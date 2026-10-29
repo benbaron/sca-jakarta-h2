@@ -1,15 +1,26 @@
 ---
-plan_version: 420
+plan_version: 421
 active_phase: P27
 active_slice: P27-S4D1
 active_status: VERIFYING
 active_branch: codex/P27-S4D1-review-validation
-active_pull_request: null
-active_head: 62b4bcf90ac1a84389f9f81dcb0f6f779236cb39
-next_action: "After explicit owner publication authorization, publish reviewed S4D1 commits with matching trees on the fresh branch, open a draft PR, verify actual-head clean/repeat/JavaFX CI and fix failures. Owner acceptance/merge follows. S4D2 category masters and S4D3 integrated/recovery gates remain blocked until predecessors merge; P28 stays blocked."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/397
+active_head: b8ec3ca7ff786d80c0abbf02d8210b5ddeefeb66
+next_action: "Publish this authorized documentation ledger with a matching tree; verify draft PR #397 final branch/head and actual-head clean/repeat/production JavaFX CI, repair failures and record results. Owner acceptance/merge follows. S4D2/S4D3 and P28 remain blocked."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-S4D1 authorized draft publication — 2026-10-28 (America/Denver)
+
+Owner explicitly authorized draft publication and CI with “proceed” in response to the publication request. Confirmed clean worktree, exact reviewed two-commit sequence, current main `6ed44f635aee5eefc63d861258cf29e96f668247` and absent remote branch before creating it at that base. Used the connected GitHub service; preserved commit messages/order, verified each changed blob and both tree IDs against local Git objects, and fast-forwarded with expected base and force disabled. No unrelated files were included.
+
+| Local commit | Published commit | Matching tree |
+|---|---|---|
+| `62b4bcf90ac1a84389f9f81dcb0f6f779236cb39` | `519612c3c3a1c7a5fa6714ce209049fc750f2dbf` | `ad84e9f2b9b60e33c2d496018edc6a2e60c8b7fe` |
+| `99ee69045c9c76fe8ea390f0d4297cde5626a7ce` | `b8ec3ca7ff786d80c0abbf02d8210b5ddeefeb66` | `91f5f81a7e4b802804e06b9f2ce8c66d7a5b259c` |
+
+Opened draft [PR #397](https://github.com/benbaron/sca-jakarta-h2/pull/397) at `b8ec3ca7ff786d80c0abbf02d8210b5ddeefeb66`. This publication-only successor records its known parent in active_head because a commit cannot embed its own SHA; publish it under the same authorization, verify final branch/PR head and matching tree, then inspect actual-head Maven clean/repeat/production JavaFX CI and correct failures. No S4D1 GitHub success is claimed yet. Final local source/test gates remain 1,090 clean tests (77 headless skips), 69 Xvfb tests (zero skips), zero failures/errors. S4D1 stays VERIFYING; owner acceptance and separately accepted merge remain. S4D2 category masters, S4D3 integrated/recovery acceptance and P28 remain blocked.
 
 ### P27-S4C merge and S4D1 selection — 2026-10-28 (America/Denver)
 
