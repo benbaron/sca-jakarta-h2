@@ -244,6 +244,8 @@ After PR #392 merged, the [S4 audit](P27-S4-portability-audit.md) split executio
 
 [S4C](P27-S4C-transfer-portability.md) adds nondestructive intrinsic transfer UUIDs and complete operational history/canonical links through the existing SCLX authority, without replaying accounting. Source request hashes remain provenance after remapping; explicit conflicts, foreign/request collisions, legacy facts, exact retry and rollback are part of the gate. Parent S4 still awaits S4D.
 
+S4D is split after PR #395 into [S4D1](P27-S4D1-close-evidence-validation.md), shared recognized close-review payload validation at Preview/export/import/history boundaries; S4D2, complete Budget Category master metadata and unused records; then S4D3, the combined fixture and recovery gate. Each follows the preceding merge. Exact source-local audit text remains historical, and current canonical close checks retain authority.
+
 **Work:** Audit and finish SCLX coverage for every new durable feature from P24–P27: dimensions, checks, transfer links, NMR, asset acquisitions, custody, valuation, recognition, and evidence references. Each earlier slice must already document its portability behavior; this is the final integrated compatibility gate. Keep computed projections derived, not new import authority.
 
 **Acceptance:** A full fixture exports/imports into a new company and preserves supported identities, allocations, histories, and report results. Existing-company conflicts and unsupported versions are visible before commit. A whole-database backup/restore reproduces the complete operational state; SCLX's deliberate exclusions are documented field by field.

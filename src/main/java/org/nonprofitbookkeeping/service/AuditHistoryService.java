@@ -136,6 +136,8 @@ public final class AuditHistoryService
         }
 
         Map<String, AuditEvent> imported = new LinkedHashMap<>(existingEvents);
+        // Validate the complete recognized payload batch before the first persist, even for direct callers.
+        source.forEach(value -> CloseReviewPayloadCodec.validateAudit(value.actionType(), value.entityType(), value.afterValue()));
         for (AuditEventImport value : source)
         {
             if (imported.containsKey(value.externalId()))

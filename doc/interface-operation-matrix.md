@@ -96,6 +96,8 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 
 ## Import and export operation matrix
 
+[S4D1 close-review validation](P27-S4D1-close-evidence-validation.md) uses existing SCLX Preview/Save and export. Recognized malformed/unsupported review payloads block before Save or destination publication; supported facts retain exact source text. Review history shares that validator. No new control or Save authority is introduced.
+
 SCLX [budget metadata portability](P27-S4B-budget-metadata.md) uses the existing File export and Import Preview/Save routes. Preview reports full plan/line history counts; imported lifecycle facts do not execute the Budget Editor's activation/archive commands. Full metadata retains saved fiscal dates, archived state, notes and times; older files retain the reduced compatibility contract. No new panel or Save authority is introduced.
 
 [Transfer portability](P27-S4C-transfer-portability.md) uses those same routes and BOOKKEEPING_WRITE Save. Export/Preview report exact transfer counts; Fund Transfers displays restored saved/reversal links. Restoration does not execute interactive transfer Save/Reverse or post duplicate accounting. Legacy unlinked operational facts make a target populated; they cannot be silently treated as an empty company.
