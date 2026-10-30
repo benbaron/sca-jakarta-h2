@@ -142,8 +142,13 @@ public final class SclxImportPreviewService
         }
         catch (IllegalStateException ex)
         {
+            String detail = Objects.toString(ex.getMessage(), "Invalid audit history");
+            if (detail.length() > 800)
+            {
+                detail = detail.substring(0, 800) + "…";
+            }
             messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_AUDIT_HISTORY_INVALID",
-                    "$.extensions.scaJakartaH2.auditHistory", ex.getMessage(), true));
+                    "$.extensions.scaJakartaH2.auditHistory", detail, true));
         }
 
         JsonNode identityRoot = document.root();

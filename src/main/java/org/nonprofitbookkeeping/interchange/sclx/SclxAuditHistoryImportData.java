@@ -1,7 +1,7 @@
 package org.nonprofitbookkeeping.interchange.sclx;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.nonprofitbookkeeping.service.CloseReviewPayloadCodec;
+import org.nonprofitbookkeeping.service.CloseReviewEvidenceService;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -54,7 +54,7 @@ final class SclxAuditHistoryImportData
                             "entityId", "summary", "beforeValue", "afterValue", "reason"),
                     Set.of("auditEventId", "occurredAt", "actor", "actionType", "entityType", "summary"),
                     path);
-            String externalId = boundedText(event, "auditEventId", path, 160);
+            String externalId = boundedText(event, "auditEventId", path, 160).trim();
             if (!identities.add(externalId))
             {
                 throw new IllegalStateException(
@@ -73,7 +73,7 @@ final class SclxAuditHistoryImportData
                     optionalBoundedText(event, "reason", path, 1000));
             try
             {
-                CloseReviewPayloadCodec.validateAudit(parsed.actionType(), parsed.entityType(), parsed.afterValue());
+                CloseReviewEvidenceService.validateRetainedAudit(parsed.actionType(), parsed.entityType(), parsed.afterValue());
             }
             catch (IllegalArgumentException ex)
             {
@@ -167,7 +167,7 @@ final class SclxAuditHistoryImportData
     private static String text(JsonNode value, String field, String path)
     {
         String result = optionalText(value, field, path);
-        if (result == null)
+        if (result == null || result.isBlank())
         {
             throw new IllegalStateException(path + "." + field + " must be a nonblank string.");
         }
@@ -185,8 +185,7 @@ final class SclxAuditHistoryImportData
         {
             throw new IllegalStateException(path + "." + field + " must be text or null.");
         }
-        String result = node.textValue();
-        return result.trim().isEmpty() ? null : result;
+        return node.textValue();
     }
 
     private static Instant boundedInstant(JsonNode value, String field, String path)

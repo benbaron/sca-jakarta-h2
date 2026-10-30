@@ -571,11 +571,14 @@ class SclxImportCommitServiceTest
             SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
 
             assertTrue(preview.hasBlockingErrors());
-            assertTrue(preview.operation().messages().stream()
-                    .anyMatch(message -> message.message().contains("actor exceeds 200")));
-            assertThrows(IllegalStateException.class,
+            assertTrue(preview.operation().messages().stream().anyMatch(message ->
+                    message.code().equals("SCLX_AUDIT_HISTORY_INVALID")
+                            && message.message().contains("actor exceeds 200")));
+            IllegalStateException failure = assertThrows(IllegalStateException.class,
                     () -> new SclxImportCommitService(jpa, () -> TARGET)
                             .commit(source, preview, "tester"));
+
+            assertTrue(failure.getMessage().contains("blocking validation"));
             try (EntityManager em = jpa.em())
             {
                 assertEquals("Empty Target", company(em).getDisplayName());

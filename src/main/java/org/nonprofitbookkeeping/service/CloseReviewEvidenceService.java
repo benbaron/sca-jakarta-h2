@@ -290,7 +290,7 @@ public final class CloseReviewEvidenceService
     {
         try
         {
-            Payload payload = CloseReviewPayloadCodec.decode(event.getAfterValue());
+            Payload payload = CloseReviewPayloadReader.read(event.getAfterValue());
             return new Review(event.getPortableId(), event.getCompany().getCode(), event.getOccurredAt(), event.getActor(), payload);
         }
         catch (RuntimeException ex)
@@ -299,12 +299,25 @@ public final class CloseReviewEvidenceService
         }
     }
 
+    /** Validates recognized historical review JSON without rewriting it or evaluating target readiness. */
+    public static void validateRetainedAudit(String action, String entity, String afterValue)
+    {
+        if (ACTION.equals(action) || ENTITY.equals(entity))
+        {
+            if (!ACTION.equals(action) || !ENTITY.equals(entity))
+            {
+                throw new IllegalArgumentException("Retained close-review action/entity markers must agree");
+            }
+            CloseReviewPayloadReader.read(afterValue);
+        }
+    }
+
     private String code()
     {
         return text(company.get(), "Company", 80, true).toUpperCase(Locale.ROOT);
     }
 
-    private static String fingerprint(Command command)
+    static String fingerprint(Command command)
     {
         Map<String, Object> facts = new LinkedHashMap<>();
         facts.put("start", command.start().toString()); facts.put("end", command.end().toString());
