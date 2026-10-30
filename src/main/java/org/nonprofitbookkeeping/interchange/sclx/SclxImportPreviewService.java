@@ -44,7 +44,7 @@ public final class SclxImportPreviewService
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Set<String> RECOGNIZED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "fundTransfers", "transactionBudgets", "budgetMetadata", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "bankConfiguration",
+            "supplementalDetails", "fundTransfers", "transactionBudgets", "budgetMetadata", "budgetCategories", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "fixedAssets", "inventory", "propertyCustody",
             "periodClose", "auditHistory", "nmrPolicies");
     private static final Set<String> UNSUPPORTED_ROOT_SECTIONS = Set.of(
@@ -159,6 +159,9 @@ public final class SclxImportPreviewService
             identityRoot = SclxAssetAcquisitions.identityDocument(identityRoot);
             identityRoot = SclxBudgetMetadata.identityDocument(identityRoot);
             identityRoot = SclxFundTransfers.identityDocument(identityRoot);
+            var categoryFacts = SclxBudgetCategories.parse(document.root());
+            if (categoryFacts.present()) messages.add(message(InterchangeMessageSeverity.INFO, "SCLX_BUDGET_CATEGORIES",
+                    "$.extensions.scaJakartaH2.budgetCategories", "Complete category masters: " + categoryFacts.byCode().size() + ".", false));
             int transferCount = SclxFundTransfers.parse(document.root()).size();
             if (transferCount > 0) messages.add(message(InterchangeMessageSeverity.INFO, "SCLX_FUND_TRANSFERS", "$.extensions.scaJakartaH2.fundTransfers",
                     "Operational fund transfer facts: " + transferCount + "; no duplicate accounting is generated.", false));
@@ -218,7 +221,9 @@ public final class SclxImportPreviewService
                 targetCode, organization.sourceSystem(), nativePortableKeys);
         addOwnershipDiagnostics(messages, ownershipIssuesSupplier.get());
         List<SclxImportEntityPreview> entities = classify(
-                extraction.entities(), target, messages, conflictSelections);
+                extraction.entities(), target, messages, conflictSelections,
+                document.root().path("extensions").path("scaJakartaH2").has(SclxBudgetCategories.KEY)
+                        ? targetReader.categories(target.companyCode()) : Map.of());
         try
         {
             var facts = SclxFundTransfers.parse(document.root());
@@ -545,6 +550,8 @@ public final class SclxImportPreviewService
         JsonNode app = extensions.path("scaJakartaH2");
         if (app.isObject())
         {
+            addObjectArrays(app.get(SclxBudgetCategories.KEY), "$.extensions.scaJakartaH2.budgetCategories", counts, entities, messages,
+                    new ArraySpec("categories", "categoryId", SclxBudgetCategories.TYPE, "budgetCategories"));
             addArray(app.get("activities"), "activityId", "ACTIVITY", "activities",
                     "$.extensions.scaJakartaH2.activities", counts, entities, messages);
             addObjectArrays(app.get(SclxFundTransfers.KEY), "$.extensions.scaJakartaH2.fundTransfers", counts, entities, messages,
@@ -609,7 +616,8 @@ public final class SclxImportPreviewService
             List<IncomingEntity> incoming,
             SclxImportTargetSnapshot target,
             List<InterchangeValidationMessage> messages,
-            List<SclxImportConflictSelection> selections)
+            List<SclxImportConflictSelection> selections,
+            Map<String, SclxImportTargetReader.CategoryTarget> categories)
     {
         List<SclxImportEntityPreview> result = new ArrayList<>(incoming.size());
         Set<SclxImportTargetSnapshot.ExternalIdentityKey> seen = new HashSet<>();
@@ -628,6 +636,8 @@ public final class SclxImportPreviewService
             }
         }
         Set<SclxImportTargetSnapshot.ExternalIdentityKey> projected = new HashSet<>();
+        Map<String, SclxImportTargetReader.CategoryTarget> categoriesById = new HashMap<>();
+        categories.values().forEach(category -> categoriesById.put(category.localId(), category));
         for (IncomingEntity entity : incoming)
         {
             SclxImportTargetSnapshot.ExternalIdentityKey key = new SclxImportTargetSnapshot.ExternalIdentityKey(
@@ -644,7 +654,13 @@ public final class SclxImportPreviewService
             String localId = null;
             String conflictDetail = null;
             String nativePortableId = null;
-            if (local == null || SclxNmrPolicies.TYPE.equals(entity.entityType()))
+            if (SclxBudgetCategories.TYPE.equals(entity.entityType()))
+            {
+                var category = categoryMatch(entity, local, target, categories, categoriesById, messages);
+                match = category.match(); localId = category.localId(); conflictDetail = category.detail();
+                nativePortableId = category.nativeId();
+            }
+            else if (local == null || SclxNmrPolicies.TYPE.equals(entity.entityType()))
             {
                 match = InterchangeIdentityMatch.NEW;
                 SclxImportTargetSnapshot.NativePortableKey nativeKey =
@@ -806,6 +822,54 @@ public final class SclxImportPreviewService
                 .sorted(Comparator.comparing(SclxImportEntityPreview::entityType)
                         .thenComparing(SclxImportEntityPreview::externalId))
                 .toList();
+    }
+
+    private record CategoryMatch(InterchangeIdentityMatch match, String localId, String detail, String nativeId) { }
+
+    private static CategoryMatch categoryMatch(IncomingEntity entity, SclxImportTargetSnapshot.IdentityFact identity,
+            SclxImportTargetSnapshot target, Map<String, SclxImportTargetReader.CategoryTarget> categories,
+            Map<String, SclxImportTargetReader.CategoryTarget> categoriesById, List<InterchangeValidationMessage> messages)
+    {
+        var key = SclxNativePortableIdentity.key(entity.entityType(), entity.externalId());
+        var nativeFact = target.nativePortableIdentities().get(key);
+        if (nativeFact != null && !nativeFact.ownedBy(target.companyCode()))
+        {
+            messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_NATIVE_PORTABLE_ID_OTHER_COMPANY", entity.path(),
+                    "Category UUID belongs to another or unresolved company.", true));
+            return new CategoryMatch(InterchangeIdentityMatch.NEW, null, null, null);
+        }
+        if (identity != null && nativeFact != null && !nativeFact.localEntityId().equals(identity.localEntityId()))
+        {
+            messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_CATEGORY_IDENTITY_CHANGED", entity.path(),
+                    "The source identity and intrinsic UUID no longer resolve to the same retained category.", true));
+        }
+        var existing = identity != null
+                ? categoriesById.get(identity.localEntityId())
+                : nativeFact != null
+                    ? categoriesById.get(nativeFact.localEntityId())
+                    : categories.get(entity.value().path("code").asText("").toUpperCase(java.util.Locale.ROOT));
+        if ((identity != null || nativeFact != null) && existing == null)
+        {
+            messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_CATEGORY_IDENTITY_CHANGED", entity.path(),
+                    "The retained category identity is missing or no longer belongs to the selected company.", true));
+            return new CategoryMatch(InterchangeIdentityMatch.CONFLICT, null, "Stale category identity", null);
+        }
+        if (existing == null) return new CategoryMatch(InterchangeIdentityMatch.NEW, null, null, null);
+        boolean exact = false;
+        try
+        {
+            exact = existing.value().equals(SclxBudgetCategories.parseEntry(entity.value()).value());
+        }
+        catch (IllegalStateException ex)
+        {
+            messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_CATEGORY_CONTENT_INVALID", entity.path(), ex.getMessage(), true));
+        }
+        String nativeId = nativeFact == null ? null : key.portableId().toString();
+        if (exact && (identity == null || identity.normalizedContentHash().equals(entity.normalizedHash())))
+            return new CategoryMatch(identity == null ? InterchangeIdentityMatch.NEW : InterchangeIdentityMatch.IDENTICAL,
+                    existing.localId(), null, nativeId);
+        return new CategoryMatch(InterchangeIdentityMatch.CONFLICT, existing.localId(),
+                "Category UUID/code or retained master facts differ. Keep target preserves its metadata and stable accounting references.", nativeId);
     }
 
     private static MappingResult mappings(

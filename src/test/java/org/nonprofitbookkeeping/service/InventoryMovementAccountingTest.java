@@ -329,9 +329,9 @@ class InventoryMovementAccountingTest
             assertEquals(new BigDecimal("0.0000"), importedPurposes.gl());
             assertEquals(2, importedPurposes.details().size());
             assertTrue(importedPurposes.details().stream().allMatch(line -> line.function() == org.nonprofitbookkeeping.model.ExpenseFunction.OA));
-            // SCLX preserves category codes; a new target initializes the category name from its code.
+            // Complete category masters preserve the source label alongside the canonical split links.
             assertEquals(2, service(target, COMPANY).listMovements(COMPANY).stream()
-                    .filter(row -> "FAIR — Historic Fair".equals(row.events()) && "COST — COST".equals(row.budgetCategories())).count(),
+                    .filter(row -> "FAIR — Historic Fair".equals(row.events()) && "COST — Event Cost".equals(row.budgetCategories())).count(),
                     () -> service(target, COMPANY).listMovements(COMPANY).toString());
             assertEquals(new BigDecimal("200.0000"), new BudgetPlanService(target, () -> COMPANY)
                     .activeVariance(MOVEMENT_DATE).stream().filter(row -> "COST".equals(row.budgetCategoryCode()))

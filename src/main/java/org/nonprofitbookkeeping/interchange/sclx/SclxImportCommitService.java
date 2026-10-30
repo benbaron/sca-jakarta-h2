@@ -99,7 +99,7 @@ public final class SclxImportCommitService
 {
     private static final Set<String> SUPPORTED_ENTITY_TYPES = Set.of(
             "ORGANIZATION", "ACCOUNT", "FUND", "ACTIVITY", "COUNTERPARTY", "MERCHANT",
-            "BUDGET", "BUDGET_LINE", "TRANSACTION", "TRANSACTION_LINE", "SUPPLEMENTAL_DETAIL",
+            "BUDGET", "BUDGET_LINE", "BUDGET_CATEGORY", "TRANSACTION", "TRANSACTION_LINE", "SUPPLEMENTAL_DETAIL",
             "FIXED_ASSET", "DEPRECIATION_RUN", "INVENTORY_ITEM", "INVENTORY_MOVEMENT",
             "PROPERTY_CUSTODY_EVENT", "FUND_TRANSFER",
             "BANK", "BANK_ACCOUNT", "BANK_IMPORT_BATCH", "BANK_STATEMENT_LINE",
@@ -107,7 +107,7 @@ public final class SclxImportCommitService
             "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT", "AUDIT_EVENT", "NMR_POLICY_VERSION");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "activities", "counterparties",
-            "supplementalDetails", "fundTransfers", "transactionBudgets", "budgetMetadata", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "fixedAssets", "inventory", "propertyCustody", "bankConfiguration",
+            "supplementalDetails", "fundTransfers", "transactionBudgets", "budgetMetadata", "budgetCategories", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "fixedAssets", "inventory", "propertyCustody", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "periodClose", "auditHistory", "nmrPolicies");
 
     private final Jpa jpa;
@@ -274,6 +274,7 @@ public final class SclxImportCommitService
         requireSupportedSections(current, root);
         SclxBudgetImportData budgets = SclxBudgetImportData.parseDocument(root);
         var budgetMetadata = SclxBudgetMetadata.parse(root);
+        var categoryMetadata = SclxBudgetCategories.parse(root);
         var transferFacts = SclxFundTransfers.parse(root);
         SclxFixedAssetImportData fixedAssets = SclxFixedAssetImportData.parse(root);
         SclxInventoryImportData inventory = SclxInventoryImportData.parse(root);
@@ -351,6 +352,28 @@ public final class SclxImportCommitService
                         writtenPolicies.put(policy.externalId(), saved);
                     }
                 }
+                Map<String, BudgetCategory> writtenCategories = new LinkedHashMap<>();
+                int categoryWrites = 0;
+                for (var fact : categoryMetadata.byCode().values().stream().sorted(java.util.Comparator.comparing(f -> f.value().code())).toList())
+                {
+                    var item = required(previews, new EntityKey(SclxBudgetCategories.TYPE, fact.id()), "category preview");
+                    BudgetCategory category;
+                    if (reuseExisting(item))
+                    {
+                        category = localEntity(em, item, BudgetCategory.class);
+                        ownership.requireOwnedBy(company, category, "Retained category");
+                        if (item.conflictChoice() != SclxImportConflictChoice.KEEP_TARGET
+                                && !BudgetCategoryAdminService.importFact(category).equals(fact.value()))
+                            throw new IllegalStateException("Retained category facts changed after preview");
+                    }
+                    else
+                    {
+                        requireNew(previews, SclxBudgetCategories.TYPE, fact.id());
+                        category = budgetCategoryAdminService.importForInterchange(em, company, fact.value());
+                        afterBusinessWrite.accept(policyWrites + ++categoryWrites);
+                    }
+                    writtenCategories.put(fact.value().code(), category);
+                }
                 boolean allIdentical = current.operation().items().stream()
                         .allMatch(item -> item.identityMatch() == InterchangeIdentityMatch.IDENTICAL);
                 if (!transferFacts.isEmpty())
@@ -383,7 +406,7 @@ public final class SclxImportCommitService
                             "SCLX_IDENTICAL_REIMPORT",
                             "Every governed core, extension, banking, reconciliation, period-close, audit-history, and correction fact was identical; no data changed.");
                 }
-                int writes = policyWrites;
+                int writes = policyWrites + categoryWrites;
                 if (!current.targetPopulated())
                 {
                     applyOrganization(company, root.path("organization"));
@@ -402,7 +425,7 @@ public final class SclxImportCommitService
                 writes += newEntityCount(previews, "ACTIVITY", details.activities().stream()
                         .map(SclxTransactionDetailImportData.ActivityValue::externalId).toList());
                 BudgetWrite writtenBudgets = writeBudgets(
-                        em, company, budgets, funds, activities, previews, transactionBudgetCodes, budgetMetadata, writes);
+                        em, company, budgets, funds, activities, previews, transactionBudgetCodes, writtenCategories, budgetMetadata, writes);
                 writes += writtenBudgets.businessWriteCount();
                 Map<String, Counterparty> counterparties = writeCounterparties(
                         em, company, details.counterparties(), previews, writes);
@@ -504,6 +527,8 @@ public final class SclxImportCommitService
                 recordMasterIdentities(em, company, current, previews, root.path("funds"),
                         "FUND", "fundId", funds);
                 recordBudgetIdentities(em, company, current, previews, writtenBudgets);
+                categoryMetadata.byCode().forEach((code, fact) -> recordIdentity(em, company, current, previews,
+                        SclxBudgetCategories.TYPE, fact.id(), writtenCategories.get(code).getId().toString()));
                 writtenTransfers.forEach((identity, value) -> recordIdentity(em, company, current, previews,
                         SclxFundTransfers.TYPE, identity, value.getId().toString()));
                 recordEntityIdentities(em, company, current, previews, activities, "ACTIVITY");
@@ -963,6 +988,7 @@ public final class SclxImportCommitService
             Map<String, Activity> activities,
             Map<EntityKey, SclxImportEntityPreview> previews,
             Map<String, String> transactionBudgetCodes,
+            Map<String, BudgetCategory> importedCategories,
             SclxBudgetMetadata.Data metadata,
             int writesBefore)
     {
@@ -984,9 +1010,10 @@ public final class SclxImportCommitService
 
         int writes = writesBefore;
         int businessWrites = 0;
-        Map<String, BudgetCategory> categories = new LinkedHashMap<>();
+        Map<String, BudgetCategory> categories = new LinkedHashMap<>(importedCategories);
         for (String code : categoryCodes.stream().sorted().toList())
         {
+            if (categories.containsKey(code)) continue;
             BudgetCategory category = em.createQuery(
                             "from BudgetCategory c where c.company = :company and c.code = :code",
                             BudgetCategory.class)

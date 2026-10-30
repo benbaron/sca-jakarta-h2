@@ -7,6 +7,13 @@ import java.util.UUID;
 /** Read-only target-company boundary used by the non-mutating SCLX preview service. */
 interface SclxImportTargetReader
 {
+    record CategoryTarget(String localId, org.nonprofitbookkeeping.service.BudgetCategoryAdminService.ImportFact value) { }
+
+    default Map<String, CategoryTarget> categories(String companyCode)
+    {
+        return Map.of();
+    }
+
     record TransferTarget(UUID id, UUID request, String company, UUID transaction)
     {
     }

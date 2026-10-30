@@ -300,6 +300,7 @@ final class SclxExportCoordinator implements SclxExportActions
                 + "\n  Audit events: " + counts.auditEvents()
                 + "\n  NMR policy versions: " + counts.nmrPolicyVersions()
                 + "\n  Fund transfers: " + counts.fundTransfers()
+                + "\n  Budget category masters: " + counts.budgetCategories()
                 + "\n  Total entities: " + counts.totalEntities()
                 + "\n\nWarnings: " + counts.warnings()
                 + "\nValidation messages:" + messages

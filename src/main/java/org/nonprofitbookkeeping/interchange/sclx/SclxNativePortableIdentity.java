@@ -88,6 +88,16 @@ final class SclxNativePortableIdentity
                                                 org.nonprofitbookkeeping.service.NmrPolicyService.importValue(p)))));
                 continue;
             }
+            if (SclxBudgetCategories.TYPE.equals(entry.getKey()))
+            {
+                em.createQuery("from BudgetCategory c left join fetch c.company where c.portableId in :ids",
+                        org.nonprofitbookkeeping.model.BudgetCategory.class).setParameter("ids", entry.getValue()).getResultList()
+                        .forEach(c -> result.put(new SclxImportTargetSnapshot.NativePortableKey(SclxBudgetCategories.TYPE, c.getPortableId()),
+                                new SclxImportTargetSnapshot.NativePortableFact(c.getId().toString(),
+                                        c.getCompany() == null ? null : c.getCompany().getCode(),
+                                        SclxBudgetCategories.fingerprint(org.nonprofitbookkeeping.service.BudgetCategoryAdminService.importFact(c)))));
+                continue;
+            }
             @SuppressWarnings("unchecked")
             List<Object[]> rows = em.createNativeQuery(spec.selectSql()
                             + " where " + spec.portableExpression() + " in (:portableIds)")
@@ -118,6 +128,7 @@ final class SclxNativePortableIdentity
     {
         return switch (entityType)
         {
+            case "BUDGET_CATEGORY" -> SclxBudgetCategories.fingerprint(SclxBudgetCategories.parseEntry(value).value());
             case "NMR_POLICY_VERSION" -> org.nonprofitbookkeeping.service.NmrPolicyService.importFingerprint(
                     SclxNmrPolicies.parseEntry(value).value());
             case "COUNTERPARTY" -> counterpartyFingerprint(
@@ -227,6 +238,7 @@ final class SclxNativePortableIdentity
     private static Map<String, TableSpec> tables()
     {
         Map<String, TableSpec> values = new LinkedHashMap<>();
+        values.put(SclxBudgetCategories.TYPE, direct("budget_category", "e.portable_id", ""));
         values.put("COUNTERPARTY", direct("counterparty", "e.portable_id",
                 ", e.display_name, e.kind, e.email, e.phone, cast(e.notes as varchar), e.is_active"));
         values.put("MERCHANT", direct("merchant", "e.portable_id",

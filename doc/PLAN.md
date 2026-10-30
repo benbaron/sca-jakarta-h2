@@ -1,15 +1,31 @@
 ---
-plan_version: 421
+plan_version: 422
 active_phase: P27
-active_slice: P27-S4D1
+active_slice: P27-S4D2
 active_status: VERIFYING
-active_branch: codex/P27-S4D1-review-validation
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/397
-active_head: b8ec3ca7ff786d80c0abbf02d8210b5ddeefeb66
-next_action: "Publish this authorized documentation ledger with a matching tree; verify draft PR #397 final branch/head and actual-head clean/repeat/production JavaFX CI, repair failures and record results. Owner acceptance/merge follows. S4D2/S4D3 and P28 remain blocked."
+active_branch: codex/P27-S4D2-category-portability
+active_pull_request: null
+active_head: f8206e45a1f1f245956c6447db7c0c2625d8227c
+next_action: "Finish production JavaFX, publish S4D2 as a draft PR, confirm exact final head/tree and CI, then hand off owner review/merge. S4D3 follows confirmed merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### GitHub resync and S4D2 selection — 2026-10-29 (America/Denver)
+
+[GitHub/archive rescan](github-state-sync.md) confirms S4D1 merged through **PR #397**, not #396. Current main `f8206e45a1f1f245956c6447db7c0c2625d8227c` contains accepted head `c852a10a5a913b6b548d8ea426d6ea0e19a2c681`; workflow `40809782195`, job `123237359004`, passed clean/repeat/production JavaFX. S4D1 is DONE. #396 remains an open overlapping draft at `fd3b6a99`; its old `5224626c` validation is not evidence for that new head. Do not merge/replay the obsolete implementation. All 397 PR heads are archived locally. Preserve the previous local branch/evidence separately rather than cherry-picking it over #397's newer records. No additional native human result is inferred.
+
+Fresh `codex/P27-S4D2-category-portability` starts from verified main. Select [S4D2 category masters](P27-S4D2-category-portability.md) IN_PROGRESS. Inspection confirms code-only references currently lose names/descriptions/effective state/times and unused records; categories have no intrinsic portable UUID. Add nondestructive V92 UUIDs and a complete optional extension restored through BudgetCategoryAdminService inside the existing import transaction. Legacy absence keeps the code-as-name contract; no invented master facts or accounting. Production alias maintenance has no writer/reader; its legacy dictionary is a deliberate SCLX exclusion retained by whole-database recovery. Parent S4 remains incomplete; S4D3/P28 stay blocked. Baseline compile passed; existing category/budget/import tests run before production edits.
+
+S4D2 implementation and focused gates — 2026-10-29 (America/Denver): V92 nondestructive category UUIDs, strict complete budgetCategories v1 snapshot/parser, native/source identity and code-conflict classification, exact caller-owned master restoration before Budget/Journal links, current-fact revalidation even on replay, and exact export/Preview counts are implemented. Historical inactive/effective-date assignments are restored without live Save replay. Legacy absence leaves financial identity hashes/code-as-name behavior unchanged; Keep target preserves master metadata/native links. No new UI command, workflow, dependency, ledger or accounting policy. Alias compatibility rows remain a documented selected-company exclusion and survive upgrade/recovery.
+
+Baseline compile and 42 existing tests passed. New migration/file gate passed eight tests; broader category/budget/import/export gate passed **51 tests, zero failures/errors/skips**. Final review added constant-time target-ID lookup and source/native binding-drift rejection; the strengthened eight-test gate passed again, including target rename and identity tampering. Nine governing documents / 192 relative links and whitespace/scope checks pass. No known executed-check failure remains. Full clean verification, exact production JavaFX, draft publication/final-head CI and owner review/merge remain. S4D3/P28 stay blocked.
+
+S4D2 final-source refinement: native category maintenance permits non-ASCII whitespace in a nonblank code, so the import DTO must not impose a stronger trimming rule. Added a service/export/parser/restoration regression proving exact Unicode-code preservation. The final nine-test migration/file gate passed, zero failures/errors/skips. The earlier full clean was deliberately stopped after this refinement; only `/tmp/p27-s4d2-clean-final.log` owns final full validation. No success is claimed for the stopped run.
+
+S4D2 inventory-label regression correction: the first complete 1,099-test run had one failure, zero errors and 77 expected display skips. `InventoryMovementAccountingTest` still expected a new target to lose “Event Cost” and display “COST — COST”. It now asserts the preserved source label “COST — Event Cost” while retaining its exact accounting/function/reversal/link checks. The final affected inventory/category/migration gate passed **16 tests, zero failures/errors/skips**. Final frozen source covers 18 changed source/test/schema/build files. The prior failing log is retained as `/tmp/p27-s4d2-clean-before-label.log`; rerun final full clean verification before publication.
+
+Final S4D2 clean gate — 2026-10-29 (America/Denver): final `mvn clean verify` passed at **21:11:16 with 1,099 tests, zero failures/errors and 77 expected display skips** (`/tmp/p27-s4d2-clean-final.log`). All 18 frozen source/test/schema/build hashes match the completed gate, including the Unicode-code and preserved inventory-label regressions. Final affected gate passed 16; the broader gate passed 51. Ten governing documents / 195 relative links and whitespace/scope review pass. The exact production JavaFX selector is running under Xvfb with the required environment permission. Main remains `f8206e45`; the fresh remote branch is absent. Draft publication/final-head CI and owner review/merge remain; S4D2 is VERIFYING and S4D3/P28 stay blocked. No source change follows this final clean gate.
 
 ### P27-S4D1 authorized draft publication — 2026-10-28 (America/Denver)
 
@@ -194,7 +210,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | DONE through owner-merged PR #386; final published head passed clean/repeat/JavaFX CI |
-| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1/S2/S3 and S4A/B/C merged; S4D1 review validation active; category-master and combined acceptance remain |
+| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1/S2/S3 and S4A/B/C merged; S4D1 merged through #397; S4D2 category masters active; combined acceptance remains |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
 ## 3. Established product decisions
@@ -874,8 +890,8 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P27-S4B | Complete budget metadata portability | DONE | PR #394 merged at 00aa3cb6; accepted head 3437de8b passed workflow 40604890977 |
 | P27-S4C | Preserve operational transfer links | DONE | PR #395 merged at 6ed44f63; accepted head 5856e0d9 passed workflow 40617977330 |
 | P27-S4D | Evidence validation and integrated compatibility gate | IN_PROGRESS | S4C merged; bounded S4D1 selected; complete only after S4D1–S4D3 merge |
-| P27-S4D1 | Strict retained-review payload validation | VERIFYING | [Contract](P27-S4D1-review-payload-validation.md); S4C merged; existing Preview/Save and audit authority |
-| P27-S4D2 | Complete Budget Category master portability | BLOCKED | S4D1 merged; explicit master identity/conflict/history contract, unused categories and metadata |
+| P27-S4D1 | Retained review validation | DONE | PR #397 merged at f8206e45; accepted head c852a10a passed workflow 40809782195 |
+| P27-S4D2 | Complete category-master portability | VERIFYING | [Contract](P27-S4D2-category-portability.md); UUIDs, exact master fields, unused records, conflict/legacy/rollback gates |
 | P27-S4D3 | Integrated all-feature and recovery acceptance | BLOCKED | S4D2 merged; combined P24–P27 report/history/conflict/backup fixture |
 | P28-S1 | Run the complete runbook acceptance matrix | BLOCKED | P27-S4 merged; owning contract and D01–D10 gates as applicable |
 | P28-S2 | Release and close the correction program | BLOCKED | P28-S1 merged; owning contract and D01–D10 gates as applicable |

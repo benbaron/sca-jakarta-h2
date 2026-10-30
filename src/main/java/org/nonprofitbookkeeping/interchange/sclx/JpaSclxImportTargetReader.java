@@ -25,6 +25,24 @@ import java.util.stream.Collectors;
 final class JpaSclxImportTargetReader implements SclxImportTargetReader
 {
     @Override
+    public Map<String, CategoryTarget> categories(String companyCode)
+    {
+        try (var em = jpa.em())
+        {
+            Map<String, CategoryTarget> result = new LinkedHashMap<>();
+            for (var value : em.createQuery("from BudgetCategory c where c.company.code=:code",
+                    org.nonprofitbookkeeping.model.BudgetCategory.class).setParameter("code", companyCode).getResultList())
+            {
+                String code = value.getCode().toUpperCase(Locale.ROOT);
+                if (result.put(code, new CategoryTarget(value.getId().toString(),
+                        org.nonprofitbookkeeping.service.BudgetCategoryAdminService.importFact(value))) != null)
+                    throw new IllegalStateException("Target contains ambiguous category codes");
+            }
+            return Map.copyOf(result);
+        }
+    }
+
+    @Override
     public Map<java.util.UUID, TransferTarget> transfers(Set<java.util.UUID> portableIds, Set<java.util.UUID> requests)
     {
         if (portableIds.isEmpty() && requests.isEmpty()) return Map.of();
