@@ -4,12 +4,14 @@ active_phase: P27
 active_slice: P27-S4D2
 active_status: VERIFYING
 active_branch: codex/P27-S4D2-category-portability
-active_pull_request: null
-active_head: f8206e45a1f1f245956c6447db7c0c2625d8227c
-next_action: "Finish production JavaFX, publish S4D2 as a draft PR, confirm exact final head/tree and CI, then hand off owner review/merge. S4D3 follows confirmed merge."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/398
+active_head: 42760301e8ea919c0d11c016d74a3e23a205fe03
+next_action: "Finish production JavaFX and exact published-head CI for draft PR #398, then hand off owner review/merge. After confirmed merge, carry final evidence to a fresh S4D3 integrated compatibility/recovery branch."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+S4D2 draft publication — 2026-10-29 (America/Denver): pushed implementation `42760301e8ea919c0d11c016d74a3e23a205fe03`, tree `38d8f431d469f8a58755514282e272de0cdc3995`, without force from confirmed main `f8206e45`. Native fetched ref and draft [PR #398](https://github.com/benbaron/sca-jakarta-h2/pull/398) confirm that exact head. The PR records complete master/legacy boundaries, V92 upgrade, all nine new scenarios, final 1,099-test clean / 16-test affected results and owner checks. Initial PR head #398 was fetched into the local archive, which now contains 398 PR heads. The exact production JavaFX selector is running; no GitHub success or native human result is inferred. This documentation-only successor changes none of the 18 frozen source/test/schema/build files; verify its resulting head/tree and exact-head CI before handoff. S4D2 remains VERIFYING; S4D3/P28 remain blocked.
 
 ### GitHub resync and S4D2 selection — 2026-10-29 (America/Denver)
 

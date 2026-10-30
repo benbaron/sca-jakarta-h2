@@ -7,3 +7,5 @@ Current main is `f8206e45a1f1f245956c6447db7c0c2625d8227c`, merging [#397](https
 Only [#396](https://github.com/benbaron/sca-jakarta-h2/pull/396) remains open, as a draft, at `fd3b6a994551e90e09896cd0cdde1adec80728d5`. It overlaps merged S4D1; its description's `5224626c` result is historical and does not certify its newer head. Workflow `40992759119` was in progress when scanned. The rescan does not close or merge it. Do not use it as the next implementation base.
 
 PRs #368–#395 and #397 are merged. Current main, not the old local task branch or open overlapping draft, owns production. [PLAN](PLAN.md) now closes S4D1 through #397 and selects S4D2 category-master portability on a fresh branch. S4D3 integrated compatibility/recovery remains required; P28 stays blocked.
+
+Publication update in the same session: opened draft [#398](https://github.com/benbaron/sca-jakarta-h2/pull/398) for S4D2 on the fresh current-main branch and fetched its PR head into the local archive. The archive now contains 398 PR heads. #396 remains the older overlapping draft, not the active slice. Final published head/tree and CI evidence for #398 live in PLAN.
