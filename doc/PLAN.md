@@ -4,12 +4,14 @@ active_phase: P27
 active_slice: P27-S4D3R
 active_status: VERIFYING
 active_branch: codex/P27-S4D3R-recovery-integrity
-active_pull_request: null
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/399
 active_head: 42760301e8ea919c0d11c016d74a3e23a205fe03
-next_action: "Finish exact production JavaFX, publish the authorized S4D3R draft, verify final head/tree and exact-head CI, then owner reviews/merges; only afterwards resume the parked S4D3 slice from new main."
+next_action: "Verify final published PR #399 head/tree and exact-head clean/repeat/production JavaFX CI; owner reviews/merges separately, then resume S4D3 from new main using the parked checkpoint."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+S4D3R draft publication — 2026-10-31 UTC: pushed implementation `aa03530d3734dd5c7c8773582cb015049055bf94`, tree `1f04c7231efde9eec813bec06e7fff53bdfc77bb`, without force from confirmed main `dd30fa5f`. Native fetched branch/head/tree match local and draft [PR #399](https://github.com/benbaron/sca-jakarta-h2/pull/399) independently reports that exact head/base. PR description records the red baseline, current 1,102 clean / 69 Xvfb / nine focused passes, legacy fixtures, source isolation, performance/old-copy owner checks and the parked S4D3 boundary. This documentation-only successor records its known implementation parent because a commit cannot embed its own SHA. Publish under the standing authorization, refresh all branch/PR-head archive refs and verify the resulting final head/tree and exact-head clean/repeat/JavaFX CI before handoff. No GitHub success or native human result is inferred.
 
 S4D3R local publication gate — 2026-10-31 UTC: exact production JavaFX selector passed at **04:51:49**, **69 tests, zero failures/errors/skips** (`/tmp/p27-s4d3r-fx.log`). The same 11 frozen source/test/fixture/build files passed both the 1,102-test clean gate and real-display gate. No source changes followed. Diff review confirms only the two runtime versions and isolated-copy finalization in production; no schema/UI or parked SCLX/report fixes. Authorized draft publication and exact-head CI follow; owner acceptance/merge remain separate.
 
