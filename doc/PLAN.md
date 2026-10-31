@@ -1,15 +1,29 @@
 ---
-plan_version: 422
+plan_version: 424
 active_phase: P27
-active_slice: P27-S4D2
+active_slice: P27-S4D3R
 active_status: VERIFYING
-active_branch: codex/P27-S4D2-category-portability
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/398
+active_branch: codex/P27-S4D3R-recovery-integrity
+active_pull_request: null
 active_head: 42760301e8ea919c0d11c016d74a3e23a205fe03
-next_action: "Finish production JavaFX and exact published-head CI for draft PR #398, then hand off owner review/merge. After confirmed merge, carry final evidence to a fresh S4D3 integrated compatibility/recovery branch."
+next_action: "Finish exact production JavaFX, publish the authorized S4D3R draft, verify final head/tree and exact-head CI, then owner reviews/merges; only afterwards resume the parked S4D3 slice from new main."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+S4D3R local publication gate — 2026-10-31 UTC: exact production JavaFX selector passed at **04:51:49**, **69 tests, zero failures/errors/skips** (`/tmp/p27-s4d3r-fx.log`). The same 11 frozen source/test/fixture/build files passed both the 1,102-test clean gate and real-display gate. No source changes followed. Diff review confirms only the two runtime versions and isolated-copy finalization in production; no schema/UI or parked SCLX/report fixes. Authorized draft publication and exact-head CI follow; owner acceptance/merge remain separate.
+
+S4D3R final clean gate — 2026-10-31 UTC: `mvn clean verify` passed at **04:47:46**, **1,102 tests, zero failures/errors, 77 expected headless display skips**, total 05:35 (`/tmp/p27-s4d3r-clean.log`). All 11 frozen source/test/fixture/build hashes match the completed gate. Exact workflow JavaFX selection is running under Xvfb with the required environment permission (`/tmp/p27-s4d3r-fx.log`). Relative-link and whitespace/scope checks passed. Remote main is still `dd30fa5f`; the fresh R branch is absent remotely. No current executed-check failure remains; earlier old-stack/index experiments are resolved by the tested runtime/finalization pair. Draft publication/exact-head CI, owner review and separate merge remain. S4D3 remains blocked at its parked branch and P28 remains gated.
+
+S4D3R implementation/focused gates — 2026-10-31 UTC: upgrade H2 to 2.5.252 and matching Java-17-compatible Flyway 13.12.0. The fresh-main clean compile and six existing tests passed; the new old-stack regression then ran two tests with one exact native-recovery failure (2 / 33 / 73 became 1 / 1 / 2). The unchanged populated regression passes with the new runtime. A genuine older hot backup exposed a secondary-index read failure after schema/primary-field validation; isolated target `SHUTDOWN COMPACT` plus count recheck now precedes publication. The healthy offline and affected hot old-engine images retain every original field/row/trigger and usable indexes across restart. No source checkpoint, manual repair, alternate ledger or applied migration edit.
+
+Final affected gate passed **nine tests, zero failures/errors/skips** (`/tmp/p27-s4d3r-recovery-focused-final.log`): three new native/legacy tests plus six existing transfer/close tests. Fixtures include all supported P24–P27 native facts and security/preferences/aliases/another company; three evolving online generations, exact retries, period guards, restored allocation and active/source isolation are asserted. Legacy archives/66-table field digests were captured with H2 2.2.224/Flyway 10.17, not the upgraded stack. Full clean, exact production JavaFX, draft publication and exact-head CI remain. S4D3 stays parked/unmerged at `7ca0bfe6`; do not claim its SCLX/report repairs here.
+
+S4D3R independent recovery selection — 2026-10-31 UTC: #398 is merged at current main `dd30fa5febd14a126b85589f9811d3e3f7258296`, accepted head `71137b8c60923b5981fc41e0563374aca07c8f98`, tree `8881b55187e37875ed8ecb6c5dc206d5ea8d3a1f`; exact-head CI run `40996260724`, job `123870215137`, passed. S4D2 is DONE. All remote branches and 398 PR heads were refreshed; #396 remains the old overlapping draft, not authority.
+
+S4D3 combined portability work is **BLOCKED**, preserved and published without force at branch [`codex/P27-S4D3-integrated-portability`](https://github.com/benbaron/sca-jakarta-h2/tree/7ca0bfe6d5ea2cbbe7f8e75ec57a4c1fc4f002a8), head `7ca0bfe6d5ea2cbbe7f8e75ec57a4c1fc4f002a8`. No PR was opened for this known-failing checkpoint. Its four narrow fidelity/report repairs and combined SCLX tests remain unmerged. Earlier focused gate passed 26; expanded gate ran 29 with one populated native-recovery failure, zero errors. Source had 2 companies / 33 transactions / 73 splits; H2 2.2.224 restore could publish 1 / 1 / 2. Standalone reproductions confirm records can disappear on restored-image close/reopen, and a compact diagnostic raised an MVStore null-map/page-read error. Checkpoint/anchor experiments did not fix it and are not retained. A classpath-only H2 2.5.252 diagnostic retained 2 / 33 / 73; this is not full upgrade acceptance.
+
+Under AGENTS.md §3.3's independent-prerequisite rule, stop S4D3 and select [S4D3R native recovery integrity](P27-S4D3R-recovery-integrity.md) on fresh `codex/P27-S4D3R-recovery-integrity` from confirmed main. Candidate H2 2.5.252 and Flyway 13.12.0 explicitly match upstream tested H2 and Java 17 metadata; validate rather than assume compatibility. Keep the native-copy architecture, compare all populated rows/columns/triggers, verify a genuine H2 2.2.224 / Flyway 10.17 V92 synthetic backup, native retries/protection/allocation, and run full clean/production JavaFX/exact-head CI. No source defect repair from the parked branch is replayed here. P27/S4/P28 remain incomplete/gated and native human results remain unclaimed. P27-C1's WARN_ONLY matching issue is a later independent follow-up. After R is accepted/merged, resume S4D3 from new main and rewrite its plan against current authority.
 
 S4D2 draft publication — 2026-10-29 (America/Denver): pushed implementation `42760301e8ea919c0d11c016d74a3e23a205fe03`, tree `38d8f431d469f8a58755514282e272de0cdc3995`, without force from confirmed main `f8206e45`. Native fetched ref and draft [PR #398](https://github.com/benbaron/sca-jakarta-h2/pull/398) confirm that exact head. The PR records complete master/legacy boundaries, V92 upgrade, all nine new scenarios, final 1,099-test clean / 16-test affected results and owner checks. Initial PR head #398 was fetched into the local archive, which now contains 398 PR heads. The exact production JavaFX selector is running; no GitHub success or native human result is inferred. This documentation-only successor changes none of the 18 frozen source/test/schema/build files; verify its resulting head/tree and exact-head CI before handoff. S4D2 remains VERIFYING; S4D3/P28 remain blocked.
 
@@ -212,7 +226,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | DONE through owner-merged PR #386; final published head passed clean/repeat/JavaFX CI |
-| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1/S2/S3 and S4A/B/C merged; S4D1 merged through #397; S4D2 category masters active; combined acceptance remains |
+| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1/S2/S3 and S4A/B/C merged; S4D1 merged through #397; S4D2 merged #398; S4D3 blocked on active native recovery prerequisite |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
 ## 3. Established product decisions
@@ -893,8 +907,10 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P27-S4C | Preserve operational transfer links | DONE | PR #395 merged at 6ed44f63; accepted head 5856e0d9 passed workflow 40617977330 |
 | P27-S4D | Evidence validation and integrated compatibility gate | IN_PROGRESS | S4C merged; bounded S4D1 selected; complete only after S4D1–S4D3 merge |
 | P27-S4D1 | Retained review validation | DONE | PR #397 merged at f8206e45; accepted head c852a10a passed workflow 40809782195 |
-| P27-S4D2 | Complete category-master portability | VERIFYING | [Contract](P27-S4D2-category-portability.md); UUIDs, exact master fields, unused records, conflict/legacy/rollback gates |
-| P27-S4D3 | Integrated all-feature and recovery acceptance | BLOCKED | S4D2 merged; combined P24–P27 report/history/conflict/backup fixture |
+| P27-S4D2 | Complete category-master portability | DONE | [Contract](P27-S4D2-category-portability.md); UUIDs, exact master fields, unused records, conflict/legacy/rollback gates |
+| P27-S4D3 | Integrated all-feature and recovery acceptance | BLOCKED | Parked at `7ca0bfe6`; S4D3R recovery must merge before combined acceptance resumes |
+| P27-S4D3R | Native recovery integrity prerequisite | VERIFYING | [Contract](P27-S4D3R-recovery-integrity.md); fresh main, complete populated and legacy backup preservation gates |
+| P27-C1 | Reconciliation WARN_ONLY matching correction | BLOCKED | After integrated portability: uncleared match sets a statement link, violating V54; keep explicit clearing policy and add focused rollback/role tests |
 | P28-S1 | Run the complete runbook acceptance matrix | BLOCKED | P27-S4 merged; owning contract and D01–D10 gates as applicable |
 | P28-S2 | Release and close the correction program | BLOCKED | P28-S1 merged; owning contract and D01–D10 gates as applicable |
 | P27-S5 (conditional) | Internal attachments and approvals | BLOCKED | Not adopted; explicit scope amendment and separate specifications required; not a prerequisite for baseline P28 |
