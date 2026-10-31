@@ -81,12 +81,23 @@ public final class PeriodCloseTestFixture
             workspace.save(session.sessionId(), true);
         }
         var service = evidence(jpa, db, code);
-        var preview = service.preview(start, end);
-        if (preview.blockers() != 0) throw new AssertionError(preview.findings());
-        Map<String, String> reasons = new java.util.TreeMap<>();
-        preview.findings().forEach(f -> reasons.put(f.id(), "Synthetic reviewed timing exception"));
-        return service.save(new CloseReviewEvidenceService.Command(UUID.randomUUID(), start, end, preview.dataRevision(),
-                List.of(new CloseReviewEvidenceService.Reference(CloseReviewEvidenceService.ReferenceKind.OTHER, "synthetic/close-packet", "Explicit synthetic evidence")), reasons, "Synthetic factual review", true));
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            var preview = service.preview(start, end);
+            if (preview.blockers() != 0) throw new AssertionError(preview.findings());
+            Map<String, String> reasons = new java.util.TreeMap<>();
+            preview.findings().forEach(f -> reasons.put(f.id(), "Synthetic reviewed timing exception"));
+            try
+            {
+                return service.save(new CloseReviewEvidenceService.Command(UUID.randomUUID(), start, end, preview.dataRevision(),
+                        List.of(new CloseReviewEvidenceService.Reference(CloseReviewEvidenceService.ReferenceKind.OTHER, "synthetic/close-packet", "Explicit synthetic evidence")), reasons, "Synthetic factual review", true));
+            }
+            catch (IllegalStateException ex)
+            {
+                if (!"Review preview is stale; preview again before saving".equals(ex.getMessage()) || attempt == 2) throw ex;
+            }
+        }
+        throw new IllegalStateException("Synthetic review preview could not be stabilized");
     }
 
     static CloseReviewEvidenceService evidence(Jpa jpa, Path db, String code)
