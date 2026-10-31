@@ -331,3 +331,5 @@ Each PR and PLAN entry must record phase/slice, branch, exact commit, deliverabl
 ## P25-S4I — NMR acceptance and Journal create replay
 
 Following merged MR #375, select [S4I](P25-S4I-nmr-acceptance.md): map A10-N01–N10 to executed accounting evidence and repair the reproduced duplicate new-entry Save through the existing canonical transaction/create audit identity. Include lost-response/restart/concurrent retries, immutable receipt ownership, corrected/deleted/protected cases, late atomic failure, actual shared UI Save and integrated year-boundary GL/report/SCLX checks. No operating-policy engine, schema or second ledger is introduced. Parent S4 remains IN_PROGRESS pending its owner acceptance/closeout; D07 meanings and form-specific legal mappings stay with S5/P27.
+
+[S4D3 integrated acceptance](P27-S4D3-integrated-portability.md) follows merged category portability #398. It combines supported business facts, report cutoffs, conflicts and full database recovery; parent S4/P27 remain incomplete until its accepted merge.

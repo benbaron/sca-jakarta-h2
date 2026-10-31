@@ -35,4 +35,32 @@ class SclxPropertyCustodyTest
                 """);
         assertThrows(IllegalStateException.class, () -> SclxPropertyCustody.parse(root));
     }
+    @Test
+    void quantityAcceptsSerializerStringsAndNumbersWithoutCoercingMalformedValuesToZero() throws Exception
+    {
+        var json = new ObjectMapper();
+        var root = json.readTree("""
+                {"extensions":{"scaJakartaH2":{"propertyCustody":{"version":1,"events":[{"eventId":"x","inventoryItemId":"y","eventType":"ASSIGNMENT","eventDate":"2026-01-01","quantity":1,"condition":"GOOD","confirmationStatus":"NOT_REQUIRED","actor":"a","accountingTreatment":"CUSTODY_ONLY","createdAt":"2026-01-01T00:00:00Z"}]}}}}
+                """);
+        var row = (com.fasterxml.jackson.databind.node.ObjectNode) root.path("extensions").path("scaJakartaH2").path("propertyCustody").path("events").get(0);
+        for (String valid : java.util.List.of("4.1234", "\"4.12340\"", "\"0\"", "\"999999999999999.9999\""))
+        {
+            row.set("quantity", json.readTree(valid));
+            assertEquals(0, new java.math.BigDecimal(row.path("quantity").asText()).compareTo(SclxPropertyCustody.parse(root).get(0).quantity()));
+        }
+        for (String invalid : java.util.List.of("null", "true", "{}", "[]", "\"bad\"", "-1", "0.00001", "1000000000000000", "\"1E100000\""))
+        {
+            row.set("quantity", json.readTree(invalid));
+            assertThrows(IllegalStateException.class, () -> SclxPropertyCustody.parse(root), invalid);
+        }
+        row.remove("quantity"); assertThrows(IllegalStateException.class, () -> SclxPropertyCustody.parse(root));
+        row.put("quantity", "4");
+        var extension = (com.fasterxml.jackson.databind.node.ObjectNode) root.path("extensions").path("scaJakartaH2").path("propertyCustody");
+        for (String version : java.util.List.of("2", "4294967297", "1.5", "\"1\"", "true", "null"))
+        {
+            extension.set("version", json.readTree(version));
+            assertThrows(IllegalStateException.class, () -> SclxPropertyCustody.parse(root), version);
+        }
+    }
+
 }

@@ -151,6 +151,11 @@ public final class SclxImportPreviewService
                     "$.extensions.scaJakartaH2.auditHistory", detail, true));
         }
 
+        validateRetainedExtension(document.root(), "propertyCustody", "SCLX_PROPERTY_CUSTODY_INVALID",
+                SclxPropertyCustody::parse, messages);
+        validateRetainedExtension(document.root(), "periodClose", "SCLX_PERIOD_CLOSE_INVALID",
+                SclxPeriodCloseImportData::parse, messages);
+
         JsonNode identityRoot = document.root();
         try
         {
@@ -1629,6 +1634,25 @@ public final class SclxImportPreviewService
         catch (java.io.IOException ex)
         {
             throw new IllegalStateException("Could not canonicalize JSON text", ex);
+        }
+    }
+
+    private static void validateRetainedExtension(JsonNode root, String key, String code,
+            java.util.function.Consumer<JsonNode> validator, List<InterchangeValidationMessage> messages)
+    {
+        try
+        {
+            validator.accept(root);
+        }
+        catch (RuntimeException ex)
+        {
+            String detail = Objects.toString(ex.getMessage(), "Invalid " + key);
+            if (detail.length() > 800)
+            {
+                detail = detail.substring(0, 800) + "…";
+            }
+            messages.add(message(InterchangeMessageSeverity.ERROR, code,
+                    "$.extensions.scaJakartaH2." + key, detail, true));
         }
     }
 

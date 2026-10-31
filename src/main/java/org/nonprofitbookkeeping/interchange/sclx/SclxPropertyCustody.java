@@ -55,7 +55,8 @@ final class SclxPropertyCustody
     {
         JsonNode ext = root.path("extensions").path("scaJakartaH2").path(KEY);
         if (ext.isMissingNode() || ext.isNull()) return List.of();
-        if (!ext.isObject() || ext.path("version").asInt(-1) != 1 || !ext.path("events").isArray())
+        if (!ext.isObject() || !ext.path("version").isIntegralNumber() || !ext.path("version").canConvertToInt()
+                || ext.path("version").intValue() != 1 || !ext.path("events").isArray())
             throw new IllegalStateException("$.extensions.scaJakartaH2.propertyCustody must be a version-1 object with events.");
         ext.fieldNames().forEachRemaining(name -> { if (!Set.of("version", "events").contains(name)) throw new IllegalStateException("Unsupported property custody extension field: " + name); });
         Set<String> allowed = Set.of("eventId","fixedAssetId","inventoryItemId","correctionOfEventId","inventoryMovementId","eventType","eventDate","quantity","guardianName","guardianEmail","guardianPhone","location","condition","confirmationStatus","confirmationDueDate","confirmationDate","expectedReturnDate","removalReason","authorizationReference","notes","actor","accountingTreatment","createdAt");
@@ -68,7 +69,7 @@ final class SclxPropertyCustody
             String fixed = optional(n,"fixedAssetId"), inventory = optional(n,"inventoryItemId");
             if ((fixed == null) == (inventory == null)) throw new IllegalStateException("Each property custody event requires exactly one subject");
             result.add(new Value(id, fixed, inventory, optional(n,"correctionOfEventId"), optional(n,"inventoryMovementId"),
-                    PropertyCustodyEvent.EventType.valueOf(required(n,"eventType")), LocalDate.parse(required(n,"eventDate")), n.path("quantity").decimalValue(),
+                    PropertyCustodyEvent.EventType.valueOf(required(n,"eventType")), LocalDate.parse(required(n,"eventDate")), quantity(n),
                     optional(n,"guardianName"), optional(n,"guardianEmail"), optional(n,"guardianPhone"), optional(n,"location"), required(n,"condition"), required(n,"confirmationStatus"),
                     date(n,"confirmationDueDate"), date(n,"confirmationDate"), date(n,"expectedReturnDate"), optional(n,"removalReason"), optional(n,"authorizationReference"), optional(n,"notes"),
                     required(n,"actor"), required(n,"accountingTreatment"), Instant.parse(required(n,"createdAt"))));
@@ -78,6 +79,29 @@ final class SclxPropertyCustody
         for (Value v : result) if (v.correctionOfEventId()!=null) { if (!known.contains(v.correctionOfEventId())) throw new IllegalStateException("Custody correction reference is outside the extension"); if (!corrected.add(v.correctionOfEventId())) throw new IllegalStateException("A custody event can have only one direct correction"); parents.put(v.eventId(), v.correctionOfEventId()); }
         for (String id : ids) { Set<String> seen = new HashSet<>(); String next=id; while ((next=parents.get(next))!=null) if(!seen.add(next)) throw new IllegalStateException("Custody correction chain contains a cycle"); }
         return List.copyOf(result);
+    }
+
+    private static BigDecimal quantity(JsonNode event)
+    {
+        JsonNode node = event.get("quantity");
+        if (node == null || (!node.isTextual() && !node.isNumber()))
+        {
+            throw new IllegalStateException("Property custody quantity must be a decimal string or number");
+        }
+        try
+        {
+            BigDecimal value = new BigDecimal(node.asText());
+            if (value.signum() < 0 || value.compareTo(new BigDecimal("999999999999999.9999")) > 0
+                    || value.stripTrailingZeros().scale() > 4)
+            {
+                throw new IllegalStateException("Property custody quantity must fit a nonnegative DECIMAL(19,4)");
+            }
+            return value.setScale(4, java.math.RoundingMode.UNNECESSARY);
+        }
+        catch (NumberFormatException ex)
+        {
+            throw new IllegalStateException("Property custody quantity must be a decimal string or number", ex);
+        }
     }
 
     private static void put(Map<String,Object> map,String key,Object value){ if(value!=null) map.put(key,value); }

@@ -70,7 +70,6 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -1349,7 +1348,7 @@ public final class SclxImportCommitService
                         account.getId(), fund.getId(), category == null ? null : category.getId(),
                         activity == null ? null : activity.getId(),
                         merchant == null ? null : merchant.getId(),
-                        debit, credit, nmrLineIds.contains(lineId), optionalText(line, "memo"), null, expenseFunctions.get(lineId)));
+                        debit, credit, nmrLineIds.contains(lineId), optionalExactText(line, "memo"), null, expenseFunctions.get(lineId)));
                 postingLineIds.add(lineId);
             }
             if (counterpartyIds.size() > 1)
@@ -1666,14 +1665,8 @@ public final class SclxImportCommitService
                 event.setCorrectionOf(required(events, entry.getValue().correctionOfEventId(), "corrected custody event"));
         }
         em.flush();
-        for (InventoryItem item : items.values())
-        {
-            PropertyCustodyEvent latest = events.values().stream()
-                    .filter(e -> e.getInventoryItem() != null && e.getInventoryItem().getId().equals(item.getId()))
-                    .filter(e -> events.values().stream().noneMatch(c -> c.getCorrectionOf() == e))
-                    .max(Comparator.comparing(PropertyCustodyEvent::getEventDate).thenComparing(PropertyCustodyEvent::getCreatedAt)).orElse(null);
-            if (latest != null) { item.setCustodian(latest.getGuardianName()); item.setStorageLocation(latest.getLocation()); item.setCondition(latest.getCondition()); item.touchUpdatedAt(); }
-        }
+        // The inventory snapshot already owns current register facts and source timestamps.
+        // Retained custody events are history, not live commands to replay over that snapshot.
         return new PropertyCustodyWrite(events, writes - writesBefore);
     }
 
@@ -2582,6 +2575,20 @@ public final class SclxImportCommitService
             throw new IllegalStateException(field + " is required and must be a nonblank string.");
         }
         return node.textValue().trim();
+    }
+
+    private static String optionalExactText(JsonNode value, String field)
+    {
+        JsonNode node = value.get(field);
+        if (node == null || node.isNull())
+        {
+            return null;
+        }
+        if (!node.isTextual())
+        {
+            throw new IllegalStateException(field + " must be a string or null.");
+        }
+        return node.textValue();
     }
 
     private static String optionalText(JsonNode value, String field)

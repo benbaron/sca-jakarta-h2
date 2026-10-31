@@ -1,19 +1,27 @@
 ---
-plan_version: 422
+plan_version: 423
 active_phase: P27
-active_slice: P27-S4D2
-active_status: VERIFYING
-active_branch: codex/P27-S4D2-category-portability
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/398
-active_head: 71137b8c60923b5981fc41e0563374aca07c8f98
-next_action: "Owner reviews and merges draft PR #398; all local and exact-head CI gates passed. After confirmed merge, carry final evidence to a fresh S4D3 integrated compatibility/recovery branch."
+active_slice: P27-S4D3R
+active_status: READY
+active_branch: null
+active_pull_request: null
+active_head: dd30fa5febd14a126b85589f9811d3e3f7258296
+next_action: "Start the independent S4D3R recovery prerequisite from current main; preserve the blocked S4D3 branch and reproduce the native restore loss before selecting/testing compatible H2 and Flyway upgrades."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
+S4D3 recovery blocker and scope split — 2026-10-31 UTC: the expanded final focused run had **29 tests, one failure, zero errors**: full populated native recovery lost current rows (source 2 companies / 33 transactions / 73 splits; restored 1 / 1 / 2). Earlier 26-test gate passed; the added complete recovery assertion exposes the failure rather than ignoring it. Isolated Java/JUnit reproductions preserve diagnostics in `/tmp/p27-s4d3-recovery-debug*.log`, `/tmp/fixture-recovery-probe*.log` and retained synthetic temporary databases. Source/target CHECKPOINT and holding a validation connection did not repair persistence across close; a compact shutdown produced an H2 MVStore page/null-map exception. No experimental storage workaround remains in production. A classpath-only H2 2.5.252 probe retained 2 / 33 / 73 (`/tmp/newengine-probe.log`), with Flyway 10.17 warning that its tested H2 ends at 2.2.224. This is not full upgrade acceptance. Under AGENTS.md §3.3, park S4D3 **BLOCKED** and select the independent [S4D3R recovery integrity prerequisite](P27-S4D3R-recovery-integrity.md) READY on fresh current main. Preserve the S4D3 branch/source/tests/docs; no PR/full clean/JavaFX/final-head success is claimed for it. Its four narrow fidelity/report repairs remain unmerged. R must validate old-file compatibility and the complete populated graph before publication. Parent S4/P27/P28 remain incomplete/gated.
+
+S4D3 implementation — 2026-10-31 UTC: combined real-file/remapping/restart/conflict/rollback/full-recovery fixture and ten-cutoff canonical report comparisons implemented. The gate reproduced and narrowly repairs Balance Sheet contra signs, journal-line text loss, custody replay overwriting current inventory/timestamps, and custody decimal coercion/Preview validation (including period-close version preflight). No migration, alternate ledger or new UI. Baseline compile and 33 prior tests passed; the first completed combined/affected gate passed 26 tests. Final fixture-count, malformed-input, isolation and restored-allocation assertions are being verified in `/tmp/p27-s4d3-focused-final.log`; full clean, exact production JavaFX and final-head CI remain. Ten source/test files are frozen in `/tmp/p27-s4d3-source-hashes.json`. Known independent WARN_ONLY matching defect is tracked below; no full-gate success is inferred yet. Documents changed: integrated contract, PLAN, program/coverage/audit, SCLX/inventory/report contracts and GitHub resync. Publication is authorized by the ongoing session; owner review/acceptance and separate merge remain.
+
+S4D3 selection — 2026-10-31 UTC: verified #398 merged at `dd30fa5febd14a126b85589f9811d3e3f7258296`, containing accepted head `71137b8c60923b5981fc41e0563374aca07c8f98`; exact-head CI `40996260724` passed. All remote branches and 398 PR heads refreshed. #396 remains an overlapping open draft, not implementation authority. S4D2 is DONE. Fresh `codex/P27-S4D3-integrated-portability` carries the prior final local evidence as `c5691a36`. [Integrated acceptance contract](P27-S4D3-integrated-portability.md) owns this slice. Baseline compile passed; relevant existing tests precede new edits. Parent S4/P27 remain incomplete and P28 BLOCKED until this slice merges. No human desktop result is inferred. Earlier chronological handoffs below remain historical.
+
 Final S4D2 local/CI gates and handoff — 2026-10-29 (America/Denver): final `mvn clean verify` passed at **21:11:16 with 1,099 tests, zero failures/errors and 77 expected display skips**. The exact production JavaFX selector passed under Xvfb at **21:16:27 with 69 tests, zero failures/errors/skips** (`/tmp/p27-s4d2-fx.log`). All 18 frozen source/test/schema/build hashes match both completed gates. Final published head `71137b8c60923b5981fc41e0563374aca07c8f98`, tree `8881b55187e37875ed8ecb6c5dc206d5ea8d3a1f`, matches local HEAD, native branch ref, archived PR #398 head and connected PR head. Local archive contains 398 PR heads. Exact-head [Maven PR Tests run 40996260724](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40996260724), job `123870215137`, completed successfully: clean headless verification, repeated tests and production JavaFX route compliance all passed. Independent PR/run/job inspection confirms the same published head and all three successful stages; the draft description records the result. Current open PRs are #398 and the older overlapping #396; current main remains the #397 merge. No known executed-check failure remains and no native human result is inferred. This final evidence stays local to preserve the remote CI head. S4D2 remains VERIFYING pending owner review/acceptance and merge; S4D3/P28 remain blocked. After the owner reports merge, verify current main, carry this final local-only record onto a fresh S4D3 branch and inspect the combined P24–P27 fixture/report/history/conflict/recovery acceptance matrix. Do not implement that slice on this branch.
 
 S4D2 draft publication — 2026-10-29 (America/Denver): pushed implementation `42760301e8ea919c0d11c016d74a3e23a205fe03`, tree `38d8f431d469f8a58755514282e272de0cdc3995`, without force from confirmed main `f8206e45`. Native fetched ref and draft [PR #398](https://github.com/benbaron/sca-jakarta-h2/pull/398) confirm that exact head. The PR records complete master/legacy boundaries, V92 upgrade, all nine new scenarios, final 1,099-test clean / 16-test affected results and owner checks. Initial PR head #398 was fetched into the local archive, which now contains 398 PR heads. The exact production JavaFX selector is running; no GitHub success or native human result is inferred. This documentation-only successor changes none of the 18 frozen source/test/schema/build files; verify its resulting head/tree and exact-head CI before handoff. S4D2 remains VERIFYING; S4D3/P28 remain blocked.
+
+S4D3 inspection follow-up: `BankReconciliationWorkspaceService.matchSelected(..., false)` under WARN_ONLY sets a matched statement link on an uncleared split and V54 rejects it. The integration fixture uses genuine explicit per-line clearing (`true`). Schedule a focused reconciliation-policy corrective slice after S4D3; do not drop V54 or widen this portability slice into matching-policy redesign. The contra-account Balance Sheet repair directly blocks this slice and is included with a regression.
 
 ### GitHub resync and S4D2 selection — 2026-10-29 (America/Denver)
 
@@ -214,7 +222,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | DONE through owner-merged PR #386; final published head passed clean/repeat/JavaFX CI |
-| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1/S2/S3 and S4A/B/C merged; S4D1 merged through #397; S4D2 category masters active; combined acceptance remains |
+| P27 | Generic accounting packet, evidence, complete portability | IN_PROGRESS — S1/S2/S3 and S4A/B/C merged; S4D1 merged through #397; S4D2 merged through #398; combined S4D3 acceptance active |
 | P28 | End-to-end acceptance and release | BLOCKED — preceding required slices |
 
 ## 3. Established product decisions
@@ -895,8 +903,10 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P27-S4C | Preserve operational transfer links | DONE | PR #395 merged at 6ed44f63; accepted head 5856e0d9 passed workflow 40617977330 |
 | P27-S4D | Evidence validation and integrated compatibility gate | IN_PROGRESS | S4C merged; bounded S4D1 selected; complete only after S4D1–S4D3 merge |
 | P27-S4D1 | Retained review validation | DONE | PR #397 merged at f8206e45; accepted head c852a10a passed workflow 40809782195 |
-| P27-S4D2 | Complete category-master portability | VERIFYING | [Contract](P27-S4D2-category-portability.md); UUIDs, exact master fields, unused records, conflict/legacy/rollback gates |
-| P27-S4D3 | Integrated all-feature and recovery acceptance | BLOCKED | S4D2 merged; combined P24–P27 report/history/conflict/backup fixture |
+| P27-S4D2 | Complete category-master portability | DONE | [Contract](P27-S4D2-category-portability.md); UUIDs, exact master fields, unused records, conflict/legacy/rollback gates |
+| P27-S4D3 | Integrated all-feature and recovery acceptance | BLOCKED | [Contract](P27-S4D3-integrated-portability.md); S4D2 merged #398; combined P24–P27 report/history/conflict/backup fixture |
+| P27-S4D3R | Native recovery integrity prerequisite | READY | [Contract](P27-S4D3R-recovery-integrity.md); fresh main, reproduced old-image/MVStore failure, tested H2/Flyway compatibility and legacy backup preservation before S4D3 resumes |
+| P27-C1 | Reconciliation WARN_ONLY matching correction | BLOCKED | After S4D3 merge, reproduce uncleared-match/V54 failure, retain explicit cleared-state policy semantics, add service/rollback/Preview/UI tests as applicable; fresh current-main branch |
 | P28-S1 | Run the complete runbook acceptance matrix | BLOCKED | P27-S4 merged; owning contract and D01–D10 gates as applicable |
 | P28-S2 | Release and close the correction program | BLOCKED | P28-S1 merged; owning contract and D01–D10 gates as applicable |
 | P27-S5 (conditional) | Internal attachments and approvals | BLOCKED | Not adopted; explicit scope amendment and separate specifications required; not a prerequisite for baseline P28 |

@@ -66,3 +66,5 @@ The review UUID and range/event identities remain portable. A target can import 
 Retain the existing feature tests in the inventory. Run the focused portability/recovery suite, `mvn clean verify`, and the production JavaFX selector. Record actual results in PLAN/PR; no human result is inferred.
 
 On a disposable database: export a company with a recorded review and reopened range; preview/import into an empty company, inspect the source references and original close/reopen actors/reasons, restart and reimport without duplicates. Change target accounting and confirm the old review cannot close it. Back up/restore to a new path, inspect transfer links and close history, and confirm the active database is not switched implicitly. S4C now includes transfer facts/counts and canonical links; verify them explicitly. No visible production workflow changes were introduced by S4A.
+
+S4D2 merged through #398. [S4D3 combined acceptance](P27-S4D3-integrated-portability.md) is now selected; separate feature tests above remain required and do not themselves complete that gate.
