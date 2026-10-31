@@ -8,6 +8,8 @@ P27's [integrated portability audit](P27-S4-portability-audit.md) supplements th
 
 P27-S4C adds `SclxFundTransfersTest` and expands `FundTransferSclxTest`/`FundTransferMigrationTest`: original/reversal/reversal-of-reversal, unlinked legacy facts, exact source metadata/UUID/request provenance, native future reversal/correction protection, deterministic bytes, remapped company/IDs, changed/stripped/conflicting input, unsupported/malformed graphs, request collisions, legacy absence, restart/retry, Viewer denial and late rollback. S4D remains the full integrated/category/evidence gate.
 
+P27-S4D2 adds `SclxBudgetCategoriesTest` and `BudgetCategoryPortableIdentityMigrationTest`: full referenced/unused/inactive master facts, exact text/times, stable Budget/Journal relationships, remapping, code/UUID conflicts and Keep target, native edits/rename, stale rows, legacy absence, denial/late rollback/retry, V91 upgrade/UUID restart and unchanged alias links/write guards. This supplements P26 planning tests and does not replace S4D3 integrated acceptance.
+
 | Slice | Behaviors covered | Principal tests |
 |---|---|---|
 | P25-S1 Fund transfers | atomic balanced save, request retry, ownership/period/authorization rejection, reversal history, migration, SCLX, JavaFX Save and Viewer gate | `FundTransferServiceTest`, `FundTransferMigrationTest`, `FundTransferSclxTest`, `FundTransfersPanelTest` |

@@ -33,6 +33,9 @@ import java.time.LocalDate;
        })
 public class BudgetCategory
 {
+    @Column(name = "portable_id", nullable = false, unique = true, updatable = false)
+    private java.util.UUID portableId = java.util.UUID.randomUUID();
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -66,6 +69,16 @@ public class BudgetCategory
     private Instant updatedAt = Instant.now();
 
     public Long getId() { return id; }
+    public java.util.UUID getPortableId() { return portableId; }
+
+    /** Restores source identity and times only before the governed import persists this master. */
+    public void initializeImportMetadata(java.util.UUID identity, Instant created, Instant updated)
+    {
+        if (id != null) throw new IllegalStateException("Category import metadata requires a new record");
+        portableId = java.util.Objects.requireNonNull(identity);
+        createdAt = java.util.Objects.requireNonNull(created);
+        updatedAt = java.util.Objects.requireNonNull(updated);
+    }
     public Company getCompany() { return company; }
     public void setCompany(Company company) { this.company = company; }
 

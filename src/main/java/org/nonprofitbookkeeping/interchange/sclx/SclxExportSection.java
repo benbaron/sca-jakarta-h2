@@ -9,6 +9,7 @@ public enum SclxExportSection
     BUDGETS(Support.INCLUDED, "budgets", "Budget categories, plans, and lines"),
     ACTIVITIES(Support.EXTENSION, true, "extensions.scaJakartaH2.activities", "Company activities"),
     COUNTERPARTIES(Support.EXTENSION, true, "extensions.scaJakartaH2.counterparties", "Company counterparties, merchants, and transaction references"),
+    BUDGET_CATEGORIES(Support.EXTENSION, true, "extensions.scaJakartaH2.budgetCategories", "Complete Budget Category masters, including unused records"),
     FUND_TRANSFERS(Support.EXTENSION, true, "extensions.scaJakartaH2.fundTransfers", "Operational fund-transfer history, canonical links and retained request provenance"),
     TRANSACTIONS(Support.INCLUDED, "transactions", "Canonical balanced transactions and splits"),
     SUPPLEMENTAL_DETAILS(Support.EXTENSION, true, "extensions.scaJakartaH2.supplementalDetails", "Canonical transaction supplemental details"),

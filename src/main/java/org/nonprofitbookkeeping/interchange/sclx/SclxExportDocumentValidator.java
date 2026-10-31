@@ -63,6 +63,7 @@ public final class SclxExportDocumentValidator
         validatePeriodClose(SclxPeriodCloseExtension.data(document.extensions()));
         validateAuditHistory(SclxAuditHistoryExtension.data(document.extensions()));
         SclxNmrPolicies.parseExtensions(document.extensions());
+        SclxBudgetCategories.count(document.extensions());
     }
 
     private static Set<String> uniqueAccountIds(List<SclxExportDocument.Account> accounts)

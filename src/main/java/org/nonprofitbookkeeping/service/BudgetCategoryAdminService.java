@@ -17,6 +17,57 @@ import java.util.function.Supplier;
 @ApplicationScoped
 public class BudgetCategoryAdminService
 {
+    /** Exact retained master facts, independent from interactive maintenance normalization. */
+    public record ImportFact(java.util.UUID portableId, String code, String name, boolean active,
+            java.time.LocalDate effectiveFrom, java.time.LocalDate effectiveTo, String description,
+            java.time.Instant createdAt, java.time.Instant updatedAt)
+    {
+        public ImportFact
+        {
+            Objects.requireNonNull(portableId, "Category identity");
+            if (code == null || code.isBlank() || code.length() > 64
+                    || name == null || name.isBlank() || name.length() > 200)
+                throw new IllegalArgumentException("Invalid category code/name bounds");
+            if (effectiveFrom != null && effectiveTo != null && effectiveFrom.isAfter(effectiveTo))
+                throw new IllegalArgumentException("Category effective dates are inverted");
+            for (var date : new java.time.LocalDate[]{effectiveFrom, effectiveTo})
+                if (date != null && (date.getYear() < 1900 || date.getYear() > 9999))
+                    throw new IllegalArgumentException("Category date outside supported range");
+            for (var time : new java.time.Instant[]{createdAt, updatedAt})
+                if (time == null || time.getNano() % 1000 != 0
+                        || time.isBefore(java.time.Instant.parse("1900-01-01T00:00:00Z"))
+                        || time.isAfter(java.time.Instant.parse("9999-12-31T23:59:59.999999Z")))
+                    throw new IllegalArgumentException("Invalid category timestamp or persisted precision");
+            if (description != null && description.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 1_048_576)
+                throw new IllegalArgumentException("Category description exceeds one MiB UTF-8");
+        }
+    }
+
+    public static ImportFact importFact(BudgetCategory category)
+    {
+        return new ImportFact(category.getPortableId(), category.getCode(), category.getName(), category.isActive(),
+                category.getEffectiveFrom(), category.getEffectiveTo(), category.getDescription(),
+                category.getCreatedAt(), category.getUpdatedAt());
+    }
+
+    /** Restores a new master in the caller's atomic import, without replaying Save or audit creation. */
+    public BudgetCategory importForInterchange(EntityManager em, Company company, ImportFact fact)
+    {
+        Objects.requireNonNull(fact);
+        if (!em.getTransaction().isActive() || !em.contains(company) || company.getId() == null)
+            throw new IllegalArgumentException("Category import requires an active transaction and managed company");
+        long collisions = em.createQuery("select count(c) from BudgetCategory c where c.portableId=:uuid "
+                        + "or (c.company=:company and upper(c.code)=:code)", Long.class)
+                .setParameter("uuid", fact.portableId()).setParameter("company", company)
+                .setParameter("code", fact.code().toUpperCase(Locale.ROOT)).getSingleResult();
+        if (collisions != 0) throw new IllegalStateException("Category UUID or company code already exists");
+        var category = new BudgetCategory(); category.setCompany(company); category.setCode(fact.code());
+        category.setName(fact.name()); category.setActive(fact.active()); category.setEffectiveFrom(fact.effectiveFrom());
+        category.setEffectiveTo(fact.effectiveTo()); category.setDescription(fact.description());
+        category.initializeImportMetadata(fact.portableId(), fact.createdAt(), fact.updatedAt());
+        em.persist(category);
+        return category;
+    }
     @Inject
     Jpa jpa;
 
@@ -199,8 +250,8 @@ public class BudgetCategoryAdminService
     /**
      * Caller-owned transaction variant used by governed interchange imports.
      *
-     * <p>SCLX carries a budget category code on each budget line but has no
-     * separate category-name master record. A new empty target therefore uses
+     * <p>Legacy SCLX without complete category masters carries only category codes.
+     * A new empty target in that compatibility path therefore uses
      * the portable code as the initial display name. The caller owns commit or
      * rollback so this supporting master remains atomic with the imported
      * budget graph.</p>
