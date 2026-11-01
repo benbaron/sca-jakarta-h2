@@ -10,6 +10,10 @@ P27-S4C adds `SclxFundTransfersTest` and expands `FundTransferSclxTest`/`FundTra
 
 P27-S4D2 adds `SclxBudgetCategoriesTest` and `BudgetCategoryPortableIdentityMigrationTest`: full referenced/unused/inactive master facts, exact text/times, stable Budget/Journal relationships, remapping, code/UUID conflicts and Keep target, native edits/rename, stale rows, legacy absence, denial/late rollback/retry, V91 upgrade/UUID restart and unchanged alias links/write guards. This supplements P26 planning tests and does not replace S4D3 integrated acceptance.
 
+
+P27-S4D3 adds `IntegratedPortabilityTest`: one populated P24–P27 company through real-file cross-company/native-ID remapping, exact supported graph/history and dated canonical reports, restart/no-op retry, populated-target Keep target, unsupported versions, audited Viewer denial, late rollback, and full-table/trigger backup recovery including credentials/preferences/aliases/another company. `BalanceSheetContraAccountTest` covers contra asset/liability/equity section signs and unchanged Trial Balance sides. See the [integrated contract](P27-S4D3-integrated-portability.md) for scope and the separately tracked reconciliation-policy follow-up.
+
+
 | Slice | Behaviors covered | Principal tests |
 |---|---|---|
 | P25-S1 Fund transfers | atomic balanced save, request retry, ownership/period/authorization rejection, reversal history, migration, SCLX, JavaFX Save and Viewer gate | `FundTransferServiceTest`, `FundTransferMigrationTest`, `FundTransferSclxTest`, `FundTransfersPanelTest` |
