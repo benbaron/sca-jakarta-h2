@@ -1,15 +1,17 @@
 ---
-plan_version: 435
+plan_version: 436
 active_phase: P28
 active_slice: P28-S2
 active_status: VERIFYING
 active_branch: codex/P28-S2-release-close
-active_pull_request: null
-active_head: 71b81442a3d61e4f087c481267b752ca7bab9d4e
-next_action: "Publish the verified P28-S2 release slice as a draft, refresh the branch/PR archive, and require exact-final-head clean/repeat/production JavaFX CI before owner review and merge."
+active_pull_request: 403
+active_head: 737d02d9ae0a88c717a3276bd08d3c7ad9c02bb5
+next_action: "Push the P28-S2 publication record, refresh the branch/PR archive, and require exact-final-head clean/repeat/production JavaFX CI before owner review and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P28-S2 draft publication — 2026-11-01 America/Denver: pushed the reviewed release commits without force from confirmed main `c1ba17743133d91b747c36ab74f40a6755ee0a45` and opened draft [PR #403](https://github.com/benbaron/sca-jakarta-h2/pull/403). Initial published head `737d02d9ae0a88c717a3276bd08d3c7ad9c02bb5`, tree `540ca0445b45488ac301183ae54703ad60e86717`, matches the connected snapshot. The PR records the two focused, 1,111 clean and 69 actual-display tests plus retained limits. This documentation-only successor records publication; refresh branch/PR refs and require exact-final-head CI. No GitHub success or merge is inferred yet.
 
 P28-S2 final local handoff — 2026-11-01 America/Denver: implementation `71b81442a3d61e4f087c481267b752ca7bab9d4e`, tree `f742c5d4e5eb3e562c179f6ab50f328ce3595123`, contains the three release documents, program/PLAN/GitHub reconciliation and focused release-guide regression. No production/schema/migration/dependency/workflow source changed. The two focused, 1,111 clean and 69 actual-display tests own final local validation; links and whitespace pass. Publish without force, verify matching final remote tree and exact-head CI, then owner reviews/merges. Only after confirmed merge may P28 and P23–P28 become DONE and the final merged release commit be recorded.
 
