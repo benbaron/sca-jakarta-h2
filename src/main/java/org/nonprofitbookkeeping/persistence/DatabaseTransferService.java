@@ -141,6 +141,18 @@ public final class DatabaseTransferService
             {
                 counts = readCounts(temporaryBase);
             }
+            // Complete engine-native compaction and shutdown before publishing this isolated copy.
+            // Schema validation and primary-row counts alone do not validate old index encodings.
+            try (Connection connection = DriverManager.getConnection(DatabaseMigrationService.jdbcUrlFor(temporaryBase), "sa", "");
+                    Statement statement = connection.createStatement())
+            {
+                statement.execute("SHUTDOWN COMPACT");
+            }
+            DatabaseCounts finalizedCounts = readCounts(temporaryBase);
+            if (!counts.equals(finalizedCounts))
+            {
+                throw new IllegalStateException("Restored database counts changed during finalization; no copy was published.");
+            }
             moveAtomically(temporaryFile, finalFile);
             deleteTreeQuietly(workspace);
             return new RestoreResult(backup, target, started, Instant.now(), true, counts, sha256(backup));
