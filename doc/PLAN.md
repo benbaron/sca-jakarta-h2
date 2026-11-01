@@ -5,11 +5,13 @@ active_slice: P27-S4D3
 active_status: VERIFYING
 active_branch: codex/P27-S4D3-integrated-portability-resume
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/400
-active_head: cc79b32278809e21c95b8a709da9b5bbe3b215ba
-next_action: "Publish the reconciled S4D3 implementation as a draft, refresh the archive, and verify exact-head clean/repeat/production JavaFX CI before owner review and merge."
+active_head: 84f80c0274ae62ec29e0e6eb3f0bb77d4402051e
+next_action: "Owner reviews and merges draft PR #400 separately; after merge, verify main and start the recorded P27-C1 reconciliation-policy correction from fresh current main."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+S4D3 final publication evidence — 2026-10-31 America/Denver: final published head `84f80c0274ae62ec29e0e6eb3f0bb77d4402051e`, tree `ee48a80e6f8db695b08e4e1cf2aaa3faddc4d36c`, matches local, native branch, archived PR #400 head and connected PR. Exact-head [workflow 41259482562](https://github.com/benbaron/sca-jakarta-h2/actions/runs/41259482562), job `124709599603`, passed clean verification, repeated tests and production JavaFX route compliance. The PR description records the same evidence. This local-only ledger successor preserves the tested remote head and is not pushed solely to retrigger CI. S4D3 remains VERIFYING pending owner review/merge; P27-C1 and P28 remain gated.
 
 S4D3 draft publication — 2026-10-31 America/Denver: pushed implementation `cc79b32278809e21c95b8a709da9b5bbe3b215ba`, tree `4e4bae2a481235bdf07d291610b945881654bca1`, without force from confirmed main `cf375309`, and opened draft [PR #400](https://github.com/benbaron/sca-jakarta-h2/pull/400). The connected PR reports the same implementation head/base. This documentation-only successor records publication and does not alter the verified source/tests. Refresh the branch/PR archive and require exact-final-head clean/repeat/production JavaFX CI before handoff. Owner review and merge remain separate.
 
