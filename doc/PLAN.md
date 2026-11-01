@@ -4,12 +4,14 @@ active_phase: P27
 active_slice: P27-S4D3
 active_status: VERIFYING
 active_branch: codex/P27-S4D3-integrated-portability-resume
-active_pull_request: null
-active_head: cf375309c041e30d5b7dd86dcd286f915bd8a582
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/400
+active_head: cc79b32278809e21c95b8a709da9b5bbe3b215ba
 next_action: "Publish the reconciled S4D3 implementation as a draft, refresh the archive, and verify exact-head clean/repeat/production JavaFX CI before owner review and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+S4D3 draft publication — 2026-10-31 America/Denver: pushed implementation `cc79b32278809e21c95b8a709da9b5bbe3b215ba`, tree `4e4bae2a481235bdf07d291610b945881654bca1`, without force from confirmed main `cf375309`, and opened draft [PR #400](https://github.com/benbaron/sca-jakarta-h2/pull/400). The connected PR reports the same implementation head/base. This documentation-only successor records publication and does not alter the verified source/tests. Refresh the branch/PR archive and require exact-final-head clean/repeat/production JavaFX CI before handoff. Owner review and merge remain separate.
 
 S4D3 final local gates — 2026-10-31 America/Denver: the reconciled combined gate passed **14 focused tests**, then final `mvn clean verify` passed **1,108 tests, zero failures/errors, 77 expected headless display skips** in 05:34. The exact production JavaFX selector passed **69 tests, zero failures/errors/skips** in 02:05. The full run exposed one stale test expectation after malformed period-close validation moved into Preview; the test now requires the blocking Preview code and Commit refusal. The corrected Balance Sheet also exposed a close test that relied on the old imbalance for a blocker; it now creates a real unclassified expense through the canonical entry service. No production scope was added. Draft publication and exact-head CI remain; no native human result is inferred.
 
