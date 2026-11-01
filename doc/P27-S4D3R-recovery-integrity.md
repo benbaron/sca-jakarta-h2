@@ -15,7 +15,6 @@ A classpath-only diagnostic using H2 2.5.252 retained both companies, all 33 tra
 Use H2 **2.5.252** and Flyway **13.12.0**. Upstream Flyway 13.12's H2Database explicitly tests through 2.5.252 and its parent compiler release is Java 17. Sources: [H2 release](https://github.com/h2database/h2database/releases/tag/version-2.5.252), [Flyway H2 compatibility](https://github.com/flyway/flyway/blob/flyway-13.12.0/flyway-core/src/main/java/org/flywaydb/core/internal/database/h2/H2Database.java), [Flyway Java release](https://github.com/flyway/flyway/blob/flyway-13.12.0/pom.xml). No applied migration is edited and no source checkpoint or anchor-only workaround is retained. Isolated-copy finalization is explicitly verified below.
 
 Fresh-main clean compile and six existing recovery/close tests passed. The new unchanged native regression was then run on H2 2.2.224/Flyway 10.17: **two tests, one failure, zero errors**; hot populated recovery returned 1 / 1 / 2 instead of 2 / 33 / 73. The genuine old-engine fixture already passes its full original-field oracle on the old stack. This establishes the red baseline before changing the two dependency properties.
-
 ## Coherent scope
 
 - Upgrade H2 to a maintained version that passes the reproduced native recovery gate. Use a Flyway version that explicitly tests that H2 version while retaining Java 17 compatibility; inspect published metadata before choosing.

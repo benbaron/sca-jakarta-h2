@@ -933,11 +933,13 @@ class SclxImportCommitServiceTest
             seedEmptyTarget(jpa);
             SclxImportPreview preview = new SclxImportPreviewService(jpa, () -> TARGET).preview(source);
 
-            IllegalStateException failure = assertThrows(IllegalStateException.class,
-                    () -> new SclxImportCommitService(jpa, () -> TARGET)
-                            .commit(source, preview, "tester"));
-
-            assertTrue(failure.getMessage().contains("does not match range facts"));
+            assertTrue(preview.hasBlockingErrors(), preview.operation().messages().toString());
+            assertTrue(preview.operation().messages().stream().anyMatch(message ->
+                    message.code().equals("SCLX_PERIOD_CLOSE_INVALID")
+                            && message.message().contains("does not match range facts")
+                            && message.blocking()), preview.operation().messages().toString());
+            assertThrows(IllegalStateException.class, () ->
+                    new SclxImportCommitService(jpa, () -> TARGET).commit(source, preview, "tester"));
             try (EntityManager em = jpa.em())
             {
                 assertEquals("Empty Target", company(em).getDisplayName());

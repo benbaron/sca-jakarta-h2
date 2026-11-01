@@ -175,6 +175,12 @@ public class FinancialReportService
         for (Account account : accounts)
         {
             BigDecimal naturalBalance = signedBalance(account, activityByAccount.get(account.getId()));
+            // Statement sections use their account type's sign, including contra accounts.
+            boolean debitSection = account.getAccountType() == AccountType.ASSET;
+            if (debitSection != (account.getNormalBalance() == NormalBalance.DEBIT))
+            {
+                naturalBalance = naturalBalance.negate();
+            }
             StatementRow row = statementRow(account, naturalBalance);
 
             if (account.getAccountType() == AccountType.ASSET)
