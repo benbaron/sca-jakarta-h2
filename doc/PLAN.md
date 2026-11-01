@@ -1,15 +1,17 @@
 ---
-plan_version: 431
+plan_version: 432
 active_phase: P28
 active_slice: P28-S1
 active_status: VERIFYING
 active_branch: codex/P28-S1-runbook-acceptance
 active_pull_request: 402
-active_head: 5f41792617707e220c83843991b828c7b21aef86
-next_action: "Push the P28-S1 publication record, refresh the branch/PR archive, and require exact-final-head clean/repeat/production JavaFX CI before owner Windows/external-procedure acceptance and merge."
+active_head: ca66658b342802b6f56c8e3dcceb30484cf7b236
+next_action: "Owner-review draft PR #402, perform and record the Windows scaling/workflow and external-procedure acceptance in the P28-S1 contract, and merge when accepted; then resync main and select P28-S2."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P28-S1 final publication evidence — 2026-10-31 America/Denver: final published head `ca66658b342802b6f56c8e3dcceb30484cf7b236`, tree `8d9a0240ded1e14f29b17e708bcea192bcb9b792`, matches local, native branch and archived/connected draft [PR #402](https://github.com/benbaron/sca-jakarta-h2/pull/402). Exact-head [workflow 41274251144](https://github.com/benbaron/sca-jakarta-h2/actions/runs/41274251144), job `124753135048`, passed clean headless verification, repeated tests and production JavaFX route compliance. The PR description records the same evidence. This local-only ledger successor preserves the tested remote head and is not pushed solely to retrigger CI. P28-S1 remains VERIFYING pending owner Windows/external-procedure acceptance and merge; P28-S2 remains blocked.
 
 P28-S1 draft publication — 2026-10-31 America/Denver: pushed the reviewed acceptance commits without force from confirmed main `c79d9f50f692d171f8f636b399bf67c2de297f42` and opened draft [PR #402](https://github.com/benbaron/sca-jakarta-h2/pull/402). Initial published head `5f41792617707e220c83843991b828c7b21aef86`, tree `c2100f53a1e7b2bd60ab0f4e8f7072bcc1c68198`, matches the connected PR snapshot. The PR records the 218 focused, 71 actual-display and 1,109 clean results plus owner Windows/external checks. This documentation-only successor records publication; refresh all branch/PR refs and require exact-final-head CI before handoff. No GitHub success or owner desktop result is inferred yet.
 
