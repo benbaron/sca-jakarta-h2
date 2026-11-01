@@ -1,15 +1,17 @@
 ---
-plan_version: 427
+plan_version: 428
 active_phase: P27
 active_slice: P27-C1
 active_status: VERIFYING
 active_branch: codex/P27-C1-reconciliation-warn-only
 active_pull_request: 401
-active_head: 7cc668187ba066c190e78a1c323ce5690af38ff1
-next_action: "Push the P27-C1 publication record, refresh the branch/PR archive, and verify exact-final-head clean/repeat/production JavaFX CI before owner review and merge."
+active_head: 2022289b16345bdd1d24bea4bbb4ac5fdf8c5986
+next_action: "Owner-review draft PR #401, perform the disposable-company WARN_ONLY check, and merge when accepted; then resync main and select the next PLAN slice."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P27-C1 final publication evidence — 2026-10-31 America/Denver: final published head `2022289b16345bdd1d24bea4bbb4ac5fdf8c5986`, tree `378da5a12777dc39fa5facda46758660d8685c22`, matches local, native branch and connected draft [PR #401](https://github.com/benbaron/sca-jakarta-h2/pull/401). Exact-head [workflow 41271225555](https://github.com/benbaron/sca-jakarta-h2/actions/runs/41271225555), job `124744237482`, passed clean headless verification, repeated tests and production JavaFX route compliance. The PR description records the same evidence. This local-only ledger successor preserves the tested remote head and is not pushed solely to retrigger CI. P27-C1 remains VERIFYING pending owner review/merge; no native human result is inferred.
 
 P27-C1 draft publication — 2026-10-31 America/Denver: pushed implementation `7cc668187ba066c190e78a1c323ce5690af38ff1`, tree `a1cfff122c7943001c3b9b06bf8991362880d522`, without force from confirmed main `f47d7e464fcb3e1f162a5baf324784f796739787`, and opened draft [PR #401](https://github.com/benbaron/sca-jakarta-h2/pull/401). The connected PR reports the same implementation head/base and is mergeable. This documentation-only successor records publication and does not alter the verified service, UI or tests. Refresh the full branch/PR archive and require exact-final-head clean/repeat/production JavaFX CI before handoff; no GitHub success or native human result is inferred yet.
 
