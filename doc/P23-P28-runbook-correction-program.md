@@ -270,6 +270,8 @@ Test at least two companies, multiple funds/events, inactive historical dimensio
 
 Update the operating guide to actual screen labels and steps. Replace workarounds that are no longer necessary. Publish user testing/release notes, migration and backup guidance, supported SCLX/template versions, and the exact tested commit. Verify final merged CI and record owner desktop acceptance. Reconcile `doc/PLAN.md` and G1–G14 closure evidence; retain factual limitations.
 
+Current release artifacts are the [actual-screen operating guide](operating-guide.md), [release and upgrade notes](release-notes-P23-P28.md), and [P28-S2 closure contract](P28-S2-release-close.md). The release notes own the G1–G14 closure table. External documents/approvals, generic packet scope, SCLX exclusions/older-version limits, and user-entered NMR policy facts remain explicit limitations rather than hidden completion claims.
+
 ## Coverage ledger
 
 | Finding | Primary correction slices | Required closure evidence |
