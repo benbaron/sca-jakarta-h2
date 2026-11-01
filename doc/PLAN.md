@@ -1,15 +1,17 @@
 ---
-plan_version: 434
+plan_version: 435
 active_phase: P28
 active_slice: P28-S2
 active_status: VERIFYING
 active_branch: codex/P28-S2-release-close
 active_pull_request: null
-active_head: c1ba17743133d91b747c36ab74f40a6755ee0a45
-next_action: "Review and commit the verified P28-S2 release documents/test, publish a draft, and require exact-final-head clean/repeat/production JavaFX CI before owner review and merge."
+active_head: 71b81442a3d61e4f087c481267b752ca7bab9d4e
+next_action: "Publish the verified P28-S2 release slice as a draft, refresh the branch/PR archive, and require exact-final-head clean/repeat/production JavaFX CI before owner review and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P28-S2 final local handoff — 2026-11-01 America/Denver: implementation `71b81442a3d61e4f087c481267b752ca7bab9d4e`, tree `f742c5d4e5eb3e562c179f6ab50f328ce3595123`, contains the three release documents, program/PLAN/GitHub reconciliation and focused release-guide regression. No production/schema/migration/dependency/workflow source changed. The two focused, 1,111 clean and 69 actual-display tests own final local validation; links and whitespace pass. Publish without force, verify matching final remote tree and exact-head CI, then owner reviews/merges. Only after confirmed merge may P28 and P23–P28 become DONE and the final merged release commit be recorded.
 
 P28-S2 implementation and local gates — 2026-11-01 America/Denver: added the actual-screen operating guide, release/upgrade/backup/interchange notes, P28-S2 closure contract and G1–G14 closure linkage. A new `ReleaseOperatingGuideTest` binds the published navigation/backup labels and SCLX read/write versions to production source. Its focused gate passed **2 tests**. Final `mvn clean verify` passed **1,111 tests, zero failures/errors, 77 expected headless display skips** in 05:51 (`/tmp/p28-s2-clean.log`). The exact production JavaFX selector passed on a verified X display with **69 tests, zero failures/errors/skips** in 02:16 (`/tmp/p28-s2-fx.log`). An earlier launcher attempt ran without Xvfb and skipped 55 tests; it is rejected as evidence, and the complete rerun owns the display result. Changed-document links and whitespace checks pass. Final diff/commit, draft publication, exact-head CI and owner review/merge remain; P28 is not DONE before merge.
 
