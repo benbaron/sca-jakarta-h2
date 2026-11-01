@@ -404,8 +404,12 @@ public class ReconciliationRunsPanel implements AppPanel
         differenceExplanation.setPrefWidth(320);
         Label explanationHelp = new Label("Explanation records a reconciliation fact only; it does not create or change a Journal transaction.");
         explanationHelp.getStyleClass().add("help-text");
+        Label clearingHelp = new Label("Warn only preserves ledger cleared state. Use Mark Cleared before matching an uncleared ledger line.");
+        clearingHelp.getStyleClass().add("help-text");
+        clearingHelp.setWrapText(true);
         VBox explanation = new VBox(3, new HBox(8, explainDifferenceButton, differenceExplanation), explanationHelp);
-        return new HBox(8, autoMatchButton, matchButton, unmatchButton, markClearedButton, explanation);
+        VBox matching = new VBox(3, new HBox(8, autoMatchButton, matchButton, unmatchButton, markClearedButton), clearingHelp);
+        return new HBox(8, matching, explanation);
     }
 
     private void configureMutationActions()

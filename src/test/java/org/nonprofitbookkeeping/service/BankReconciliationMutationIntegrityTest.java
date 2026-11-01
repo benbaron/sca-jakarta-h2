@@ -148,6 +148,46 @@ public class BankReconciliationMutationIntegrityTest
     }
 
     @Test
+    void warnOnlyRequiresExplicitClearingBeforeMatchAndRollsBackRejectedAttempt(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("warn-only-cleared-state")))
+        {
+            seed(jpa);
+            BankReconciliationWorkspaceService service = new BankReconciliationWorkspaceService(jpa);
+            long sessionId = service.start(new StartCommand(
+                    "SCA", CHECKING_CBA, LocalDate.of(2026, 3, 31), new BigDecimal("-25.75"),
+                    ClearedStatePolicy.WARN_ONLY, "Preserve explicit ledger clearing")).sessionId();
+
+            service.autoMatch(sessionId);
+            assertEquals(0L, count(jpa, "bank_reconciliation_match"),
+                    "Auto match must leave uncleared WARN_ONLY candidates available for explicit review");
+            IllegalStateException rejected = assertThrows(IllegalStateException.class,
+                    () -> service.matchSelected(sessionId, STATEMENT, BANK_SPLIT, false));
+            assertTrue(rejected.getMessage().contains("Mark Cleared"));
+            assertEquals(0L, count(jpa, "bank_reconciliation_match"));
+            try (var em = jpa.em())
+            {
+                assertNull(em.find(BankStatementLine.class, STATEMENT).getMatchedTransaction());
+                TxnSplit split = em.find(TxnSplit.class, BANK_SPLIT);
+                assertNull(split.getMatchedBankStatementLine());
+                assertFalse(split.isBankCleared());
+            }
+
+            service.markCleared(sessionId, BANK_SPLIT);
+            service.matchSelected(sessionId, STATEMENT, BANK_SPLIT, false);
+            assertEquals(1L, relationshipCount(jpa, sessionId, STATEMENT, BANK_SPLIT));
+            try (var em = jpa.em())
+            {
+                assertEquals(4001L, em.find(BankStatementLine.class, STATEMENT)
+                        .getMatchedTransaction().getId());
+                TxnSplit split = em.find(TxnSplit.class, BANK_SPLIT);
+                assertEquals(STATEMENT, split.getMatchedBankStatementLine().getId());
+                assertTrue(split.isBankCleared());
+            }
+        }
+    }
+
+    @Test
     void differenceExplanationIsFactualOnlyAndDoesNotReserveMatchRelationship(@TempDir Path tempDir)
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("factual-explanation")))

@@ -13,6 +13,8 @@ P27-S4D2 adds `SclxBudgetCategoriesTest` and `BudgetCategoryPortableIdentityMigr
 
 P27-S4D3 adds `IntegratedPortabilityTest`: one populated P24–P27 company through real-file cross-company/native-ID remapping, exact supported graph/history and dated canonical reports, restart/no-op retry, populated-target Keep target, unsupported versions, audited Viewer denial, late rollback, and full-table/trigger backup recovery including credentials/preferences/aliases/another company. `BalanceSheetContraAccountTest` covers contra asset/liability/equity section signs and unchanged Trial Balance sides. See the [integrated contract](P27-S4D3-integrated-portability.md) for scope and the separately tracked reconciliation-policy follow-up.
 
+P27-C1 extends `BankReconciliationMutationIntegrityTest` for the reconciliation protection used by P25 payment/check scenarios: WARN_ONLY Auto Match skips uncleared candidates, manual match rejects before any write, and explicit Mark Cleared permits the same retry. Existing `ReconciliationAuthorizationIntegrationTest` and JavaFX route coverage retain Viewer denial and finalized-session protections. See the [corrective contract](P27-C1-reconciliation-warn-only.md).
+
 
 | Slice | Behaviors covered | Principal tests |
 |---|---|---|

@@ -401,7 +401,8 @@ public class BankReconciliationWorkspaceService
                 Set<Long> usedSplits = matchedSplitIds(em, sessionId);
                 for (LedgerLineView ledger : current.ledgerLines())
                 {
-                    if (usedSplits.contains(ledger.splitId()))
+                    boolean autoClears = current.policy() == ClearedStatePolicy.OVERWRITE_LEDGER_CLEARED_STATE;
+                    if (usedSplits.contains(ledger.splitId()) || (!ledger.cleared() && !autoClears))
                     {
                         continue;
                     }
@@ -780,20 +781,23 @@ public class BankReconciliationWorkspaceService
         DifferenceCategory status = compare(statement.getAmount(), split.getAmountSigned()) == 0
                 ? (Objects.equals(statement.getTransactionDate(), split.getTxn().getTxnDate()) ? DifferenceCategory.MATCHED : DifferenceCategory.DATE_MISMATCH)
                 : DifferenceCategory.AMOUNT_MISMATCH;
+        boolean clearOnMatch = session.policy() == ClearedStatePolicy.OVERWRITE_LEDGER_CLEARED_STATE
+                || overwriteCleared;
+        if (!split.isBankCleared() && !clearOnMatch)
+        {
+            throw new IllegalStateException(
+                    "The selected ledger line is not cleared. Policy " + session.policy().name()
+                            + " preserves ledger cleared state; choose Mark Cleared before matching.");
+        }
         insertMatch(em, sessionId, statementLineId, splitId, status, note);
         statement.setMatchedTransaction(split.getTxn());
         statement.setStatus(BankStatementLine.Status.MATCHED);
         statement.touchUpdatedAt();
         split.setMatchedBankStatementLine(statement);
-        if (session.policy() == ClearedStatePolicy.OVERWRITE_LEDGER_CLEARED_STATE || overwriteCleared)
+        if (clearOnMatch)
         {
             split.setBankCleared(true);
             split.setBankClearedOn(statement.getPostedDate() == null ? statement.getTransactionDate() : statement.getPostedDate());
-        }
-        else if (!split.isBankCleared())
-        {
-            insertMatch(em, sessionId, statementLineId, splitId, DifferenceCategory.CLEARED_STATE_MISMATCH,
-                    "Matched statement line exists, but ledger line is not cleared under policy " + session.policy().name() + ".");
         }
     }
 

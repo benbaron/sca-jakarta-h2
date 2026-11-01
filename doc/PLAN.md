@@ -1,15 +1,23 @@
 ---
-plan_version: 425
+plan_version: 427
 active_phase: P27
-active_slice: P27-S4D3
+active_slice: P27-C1
 active_status: VERIFYING
-active_branch: codex/P27-S4D3-integrated-portability-resume
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/400
-active_head: cc79b32278809e21c95b8a709da9b5bbe3b215ba
-next_action: "Publish the reconciled S4D3 implementation as a draft, refresh the archive, and verify exact-head clean/repeat/production JavaFX CI before owner review and merge."
+active_branch: codex/P27-C1-reconciliation-warn-only
+active_pull_request: 401
+active_head: 7cc668187ba066c190e78a1c323ce5690af38ff1
+next_action: "Push the P27-C1 publication record, refresh the branch/PR archive, and verify exact-final-head clean/repeat/production JavaFX CI before owner review and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P27-C1 draft publication — 2026-10-31 America/Denver: pushed implementation `7cc668187ba066c190e78a1c323ce5690af38ff1`, tree `a1cfff122c7943001c3b9b06bf8991362880d522`, without force from confirmed main `f47d7e464fcb3e1f162a5baf324784f796739787`, and opened draft [PR #401](https://github.com/benbaron/sca-jakarta-h2/pull/401). The connected PR reports the same implementation head/base and is mergeable. This documentation-only successor records publication and does not alter the verified service, UI or tests. Refresh the full branch/PR archive and require exact-final-head clean/repeat/production JavaFX CI before handoff; no GitHub success or native human result is inferred yet.
+
+P27-C1 final local gates — 2026-10-31 America/Denver: final `mvn clean verify` passed **1,109 tests, zero failures/errors, 77 expected headless display skips** in 05:38. The exact production JavaFX selector passed **69 tests, zero failures/errors/skips** in 02:13. The ten-test focused reconciliation/authorization/UI gate also passed. Diff review confirms one service preflight/Auto Match filter and one visible help label; no schema, migration, accounting or authorization change. Draft publication and exact-head CI remain; no native human result is inferred.
+
+P27-C1 implementation — 2026-10-31 America/Denver: #400 is merged at main `f47d7e464fcb3e1f162a5baf324784f796739787`, containing accepted head `84f80c0274ae62ec29e0e6eb3f0bb77d4402051e`; exact-head workflow `41259482562`, job `124709599603`, passed. The recorded WARN_ONLY defect reproduces before edits as the V54 constraint exception. The corrected service rejects manual uncleared matches before writes, skips them during Auto Match, preserves explicit Mark Cleared and then permits the same match. Existing overwrite/per-line authority is retained. A visible instruction explains the workflow. Baseline compile and nine existing mutation/authorization/UI tests passed; the corrected focused gate passes ten. Full clean, production JavaFX, draft publication and exact-head CI remain. [Contract and owner check](P27-C1-reconciliation-warn-only.md).
+
+S4D3 final publication evidence — 2026-10-31 America/Denver: final published head `84f80c0274ae62ec29e0e6eb3f0bb77d4402051e`, tree `ee48a80e6f8db695b08e4e1cf2aaa3faddc4d36c`, matches local, native branch, archived PR #400 head and connected PR. Exact-head [workflow 41259482562](https://github.com/benbaron/sca-jakarta-h2/actions/runs/41259482562), job `124709599603`, passed clean verification, repeated tests and production JavaFX route compliance. The PR description records the same evidence. This local-only ledger successor preserves the tested remote head and is not pushed solely to retrigger CI. S4D3 remains VERIFYING pending owner review/merge; P27-C1 and P28 remain gated.
 
 S4D3 draft publication — 2026-10-31 America/Denver: pushed implementation `cc79b32278809e21c95b8a709da9b5bbe3b215ba`, tree `4e4bae2a481235bdf07d291610b945881654bca1`, without force from confirmed main `cf375309`, and opened draft [PR #400](https://github.com/benbaron/sca-jakarta-h2/pull/400). The connected PR reports the same implementation head/base. This documentation-only successor records publication and does not alter the verified source/tests. Refresh the branch/PR archive and require exact-final-head clean/repeat/production JavaFX CI before handoff. Owner review and merge remain separate.
 
@@ -926,9 +934,9 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P27-S4D | Evidence validation and integrated compatibility gate | IN_PROGRESS | S4C merged; bounded S4D1 selected; complete only after S4D1–S4D3 merge |
 | P27-S4D1 | Retained review validation | DONE | PR #397 merged at f8206e45; accepted head c852a10a passed workflow 40809782195 |
 | P27-S4D2 | Complete category-master portability | DONE | [Contract](P27-S4D2-category-portability.md); UUIDs, exact master fields, unused records, conflict/legacy/rollback gates |
-| P27-S4D3 | Integrated all-feature and recovery acceptance | IN_PROGRESS | [Contract](P27-S4D3-integrated-portability.md); resumed on merged #399 recovery stack with combined P24–P27 report/history/conflict/backup fixture |
+| P27-S4D3 | Integrated all-feature and recovery acceptance | DONE | [Contract](P27-S4D3-integrated-portability.md); PR #400 merged at `f47d7e46`, accepted head `84f80c02`, workflow `41259482562` passed |
 | P27-S4D3R | Native recovery integrity prerequisite | DONE | [Contract](P27-S4D3R-recovery-integrity.md); PR #399 merged at `cf375309`, accepted head `911832e4`, workflow `41248354701` passed |
-| P27-C1 | Reconciliation WARN_ONLY matching correction | BLOCKED | After S4D3 merge, reproduce uncleared-match/V54 failure, retain explicit cleared-state policy semantics, add service/rollback/Preview/UI tests as applicable; fresh current-main branch |
+| P27-C1 | Reconciliation WARN_ONLY matching correction | IN_PROGRESS | [Contract](P27-C1-reconciliation-warn-only.md); preflight uncleared manual matches, skip non-overwrite Auto Match candidates, retain explicit clearing and role/finalization protections |
 | P28-S1 | Run the complete runbook acceptance matrix | BLOCKED | P27-S4 merged; owning contract and D01–D10 gates as applicable |
 | P28-S2 | Release and close the correction program | BLOCKED | P28-S1 merged; owning contract and D01–D10 gates as applicable |
 | P27-S5 (conditional) | Internal attachments and approvals | BLOCKED | Not adopted; explicit scope amendment and separate specifications required; not a prerequisite for baseline P28 |
