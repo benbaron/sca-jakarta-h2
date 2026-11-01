@@ -1,15 +1,17 @@
 ---
-plan_version: 430
+plan_version: 431
 active_phase: P28
 active_slice: P28-S1
 active_status: VERIFYING
 active_branch: codex/P28-S1-runbook-acceptance
-active_pull_request: null
-active_head: 446ef1688e989f0135b580e32297688c58104600
-next_action: "Publish P28-S1 as a draft, refresh the branch/PR archive, and require exact-final-head clean/repeat/production JavaFX CI before owner Windows/external-procedure acceptance and merge."
+active_pull_request: 402
+active_head: 5f41792617707e220c83843991b828c7b21aef86
+next_action: "Push the P28-S1 publication record, refresh the branch/PR archive, and require exact-final-head clean/repeat/production JavaFX CI before owner Windows/external-procedure acceptance and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P28-S1 draft publication — 2026-10-31 America/Denver: pushed the reviewed acceptance commits without force from confirmed main `c79d9f50f692d171f8f636b399bf67c2de297f42` and opened draft [PR #402](https://github.com/benbaron/sca-jakarta-h2/pull/402). Initial published head `5f41792617707e220c83843991b828c7b21aef86`, tree `c2100f53a1e7b2bd60ab0f4e8f7072bcc1c68198`, matches the connected PR snapshot. The PR records the 218 focused, 71 actual-display and 1,109 clean results plus owner Windows/external checks. This documentation-only successor records publication; refresh all branch/PR refs and require exact-final-head CI before handoff. No GitHub success or owner desktop result is inferred yet.
 
 P28-S1 final local handoff — 2026-10-31 America/Denver: acceptance implementation `446ef1688e989f0135b580e32297688c58104600`, tree `f8d69ad4ff5f862a161e188d152cc6fbc13a2fd8`, changes governing evidence only; production/test/schema/build sources are unchanged. All 41 named test classes and changed-document links resolve, whitespace review passes, and the 218 focused / 71 actual-display / 1,109 clean gates above own final local validation. No product defect or hidden exception remains from executed automation. Publish the reviewed branch without force, open a draft, match the final remote tree, and require exact-head CI. Owner Windows scaling/workflow and external procedure acceptance remain explicit; no such result is inferred.
 
