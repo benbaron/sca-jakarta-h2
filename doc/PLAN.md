@@ -1,15 +1,17 @@
 ---
-plan_version: 429
+plan_version: 430
 active_phase: P28
 active_slice: P28-S1
 active_status: VERIFYING
 active_branch: codex/P28-S1-runbook-acceptance
 active_pull_request: null
-active_head: c79d9f50f692d171f8f636b399bf67c2de297f42
-next_action: "Complete final clean verification and documentation/link review, then publish P28-S1 as a draft and require exact-final-head clean/repeat/production JavaFX CI before owner desktop/external acceptance and merge."
+active_head: 446ef1688e989f0135b580e32297688c58104600
+next_action: "Publish P28-S1 as a draft, refresh the branch/PR archive, and require exact-final-head clean/repeat/production JavaFX CI before owner Windows/external-procedure acceptance and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P28-S1 final local handoff — 2026-10-31 America/Denver: acceptance implementation `446ef1688e989f0135b580e32297688c58104600`, tree `f8d69ad4ff5f862a161e188d152cc6fbc13a2fd8`, changes governing evidence only; production/test/schema/build sources are unchanged. All 41 named test classes and changed-document links resolve, whitespace review passes, and the 218 focused / 71 actual-display / 1,109 clean gates above own final local validation. No product defect or hidden exception remains from executed automation. Publish the reviewed branch without force, open a draft, match the final remote tree, and require exact-head CI. Owner Windows scaling/workflow and external procedure acceptance remain explicit; no such result is inferred.
 
 P28-S1 combined acceptance gates — 2026-10-31 America/Denver: baseline compile passed. The one-invocation A01–A14/P25/P26 service, report, authorization, correction, SCLX and native-recovery matrix passed **218 tests, zero failures/errors/skips** in 03:13 (`/tmp/p28-s1-service.log`). The production JavaFX acceptance selector passed on an actual X display with **71 tests, zero failures/errors/skips** in 02:07 (`/tmp/p28-s1-fx.log`), including event discovery/tagging, packet/readiness, check/reconciliation, P25/P26 Save workspaces, command routing and geometry/scaling tests. Final `mvn clean verify` passed **1,109 tests, zero failures/errors, 77 expected headless display skips** in 05:44 (`/tmp/p28-s1-clean.log`). The environment's shared X socket could not host Xvfb; a loopback-only X display ran the same tests without repository/system changes. No product correction was required. Documentation/link review, draft publication, exact-head CI and owner Windows/external-procedure acceptance remain. [Acceptance matrix and owner steps](P28-S1-runbook-acceptance.md).
 
