@@ -1,15 +1,17 @@
 ---
-plan_version: 426
+plan_version: 427
 active_phase: P27
 active_slice: P27-C1
 active_status: VERIFYING
 active_branch: codex/P27-C1-reconciliation-warn-only
-active_pull_request: null
-active_head: f47d7e464fcb3e1f162a5baf324784f796739787
-next_action: "Publish P27-C1 as a draft, refresh the branch/PR archive, and verify exact-head clean/repeat/production JavaFX CI before owner review and merge."
+active_pull_request: 401
+active_head: 7cc668187ba066c190e78a1c323ce5690af38ff1
+next_action: "Push the P27-C1 publication record, refresh the branch/PR archive, and verify exact-final-head clean/repeat/production JavaFX CI before owner review and merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P27-C1 draft publication — 2026-10-31 America/Denver: pushed implementation `7cc668187ba066c190e78a1c323ce5690af38ff1`, tree `a1cfff122c7943001c3b9b06bf8991362880d522`, without force from confirmed main `f47d7e464fcb3e1f162a5baf324784f796739787`, and opened draft [PR #401](https://github.com/benbaron/sca-jakarta-h2/pull/401). The connected PR reports the same implementation head/base and is mergeable. This documentation-only successor records publication and does not alter the verified service, UI or tests. Refresh the full branch/PR archive and require exact-final-head clean/repeat/production JavaFX CI before handoff; no GitHub success or native human result is inferred yet.
 
 P27-C1 final local gates — 2026-10-31 America/Denver: final `mvn clean verify` passed **1,109 tests, zero failures/errors, 77 expected headless display skips** in 05:38. The exact production JavaFX selector passed **69 tests, zero failures/errors/skips** in 02:13. The ten-test focused reconciliation/authorization/UI gate also passed. Diff review confirms one service preflight/Auto Match filter and one visible help label; no schema, migration, accounting or authorization change. Draft publication and exact-head CI remain; no native human result is inferred.
 
