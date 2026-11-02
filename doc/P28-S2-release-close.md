@@ -1,5 +1,7 @@
 # P28-S2 — Release and correction-program closure
 
+Status: DONE through merged [PR #403](https://github.com/benbaron/sca-jakarta-h2/pull/403) at `da54b6c293163ca332fbf473106a9f8ca5775727`. Accepted head `99c5752cb38a98357713921a257f2ec80a89973b` passed exact-head workflow `41354367929`, retry job `124993311642`, including clean, repeat and production JavaFX stages.
+
 ## Scope
 
 This final adopted slice publishes the actual-screen [operating guide](operating-guide.md), [release and upgrade notes](release-notes-P23-P28.md), exact tested authority and G1–G14 closure evidence. It removes obsolete workaround instructions from current guidance while retaining historical documents as factual records. It changes no accounting, schema, authorization, persistence, UI route or dependency.
@@ -30,4 +32,4 @@ All new document links and actual UI labels resolve against current source. `mvn
 
 ## Local validation
 
-On 2026-11-01 America/Denver, `ReleaseOperatingGuideTest` passed two focused source/document checks. Final `mvn clean verify` passed 1,111 tests with zero failures/errors and 77 expected headless display skips in 05:51. The exact production JavaFX selector passed 69 tests with zero failures/errors/skips on a verified X display in 02:16. The first display launcher attempt lacked Xvfb and skipped 55 tests; it is not acceptance evidence. Changed-document links and whitespace checks pass. Draft publication and exact-head CI remain.
+On 2026-11-01 America/Denver, `ReleaseOperatingGuideTest` passed two focused source/document checks. Final `mvn clean verify` passed 1,111 tests with zero failures/errors and 77 expected headless display skips in 05:51. The exact production JavaFX selector passed 69 tests with zero failures/errors/skips on a verified X display in 02:16. The first display launcher attempt lacked Xvfb and skipped 55 tests; it is not acceptance evidence. Changed-document links and whitespace checks pass. Exact-head GitHub clean, repeat and production JavaFX stages subsequently passed, and the owner merged the slice.
