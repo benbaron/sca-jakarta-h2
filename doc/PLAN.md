@@ -1,15 +1,19 @@
 ---
-plan_version: 436
+plan_version: 438
 active_phase: P28
 active_slice: P28-S2
-active_status: VERIFYING
-active_branch: codex/P28-S2-release-close
-active_pull_request: 403
-active_head: 737d02d9ae0a88c717a3276bd08d3c7ad9c02bb5
-next_action: "Push the P28-S2 publication record, refresh the branch/PR archive, and require exact-final-head clean/repeat/production JavaFX CI before owner review and merge."
+active_status: DONE
+active_branch: null
+active_pull_request: null
+active_head: da54b6c293163ca332fbf473106a9f8ca5775727
+next_action: "P23-P28 is complete. Select an explicit new product phase or corrective topic before implementation; no P29 scope is currently adopted."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P28 and P23–P28 completion — 2026-11-01 America/Denver: owner reported #403 published. Connected GitHub and native fetch confirm [PR #403](https://github.com/benbaron/sca-jakarta-h2/pull/403) merged accepted head `99c5752cb38a98357713921a257f2ec80a89973b` into current `main` at signed merge `da54b6c293163ca332fbf473106a9f8ca5775727`; merge tree `965a7d91ee9b3f35b7c7f7d65caa8d1b7bcd6a63` equals the accepted head tree. Exact-head workflow `41354367929`, retry job `124993311642`, passed clean verification, repeated tests and production JavaFX route compliance. P28-S2, P28 and the adopted P23–P28 correction program are DONE. GitHub has no open issue or pull-request topic, and the adopted roadmap defines no P29; repository rules require an explicit next phase/topic rather than inventing scope.
+
+P28-S2 final publication evidence — 2026-11-01 America/Denver: final published head `99c5752cb38a98357713921a257f2ec80a89973b`, tree `965a7d91ee9b3f35b7c7f7d65caa8d1b7bcd6a63`, matches local, native branch and connected draft [PR #403](https://github.com/benbaron/sca-jakarta-h2/pull/403). Exact-head [workflow 41354367929](https://github.com/benbaron/sca-jakarta-h2/actions/runs/41354367929), retry job `124993311642`, passed clean headless verification, repeated tests and production JavaFX route compliance. The first job attempt failed transiently during clean verification; the unchanged exact head passed the complete retry and the same source had already passed local clean verification. The PR description records the final head/tree and successful retry. This local-only ledger successor preserves the tested remote head and is not pushed solely to retrigger CI. P28-S2 remains VERIFYING pending owner review/merge; only after confirmed merge may P28 and P23–P28 be marked DONE.
 
 P28-S2 draft publication — 2026-11-01 America/Denver: pushed the reviewed release commits without force from confirmed main `c1ba17743133d91b747c36ab74f40a6755ee0a45` and opened draft [PR #403](https://github.com/benbaron/sca-jakarta-h2/pull/403). Initial published head `737d02d9ae0a88c717a3276bd08d3c7ad9c02bb5`, tree `540ca0445b45488ac301183ae54703ad60e86717`, matches the connected snapshot. The PR records the two focused, 1,111 clean and 69 actual-display tests plus retained limits. This documentation-only successor records publication; refresh branch/PR refs and require exact-final-head CI. No GitHub success or merge is inferred yet.
 

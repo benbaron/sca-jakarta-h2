@@ -1,5 +1,7 @@
 # P23–P28 — Adopted runbook correction program
 
+Status: DONE. Owner merged final release closure [PR #403](https://github.com/benbaron/sca-jakarta-h2/pull/403) at `da54b6c293163ca332fbf473106a9f8ca5775727` after exact-head clean, repeat and production JavaFX validation passed. [PLAN](PLAN.md) retains the complete execution ledger and factual limitations.
+
 Scope amendment, 2026-10-25: owner directs generic accounting rules for P27. The [generic packet contract](P27-S1-submission-contract.md) supersedes earlier official-template, signature, deadline and document-owner runbook-resolution prerequisites for generic export. Historical template collection and official-form acceptance wording elsewhere are reference evidence, not current implementation gates.
 
 Adopted by the owner on 26 September 2026. Live governing specification; execution status belongs to [PLAN.md](PLAN.md).
