@@ -2,12 +2,14 @@
 
 ## User-visible correction
 
-The Windows Light theme must render production workspace text in near-black rather than inheriting a low-contrast blue foreground from platform control styles. This applies to menus, toolbar controls, form labels and values, tabs, navigation, inspector content, tables, lists and links. Blue remains an accent for focus outlines, selection backgrounds and icons.
+The Windows Light theme must render production workspace text with a readable foreground rather than inheriting a low-contrast blue foreground from platform control styles. The application adopts the [AtlantaFX](https://github.com/mkpaz/atlantafx) theme set and adapts its production shell surfaces to AtlantaFX foreground, background, border, accent, success and danger variables.
 
-The existing **Light**, **Dark** and **System Default** choices remain. This correction changes only **Light**; adding another theme would make the readable option less discoverable and would leave the reported Light theme defective.
+AtlantaFX 2.0.1 is the latest line compatible with this application's Java 17 baseline. Its complete built-in set is exposed: **Primer Light**, **Primer Dark**, **Nord Light**, **Nord Dark**, **Cupertino Light**, **Cupertino Dark**, and **Dracula**, alongside **System Default (JavaFX)**. Existing persisted `LIGHT` and `DARK` values remain valid and map to Primer Light and Primer Dark.
 
 ## Required inspection
 
+- AtlantaFX 2.0.1 theme API and built-in theme catalog
+- `pom.xml`
 - `src/main/resources/ui/styles.css`
 - `ProductionWorkspaceWindow.applyPreferences(...)`
 - `UiThemePreference`
@@ -16,8 +18,9 @@ The existing **Light**, **Dark** and **System Default** choices remain. This cor
 
 ## Acceptance
 
-- Light-theme foreground rules explicitly cover ordinary JavaFX control roles and the production shell's selected/accent text roles.
-- Dark and System Default theme behavior remains unchanged.
-- A unit regression binds the Light-theme selectors to the near-black foreground.
+- All seven AtlantaFX themes are available by readable names and apply immediately.
+- Existing Light/Dark preference files remain compatible; newly selected themes persist across restart.
+- Application shell surfaces use AtlantaFX palette variables so each light and dark theme remains coherent.
+- Unit regressions bind every preference to the correct AtlantaFX theme, dark/light shell classification, persistence and production consumption.
 - Focused and full Maven verification pass, followed by exact-head GitHub clean, repeat and production JavaFX checks.
-- Owner check: select **Light**, revisit Administration / Preferences, and confirm menu, toolbar, tab, form, navigation and inspector text is comfortably readable on Windows.
+- Owner check: select each theme, revisit Administration / Preferences, and confirm menu, toolbar, tab, form, navigation and inspector text remains readable on Windows. In particular, Primer Light, Nord Light and Cupertino Light must use dark ordinary text.

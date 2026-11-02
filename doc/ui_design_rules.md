@@ -10,7 +10,7 @@ Text boxes and other `TextInputControl` instances are excluded so user-entered o
 
 ## Theme text contrast
 
-The production **Light** theme uses a deterministic near-black foreground for ordinary control text, including menus, toolbar controls, forms, tabs, navigation, inspector content, tables, lists and links. Platform styles must not replace readable foregrounds with accent blue. Blue is reserved for non-text focus/selection treatment and icons. **Dark** and **System Default** retain their own foreground contracts.
+Production exposes the Java-17-compatible AtlantaFX 2.0.1 theme set: Primer, Nord and Cupertino in light/dark variants plus Dracula, alongside JavaFX System Default. Application shell CSS uses AtlantaFX palette variables rather than imposing one platform foreground, so light variants retain dark ordinary text and dark variants retain light ordinary text. Existing persisted Light/Dark settings map to Primer Light/Primer Dark. Theme changes apply immediately and must preserve readable menus, toolbar controls, forms, tabs, navigation, inspector content, tables and lists.
 
 ## Preference storage scope
 

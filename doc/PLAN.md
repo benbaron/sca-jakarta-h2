@@ -1,17 +1,17 @@
 ---
-plan_version: 439
+plan_version: 440
 active_phase: P29
 active_slice: P29-S1
 active_status: IN_PROGRESS
 active_branch: codex/P29-S1-light-theme-contrast
 active_pull_request: null
 active_head: 5cdf7e59414c2b9cdec9dd7484d1e11c6c098479
-next_action: "Verify the Light-theme near-black foreground contract with focused/full tests, review the final CSS scope, then publish a draft for owner Windows review."
+next_action: "Verify the complete AtlantaFX theme catalog, compatibility persistence and shell palette adaptation with focused/full tests, then update draft PR #405 and require exact-final-head CI before owner Windows review."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
-P29-S1 Light-theme contrast correction — 2026-11-01 America/Denver: owner supplied a Windows Light-theme screenshot showing low-contrast blue text and requested black text or an additional black-text theme. [P29-S1](P29-S1-light-theme-contrast.md) selects the direct correction: retain the existing Light/Dark/System Default choices and make Light text deterministically near-black across menus, toolbar controls, forms, tabs, navigation, inspector content, tables, lists and links. Blue remains available for focus/selection surfaces and icons. Current main `5cdf7e59414c2b9cdec9dd7484d1e11c6c098479` is the merged #404 closeout; fresh branch `codex/P29-S1-light-theme-contrast` owns this corrective slice. Add a unit CSS contract, run focused/full validation and publish a draft for owner Windows review.
+P29-S1 AtlantaFX theme correction — 2026-11-01 America/Denver: owner supplied a Windows Light-theme screenshot showing low-contrast blue text, then explicitly selected the [AtlantaFX](https://github.com/mkpaz/atlantafx) theme set. [P29-S1](P29-S1-light-theme-contrast.md) uses AtlantaFX 2.0.1 because it is the Java 17 compatible release; current 3.0 requires Java 25/JavaFX 27. Expose Primer, Nord and Cupertino light/dark variants plus Dracula and JavaFX System Default. Preserve persisted `LIGHT`/`DARK` as Primer Light/Dark. Apply the selected user-agent stylesheet immediately and adapt the production shell through AtlantaFX palette variables. Current main `5cdf7e59414c2b9cdec9dd7484d1e11c6c098479` is merged #404; fresh branch `codex/P29-S1-light-theme-contrast` and draft #405 own this corrective slice. Add catalog/mapping/persistence/CSS regressions, run focused/full validation, update the draft and require exact-final-head CI before owner Windows review.
 
 P28 and P23–P28 completion — 2026-11-01 America/Denver: owner reported #403 published. Connected GitHub and native fetch confirm [PR #403](https://github.com/benbaron/sca-jakarta-h2/pull/403) merged accepted head `99c5752cb38a98357713921a257f2ec80a89973b` into current `main` at signed merge `da54b6c293163ca332fbf473106a9f8ca5775727`; merge tree `965a7d91ee9b3f35b7c7f7d65caa8d1b7bcd6a63` equals the accepted head tree. Exact-head workflow `41354367929`, retry job `124993311642`, passed clean verification, repeated tests and production JavaFX route compliance. P28-S2, P28 and the adopted P23–P28 correction program are DONE. GitHub has no open issue or pull-request topic, and the adopted roadmap defines no P29; repository rules require an explicit next phase/topic rather than inventing scope.
 
