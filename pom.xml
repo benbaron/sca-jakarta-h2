@@ -29,6 +29,7 @@
     <jackson.version>2.17.2</jackson.version>
     <picocli.version>4.7.6</picocli.version>
     <javafx.version>21.0.4</javafx.version>
+    <atlantafx.version>2.0.1</atlantafx.version>
     <junit.version>5.10.3</junit.version>
     <testfx.version>4.0.18</testfx.version>
     <jasperreports.version>6.21.3</jasperreports.version>
@@ -138,6 +139,11 @@
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-base</artifactId>
       <version>${javafx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.mkpaz</groupId>
+      <artifactId>atlantafx-base</artifactId>
+      <version>${atlantafx.version}</version>
     </dependency>
 
     <!-- Reporting adapters -->

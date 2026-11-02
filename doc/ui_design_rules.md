@@ -8,6 +8,10 @@ Every production JavaFX widget with visible non-blank display text should expose
 
 Text boxes and other `TextInputControl` instances are excluded so user-entered or potentially sensitive typed text is not automatically repeated in a tooltip. Controls that already define a custom tooltip may keep it when the tooltip carries more specific help text.
 
+## Theme text contrast
+
+Production exposes the Java-17-compatible AtlantaFX 2.0.1 theme set: Primer, Nord and Cupertino in light/dark variants plus Dracula, alongside JavaFX System Default. Application shell CSS uses AtlantaFX palette variables rather than imposing one platform foreground, so light variants retain dark ordinary text and dark variants retain light ordinary text. Existing persisted Light/Dark settings map to Primer Light/Primer Dark. Theme changes apply immediately and must preserve readable menus, toolbar controls, forms, tabs, navigation, inspector content, tables and lists.
+
 ## Preference storage scope
 
 Preferences have two explicit scopes:

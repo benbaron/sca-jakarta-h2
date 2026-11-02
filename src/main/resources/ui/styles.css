@@ -645,126 +645,178 @@ dashboard-footer-link,
     -fx-border-color: transparent;
 }
 
-/* The persisted shell theme is applied to the production root at runtime. */
-.production-workspace.theme-dark
+/* AtlantaFX supplies the control palette; these rules adapt application shell surfaces. */
+.production-workspace.theme-atlantafx
 {
-    -fx-background-color: #171c24;
-    -fx-text-fill: #e7edf5;
-    -fx-accent: #69aaf5;
-    -fx-focus-color: #69aaf5;
-    -fx-faint-focus-color: rgba(105, 170, 245, 0.18);
+    -fx-background-color: -color-bg-subtle;
+    -fx-text-fill: -color-fg-default;
+    -fx-text-base-color: -color-fg-default;
+    -fx-text-inner-color: -color-fg-default;
+    -fx-text-background-color: -color-fg-default;
+    -fx-accent: -color-accent-emphasis;
+    -fx-focus-color: -color-accent-emphasis;
+    -fx-faint-focus-color: -color-accent-muted;
 }
 
-.production-workspace.theme-dark .label,
-.production-workspace.theme-dark .check-box,
-.production-workspace.theme-dark .radio-button,
-.production-workspace.theme-dark .tab-label
+.production-workspace.theme-atlantafx .label,
+.production-workspace.theme-atlantafx .check-box,
+.production-workspace.theme-atlantafx .radio-button,
+.production-workspace.theme-atlantafx .tab-label,
+.production-workspace.theme-atlantafx .table-cell,
+.production-workspace.theme-atlantafx .list-cell,
+.production-workspace.theme-atlantafx .tree-cell,
+.production-workspace.theme-atlantafx .navigation-section,
+.production-workspace.theme-atlantafx .navigation-item,
+.production-workspace.theme-atlantafx .navigation-item-selected,
+.production-workspace.theme-atlantafx .navigation-item-selected .label,
+.production-workspace.theme-atlantafx .inspector-card-title,
+.production-workspace.theme-atlantafx .inspector-strong,
+.production-workspace.theme-atlantafx .inspector-primary-value,
+.production-workspace.theme-atlantafx .inspector-value,
+.production-workspace.theme-atlantafx .dashboard-card-title,
+.production-workspace.theme-atlantafx .dashboard-value,
+.production-workspace.theme-atlantafx .dashboard-key-value,
+.production-workspace.theme-atlantafx .dashboard-emphasis
 {
-    -fx-text-fill: #e7edf5;
+    -fx-text-fill: -color-fg-default;
 }
 
-.production-workspace.theme-dark .top-chrome,
-.production-workspace.theme-dark .menu-bar,
-.production-workspace.theme-dark .tool-bar,
-.production-workspace.theme-dark .reference-toolbar,
-.production-workspace.theme-dark .navigation-pane,
-.production-workspace.theme-dark .inspector-pane,
-.production-workspace.theme-dark .inspector-tabs,
-.production-workspace.theme-dark .inspector-tabs > .tab-content-area,
-.production-workspace.theme-dark .inspector-scroll,
-.production-workspace.theme-dark .inspector-scroll > .viewport,
-.production-workspace.theme-dark .workspace-tabs > .tab-header-area > .tab-header-background,
-.production-workspace.theme-dark .inspector-tabs > .tab-header-area > .tab-header-background
+.production-workspace.theme-atlantafx .navigation-brand-caption,
+.production-workspace.theme-atlantafx .formatted-report-subtitle,
+.production-workspace.theme-atlantafx .formatted-report-metadata-secondary
 {
-    -fx-background-color: #202733;
-    -fx-border-color: #343e4d;
+    -fx-text-fill: -color-fg-muted;
 }
 
-.production-workspace.theme-dark .workspace-tabs,
-.production-workspace.theme-dark .workspace-tabs > .tab-content-area,
-.production-workspace.theme-dark .workspace-split,
-.production-workspace.theme-dark .split-pane,
-.production-workspace.theme-dark .scroll-pane,
-.production-workspace.theme-dark .scroll-pane > .viewport,
-.production-workspace.theme-dark .dashboard-grid,
-.production-workspace.theme-dark .dashboard-home,
-.production-workspace.theme-dark .dashboard-workspace,
-.production-workspace.theme-dark .dashboard-scroll,
-.production-workspace.theme-dark .dashboard-scroll > .viewport
+.production-workspace.theme-atlantafx .top-chrome,
+.production-workspace.theme-atlantafx .menu-bar,
+.production-workspace.theme-atlantafx .tool-bar,
+.production-workspace.theme-atlantafx .reference-toolbar,
+.production-workspace.theme-atlantafx .navigation-pane,
+.production-workspace.theme-atlantafx .navigation-scroll,
+.production-workspace.theme-atlantafx .navigation-scroll > .viewport,
+.production-workspace.theme-atlantafx .inspector-pane,
+.production-workspace.theme-atlantafx .inspector-tabs,
+.production-workspace.theme-atlantafx .inspector-tabs > .tab-content-area,
+.production-workspace.theme-atlantafx .inspector-scroll,
+.production-workspace.theme-atlantafx .inspector-scroll > .viewport,
+.production-workspace.theme-atlantafx .workspace-tabs > .tab-header-area > .tab-header-background,
+.production-workspace.theme-atlantafx .inspector-tabs > .tab-header-area > .tab-header-background,
+.production-workspace.theme-atlantafx .dashboard-card,
+.production-workspace.theme-atlantafx .inspector-card
 {
-    -fx-background-color: #171c24;
+    -fx-background-color: -color-bg-default;
+    -fx-border-color: -color-border-default;
 }
 
-.production-workspace.theme-dark .button,
-.production-workspace.theme-dark .menu-button,
-.production-workspace.theme-dark .toggle-button,
-.production-workspace.theme-dark .date-picker,
-.production-workspace.theme-dark .combo-box-base,
-.production-workspace.theme-dark .text-field,
-.production-workspace.theme-dark .password-field,
-.production-workspace.theme-dark .text-area,
-.production-workspace.theme-dark .context-menu
+.production-workspace.theme-atlantafx .workspace-tabs,
+.production-workspace.theme-atlantafx .workspace-tabs > .tab-content-area,
+.production-workspace.theme-atlantafx .workspace-split,
+.production-workspace.theme-atlantafx .split-pane,
+.production-workspace.theme-atlantafx .scroll-pane,
+.production-workspace.theme-atlantafx .scroll-pane > .viewport,
+.production-workspace.theme-atlantafx .dashboard-grid,
+.production-workspace.theme-atlantafx .dashboard-home,
+.production-workspace.theme-atlantafx .dashboard-workspace,
+.production-workspace.theme-atlantafx .dashboard-scroll,
+.production-workspace.theme-atlantafx .dashboard-scroll > .viewport
 {
-    -fx-background-color: #252d3a;
-    -fx-border-color: #465266;
-    -fx-text-fill: #e7edf5;
+    -fx-background-color: -color-bg-subtle;
 }
 
-.production-workspace.theme-dark .button:hover,
-.production-workspace.theme-dark .menu-button:hover,
-.production-workspace.theme-dark .toggle-button:hover,
-.production-workspace.theme-dark .menu-item:focused
+.production-workspace.theme-atlantafx .button,
+.production-workspace.theme-atlantafx .menu-button,
+.production-workspace.theme-atlantafx .toggle-button,
+.production-workspace.theme-atlantafx .date-picker,
+.production-workspace.theme-atlantafx .combo-box-base,
+.production-workspace.theme-atlantafx .text-field,
+.production-workspace.theme-atlantafx .password-field,
+.production-workspace.theme-atlantafx .text-area
 {
-    -fx-background-color: #303d50;
-    -fx-border-color: #6385ad;
+    -fx-background-color: -color-bg-default;
+    -fx-border-color: -color-border-default;
+    -fx-text-fill: -color-fg-default;
 }
 
-.production-workspace.theme-dark .table-view,
-.production-workspace.theme-dark .table-view .table-row-cell,
-.production-workspace.theme-dark .dashboard-card,
-.production-workspace.theme-dark .inspector-card
+.production-workspace.theme-atlantafx .button:hover,
+.production-workspace.theme-atlantafx .menu-button:hover,
+.production-workspace.theme-atlantafx .toggle-button:hover,
+.production-workspace.theme-atlantafx .menu-item:focused,
+.production-workspace.theme-atlantafx .navigation-item:hover
 {
-    -fx-background-color: #202733;
-    -fx-border-color: #3b4657;
+    -fx-background-color: -color-neutral-subtle;
+    -fx-border-color: -color-accent-muted;
 }
 
-.production-workspace.theme-dark .table-view .column-header-background,
-.production-workspace.theme-dark .table-view .column-header,
-.production-workspace.theme-dark .table-view .filler
+.production-workspace.theme-atlantafx .workspace-tabs .tab:selected,
+.production-workspace.theme-atlantafx .inspector-tabs .tab:selected,
+.production-workspace.theme-atlantafx .navigation-item-selected
 {
-    -fx-background-color: #252d3a;
-    -fx-border-color: #3b4657;
+    -fx-background-color: -color-accent-subtle;
 }
 
-.production-workspace.theme-dark .table-view .column-header .label,
-.production-workspace.theme-dark .workspace-tabs .tab .tab-label,
-.production-workspace.theme-dark .inspector-tabs .tab .tab-label,
-.production-workspace.theme-dark .dashboard-card-title,
-.production-workspace.theme-dark .dashboard-value,
-.production-workspace.theme-dark .dashboard-key-value,
-.production-workspace.theme-dark .dashboard-emphasis,
-.production-workspace.theme-dark .inspector-strong,
-.production-workspace.theme-dark .inspector-primary-value,
-.production-workspace.theme-dark .inspector-value
+.production-workspace.theme-atlantafx .workspace-tabs .tab .tab-label,
+.production-workspace.theme-atlantafx .workspace-tabs .tab:selected .tab-label,
+.production-workspace.theme-atlantafx .inspector-tabs .tab .tab-label,
+.production-workspace.theme-atlantafx .inspector-tabs .tab:selected .tab-label
 {
-    -fx-text-fill: #d7e0eb;
+    -fx-text-fill: -color-fg-default;
 }
 
-.production-workspace.theme-dark .table-view .table-row-cell:filled:hover,
-.production-workspace.theme-dark .workspace-tabs .tab:selected,
-.production-workspace.theme-dark .inspector-tabs .tab:selected
+.production-workspace.theme-atlantafx .table-view,
+.production-workspace.theme-atlantafx .table-view .table-row-cell
 {
-    -fx-background-color: #2b3748;
+    -fx-background-color: -color-bg-default;
+    -fx-border-color: -color-border-default;
 }
 
-.production-workspace.theme-dark .table-view .table-row-cell:selected
+.production-workspace.theme-atlantafx .table-view .column-header-background,
+.production-workspace.theme-atlantafx .table-view .column-header,
+.production-workspace.theme-atlantafx .table-view .filler
 {
-    -fx-background-color: #35557a;
-    -fx-text-background-color: #ffffff;
+    -fx-background-color: -color-bg-subtle;
+    -fx-border-color: -color-border-default;
 }
 
-.production-workspace.theme-dark .workspace-split > .split-pane-divider,
-.production-workspace.theme-dark .split-pane > .split-pane-divider
+.production-workspace.theme-atlantafx .table-view .column-header .label
 {
-    -fx-background-color: #3b4657;
+    -fx-text-fill: -color-fg-muted;
+}
+
+.production-workspace.theme-atlantafx .table-view .table-row-cell:filled:hover
+{
+    -fx-background-color: -color-neutral-subtle;
+}
+
+.production-workspace.theme-atlantafx .table-view .table-row-cell:selected
+{
+    -fx-background-color: -color-accent-subtle;
+    -fx-text-background-color: -color-fg-default;
+}
+
+.production-workspace.theme-atlantafx .workspace-split > .split-pane-divider,
+.production-workspace.theme-atlantafx .split-pane > .split-pane-divider
+{
+    -fx-background-color: -color-border-default;
+}
+
+.production-workspace.theme-atlantafx .dashboard-link-value,
+.production-workspace.theme-atlantafx .dashboard-link-title,
+.production-workspace.theme-atlantafx .dashboard-footer-link,
+.production-workspace.theme-atlantafx .quick-link-title,
+.production-workspace.theme-atlantafx .hyperlink
+{
+    -fx-text-fill: -color-accent-fg;
+}
+
+.production-workspace.theme-atlantafx .dashboard-positive-amount,
+.production-workspace.theme-atlantafx .formatted-report-success-row .table-cell,
+.production-workspace.theme-atlantafx .formatted-report-success-row .table-cell .label
+{
+    -fx-text-fill: -color-success-fg;
+}
+
+.production-workspace.theme-atlantafx .dashboard-negative-amount
+{
+    -fx-text-fill: -color-danger-fg;
 }

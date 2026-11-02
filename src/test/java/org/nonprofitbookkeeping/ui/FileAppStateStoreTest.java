@@ -60,6 +60,22 @@ public class FileAppStateStoreTest
     }
 
     @Test
+    public void saveThenLoad_roundTripsAtlantaFxTheme(@TempDir Path tempDir)
+    {
+        FileAppStateStore store = new FileAppStateStore(tempDir.resolve("ui-state.properties"));
+        AppPreferencesState preferences = new AppPreferencesState(
+                UiThemePreference.NORD_LIGHT,
+                false,
+                true,
+                UserPrivilegeLevel.ACCOUNTANT);
+
+        store.savePreferences(preferences);
+
+        assertEquals(UiThemePreference.NORD_LIGHT,
+                store.loadPreferences().orElseThrow().themePreference());
+    }
+
+    @Test
     public void saveDatabaseSession_roundTripsDatabaseAndResolvedCompanyTogether(@TempDir Path tempDir)
     {
         FileAppStateStore store = new FileAppStateStore(tempDir.resolve("ui-state.properties"));
