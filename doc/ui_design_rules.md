@@ -8,6 +8,10 @@ Every production JavaFX widget with visible non-blank display text should expose
 
 Text boxes and other `TextInputControl` instances are excluded so user-entered or potentially sensitive typed text is not automatically repeated in a tooltip. Controls that already define a custom tooltip may keep it when the tooltip carries more specific help text.
 
+## Theme text contrast
+
+The production **Light** theme uses a deterministic near-black foreground for ordinary control text, including menus, toolbar controls, forms, tabs, navigation, inspector content, tables, lists and links. Platform styles must not replace readable foregrounds with accent blue. Blue is reserved for non-text focus/selection treatment and icons. **Dark** and **System Default** retain their own foreground contracts.
+
 ## Preference storage scope
 
 Preferences have two explicit scopes:

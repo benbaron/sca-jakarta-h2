@@ -646,6 +646,57 @@ dashboard-footer-link,
 }
 
 /* The persisted shell theme is applied to the production root at runtime. */
+.production-workspace.theme-light
+{
+    -fx-text-fill: #111111;
+    -fx-text-base-color: #111111;
+    -fx-text-inner-color: #111111;
+    -fx-text-background-color: #111111;
+}
+
+/*
+ * JavaFX platform styles can supply their own control foregrounds. Keep the
+ * Light theme readable and deterministic by setting every visible text role
+ * explicitly; blue remains available for focus, borders, backgrounds and
+ * icons rather than body copy.
+ */
+.production-workspace.theme-light .label,
+.production-workspace.theme-light .button,
+.production-workspace.theme-light .menu,
+.production-workspace.theme-light .menu-item,
+.production-workspace.theme-light .menu-button,
+.production-workspace.theme-light .toggle-button,
+.production-workspace.theme-light .check-box,
+.production-workspace.theme-light .radio-button,
+.production-workspace.theme-light .tab-label,
+.production-workspace.theme-light .text-field,
+.production-workspace.theme-light .password-field,
+.production-workspace.theme-light .text-area,
+.production-workspace.theme-light .combo-box-base,
+.production-workspace.theme-light .choice-box,
+.production-workspace.theme-light .date-picker,
+.production-workspace.theme-light .spinner,
+.production-workspace.theme-light .table-cell,
+.production-workspace.theme-light .list-cell,
+.production-workspace.theme-light .tree-cell,
+.production-workspace.theme-light .hyperlink,
+.production-workspace.theme-light .workspace-tabs .tab .tab-label,
+.production-workspace.theme-light .workspace-tabs .tab:selected .tab-label,
+.production-workspace.theme-light .inspector-tabs .tab .tab-label,
+.production-workspace.theme-light .inspector-tabs .tab:selected .tab-label,
+.production-workspace.theme-light .navigation-section,
+.production-workspace.theme-light .navigation-item,
+.production-workspace.theme-light .navigation-item-selected,
+.production-workspace.theme-light .navigation-item-selected .label,
+.production-workspace.theme-light .inspector-card-title,
+.production-workspace.theme-light .dashboard-link-value,
+.production-workspace.theme-light .dashboard-link-title,
+.production-workspace.theme-light .dashboard-footer-link,
+.production-workspace.theme-light .quick-link-title
+{
+    -fx-text-fill: #111111;
+}
+
 .production-workspace.theme-dark
 {
     -fx-background-color: #171c24;
