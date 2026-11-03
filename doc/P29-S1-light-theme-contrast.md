@@ -21,6 +21,6 @@ AtlantaFX 2.0.1 is the latest line compatible with this application's Java 17 ba
 - All seven AtlantaFX themes are available by readable names and apply immediately.
 - Existing Light/Dark preference files remain compatible; newly selected themes persist across restart.
 - Application shell surfaces use AtlantaFX palette variables while ordinary workspace text remains black in every light theme and white in every dark theme, including JavaFX System Default as a light theme.
-- Unit regressions bind every preference to the correct AtlantaFX theme, dark/light shell classification, persistence and production consumption.
+- Unit regressions bind every preference to the correct AtlantaFX theme, dark/light shell classification, persistence and production consumption. An actual JavaFX CSS test applies every preference under a virtual display and verifies computed label, button, hyperlink and text-node paint is exactly black or white as required.
 - Focused and full Maven verification pass, followed by exact-head GitHub clean, repeat and production JavaFX checks.
 - Owner check: select each theme, revisit Administration / Preferences, and confirm menu, toolbar, tab, form, navigation and inspector text remains readable on Windows. In particular, Primer Light, Nord Light and Cupertino Light must use dark ordinary text.
