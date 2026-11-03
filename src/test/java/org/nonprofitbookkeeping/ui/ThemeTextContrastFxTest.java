@@ -115,12 +115,18 @@ class ThemeTextContrastFxTest
                     "{\"title\":\"White workbook\",\"sections\":[]}");
             var report = (javafx.scene.Parent) new SemanticReportFxRenderer().render(template, values);
             Label outside = new Label("Dark surface");
-            VBox root = new VBox(outside, report);
+            var area = new javafx.scene.control.TextArea("White editor content");
+            VBox root = new VBox(outside, area, report);
             root.setStyle("-fx-background-color: #24292f;");
             WorkspaceTextContrastEnforcer.install(root);
             WorkspaceTextContrastEnforcer.apply(root, true);
             new Scene(root, 640, 480);
             settle(root);
+            area.lookup(".content").setStyle("-fx-background-color: white;");
+            settle(root);
+            area.lookupAll(".text").stream().filter(Text.class::isInstance)
+                    .map(Text.class::cast).forEach(node ->
+                            assertEquals(Color.BLACK, node.getFill(), "White editor content uses black text"));
             assertEquals(Color.WHITE, outside.getTextFill());
             var title = (Label) root.lookup(".workbook-report-title");
             assertEquals(Color.BLACK, title.getTextFill(), "White report stays black under a dark theme");

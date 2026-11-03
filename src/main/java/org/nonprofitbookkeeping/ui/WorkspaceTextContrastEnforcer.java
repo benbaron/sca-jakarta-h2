@@ -73,7 +73,21 @@ final class WorkspaceTextContrastEnforcer
     private static void refresh(Node node, Color inherited)
     {
         Color background = surface(node, inherited);
-        Color foreground = contrastingText(background);
+        Color textBackground = background;
+        if (node instanceof TextInputControl input)
+        {
+            Node content = input.lookup(".content");
+            var path = new java.util.ArrayList<Node>();
+            for (Node current = content; current != null && current != input; current = current.getParent())
+            {
+                path.add(current);
+            }
+            for (int index = path.size() - 1; index >= 0; index--)
+            {
+                textBackground = surface(path.get(index), textBackground);
+            }
+        }
+        Color foreground = contrastingText(textBackground);
         String color = foreground.equals(Color.BLACK) ? "#000000" : "#ffffff";
         if (node instanceof Labeled || node instanceof TextInputControl)
         {
