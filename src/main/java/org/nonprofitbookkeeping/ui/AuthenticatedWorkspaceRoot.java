@@ -46,10 +46,9 @@ public final class AuthenticatedWorkspaceRoot extends BorderPane
                 UiServiceRegistry::authentication,
                 this::showAuthenticatedWorkspace);
         WorkspaceTextContrastEnforcer.install(this);
-        WorkspaceTextContrastEnforcer.apply(this,
-                AtlantaFxThemeManager.isDark(sessionState.preferences().themePreference()));
-        sessionState.onPreferencesChanged(preferences -> WorkspaceTextContrastEnforcer.apply(
-                this, AtlantaFxThemeManager.isDark(preferences.themePreference())));
+        getStyleClass().add("production-workspace");
+        applyTheme(sessionState.preferences());
+        sessionState.onPreferencesChanged(this::applyTheme);
         sessionState.onAuthenticationChanged(ignored -> refreshPresentation());
         sessionState.onDatabaseSelectionChanged(ignored ->
         {
@@ -59,6 +58,17 @@ public final class AuthenticatedWorkspaceRoot extends BorderPane
             }
         });
         refreshPresentation();
+    }
+
+    private void applyTheme(org.nonprofitbookkeeping.model.AppPreferencesState preferences)
+    {
+        var preference = preferences.themePreference();
+        getStyleClass().removeAll("theme-light", "theme-dark", "theme-system", "theme-atlantafx");
+        boolean dark = AtlantaFxThemeManager.isDark(preference);
+        getStyleClass().add(dark ? "theme-dark" : "theme-light");
+        getStyleClass().add(preference == org.nonprofitbookkeeping.model.UiThemePreference.SYSTEM_DEFAULT
+                ? "theme-system" : "theme-atlantafx");
+        WorkspaceTextContrastEnforcer.apply(this, dark);
     }
 
     ProductionWorkspaceWindow workspaceWindow()
