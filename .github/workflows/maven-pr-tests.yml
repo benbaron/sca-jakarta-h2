@@ -43,7 +43,12 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
       - name: Run rendered theme text contrast regression
-        run: xvfb-run -a mvn -B -ntp -e -Dtest=ThemeTextContrastFxTest test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
+        run: |
+          if ! xvfb-run -a mvn -B -ntp -e -Dtest=ThemeTextContrastFxTest,ProductionPanelRouteComplianceTest test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository > theme-regression.log 2>&1; then
+            tail -n 120 theme-regression.log
+            exit 1
+          fi
+          tail -n 12 theme-regression.log
 
       - name: Run clean headless verification
         env:

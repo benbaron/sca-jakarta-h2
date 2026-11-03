@@ -88,6 +88,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         this.panelHost = new PanelHost(workspaceServices.panelFactory());
         this.companySessionController.setChangeGuard(this::confirmCompanyChange);
         getStyleClass().add("production-workspace");
+        WorkspaceTextContrastEnforcer.install(this);
         MainWindow.sharedSessionState().onPreferencesChanged(this::applyPreferences);
         applyPreferences(MainWindow.sharedSessionState().preferences());
 
@@ -959,5 +960,8 @@ public class ProductionWorkspaceWindow extends BorderPane
         {
             getStyleClass().add("theme-atlantafx");
         }
+        WorkspaceTextContrastEnforcer.apply(
+                this,
+                AtlantaFxThemeManager.isDark(preference));
     }
 }
