@@ -53,6 +53,10 @@ class ThemeTextContrastFxTest
             Hyperlink hyperlink = new Hyperlink("Ordinary link");
             Text text = new Text("Ordinary text node");
             VBox workspace = new VBox(label, button, hyperlink, text);
+            WorkspaceTextContrastEnforcer.install(workspace);
+            WorkspaceTextContrastEnforcer.apply(
+                    workspace,
+                    AtlantaFxThemeManager.isDark(preference));
             workspace.getStyleClass().addAll(
                     "production-workspace",
                     AtlantaFxThemeManager.isDark(preference) ? "theme-dark" : "theme-light");
@@ -60,10 +64,17 @@ class ThemeTextContrastFxTest
             scene.getStylesheets().add(getClass().getResource("/ui/styles.css").toExternalForm());
             workspace.applyCss();
 
+            Label dynamicallyAdded = new Label("Dynamically added label");
+            Text dynamicallyAddedText = new Text("Dynamically added text");
+            workspace.getChildren().addAll(dynamicallyAdded, dynamicallyAddedText);
+            workspace.applyCss();
+
             assertEquals(expected, label.getTextFill(), preference + " label");
             assertEquals(expected, button.getTextFill(), preference + " button");
             assertEquals(expected, hyperlink.getTextFill(), preference + " hyperlink");
             assertEquals(expected, text.getFill(), preference + " text node");
+            assertEquals(expected, dynamicallyAdded.getTextFill(), preference + " dynamic label");
+            assertEquals(expected, dynamicallyAddedText.getFill(), preference + " dynamic text");
             return null;
         });
     }

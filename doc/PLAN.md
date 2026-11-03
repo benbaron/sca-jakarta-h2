@@ -1,15 +1,17 @@
 ---
-plan_version: 442
+plan_version: 443
 active_phase: P29
-active_slice: P29-C1
+active_slice: P29-C2
 active_status: IN_PROGRESS
-active_branch: codex/P29-C1-theme-text-clamp
+active_branch: codex/P29-C2-runtime-text-contrast
 active_pull_request: null
-active_head: f265947f
-next_action: "Require exact-final-head CI, including the rendered JavaFX foreground unit test, then owner confirms black text in light themes and white text in dark themes on Windows."
+active_head: ca21abbdab5a6b2d36f1f7f45c8e98514e3e164e
+next_action: "Publish and validate the property-level foreground enforcer in a fresh draft, then repeat owner Windows review across every light and dark theme."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P29-C2 Windows runtime follow-up — 2026-11-02 America/Denver: connected GitHub and native fetch confirm [PR #406](https://github.com/benbaron/sca-jakarta-h2/pull/406) merged accepted P29-C1 head `66a335c315ad78aae02bc5c4afc7db88a51c042a` into current main `ca21abbdab5a6b2d36f1f7f45c8e98514e3e164e`; exact-head workflow `41570929862`, job `125703385380`, passed. Owner reports that the merged CSS clamp still renders green ordinary text in all light themes on Windows. The actual-display CSS unit proves the authored selectors compute black under Linux, so CSS precedence alone does not reproduce the Windows result. Fresh correction branch `codex/P29-C2-runtime-text-contrast` adds a production workspace scene-graph enforcer that assigns JavaFX `Labeled.textFill` and `Text.fill` at property level for existing and dynamically added nodes and reapplies the value on theme changes. The rendered test applies CSS after enforcement and adds controls afterward. Publish a new draft and require focused, clean, repeated and production JavaFX CI before another Windows review.
 
 P29-C1 Windows accent correction — 2026-11-02 America/Denver: connected GitHub and native fetch confirm [PR #405](https://github.com/benbaron/sca-jakarta-h2/pull/405) merged accepted P29-S1 head `1c12f80ccfee49fc910dd7484d1e11c6c098479` into current main `8c66d915d5fcd6c9965a17a5dc8d9054a28c615e`; its exact-head workflow `41381919051`, job `125074462638`, passed. Owner validation then showed that the green Windows accent affected ordinary workspace text as well as the operating-system-owned native title bar. The title-bar color remains outside the application theme contract. Fresh correction branch `codex/P29-C1-theme-text-clamp` gives every preference an explicit light/dark workspace class, including System Default, and places a final author-stylesheet clamp after palette and semantic rules: black ordinary text for light themes and white ordinary text for dark themes. Labels, menus/buttons, text inputs, tabs, list/table/tree cells, navigation, hyperlinks and JavaFX text nodes are covered. Focus and selection backgrounds remain theme-owned. `ThemeTextContrastFxTest` loads the real application stylesheet and each user-agent theme, applies CSS under a virtual display, and verifies computed label, button, hyperlink and text-node paint. It is explicitly included in the production JavaFX CI route. Focused source/CSS regressions and structural checks pass; this container has no Maven executable, so exact-head GitHub clean/repeat/production-JavaFX CI owns executable validation before renewed Windows review.
 

@@ -10,7 +10,7 @@ Text boxes and other `TextInputControl` instances are excluded so user-entered o
 
 ## Theme text contrast
 
-Production exposes the Java-17-compatible AtlantaFX 2.0.1 theme set: Primer, Nord and Cupertino in light/dark variants plus Dracula, alongside JavaFX System Default. Application shell CSS uses AtlantaFX palette variables for surfaces and controls. Ordinary workspace text is clamped to black in every light theme and white in every dark theme so Windows accent cycling cannot recolor it; the native Windows title bar remains operating-system controlled. Existing persisted Light/Dark settings map to Primer Light/Primer Dark. Theme changes apply immediately and must preserve readable menus, toolbar controls, forms, tabs, navigation, inspector content, tables and lists.
+Production exposes the Java-17-compatible AtlantaFX 2.0.1 theme set: Primer, Nord and Cupertino in light/dark variants plus Dracula, alongside JavaFX System Default. Application shell CSS uses AtlantaFX palette variables for surfaces and controls. Ordinary workspace text is clamped to black in every light theme and white in every dark theme so Windows accent cycling cannot recolor it; a live JavaFX property-level enforcer covers existing and dynamically created controls and text nodes even after a later CSS pass. The native Windows title bar remains operating-system controlled. Existing persisted Light/Dark settings map to Primer Light/Primer Dark. Theme changes apply immediately and must preserve readable menus, toolbar controls, forms, tabs, navigation, inspector content, tables and lists.
 
 ## Preference storage scope
 
