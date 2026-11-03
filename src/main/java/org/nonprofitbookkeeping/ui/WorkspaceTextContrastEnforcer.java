@@ -20,21 +20,7 @@ final class WorkspaceTextContrastEnforcer
 
     static void install(Parent root)
     {
-        if (root.getProperties().putIfAbsent(INSTALLED, Boolean.TRUE) != null)
-        {
-            return;
-        }
-        root.getChildrenUnmodifiable().addListener((ListChangeListener<Node>) change ->
-        {
-            while (change.next())
-            {
-                if (change.wasAdded())
-                {
-                    change.getAddedSubList().forEach(child -> observe(child, foreground(root)));
-                }
-            }
-        });
-        root.getChildrenUnmodifiable().forEach(child -> observe(child, foreground(root)));
+        observe(root, foreground(root));
     }
 
     static void apply(Parent root, boolean dark)
@@ -49,22 +35,49 @@ final class WorkspaceTextContrastEnforcer
         enforce(node, foreground);
         if (node instanceof Parent parent)
         {
-            install(parent);
             parent.getProperties().put(FOREGROUND, foreground);
+            if (parent.getProperties().putIfAbsent(INSTALLED, Boolean.TRUE) == null)
+            {
+                parent.getChildrenUnmodifiable().addListener((ListChangeListener<Node>) change ->
+                {
+                    while (change.next())
+                    {
+                        if (change.wasAdded())
+                        {
+                            change.getAddedSubList().forEach(child -> observe(child, foreground(parent)));
+                        }
+                    }
+                });
+            }
             parent.getChildrenUnmodifiable().forEach(child -> observe(child, foreground));
         }
     }
 
     private static void enforce(Node node, Paint foreground)
     {
+        String color = Color.WHITE.equals(foreground) ? "#ffffff" : "#000000";
         if (node instanceof Labeled labeled)
         {
-            labeled.setTextFill(foreground);
+            clampStyle(labeled, "-fx-text-fill", color);
         }
         if (node instanceof Text text)
         {
-            text.setFill(foreground);
+            clampStyle(text, "-fx-fill", color);
         }
+        if (node instanceof javafx.scene.control.TextInputControl input)
+        {
+            clampStyle(input, "-fx-text-fill", color);
+            clampStyle(input, "-fx-text-inner-color", color);
+        }
+    }
+
+    private static void clampStyle(Node node, String property, String color)
+    {
+        // Inline CSS outranks both application and user-agent stylesheets.
+        // Retain unrelated panel styles, including font, alignment and padding.
+        String style = node.getStyle().replaceAll(
+                "(?i)(?:^|;)\\s*" + property + "\\s*:[^;]*(?:;|$)", ";");
+        node.setStyle(style + ";" + property + ": " + color + ";");
     }
 
     private static Paint foreground(Parent parent)

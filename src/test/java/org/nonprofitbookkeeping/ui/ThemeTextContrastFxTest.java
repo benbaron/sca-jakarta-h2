@@ -5,6 +5,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
@@ -52,7 +53,9 @@ class ThemeTextContrastFxTest
             Button button = new Button("Ordinary button");
             Hyperlink hyperlink = new Hyperlink("Ordinary link");
             Text text = new Text("Ordinary text node");
-            VBox workspace = new VBox(label, button, hyperlink, text);
+            TextField input = new TextField("Input text");
+            label.setStyle("-fx-text-fill: green; -fx-font-size: 18px;");
+            VBox workspace = new VBox(label, button, hyperlink, text, input);
             WorkspaceTextContrastEnforcer.install(workspace);
             WorkspaceTextContrastEnforcer.apply(
                     workspace,
@@ -62,6 +65,7 @@ class ThemeTextContrastFxTest
                     AtlantaFxThemeManager.isDark(preference) ? "theme-dark" : "theme-light");
             Scene scene = new Scene(workspace, 320, 180);
             scene.getStylesheets().add(getClass().getResource("/ui/styles.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/ui/competing-accent.css").toExternalForm());
             workspace.applyCss();
 
             Label dynamicallyAdded = new Label("Dynamically added label");
@@ -75,6 +79,16 @@ class ThemeTextContrastFxTest
             assertEquals(expected, text.getFill(), preference + " text node");
             assertEquals(expected, dynamicallyAdded.getTextFill(), preference + " dynamic label");
             assertEquals(expected, dynamicallyAddedText.getFill(), preference + " dynamic text");
+            assertEquals(18.0, label.getFont().getSize(), "Unrelated inline styling survives");
+            input.lookupAll(".text").stream().filter(Text.class::isInstance)
+                    .map(Text.class::cast).forEach(node ->
+                            assertEquals(expected, node.getFill(), preference + " input skin text"));
+
+            WorkspaceTextContrastEnforcer.apply(workspace, !AtlantaFxThemeManager.isDark(preference));
+            workspace.applyCss();
+            Color switched = expected.equals(Color.BLACK) ? Color.WHITE : Color.BLACK;
+            assertEquals(switched, label.getTextFill(), preference + " live theme switch");
+            assertEquals(switched, dynamicallyAddedText.getFill(), preference + " dynamic theme switch");
             return null;
         });
     }

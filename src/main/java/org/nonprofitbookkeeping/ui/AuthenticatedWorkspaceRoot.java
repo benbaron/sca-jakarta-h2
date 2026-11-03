@@ -45,6 +45,11 @@ public final class AuthenticatedWorkspaceRoot extends BorderPane
                 sessionState,
                 UiServiceRegistry::authentication,
                 this::showAuthenticatedWorkspace);
+        WorkspaceTextContrastEnforcer.install(this);
+        WorkspaceTextContrastEnforcer.apply(this,
+                AtlantaFxThemeManager.isDark(sessionState.preferences().themePreference()));
+        sessionState.onPreferencesChanged(preferences -> WorkspaceTextContrastEnforcer.apply(
+                this, AtlantaFxThemeManager.isDark(preferences.themePreference())));
         sessionState.onAuthenticationChanged(ignored -> refreshPresentation());
         sessionState.onDatabaseSelectionChanged(ignored ->
         {

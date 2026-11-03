@@ -28,6 +28,7 @@ class ProductionPanelRouteComplianceTest
         UiSessionState session = MainWindow.sharedSessionState();
         DatabaseSelectionState originalDatabase = session.databaseSelection();
         MultiCompanyState originalCompany = session.multiCompany();
+        var originalPreferences = session.preferences();
 
         session.setDatabaseSelection(new DatabaseSelectionState(database.toString(), List.of(database.toString())));
         session.setMultiCompany(new MultiCompanyState("DEFAULT", List.of("DEFAULT")));
@@ -44,6 +45,25 @@ class ProductionPanelRouteComplianceTest
                         stateStore,
                         UiServiceRegistry::prepareDatabaseConnection);
                 javafx.scene.Scene scene = new javafx.scene.Scene(window, 1280, 800);
+                scene.getStylesheets().add(getClass().getResource("/ui/styles.css").toExternalForm());
+                scene.getStylesheets().add(getClass().getResource("/ui/competing-accent.css").toExternalForm());
+                for (var theme : org.nonprofitbookkeeping.model.UiThemePreference.values())
+                {
+                    session.setPreferences(new org.nonprofitbookkeeping.model.AppPreferencesState(
+                            theme, true, true, originalPreferences.defaultPrivilege()));
+                    window.applyCss();
+                    window.layout();
+                    var expected = switch (theme)
+                    {
+                        case DARK, NORD_DARK, CUPERTINO_DARK, DRACULA -> javafx.scene.paint.Color.WHITE;
+                        default -> javafx.scene.paint.Color.BLACK;
+                    };
+                    var labels = window.lookupAll(".label");
+                    assertFalse(labels.isEmpty(), "Production shell must expose actual labels");
+                    labels.stream().filter(javafx.scene.control.Label.class::isInstance)
+                            .map(javafx.scene.control.Label.class::cast).forEach(label ->
+                                    assertEquals(expected, label.getTextFill(), theme + " / " + label.getText()));
+                }
                 window.applyCss();
                 window.layout();
                 assertEquals(1280.0, scene.getWidth(),
@@ -137,6 +157,11 @@ class ProductionPanelRouteComplianceTest
         }
         finally
         {
+            FxTestSupport.onFx(() ->
+            {
+                session.setPreferences(originalPreferences);
+                return null;
+            });
             session.setDatabaseSelection(originalDatabase);
             session.setMultiCompany(originalCompany);
             UiServiceRegistry.reconnectToDatabase(Path.of(originalDatabase.activeDatabasePath()));

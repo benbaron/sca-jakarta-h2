@@ -1,15 +1,17 @@
 ---
-plan_version: 443
+plan_version: 444
 active_phase: P29
 active_slice: P29-C2
 active_status: IN_PROGRESS
 active_branch: codex/P29-C2-runtime-text-contrast
-active_pull_request: null
-active_head: ca21abbdab5a6b2d36f1f7f45c8e98514e3e164e
+active_pull_request: 407
+active_head: 04a5f9d3eeb0ee092d6adc6d59445854eac0dd24
 next_action: "Publish and validate the property-level foreground enforcer in a fresh draft, then repeat owner Windows review across every light and dark theme."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P29-C2 precedence review: draft [PR #407](https://github.com/benbaron/sca-jakarta-h2/pull/407) remains open. Direct property assignment can lose to author CSS; the final enforcer instead appends explicit inline foreground declarations while preserving unrelated styles. The authenticated outer root is also covered, including its banner and login content. Regressions load competing green author CSS, preserve unrelated inline fonts, verify dynamic nodes and theme switches, and exercise every preference through the real production window. Windows accent/accessibility involvement remains a hypothesis; Linux paint assertions do not establish the Windows root cause or owner acceptance. Require a new final-head CI run.
 
 P29-C2 Windows runtime follow-up — 2026-11-02 America/Denver: connected GitHub and native fetch confirm [PR #406](https://github.com/benbaron/sca-jakarta-h2/pull/406) merged accepted P29-C1 head `66a335c315ad78aae02bc5c4afc7db88a51c042a` into current main `ca21abbdab5a6b2d36f1f7f45c8e98514e3e164e`; exact-head workflow `41570929862`, job `125703385380`, passed. Owner reports that the merged CSS clamp still renders green ordinary text in all light themes on Windows. The actual-display CSS unit proves the authored selectors compute black under Linux, so CSS precedence alone does not reproduce the Windows result. Fresh correction branch `codex/P29-C2-runtime-text-contrast` adds a production workspace scene-graph enforcer that assigns JavaFX `Labeled.textFill` and `Text.fill` at property level for existing and dynamically added nodes and reapplies the value on theme changes. The rendered test applies CSS after enforcement and adds controls afterward. Publish a new draft and require focused, clean, repeated and production JavaFX CI before another Windows review.
 

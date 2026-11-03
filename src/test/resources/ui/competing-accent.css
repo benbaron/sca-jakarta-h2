@@ -1,0 +1,10 @@
+/* Simulates an author stylesheet that would otherwise recolor ordinary text. */
+.label, .button, .hyperlink, .text-input
+{
+    -fx-text-fill: #708000;
+    -fx-text-inner-color: #708000;
+}
+Text
+{
+    -fx-fill: #708000;
+}
