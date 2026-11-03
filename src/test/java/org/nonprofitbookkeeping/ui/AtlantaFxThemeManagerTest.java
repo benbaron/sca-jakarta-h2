@@ -71,4 +71,18 @@ class AtlantaFxThemeManagerTest
         assertTrue(adapter.contains("-color-border-default"));
         assertTrue(adapter.contains("-color-accent-subtle"));
     }
+
+    @Test
+    void clampsWorkspaceTextIndependentlyOfWindowsAccentColor() throws Exception
+    {
+        String styles = Files.readString(Path.of("src/main/resources/ui/styles.css"));
+
+        assertTrue(styles.contains(".production-workspace.theme-light"));
+        assertTrue(styles.contains("-app-workspace-text: #000000"));
+        assertTrue(styles.contains(".production-workspace.theme-dark"));
+        assertTrue(styles.contains("-app-workspace-text: #ffffff"));
+        assertTrue(styles.contains("-fx-text-fill: -app-workspace-text"));
+        assertTrue(styles.contains("-fx-text-inner-color: -app-workspace-text"));
+        assertTrue(styles.contains("-fx-fill: -app-workspace-text"));
+    }
 }

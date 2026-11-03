@@ -21,6 +21,9 @@ class PreferenceProductionConsumerSourceTest
         assertTrue(workspace.contains("stateStore.loadPreferences()"));
         assertTrue(workspace.contains("onPreferencesChanged(this::applyPreferences)"));
         assertTrue(workspace.contains("AtlantaFxThemeManager.apply(preference)"));
+        assertTrue(workspace.contains("AtlantaFxThemeManager.isDark(preference)"));
+        assertTrue(workspace.contains("? \"theme-dark\""));
+        assertTrue(workspace.contains(": \"theme-light\""));
         assertTrue(mainApp.contains("preferences.rememberWindowState()"));
         assertTrue(mainApp.contains("WindowDecorationPolicy.stageStyle(preferences)"));
         assertTrue(mainApp.contains("stateStore.loadWindowState()"));

@@ -948,6 +948,9 @@ public class ProductionWorkspaceWindow extends BorderPane
         getStyleClass().removeAll("theme-light", "theme-dark", "theme-system", "theme-atlantafx");
         org.nonprofitbookkeeping.model.UiThemePreference preference = preferences.themePreference();
         AtlantaFxThemeManager.apply(preference);
+        getStyleClass().add(AtlantaFxThemeManager.isDark(preference)
+                ? "theme-dark"
+                : "theme-light");
         if (preference == org.nonprofitbookkeeping.model.UiThemePreference.SYSTEM_DEFAULT)
         {
             getStyleClass().add("theme-system");
@@ -955,9 +958,6 @@ public class ProductionWorkspaceWindow extends BorderPane
         else
         {
             getStyleClass().add("theme-atlantafx");
-            getStyleClass().add(AtlantaFxThemeManager.isDark(preference)
-                    ? "theme-dark"
-                    : "theme-light");
         }
     }
 }
