@@ -820,3 +820,70 @@ dashboard-footer-link,
 {
     -fx-text-fill: -color-danger-fg;
 }
+
+/*
+ * Keep ordinary text independent of the Windows accent color.  The native
+ * title bar may still use the operating-system accent, but workspace text is
+ * deliberately black on light themes and white on dark themes.
+ */
+.production-workspace.theme-light
+{
+    -app-workspace-text: #000000;
+}
+
+.production-workspace.theme-dark
+{
+    -app-workspace-text: #ffffff;
+}
+
+.production-workspace.theme-light,
+.production-workspace.theme-dark
+{
+    -fx-text-fill: -app-workspace-text;
+    -fx-text-base-color: -app-workspace-text;
+    -fx-text-inner-color: -app-workspace-text;
+    -fx-text-background-color: -app-workspace-text;
+}
+
+.production-workspace.theme-light .label,
+.production-workspace.theme-light .button,
+.production-workspace.theme-light .menu-button,
+.production-workspace.theme-light .toggle-button,
+.production-workspace.theme-light .check-box,
+.production-workspace.theme-light .radio-button,
+.production-workspace.theme-light .hyperlink,
+.production-workspace.theme-light .tab-label,
+.production-workspace.theme-light .text-input,
+.production-workspace.theme-light .combo-box-base,
+.production-workspace.theme-light .list-cell,
+.production-workspace.theme-light .table-cell,
+.production-workspace.theme-light .tree-cell,
+.production-workspace.theme-light .navigation-item,
+.production-workspace.theme-light .navigation-section,
+.production-workspace.theme-dark .label,
+.production-workspace.theme-dark .button,
+.production-workspace.theme-dark .menu-button,
+.production-workspace.theme-dark .toggle-button,
+.production-workspace.theme-dark .check-box,
+.production-workspace.theme-dark .radio-button,
+.production-workspace.theme-dark .hyperlink,
+.production-workspace.theme-dark .tab-label,
+.production-workspace.theme-dark .text-input,
+.production-workspace.theme-dark .combo-box-base,
+.production-workspace.theme-dark .list-cell,
+.production-workspace.theme-dark .table-cell,
+.production-workspace.theme-dark .tree-cell,
+.production-workspace.theme-dark .navigation-item,
+.production-workspace.theme-dark .navigation-section
+{
+    -fx-text-fill: -app-workspace-text;
+    -fx-text-base-color: -app-workspace-text;
+    -fx-text-inner-color: -app-workspace-text;
+    -fx-text-background-color: -app-workspace-text;
+}
+
+.production-workspace.theme-light .text,
+.production-workspace.theme-dark .text
+{
+    -fx-fill: -app-workspace-text;
+}
