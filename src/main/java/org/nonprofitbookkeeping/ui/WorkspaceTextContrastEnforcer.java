@@ -75,9 +75,10 @@ final class WorkspaceTextContrastEnforcer
     {
         // Inline CSS outranks both application and user-agent stylesheets.
         // Retain unrelated panel styles, including font, alignment and padding.
-        String style = node.getStyle().replaceAll(
+        String currentStyle = node.getStyle();
+        String style = (currentStyle == null ? "" : currentStyle).replaceAll(
                 "(?i)(?:^|;)\\s*" + property + "\\s*:[^;]*(?:;|$)", ";");
-        node.setStyle(style + ";" + property + ": " + color + ";");
+        node.setStyle(style.replaceAll("^;+|;+$", "") + ";" + property + ": " + color + ";");
     }
 
     private static Paint foreground(Parent parent)

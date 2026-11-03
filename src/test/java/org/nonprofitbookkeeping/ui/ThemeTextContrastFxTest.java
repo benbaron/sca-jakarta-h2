@@ -69,6 +69,7 @@ class ThemeTextContrastFxTest
             workspace.applyCss();
 
             Label dynamicallyAdded = new Label("Dynamically added label");
+            dynamicallyAdded.setStyle(null);
             Text dynamicallyAddedText = new Text("Dynamically added text");
             workspace.getChildren().addAll(dynamicallyAdded, dynamicallyAddedText);
             workspace.applyCss();
