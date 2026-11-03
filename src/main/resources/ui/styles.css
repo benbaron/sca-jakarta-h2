@@ -883,7 +883,9 @@ dashboard-footer-link,
 }
 
 .production-workspace.theme-light .text,
-.production-workspace.theme-dark .text
+.production-workspace.theme-dark .text,
+.production-workspace.theme-light Text,
+.production-workspace.theme-dark Text
 {
     -fx-fill: -app-workspace-text;
 }
