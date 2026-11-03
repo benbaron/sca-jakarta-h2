@@ -58,7 +58,17 @@ final class WorkspaceTextContrastEnforcer
         String color = Color.WHITE.equals(foreground) ? "#ffffff" : "#000000";
         if (node instanceof Labeled labeled)
         {
-            clampStyle(labeled, "-fx-text-fill", color);
+            if (labeled.styleProperty().isBound())
+            {
+                // MenuBar skin buttons bind their inline style to a Menu.
+                // Bind the paint rather than breaking that skin-owned binding.
+                labeled.textFillProperty().bind(
+                        new javafx.beans.property.SimpleObjectProperty<>(foreground));
+            }
+            else
+            {
+                clampStyle(labeled, "-fx-text-fill", color);
+            }
         }
         if (node instanceof Text text)
         {
@@ -73,6 +83,10 @@ final class WorkspaceTextContrastEnforcer
 
     private static void clampStyle(Node node, String property, String color)
     {
+        if (node.styleProperty().isBound())
+        {
+            return;
+        }
         // Inline CSS outranks both application and user-agent stylesheets.
         // Retain unrelated panel styles, including font, alignment and padding.
         String currentStyle = node.getStyle();

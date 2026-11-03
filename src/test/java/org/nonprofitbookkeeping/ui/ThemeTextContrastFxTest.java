@@ -54,8 +54,11 @@ class ThemeTextContrastFxTest
             Hyperlink hyperlink = new Hyperlink("Ordinary link");
             Text text = new Text("Ordinary text node");
             TextField input = new TextField("Input text");
+            Label boundStyleLabel = new Label("Skin-owned style");
+            var skinStyle = new javafx.beans.property.SimpleStringProperty("-fx-text-fill: green;");
+            boundStyleLabel.styleProperty().bind(skinStyle);
             label.setStyle("-fx-text-fill: green; -fx-font-size: 18px;");
-            VBox workspace = new VBox(label, button, hyperlink, text, input);
+            VBox workspace = new VBox(label, button, hyperlink, text, input, boundStyleLabel);
             WorkspaceTextContrastEnforcer.install(workspace);
             WorkspaceTextContrastEnforcer.apply(
                     workspace,
@@ -75,6 +78,7 @@ class ThemeTextContrastFxTest
             workspace.applyCss();
 
             assertEquals(expected, label.getTextFill(), preference + " label");
+            assertEquals(expected, boundStyleLabel.getTextFill(), preference + " bound skin style");
             assertEquals(expected, button.getTextFill(), preference + " button");
             assertEquals(expected, hyperlink.getTextFill(), preference + " hyperlink");
             assertEquals(expected, text.getFill(), preference + " text node");
@@ -89,6 +93,7 @@ class ThemeTextContrastFxTest
             workspace.applyCss();
             Color switched = expected.equals(Color.BLACK) ? Color.WHITE : Color.BLACK;
             assertEquals(switched, label.getTextFill(), preference + " live theme switch");
+            assertEquals(switched, boundStyleLabel.getTextFill(), preference + " bound skin theme switch");
             assertEquals(switched, dynamicallyAddedText.getFill(), preference + " dynamic theme switch");
             return null;
         });
