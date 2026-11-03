@@ -1,7 +1,7 @@
 package org.nonprofitbookkeeping.ui;
 
 import javafx.scene.Node;
-import javafx.scene.control.Label;
+import javafx.scene.control.Labeled;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import org.junit.jupiter.api.Assertions;
@@ -12,7 +12,7 @@ final class SurfaceContrastAssertions
     {
     }
 
-    static void assertReadable(Label label)
+    static void assertReadable(Labeled label)
     {
         Color background = Color.WHITE;
         var chain = new java.util.ArrayList<Node>();

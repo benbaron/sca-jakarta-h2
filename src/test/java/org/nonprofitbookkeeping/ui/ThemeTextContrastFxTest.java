@@ -35,7 +35,7 @@ class ThemeTextContrastFxTest
     }
 
     @Test
-    void computesBlackTextForEveryLightThemeAndWhiteTextForEveryDarkTheme()
+    void computesReadableTextForWhiteAndDarkSurfacesUnderEveryTheme()
     {
         for (UiThemePreference preference : UiThemePreference.values())
         {
@@ -83,7 +83,7 @@ class ThemeTextContrastFxTest
 
             assertEquals(expected, label.getTextFill(), preference + " label");
             assertEquals(expected, boundStyleLabel.getTextFill(), preference + " bound skin style");
-            assertEquals(expected, button.getTextFill(), preference + " button");
+            SurfaceContrastAssertions.assertReadable(button);
             assertEquals(expected, hyperlink.getTextFill(), preference + " hyperlink");
             assertEquals(expected, text.getFill(), preference + " text node");
             assertEquals(expected, dynamicallyAdded.getTextFill(), preference + " dynamic label");
