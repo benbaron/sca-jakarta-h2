@@ -157,14 +157,20 @@ class ProductionPanelRouteComplianceTest
         }
         finally
         {
-            FxTestSupport.onFx(() ->
+            try
             {
-                session.setPreferences(originalPreferences);
-                return null;
-            });
-            session.setDatabaseSelection(originalDatabase);
-            session.setMultiCompany(originalCompany);
-            UiServiceRegistry.reconnectToDatabase(Path.of(originalDatabase.activeDatabasePath()));
+                FxTestSupport.onFx(() ->
+                {
+                    session.setPreferences(originalPreferences);
+                    return null;
+                });
+            }
+            finally
+            {
+                session.setDatabaseSelection(originalDatabase);
+                session.setMultiCompany(originalCompany);
+                UiServiceRegistry.reconnectToDatabase(Path.of(originalDatabase.activeDatabasePath()));
+            }
         }
     }
 }
