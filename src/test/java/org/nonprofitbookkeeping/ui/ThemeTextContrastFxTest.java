@@ -35,12 +35,12 @@ class ThemeTextContrastFxTest
     }
 
     @Test
-    void computesBlackTextForEveryLightThemeAndWhiteTextForEveryDarkTheme()
+    void computesReadableTextForWhiteAndDarkSurfacesUnderEveryTheme()
     {
         for (UiThemePreference preference : UiThemePreference.values())
         {
-            assertComputedForeground(preference,
-                    AtlantaFxThemeManager.isDark(preference) ? Color.WHITE : Color.BLACK);
+            assertComputedForeground(preference, Color.BLACK);
+            assertComputedForeground(preference, Color.WHITE);
         }
     }
 
@@ -54,6 +54,8 @@ class ThemeTextContrastFxTest
             Hyperlink hyperlink = new Hyperlink("Ordinary link");
             Text text = new Text("Ordinary text node");
             TextField input = new TextField("Input text");
+            input.setStyle("-fx-background-color: "
+                    + (expected.equals(Color.BLACK) ? "white" : "black") + ";");
             Label boundStyleLabel = new Label("Skin-owned style");
             var skinStyle = new javafx.beans.property.SimpleStringProperty("-fx-text-fill: green;");
             boundStyleLabel.styleProperty().bind(skinStyle);
@@ -66,20 +68,22 @@ class ThemeTextContrastFxTest
             workspace.getStyleClass().addAll(
                     "production-workspace",
                     AtlantaFxThemeManager.isDark(preference) ? "theme-dark" : "theme-light");
+            workspace.setStyle("-fx-background-color: "
+                    + (expected.equals(Color.BLACK) ? "white" : "black") + ";");
             Scene scene = new Scene(workspace, 320, 180);
             scene.getStylesheets().add(getClass().getResource("/ui/styles.css").toExternalForm());
             scene.getStylesheets().add(getClass().getResource("/ui/competing-accent.css").toExternalForm());
-            workspace.applyCss();
+            settle(workspace);
 
             Label dynamicallyAdded = new Label("Dynamically added label");
             dynamicallyAdded.setStyle(null);
             Text dynamicallyAddedText = new Text("Dynamically added text");
             workspace.getChildren().addAll(dynamicallyAdded, dynamicallyAddedText);
-            workspace.applyCss();
+            settle(workspace);
 
             assertEquals(expected, label.getTextFill(), preference + " label");
             assertEquals(expected, boundStyleLabel.getTextFill(), preference + " bound skin style");
-            assertEquals(expected, button.getTextFill(), preference + " button");
+            SurfaceContrastAssertions.assertReadable(button);
             assertEquals(expected, hyperlink.getTextFill(), preference + " hyperlink");
             assertEquals(expected, text.getFill(), preference + " text node");
             assertEquals(expected, dynamicallyAdded.getTextFill(), preference + " dynamic label");
@@ -89,8 +93,10 @@ class ThemeTextContrastFxTest
                     .map(Text.class::cast).forEach(node ->
                             assertEquals(expected, node.getFill(), preference + " input skin text"));
 
+            workspace.setStyle("-fx-background-color: "
+                    + (expected.equals(Color.BLACK) ? "black" : "white") + ";");
             WorkspaceTextContrastEnforcer.apply(workspace, !AtlantaFxThemeManager.isDark(preference));
-            workspace.applyCss();
+            settle(workspace);
             Color switched = expected.equals(Color.BLACK) ? Color.WHITE : Color.BLACK;
             assertEquals(switched, label.getTextFill(), preference + " live theme switch");
             assertEquals(switched, boundStyleLabel.getTextFill(), preference + " bound skin theme switch");
@@ -98,4 +104,46 @@ class ThemeTextContrastFxTest
             return null;
         });
     }
+    @Test
+    void whiteReportAndDarkSurfaceRemainReadableInTheSameDarkTheme()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            AtlantaFxThemeManager.apply(UiThemePreference.DARK);
+            var values = new org.nonprofitbookkeeping.report.template.SemanticReportValueSet();
+            var template = new com.fasterxml.jackson.databind.ObjectMapper().readTree(
+                    "{\"title\":\"White workbook\",\"sections\":[]}");
+            var report = (javafx.scene.Parent) new SemanticReportFxRenderer().render(template, values);
+            Label outside = new Label("Dark surface");
+            var area = new javafx.scene.control.TextArea("White editor content");
+            VBox root = new VBox(outside, area, report);
+            root.setStyle("-fx-background-color: #24292f;");
+            WorkspaceTextContrastEnforcer.install(root);
+            WorkspaceTextContrastEnforcer.apply(root, true);
+            new Scene(root, 640, 480);
+            settle(root);
+            area.lookup(".content").setStyle("-fx-background-color: white;");
+            settle(root);
+            area.lookupAll(".text").stream().filter(Text.class::isInstance)
+                    .map(Text.class::cast).forEach(node ->
+                            assertEquals(Color.BLACK, node.getFill(), "White editor content uses black text"));
+            assertEquals(Color.WHITE, outside.getTextFill());
+            var title = (Label) root.lookup(".workbook-report-title");
+            assertEquals(Color.BLACK, title.getTextFill(), "White report stays black under a dark theme");
+            SurfaceContrastAssertions.assertReadable(title);
+            return null;
+        });
+    }
+
+    static void settle(javafx.scene.Parent root)
+    {
+        for (int pass = 0; pass < 3; pass++)
+        {
+            root.applyCss();
+            root.layout();
+            WorkspaceTextContrastEnforcer.refresh(root);
+        }
+        root.applyCss();
+    }
+
 }

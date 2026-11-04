@@ -1,15 +1,17 @@
 ---
-plan_version: 444
+plan_version: 445
 active_phase: P29
-active_slice: P29-C2
+active_slice: P29-C3
 active_status: IN_PROGRESS
-active_branch: codex/P29-C2-runtime-text-contrast
-active_pull_request: 407
-active_head: 04a5f9d3eeb0ee092d6adc6d59445854eac0dd24
-next_action: "Publish and validate the property-level foreground enforcer in a fresh draft, then repeat owner Windows review across every light and dark theme."
+active_branch: codex/P29-C3-surface-text-contrast
+active_pull_request: null
+active_head: 7b0c286437c2c30afdcfdc39f38260178d26f895
+next_action: "Validate surface contrast and actual application startup, publish a draft, then require final-head CI and owner Windows review."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P29-C3 surface contrast and blank-window correction: #407 merged at main `7b0c286437c2c30afdcfdc39f38260178d26f895`. Owner reports white-on-white and supplies an entirely blank client-area screenshot. Startup log shows database/migrations/dashboard complete with no application exception. The prior whole-theme foreground rule is invalid for explicit white/pastel report surfaces. Replace it with black/white selection by composed solid-background luminance; transparent descendants inherit the visible surface. Run enforcement after CSS/layout pulses rather than synchronously during skin construction. Verify known white and dark surfaces under every theme, mixed white report/dark surrounding surfaces, live background changes and contrast ratios in the production workspace. Add an actual authenticated-root Stage/pulse/snapshot regression to detect blank startup. The precise Windows failure mechanism remains unconfirmed; do not infer owner acceptance from Linux tests.
 
 P29-C2 precedence review: draft [PR #407](https://github.com/benbaron/sca-jakarta-h2/pull/407) remains open. Direct property assignment can lose to author CSS; the final enforcer instead appends explicit inline foreground declarations while preserving unrelated styles. The authenticated outer root is also covered, including its banner and login content. Regressions load competing green author CSS, preserve unrelated inline fonts, verify dynamic nodes and theme switches, and exercise every preference through the real production window. Windows accent/accessibility involvement remains a hypothesis; Linux paint assertions do not establish the Windows root cause or owner acceptance. Require a new final-head CI run.
 
