@@ -12,6 +12,10 @@ Text boxes and other `TextInputControl` instances are excluded so user-entered o
 
 Production exposes the Java-17-compatible AtlantaFX 2.0.1 theme set: Primer, Nord and Cupertino in light/dark variants plus Dracula, alongside JavaFX System Default. Application shell CSS uses AtlantaFX palette variables for surfaces and controls. Ordinary workspace text uses exact black or white according to the effective painted background, choosing the greater WCAG contrast. White/pastel reports retain black text even inside dark themes; dark surfaces use white text. Transparent backgrounds inherit the composed ancestor surface. Enforcement runs after CSS/layout, covers dynamically created controls and never modifies a skin during its construction. The native Windows title bar remains operating-system controlled. Existing persisted Light/Dark settings map to Primer Light/Primer Dark. Theme changes apply immediately and must preserve readable menus, toolbar controls, forms, tabs, navigation, inspector content, tables and lists.
 
+## Windows rendering compatibility
+
+The desktop launcher selects JavaFX software rendering (`prism.order=sw`) on Windows before starting the toolkit. Owner testing confirmed that software rendering restores controls when the accelerated pipeline produces a blank client area without an exception. This is a process startup default, not a saved theme or accounting preference. An explicit `-Dprism.order` is preserved; Linux and macOS keep their platform defaults. Software rendering can use more CPU. For deliberate hardware testing in Git Bash use `JAVA_TOOL_OPTIONS='-Dprism.order=d3d,sw' mvn -Pui clean compile javafx:run`.
+
 ## Preference storage scope
 
 Preferences have two explicit scopes:

@@ -39,6 +39,7 @@ final class FxTestSupport
 
         try
         {
+            JavaFxRenderingPolicy.configure(System.getProperties());
             Platform.startup(() -> { });
             available = true;
         }

@@ -24,3 +24,11 @@ AtlantaFX 2.0.1 is the latest line compatible with this application's Java 17 ba
 - Unit regressions bind every preference to the correct AtlantaFX theme, dark/light shell classification, persistence and production consumption. An actual JavaFX CSS test applies every preference under a virtual display and verifies foreground/background contrast, explicit white and dark surfaces, white reports inside dark themes, and actual application startup painting.
 - Focused and full Maven verification pass, followed by exact-head GitHub clean, repeat and production JavaFX checks.
 - Owner check: select each theme, revisit Administration / Preferences, and confirm menu, toolbar, tab, form, navigation and inspector text remains readable on Windows. In particular, Primer Light, Nord Light and Cupertino Light must use dark ordinary text.
+
+## P29-C4 — Windows rendering compatibility
+
+Owner diagnostic testing confirmed that `JAVA_TOOL_OPTIONS='-Dprism.order=sw'` restores the missing controls. The standard `FxMain` launcher now applies this default on Windows before `Application.launch`, so the normal `mvn -Pui clean compile javafx:run` command needs no environment workaround. Explicit pipeline selections remain authoritative. Other operating systems keep their existing renderer defaults.
+
+Unit tests cover Windows detection, idempotence, explicit overrides (including an empty value), other platforms and configuration before the actual application-launch callback. The display test uses production window decorations. A separate Windows CI job must run the real application-root snapshot and contrast tests without skips.
+
+Owner review: close the app, update to this slice and run the normal launch command without setting `JAVA_TOOL_OPTIONS`. Confirm the console reports the Windows software default and the login/workspace paints correctly. The diagnostic proves a graphics-pipeline compatibility issue; it does not identify the particular driver or hardware defect.
