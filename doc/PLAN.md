@@ -1,15 +1,17 @@
 ---
-plan_version: 445
+plan_version: 446
 active_phase: P29
-active_slice: P29-C3
+active_slice: P29-C4
 active_status: IN_PROGRESS
-active_branch: codex/P29-C3-surface-text-contrast
+active_branch: codex/P29-C4-windows-rendering
 active_pull_request: null
-active_head: 7b0c286437c2c30afdcfdc39f38260178d26f895
-next_action: "Validate surface contrast and actual application startup, publish a draft, then require final-head CI and owner Windows review."
+active_head: 23367e3275b57f170ecf761c424632b32776b980
+next_action: "Validate Windows software-rendering startup policy and Windows presentation CI, publish a draft, then owner verifies the normal launch command."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P29-C4 Windows rendering compatibility — 2026-11-03 America/Denver: #408 merged at current main `23367e3275b57f170ecf761c424632b32776b980`. Owner reports continued blank/white presentation after a clean compile, then confirms that software rendering shows the controls. This isolates a graphics-pipeline compatibility problem without identifying the specific driver defect. [P29 governing contract](P29-S1-light-theme-contrast.md) now requires a Windows-only software default before toolkit startup, preserving explicit `prism.order` selections and platform defaults elsewhere. Fresh branch `codex/P29-C4-windows-rendering` implements the launcher policy; units verify defaults, overrides, platform isolation, idempotence and launch order. The presentation test uses production decorations, and Windows CI must execute startup snapshot/contrast tests without skips. No schema/accounting/theme changes. Local Maven/JDK compilation is unavailable; the merged C3 workflow is baseline evidence and final-head CI owns executable validation.
 
 P29-C3 surface contrast and blank-window correction: #407 merged at main `7b0c286437c2c30afdcfdc39f38260178d26f895`. Owner reports white-on-white and supplies an entirely blank client-area screenshot. Startup log shows database/migrations/dashboard complete with no application exception. The prior whole-theme foreground rule is invalid for explicit white/pastel report surfaces. Replace it with black/white selection by composed solid-background luminance; transparent descendants inherit the visible surface. Run enforcement after CSS/layout pulses rather than synchronously during skin construction. Verify known white and dark surfaces under every theme, mixed white report/dark surrounding surfaces, live background changes and contrast ratios in the production workspace. Add an actual authenticated-root Stage/pulse/snapshot regression to detect blank startup. The precise Windows failure mechanism remains unconfirmed; do not infer owner acceptance from Linux tests.
 

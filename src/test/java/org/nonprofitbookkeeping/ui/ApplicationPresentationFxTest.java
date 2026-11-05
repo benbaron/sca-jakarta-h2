@@ -55,6 +55,7 @@ class ApplicationPresentationFxTest
                     }
                 });
                 stage[0] = new Stage();
+                stage[0].initStyle(WindowDecorationPolicy.stageStyle(session.preferences()));
                 stage[0].setScene(scene);
                 stage[0].show();
                 return null;

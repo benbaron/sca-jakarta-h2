@@ -10,6 +10,16 @@ public class FxMain
 {
     public static void main(String[] args)
     {
-        Application.launch(MainApp.class, args);
+        launch(args, System.getProperties(), launchArgs -> Application.launch(MainApp.class, launchArgs));
+    }
+
+    static void launch(String[] args, java.util.Properties properties,
+                       java.util.function.Consumer<String[]> applicationLauncher)
+    {
+        if (JavaFxRenderingPolicy.configure(properties))
+        {
+            System.out.println("[NPBK] Windows rendering default: prism.order=sw (software).");
+        }
+        applicationLauncher.accept(args);
     }
 }
