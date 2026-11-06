@@ -1,15 +1,17 @@
 ---
-plan_version: 449
+plan_version: 450
 active_phase: P29
 active_slice: P29-S2
 active_status: VERIFYING
 active_branch: codex/P29-S2-workspace-simplification
-active_pull_request: null
-active_head: 4123280337d9a50bfe17c0a6113702ecfc9161fd
-next_action: "Commit and push the authorized P29-S2 branch, open a draft pull request, verify the remote head and record final-head CI status; owner Windows visual review remains pending."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/410
+active_head: 57eba6414b580410e5a8af8004db65c5f09b13c1
+next_action: "Inspect final-head CI for draft PR 410, correct any failing checks, and obtain owner Windows visual/scaling review before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P29-S2 draft publication — 2026-11-05 America/Denver: committed the reviewed 76-file UI slice as `57eba6414b580410e5a8af8004db65c5f09b13c1`, tree `efaca3bdc9e194ec5f1d325fc819a5172568c163`, and pushed without force to `origin/codex/P29-S2-workspace-simplification`. Native remote and connected draft [PR #410](https://github.com/benbaron/sca-jakarta-h2/pull/410) confirm the matching implementation head; base main remains `4123280337d9a50bfe17c0a6113702ecfc9161fd`. Initial-head Maven workflow `42143093762` started; no CI success is claimed. This following publication-ledger commit changes documentation only and must be verified against its final remote head/CI after pushing. Product/test bytes remain those of the recorded local validation. P29-S2 stays VERIFYING pending final-head CI and owner Windows appearance/scaling review, then owner review/merge. Publication is authorized; merging has not been requested.
 
 P29-S2 publication authorized — 2026-11-05 America/Denver: owner explicitly requests pushing the completed UI changes to the remote. Native fetch confirms main remains `4123280337d9a50bfe17c0a6113702ecfc9161fd`; the task branch does not yet exist remotely and no open PR exists. The complete staged patch exactly matches the prior validated handoff (SHA-256 `90ff8c7271b669fbfa064fb5a053f63ab0005b5d4b0728e0f6eab9327e06b453`) before these publication-ledger edits. The recorded clean verification and 333-test final UI acceptance remain the local evidence; no source, dependency or test implementation is changed during publication. Commit/push the reviewed branch without force, create its draft PR, then verify the remote head/tree and inspect CI. Native Windows owner acceptance is pending.
 
