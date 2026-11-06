@@ -1,15 +1,17 @@
 ---
-plan_version: 452
+plan_version: 453
 active_phase: P29
 active_slice: P29-S2
 active_status: VERIFYING
 active_branch: codex/P29-S2-workspace-simplification
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/410
-active_head: 47ac4ae9e3e9227617e9bc21fd02023c9cace711
-next_action: "Verify the panel-guidance implementation and ledger on remote draft PR 410, inspect final-head Linux/Windows CI, then obtain owner Windows appearance/scaling acceptance before merge."
+active_head: 649184cc2efd9644da356f273f99233a1472d7a9
+next_action: "Diagnose and correct the production JavaFX selector failure on PR 410, validate the same CI selection, then push the correction and require final-head Linux/Windows CI."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P29-S2 CI correction — 2026-11-05 America/Denver: owner reports failing GitHub tests. At published/local head `649184cc2efd9644da356f273f99233a1472d7a9`, workflow `42154251194` fails Linux job `127717586923` in **Run production JavaFX route compliance**. Rendered theme checks, clean headless verification, repeated tests and Windows presentation all pass. The failed stage is distinct from the previously recorded local recovery-fixture failure. Connected full-job log retrieval returns `Transport closed`; inspect available failure reports and reproduce the exact workflow selector locally. Same open draft PR 410/branch owns the correction; scope/permissions and no-merge boundary remain unchanged. Baseline compile passed (15 seconds). The exact 35-class production selector passed locally: **81 tests, zero failures/errors/skips** on the available JDK 21 (`/workspace/work/ci-production-selector-reproduction.log`), while GitHub Temurin 17 fails the same stage on two attempts. Added a failure-only workflow step that emits each Surefire failure/error name and message as an escaped GitHub annotation, without changing the tests or their failure result. A synthetic XML dry run verifies assertions, errors and multiline escaping. Publish this diagnostic change to make the next CI failure readable while reproducing with Temurin 17 and fresh desktop state. No test fix or CI success is claimed yet.
 
 P29-S2 panel guidance cleanup — 2026-11-05 America/Denver: owner requests review of all panels, removal of extraneous explanatory text, and relocation of useful instructions into Markdown function headers/manual source or reduced hover hints. Continue the existing open draft PR 410 on its current branch; main remains `4123280337d9a50bfe17c0a6113702ecfc9161fd`. Reviewed all **29 canonical destinations**, their inner Administration views, sign-in/recovery and import dialogs. Removed tutorial/implementation/obsolete phase blocks, condensed necessary retention notices, added control hints and replaced Help's long tutorials with the [panel and function guide](ui/panel-guide.md). Journal supplemental details now has one table with wrapping local actions; Budget vs Actual no longer reserves a section for explanation. Removed obsolete divider bindings. Current status, results, validation, attestation and confirmations remain visible. Budget vs Actual progress text is concise and wraps. The governing [P29-S2 inventory](P29-S2-workspace-simplification.md), UI rules/editor guidelines and source/layout assertions are current. No accounting, recovery, schema, dependency or permission implementation was changed.
 
