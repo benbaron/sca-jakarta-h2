@@ -48,7 +48,7 @@ public class SettingsPanelDatabaseSelectionTest
 
         assertTrue(source.contains("Connected database file"));
         assertTrue(source.contains("activeDatabase.setEditable(false)"));
-        assertTrue(source.contains("Use File → Select Database File…"));
+        assertTrue(source.contains("Use File → Database → Select Database File…"));
         assertFalse(source.contains("session.setDatabaseSelection("));
         assertFalse(source.contains("readDatabaseSelection()"));
         assertFalse(source.contains("activeDatabase.setEditable(true)"));

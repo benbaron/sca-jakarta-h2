@@ -34,14 +34,7 @@ The Journal workspace contains:
 4. An Additional Details region containing only transaction fields currently backed by H2 services.
 5. Persisted supplemental-detail regions for Receivable, Payable, Prepaid Expense, Deferred Revenue, Other Asset, and Other Liability.
 
-The major regions are separated by visible draggable `SplitPane` dividers:
-
-- journal register versus transaction editor;
-- editor header versus entry lines versus details;
-- additional details versus supplemental details;
-- every table versus the surrounding controls/help in that table's major region.
-
-The complete middle/editor region is wrapped in a single vertical `ScrollPane` identified as `journalWorkspaceEditorScroll`. The nested resize bars remain inside that scrollable editor. Journal, entry-line, and supplemental `TableView` controls keep their own horizontal and vertical scrolling and must not expand to their complete row count.
+P29-S2 replaces the nested editor with four named work panes: **Journal** (filters/register), **Entry** (header/entry lines), **Additional Details** (form), and **Supplemental Details** (selected supplemental kind). New and Edit open Entry. Each pane shows at most two major sections. Every pane has an overflow viewport, forms retain their scrollers and each table retains independent horizontal/vertical scrolling. Moving between work panes preserves the same draft and full-transaction Save operation. The old overall editor scroll and nested editor dividers are retired.
 
 Divider positions and table state are remembered for the active company through `CompanyUiPreferencesService`. Table state includes column width, column order, sort direction, and multi-column sort priority. `JournalWorkspaceCompliancePanel` is the sole persistence owner for this state; `JournalWorkspacePanel` provides only default geometry and table configuration and must not read or write Java `Preferences` or any second UI-state store. Every table uses unconstrained resizing and every column remains sortable, resizable, and reorderable.
 
@@ -73,14 +66,14 @@ Older P03 callers may still request Ledger Register or Transaction Editor. `AppP
 
 ## Sample-company system testing
 
-P03 system testing uses an explicit sample-company lifecycle action, not automatic production seed data. Testers create or select a disposable database, authenticate as ADMIN, then choose **File -> Create / Refresh Sample Company Data** to run the guarded `SampleCompanyService` against the active database. The post-login mutation requires P20 `DATABASE_ADMIN`; non-ADMIN roles remain unable to seed/refresh sample business data.
+P03 system testing uses an explicit sample-company lifecycle action, not automatic production seed data. Testers create or select a disposable database, authenticate as ADMIN, then choose **File -> Database -> Create / Refresh Sample Company Data** to run the guarded `SampleCompanyService` against the active database. The post-login mutation requires P20 `DATABASE_ADMIN`; non-ADMIN roles remain unable to seed/refresh sample business data.
 
 Manual validation:
 
 1. Create or select a disposable database.
-2. Run **File -> Create / Refresh Sample Company Data**.
+2. Run **File -> Database -> Create / Refresh Sample Company Data**.
 3. Open **Journal** and confirm account, fund, budget category, activity, merchant, and counterparty choices are populated.
-4. At laptop width, confirm the complete editor has one overall vertical scrollbar and move every nested divider.
+4. At laptop width, visit all four Journal work panes, reduce the window size, and confirm all controls remain reachable with the scrollbars and available dividers.
 5. Confirm Journal, entry-line, and every supplemental table scroll independently in both directions when content exceeds the viewport.
 6. Reorder and resize columns, apply single- and multi-column sorts, reopen the company, and confirm the state is restored.
 7. Enter and save a balanced transaction with supplemental details.

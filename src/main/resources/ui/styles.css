@@ -314,38 +314,33 @@
     -fx-padding: 0 0 0 8;
 }
 
-.workspace-tabs > .tab-header-area > .tab-header-background,
-.inspector-tabs > .tab-header-area > .tab-header-background
+.workspace-tabs > .tab-header-area > .tab-header-background
 {
     -fx-background-color: white;
     -fx-border-color: transparent transparent #dfe5ec transparent;
     -fx-border-width: 0 0 1 0;
 }
 
-.workspace-tabs .tab,
-.inspector-tabs .tab
+.workspace-tabs .tab
 {
     -fx-background-color: transparent;
     -fx-background-radius: 0;
     -fx-padding: 4 11 4 11;
 }
 
-.workspace-tabs .tab:selected,
-.inspector-tabs .tab:selected
+.workspace-tabs .tab:selected
 {
     -fx-background-color: white;
     -fx-border-color: transparent transparent #0b72e7 transparent;
     -fx-border-width: 0 0 2 0;
 }
 
-.workspace-tabs .tab .tab-label,
-.inspector-tabs .tab .tab-label
+.workspace-tabs .tab .tab-label
 {
     -fx-text-fill: #455267;
 }
 
-.workspace-tabs .tab:selected .tab-label,
-.inspector-tabs .tab:selected .tab-label
+.workspace-tabs .tab:selected .tab-label
 {
     -fx-text-fill: #075fc7;
     -fx-font-weight: bold;
@@ -442,52 +437,11 @@
     -fx-padding: 8 12 8 12;
 }
 
-.inspector-pane
-{
-    -fx-background-color: white;
-    -fx-border-color: transparent transparent transparent #dfe5ec;
-    -fx-border-width: 0 0 0 1;
-    -fx-min-width: 0;
-    -fx-pref-width: 235px;
-}
 
-.inspector-tabs
-{
-    -fx-background-color: white;
-    -fx-tab-min-height: 28px;
-    -fx-tab-max-height: 28px;
-}
 
-.inspector-tabs > .tab-content-area,
-.inspector-scroll,
-.inspector-scroll > .viewport
-{
-    -fx-background-color: white;
-}
 
-.inspector-card
-{
-    -fx-background-color: white;
-    -fx-background-radius: 6;
-    -fx-border-color: #dfe5ec;
-    -fx-border-radius: 6;
-    -fx-padding: 10;
-}
 
-.inspector-card-title
-{
-    -fx-text-fill: #075fc7;
-    -fx-font-size: 11px;
-    -fx-font-weight: bold;
-}
 
-.inspector-strong,
-.inspector-primary-value,
-.inspector-value
-{
-    -fx-font-weight: bold;
-    -fx-text-fill: #253247;
-}
 
 .scroll-pane,
 .scroll-pane > .viewport
@@ -669,10 +623,6 @@ dashboard-footer-link,
 .production-workspace.theme-atlantafx .navigation-item,
 .production-workspace.theme-atlantafx .navigation-item-selected,
 .production-workspace.theme-atlantafx .navigation-item-selected .label,
-.production-workspace.theme-atlantafx .inspector-card-title,
-.production-workspace.theme-atlantafx .inspector-strong,
-.production-workspace.theme-atlantafx .inspector-primary-value,
-.production-workspace.theme-atlantafx .inspector-value,
 .production-workspace.theme-atlantafx .dashboard-card-title,
 .production-workspace.theme-atlantafx .dashboard-value,
 .production-workspace.theme-atlantafx .dashboard-key-value,
@@ -696,15 +646,8 @@ dashboard-footer-link,
 .production-workspace.theme-atlantafx .navigation-pane,
 .production-workspace.theme-atlantafx .navigation-scroll,
 .production-workspace.theme-atlantafx .navigation-scroll > .viewport,
-.production-workspace.theme-atlantafx .inspector-pane,
-.production-workspace.theme-atlantafx .inspector-tabs,
-.production-workspace.theme-atlantafx .inspector-tabs > .tab-content-area,
-.production-workspace.theme-atlantafx .inspector-scroll,
-.production-workspace.theme-atlantafx .inspector-scroll > .viewport,
 .production-workspace.theme-atlantafx .workspace-tabs > .tab-header-area > .tab-header-background,
-.production-workspace.theme-atlantafx .inspector-tabs > .tab-header-area > .tab-header-background,
-.production-workspace.theme-atlantafx .dashboard-card,
-.production-workspace.theme-atlantafx .inspector-card
+.production-workspace.theme-atlantafx .dashboard-card
 {
     -fx-background-color: -color-bg-default;
     -fx-border-color: -color-border-default;
@@ -750,16 +693,13 @@ dashboard-footer-link,
 }
 
 .production-workspace.theme-atlantafx .workspace-tabs .tab:selected,
-.production-workspace.theme-atlantafx .inspector-tabs .tab:selected,
 .production-workspace.theme-atlantafx .navigation-item-selected
 {
     -fx-background-color: -color-accent-subtle;
 }
 
 .production-workspace.theme-atlantafx .workspace-tabs .tab .tab-label,
-.production-workspace.theme-atlantafx .workspace-tabs .tab:selected .tab-label,
-.production-workspace.theme-atlantafx .inspector-tabs .tab .tab-label,
-.production-workspace.theme-atlantafx .inspector-tabs .tab:selected .tab-label
+.production-workspace.theme-atlantafx .workspace-tabs .tab:selected .tab-label
 {
     -fx-text-fill: -color-fg-default;
 }
@@ -889,4 +829,91 @@ dashboard-footer-link,
 .production-workspace.theme-dark Text
 {
     -fx-fill: -app-workspace-text;
+}
+
+/* Windows 11 menu geometry, shared by dropdowns and cascading submenus. */
+.menu-bar
+{
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
+    -fx-padding: 4 8;
+}
+.menu-bar .menu
+{
+    -fx-padding: 5 12;
+    -fx-background-radius: 4;
+}
+.context-menu
+{
+    -fx-background-color: #f9f9f9;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-border-color: rgba(128, 128, 128, 0.35);
+    -fx-border-radius: 8;
+    -fx-padding: 5;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.18), 18, 0.08, 0, 5);
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
+}
+.context-menu .menu-item
+{
+    -fx-padding: 7 16 7 12;
+    -fx-background-radius: 4;
+}
+.context-menu .menu-item:focused
+{
+    -fx-background-color: #e9e9e9;
+}
+.context-menu .menu-item .label
+{
+    -fx-text-fill: #1a1a1a;
+}
+.context-menu .menu-item:focused .label
+{
+    -fx-text-fill: #1a1a1a;
+}
+.context-menu .separator
+{
+    -fx-padding: 4 6;
+}
+.work-pane-tabs > .tab-header-area
+{
+    -fx-padding: 3 3 0 3;
+}
+.panel-viewport,
+.panel-viewport > .viewport
+{
+    -fx-background-color: transparent;
+}
+.production-workspace .menu-bar .menu-button
+{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-radius: 4;
+}
+.production-workspace .menu-bar .menu-button:hover,
+.production-workspace .menu-bar .menu-button:showing
+{
+    -fx-background-color: #e9e9e9;
+}
+.production-workspace.theme-dark .menu-bar .menu-button:hover,
+.production-workspace.theme-dark .menu-bar .menu-button:showing
+{
+    -fx-background-color: #414141;
+}
+
+.windows-menu-dark.context-menu,
+.windows-menu-dark .context-menu
+{
+    -fx-background-color: #2c2c2c;
+}
+.windows-menu-dark .menu-item .label,
+.windows-menu-dark .menu-item:focused .label
+{
+    -fx-text-fill: #ffffff;
+}
+.windows-menu-dark .menu-item:focused
+{
+    -fx-background-color: #414141;
 }

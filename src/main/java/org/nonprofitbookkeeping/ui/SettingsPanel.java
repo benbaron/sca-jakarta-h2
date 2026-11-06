@@ -172,7 +172,7 @@ public class SettingsPanel implements AppPanel
         grid.add(activeDatabase, 1, row++);
 
         Label databaseHelp = new Label(
-                "Database selection is connected session state. Use File → Select Database File… "
+                "Database selection is connected session state. Use File → Database → Select Database File… "
                         + "or Create New Database… so the target is migrated and validated before this path changes.");
         databaseHelp.setWrapText(true);
         grid.add(databaseHelp, 0, row++, 2, 1);

@@ -26,8 +26,9 @@ class ReportLibraryTypedSourceTest
         assertTrue(source.contains("ReportPresentationMetadata.from("));
         assertTrue(source.contains("result.tabular()"));
         assertTrue(source.contains("CompanyTableStateBinder.apply("));
-        assertTrue(source.contains("Orientation.VERTICAL"));
-        assertTrue(source.contains("STATE_PREVIEW_DIVIDER"));
+        assertTrue(source.contains("reportLibraryWorkPanes"));
+        assertTrue(source.contains(".addPane(\"Parameters\", parameterRegion)"));
+        assertTrue(source.contains(".addPane(\"Preview\", previewRegion)"));
         assertTrue(source.contains("currentResult.request().equals(request)"));
         assertTrue(source.contains("preferencesService.saveState"));
         assertTrue(source.contains("ComboBox<AssetInventoryReportQueryService.FilterOption>"));

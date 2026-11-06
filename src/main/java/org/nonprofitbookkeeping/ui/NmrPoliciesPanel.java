@@ -202,13 +202,8 @@ public final class NmrPoliciesPanel implements AppPanel
         details.setOrientation(Orientation.VERTICAL);
         details.setMinSize(0, 0);
         CompanySplitPaneStateBinder.bind(details, "nmr-policy-detail", .45);
-        SplitPane main = new SplitPane(headerScroll, details);
-        main.setId("nmrPolicyMainSplit");
-        main.setOrientation(Orientation.VERTICAL);
-        main.setMinSize(0, 0);
-        CompanySplitPaneStateBinder.bind(main, "nmr-policy-main", .25);
-        root.getChildren().setAll(main);
-        VBox.setVgrow(main, Priority.ALWAYS);
+        root.getChildren().setAll(headerScroll, details);
+        VBox.setVgrow(details, Priority.ALWAYS);
         CompanyTableStateBinder.applyProductionPanel(root, AppPanelId.SETTINGS);
         FullTextTooltipInstaller.install(root);
     }

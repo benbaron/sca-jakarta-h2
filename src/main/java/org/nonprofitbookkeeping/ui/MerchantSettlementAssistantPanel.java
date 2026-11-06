@@ -155,15 +155,13 @@ public final class MerchantSettlementAssistantPanel implements AppPanel
         formScroll.setFitToWidth(true);
         formScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         formScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        SplitPane lower = new SplitPane(nmrItems, formScroll);
-        lower.setId("merchantSettlementDetailSplit");
-        lower.setDividerPositions(0.42);
-        SplitPane workspace = new SplitPane(receivables, lower);
+        WorkPaneTabs settlementViews = new WorkPaneTabs("merchantSettlementWorkPanes")
+                .addPane("Settlement draft", formScroll)
+                .addPane("NMR items", nmrItems);
+        SplitPane workspace = new SplitPane(receivables, settlementViews);
         workspace.setId("merchantSettlementWorkspaceSplit");
         workspace.setOrientation(Orientation.VERTICAL);
-        workspace.setDividerPositions(0.42);
-        CompanySplitPaneStateBinder.bind(workspace, "merchant-settlement-workspace", 0.42);
-        CompanySplitPaneStateBinder.bind(lower, "merchant-settlement-detail", 0.42);
+        CompanySplitPaneStateBinder.bind(workspace, "merchant-settlement-workspace-v2", 0.42);
         VBox.setVgrow(workspace, Priority.ALWAYS);
         root.getChildren().add(workspace);
 

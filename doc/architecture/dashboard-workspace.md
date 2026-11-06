@@ -27,7 +27,7 @@ The workspace contains:
 7. Budget vs Actual.
 8. Quick Links.
 
-The left navigation uses vector icons and a blue selected state. The right inspector uses Organization, Period Information, Balances, and Notes cards. Green, amber, red, blue, and neutral gray cues communicate status without relying on color alone; text labels and icons remain present.
+The left navigation uses vector icons and a blue selected state. The right Inspector is removed under P29-S2. Green, amber, red, blue, and neutral gray cues communicate status without relying on color alone; text labels and icons remain present.
 
 All production icons are dependency-free JavaFX `SVGPath` graphics created by `UiIcons`. No external font or image resource is required.
 
@@ -49,8 +49,8 @@ The application chrome follows the compact white-and-blue reference design:
 
 - Segoe UI is requested on Windows, with the JavaFX platform fallback used elsewhere.
 - Menus and toolbars use white surfaces, subtle gray separators, and flat controls.
-- The navigation pane, center tab workspace, and inspector are independent `SplitPane` children.
-- The center workspace has a zero minimum width so a panel cannot force the inspector outside the window.
+- Navigation and the tabbed work area are the only shell `SplitPane` children.
+- Each work pane has overflow access instead of forcing other shell regions outside the window.
 - Initial dividers use compact pixel-oriented sidebar targets rather than fixed 20/80 percentages.
 - Dividers remain visible and draggable after startup. Safe user-adjusted positions are remembered in the existing app-state file; unsafe remembered positions that would clip sidebars or crowd the center fall back to responsive defaults.
 - The native operating-system title bar retains the user's Windows accent color.
@@ -59,15 +59,7 @@ The application chrome follows the compact white-and-blue reference design:
 
 ## Responsive behavior
 
-`DashboardWorkspaceLayoutPolicy` selects one of three layouts based on the center viewport width:
-
-- Wide: four KPI columns, a full-width transaction table, and three lower sections.
-- Medium: two KPI columns with lower sections arranged in pairs.
-- Narrow: one vertical card stack.
-
-The dashboard sits in a fit-to-width `ScrollPane`. The transaction table keeps horizontal scrolling available when its columns need more width. The navigation and inspector remain resizable through visible `SplitPane` dividers and do not overlay center content.
-
-The headless geometry assessments model the center viewport after sidebar and divider widths are applied. They also evaluate startup window bounds, sidebar allocation, KPI-card minimum widths, transaction-table minimum and preferred widths, and whether horizontal or vertical scrolling is required.
+P29-S2 groups the eight cards into four named work panes: Overview, Budget, Open items / Reconciliation, and Recent transactions / Links. Each shows two cards separated by a draggable divider. Every pane has horizontal and vertical overflow access; each table retains independent scrolling. The navigation is resizable/collapsible and never overlays the work area. Historical grid geometry helpers remain compatibility references rather than the production Dashboard composition.
 
 ## Active-period and company scope
 

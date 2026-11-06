@@ -154,7 +154,7 @@ public class BankTransactionsPanel implements AppPanel
         ScrollPane controlsScroll = new ScrollPane(controls);
         controlsScroll.setFitToWidth(false);
         controlsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        controlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        controlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         controlsScroll.setPannable(true);
 
         buildLedgerTable();
@@ -188,7 +188,7 @@ public class BankTransactionsPanel implements AppPanel
         exportControlsScroll.setId("bankStatementExportControlsScroll");
         exportControlsScroll.setFitToWidth(false);
         exportControlsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        exportControlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        exportControlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         exportControlsScroll.setPannable(true);
 
         buildReviewTable();

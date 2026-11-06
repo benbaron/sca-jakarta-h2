@@ -150,25 +150,29 @@ class JournalFundEventTaggingTest
             assertEquals("RELIEF", table().getItems().get(1).getFund().code());
             for (double width : new double[] {900, 600})
             {
-                ((SplitPane) panel.root().lookup("#journalTaggingSplit")).setDividerPositions(0.12);
+                ((javafx.scene.control.TabPane) panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(1);
+                ((SplitPane) panel.root().lookup("#journalWorkspaceEditorSplit")).setDividerPositions(0.7);
                 stage.setWidth(width);
                 panel.root().setStyle("-fx-font-size: " + (width == 600 ? 17 : 13) + "px;");
                 panel.root().applyCss();
                 ((javafx.scene.Parent) panel.root()).layout();
                 ScrollPane tagging = (ScrollPane) panel.root().lookup("#journalTaggingScroll");
                 assertTrue(tagging.getViewportBounds().getWidth() > 0);
+                assertTrue(tagging.getViewportBounds().getHeight() >= 60,
+                        "Entry lines must not squeeze the Fund/Event controls out of view");
                 assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, tagging.getHbarPolicy());
                 assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, tagging.getVbarPolicy());
                 assertTrue(tagging.getContent().getBoundsInLocal().getHeight() > tagging.getViewportBounds().getHeight(), "Tag contents should scroll at " + width);
             }
-            SplitPane split = (SplitPane) panel.root().lookup("#journalTaggingSplit");
+            SplitPane split = (SplitPane) panel.root().lookup("#journalWorkspaceEditorSplit");
             ScrollPane tags = (ScrollPane) panel.root().lookup("#journalTaggingScroll");
             split.setDividerPositions(0.2);
             ((javafx.scene.Parent) panel.root()).layout();
             double smallHeight = tags.getHeight();
             split.setDividerPositions(0.7);
             ((javafx.scene.Parent) panel.root()).layout();
-            assertTrue(tags.getHeight() > smallHeight + 10, "Tag area has a working divider");
+            assertTrue(tags.getHeight() <= smallHeight, "Tags stay bounded while the entry/table region is resized");
+            ((javafx.scene.control.TabPane) panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(0);
             SplitPane filtersSplit = (SplitPane) panel.root().lookup("#journalWorkspaceFiltersSplit");
             ScrollPane filters = (ScrollPane) panel.root().lookup("#journalWorkspaceFiltersScroll");
             filtersSplit.setDividerPositions(0.1);
@@ -179,6 +183,9 @@ class JournalFundEventTaggingTest
             ((javafx.scene.Parent) panel.root()).layout();
             assertTrue(filters.getHeight() > filterHeight + 10);
             assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, filters.getHbarPolicy());
+            ((javafx.scene.control.TabPane) panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(1);
+            panel.root().applyCss();
+            ((javafx.scene.Parent) panel.root()).layout();
             assertTrue(table().getColumns().get(0).getWidth() > table().getWidth(), "Saved wide column retained");
             assertTrue(table().lookupAll(".scroll-bar").stream().map(ScrollBar.class::cast)
                     .anyMatch(bar -> bar.getOrientation() == javafx.geometry.Orientation.HORIZONTAL && bar.isVisible()), "Wide table should scroll horizontally");

@@ -12,12 +12,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class BankingPanelSourceTest
 {
     @Test
-    void financialInstitutionsAndConfiguredAccountsUseTopBottomSplit() throws Exception
+    void institutionsAndAccountsUseSeparateNamedWorkPanes() throws Exception
     {
         String source = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/BankingPanel.java"));
 
-        assertTrue(source.contains("new SplitPane(bankListPane(), bankAccountPane())"));
-        assertTrue(source.contains("split.setOrientation(Orientation.VERTICAL)"));
+        assertTrue(source.contains("new WorkPaneTabs(\"bankingWorkPanes\")"));
+        assertTrue(source.contains(".addPane(\"Banks\", bankListPane())"));
+        assertTrue(source.contains(".addPane(\"Bank accounts\", bankAccountPane())"));
         assertTrue(source.contains("Financial institutions"));
         assertTrue(source.contains("Configured bank accounts"));
         assertTrue(source.contains("bankingInstitutionsSplit"));

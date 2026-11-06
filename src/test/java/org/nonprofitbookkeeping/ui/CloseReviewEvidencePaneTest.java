@@ -137,7 +137,10 @@ class CloseReviewEvidencePaneTest
             assertTrue(scroll.getViewportBounds().getWidth() > 0);
             assertTrue(scroll.getContent().getBoundsInLocal().getHeight() > scroll.getViewportBounds().getHeight(),
                     "The long form must remain scrollable within its bounded editor viewport");
-            var main = (SplitPane) ((VBox) evidence.root()).getChildren().get(3);
+            var views = (TabPane) evidence.root().lookup("#closeReviewDetails");
+            assertEquals(2, views.getTabs().size());
+            var viewport = (PanelViewport) views.getTabs().get(0).getContent();
+            var main = (SplitPane) ((javafx.scene.layout.BorderPane) viewport.getContent()).getCenter();
             main.setDividerPositions(0.3);
             evidence.root().applyCss(); ((javafx.scene.Parent) evidence.root()).layout();
             assertEquals(0.3, main.getDividerPositions()[0], 0.03);

@@ -128,12 +128,11 @@ final class CloseReviewEvidencePane implements AppPanel
                 column("Content revision", "revision", 320, row -> row.payload().dataRevision()));
         retained.setEditable(false); retained.setId("closeReviewRetainedDetails");
         history.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, value) -> showRetained(value));
-        SplitPane draftTable = split("period-close-review-references", new Label("Draft references — included only when Save Review succeeds"), references);
-        SplitPane historyTable = split("period-close-review-history", new Label("Most recent 100 reviews for these exact dates — retained, read-only facts"), history, retained);
-        TabPane details = new TabPane(new Tab("Draft References", draftTable), new Tab("Recorded Reviews", historyTable));
-        details.setId("closeReviewDetails");
-        details.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        SplitPane main = split("period-close-review-editor", scroll, details);
+        SplitPane draft = split("period-close-review-draft-v2", scroll, references);
+        SplitPane historyPane = split("period-close-review-history-v2", history, retained);
+        WorkPaneTabs main = new WorkPaneTabs("closeReviewDetails")
+                .addPane("Draft References", draft)
+                .addPane("Recorded Reviews", historyPane);
         VBox.setVgrow(main, javafx.scene.layout.Priority.ALWAYS);
         root.getChildren().add(main);
         start.valueProperty().addListener((observable, oldValue, value) -> invalidate(false));

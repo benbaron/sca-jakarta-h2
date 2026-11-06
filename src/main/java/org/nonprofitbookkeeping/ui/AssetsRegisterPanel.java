@@ -184,24 +184,19 @@ public class AssetsRegisterPanel implements AppPanel
         VBox lifecycleRegion = new VBox(6, new Label("Lifecycle History"), lifecycleTable);
         lifecycleRegion.setMinHeight(0.0);
         VBox.setVgrow(lifecycleTable, Priority.ALWAYS);
-        SplitPane historySplit = new SplitPane(tableRegion, lifecycleRegion);
-        historySplit.setMinHeight(0);
-        table.setMinHeight(0); lifecycleTable.setMinHeight(0);
-        historySplit.setOrientation(Orientation.VERTICAL);
-        historySplit.setDividerPositions(0.62);
-        historySplit.setId("assetRegisterHistorySplit");
-        CompanySplitPaneStateBinder.bind(historySplit, "asset-register-history", 0.62);
         ScrollPane editorScroll = new ScrollPane(buildForm());
         editorScroll.setId("assetRegisterEditorScroll");
         editorScroll.setFitToWidth(true);
-        editorScroll.setMinHeight(0.0);
         editorScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         editorScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        SplitPane split = new SplitPane(historySplit, editorScroll);
+        WorkPaneTabs assetViews = new WorkPaneTabs("assetRegisterWorkPanes")
+                .addPane("Asset editor", editorScroll)
+                .addPane("Lifecycle History", lifecycleRegion);
+        SplitPane split = new SplitPane(tableRegion, assetViews);
         split.setId("assetRegisterWorkspaceSplit");
         split.setOrientation(Orientation.VERTICAL);
-        split.setDividerPositions(0.55);
-        CompanySplitPaneStateBinder.bind(split, "asset-register-workspace", 0.55);
+        split.setMinSize(0, 0);
+        CompanySplitPaneStateBinder.bind(split, "asset-register-workspace-v2", 0.5);
         root.setCenter(split);
         companyFormat.install(acquisitionDate);
         clearForm();

@@ -76,6 +76,7 @@ public class CompanyAdminPanel implements AppPanel
     private final CompanySessionController companyController;
     private final org.nonprofitbookkeeping.service.CompanyUiPreferencesService preferencesService;
     private final String layoutOwnerCompany;
+    private final UiStateWriteContext layoutContext;
 
     private Long editingCompanyId;
     private boolean populating;
@@ -96,6 +97,7 @@ public class CompanyAdminPanel implements AppPanel
         this.companyController = Objects.requireNonNull(companyController, "companyController");
         this.preferencesService = UiServiceRegistry.companyUiPreferences();
         this.layoutOwnerCompany = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+        this.layoutContext = UiStateWriteContext.capture(MainWindow.sharedSessionState(), layoutOwnerCompany);
         build();
         restoreLayoutState();
         installLayoutStateListeners();
@@ -732,6 +734,10 @@ public class CompanyAdminPanel implements AppPanel
 
     private void saveLayoutState()
     {
+        if (!layoutContext.canSave())
+        {
+            return;
+        }
         Map<String, String> state = new LinkedHashMap<>();
         state.put(STATE_PREFIX + "divider", Double.toString(split.getDividers().get(0).getPosition()));
         state.put(STATE_PREFIX + "table.order", companies.getColumns().stream()

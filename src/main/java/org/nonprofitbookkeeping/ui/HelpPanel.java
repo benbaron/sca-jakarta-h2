@@ -33,7 +33,7 @@ public class HelpPanel implements AppPanel
         title.getStyleClass().add("panel-title");
 
         Label gettingStarted = wrapped("Getting Started\n"
-                + "1) Select your H2 database in File -> Select Database File… or create one with File -> Create New Database…\n"
+                + "1) Select your H2 database in File -> Database -> Select Database File… or create one with File -> Database -> Create New Database…\n"
                 + "2) Choose an existing active company from the toolbar, or use Administration -> Company Admin to create and maintain companies.\n"
                 + "3) Choose the accounting month in the toolbar and select Set Active Period.\n"
                 + "4) Use Journal for transaction entry/review, Banking and Bank Reconciliation for bank work, and Import Preview before accepting supported imports.");

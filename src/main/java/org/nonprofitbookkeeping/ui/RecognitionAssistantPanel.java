@@ -123,13 +123,15 @@ public final class RecognitionAssistantPanel implements AppPanel
         VBox proposalRegion = new VBox(6, new Label("Due recognition proposals"), proposals);
         proposalRegion.setMinHeight(0);
         VBox.setVgrow(proposals, Priority.ALWAYS);
-        ScrollPane editor = new ScrollPane(new VBox(6, form, proposalRegion));
+        ScrollPane editor = new ScrollPane(form);
         editor.setId("recognitionEditorScroll");
         editor.setFitToWidth(true);
         editor.setMinHeight(0);
         editor.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         editor.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        SplitPane split = new SplitPane(items, editor);
+        SplitPane split = new SplitPane(items, new WorkPaneTabs("recognitionWorkPanes")
+                .addPane("Recognition draft", editor)
+                .addPane("Due recognition proposals", proposalRegion));
         split.setId("recognitionWorkspaceSplit");
         split.setOrientation(Orientation.VERTICAL);
         split.setDividerPositions(0.42);

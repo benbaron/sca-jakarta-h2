@@ -46,7 +46,6 @@ public class ProductionWorkspaceWindow extends BorderPane
     private final DatabaseSessionController databaseSessionController;
     private final CompanySessionController companySessionController;
     private final PanelHost panelHost;
-    private final InspectorPane inspectorPane = new InspectorPane();
     private final NavigationPane navigationPane;
     private final SplitPane workspace = new SplitPane();
     private final Label activePanelLabel = new Label();
@@ -105,10 +104,7 @@ public class ProductionWorkspaceWindow extends BorderPane
                     + ex.getMessage());
         }
 
-        navigationPane = new NavigationPane(
-                this::openPanel,
-                inspectorPane::show,
-                this::inspectorContext);
+        navigationPane = new NavigationPane(this::openPanel, () -> setNavigationVisible(false));
         DrillThroughCoordinator.configureOpener(this::openPanel);
 
         workspaceContext.activePeriodDateProperty().addListener(
@@ -135,7 +131,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         if (databaseFailure != null && panelId != AppPanelId.DASHBOARD)
         {
             UiDebug.log("workspace", "openPanel blocked by database failure for " + panelId + ".");
-            inspectorPane.show(
+            showWorkspaceMessage(
                     "Database unavailable",
                     "Select, repair, or create a database from the Dashboard or File menu before opening accounting workspaces.");
             showRecoveryDashboard(databaseFailure);
@@ -145,6 +141,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         try
         {
             panelHost.show(panelId);
+            navigationPane.highlight(panelHost.activePanelId());
             activePanelLabel.setText("Workspace: " + panelHost.getActiveTitle());
             UiDebug.log("workspace", "openPanel completed for " + panelId
                     + "; active panel is " + panelHost.activePanelId() + ".");
@@ -176,11 +173,6 @@ public class ProductionWorkspaceWindow extends BorderPane
         AppPanel.RunCommandResult result = panelHost.newItemActive();
         presentCommandResult(result);
         return result;
-    }
-
-    public void closeInspector()
-    {
-        setInspectorVisible(false);
     }
 
     public AppPanel.RunCommandResult closeAllWorkspaceTabs()
@@ -221,11 +213,6 @@ public class ProductionWorkspaceWindow extends BorderPane
             case NEW_ACTIVE -> panelHost.newItemActive();
             case SAVE_ACTIVE -> panelHost.saveActive();
             case CLOSE_ALL_TABS -> closeAllWorkspaceTabs();
-            case CLOSE_INSPECTOR ->
-            {
-                closeInspector();
-                yield new AppPanel.RunCommandResult(true, "Closed the inspector.");
-            }
             case POST_VALIDATE -> panelHost.executeActive(command);
         };
         if (command == AppCommand.SAVE_ACTIVE && result.handled())
@@ -332,11 +319,10 @@ public class ProductionWorkspaceWindow extends BorderPane
                 getScene().getWindow().hide();
             }
         });
+        Menu database = new Menu("Database");
+        database.getItems().addAll(selectDatabase, createDatabase, repairDatabase, sampleCompany);
         file.getItems().addAll(
-                selectDatabase,
-                createDatabase,
-                repairDatabase,
-                sampleCompany,
+                database,
                 new SeparatorMenuItem(),
                 newMenuItem,
                 saveMenuItem,
@@ -353,9 +339,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         Menu view = new Menu("View");
         MenuItem navigation = new MenuItem("Toggle Navigation");
         navigation.setOnAction(event -> setNavigationVisible(!workspace.getItems().contains(navigationPane)));
-        MenuItem inspector = new MenuItem("Toggle Inspector");
-        inspector.setOnAction(event -> setInspectorVisible(!workspace.getItems().contains(inspectorPane)));
-        view.getItems().addAll(navigation, inspector);
+        view.getItems().add(navigation);
 
         Menu destinationsMenu = new Menu("Destinations");
         MenuItem dashboard = new MenuItem("Dashboard");
@@ -368,7 +352,11 @@ public class ProductionWorkspaceWindow extends BorderPane
         help.setOnAction(event -> openPanel(AppPanelId.HELP));
         destinationsMenu.getItems().addAll(dashboard, journal, administration, help);
 
-        return new MenuBar(file, workspaceMenu, destinationsMenu, view);
+        MenuBar menuBar = new MenuBar(file, workspaceMenu, destinationsMenu, view);
+        menuBar.setId("productionMenuBar");
+        menuBar.getStyleClass().add("windows-menu-bar");
+        WindowsMenuStyler.install(menuBar);
+        return menuBar;
     }
 
     private ToolBar buildToolBar()
@@ -381,9 +369,6 @@ public class ProductionWorkspaceWindow extends BorderPane
 
         Button navigationButton = new Button("Navigation");
         navigationButton.setOnAction(event -> setNavigationVisible(!workspace.getItems().contains(navigationPane)));
-
-        Button inspectorButton = new Button("Inspector");
-        inspectorButton.setOnAction(event -> setInspectorVisible(!workspace.getItems().contains(inspectorPane)));
 
         ComboBox<YearMonth> periodSelector = new ComboBox<>();
         periodSelector.getItems().setAll(periodChoicesFor(workspaceContext.activePeriodDate()));
@@ -412,7 +397,6 @@ public class ProductionWorkspaceWindow extends BorderPane
                 saveButton,
                 new Separator(),
                 navigationButton,
-                inspectorButton,
                 new Separator(),
                 new Label("Period:"),
                 periodSelector,
@@ -428,7 +412,19 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     private SplitPane buildWorkspace()
     {
-        workspace.getItems().setAll(navigationPane, panelHost, inspectorPane);
+        workspace.getDividers().addListener((javafx.collections.ListChangeListener<SplitPane.Divider>) change ->
+        {
+            while (change.next())
+            {
+                for (SplitPane.Divider divider : change.getAddedSubList())
+                {
+                    divider.positionProperty().addListener(
+                            (observable, oldValue, newValue) -> rememberCurrentDividerPositions());
+                }
+            }
+        });
+        workspace.getItems().setAll(navigationPane, panelHost);
+        workspace.setId("productionWorkspaceSplit");
         rememberedDividerState = (MainWindow.sharedSessionState().preferences().rememberWindowState()
                 ? stateStore.loadWorkspaceDividers()
                 : Optional.<WorkspaceDividerState>empty())
@@ -436,8 +432,6 @@ public class ProductionWorkspaceWindow extends BorderPane
                         .forWidth(WorkspaceShellLayoutPolicy.FALLBACK_WORKSPACE_WIDTH)
                         .dividerState());
         restoreDividerPositions();
-        workspace.getDividers().forEach(divider -> divider.positionProperty().addListener(
-                (observable, oldValue, newValue) -> rememberCurrentDividerPositions()));
         BorderPane.setMargin(workspace, new Insets(8));
         return workspace;
     }
@@ -446,6 +440,7 @@ public class ProductionWorkspaceWindow extends BorderPane
     {
         activePanelLabel.getStyleClass().add("status-label");
         commandStatusLabel.getStyleClass().add("status-label");
+        commandStatusLabel.setId("workspaceMessage");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         HBox statusBar = new HBox(activePanelLabel, spacer, commandStatusLabel);
@@ -515,6 +510,7 @@ public class ProductionWorkspaceWindow extends BorderPane
     private void presentCommandResult(AppPanel.RunCommandResult result)
     {
         commandStatusLabel.setText(result.message());
+        commandStatusLabel.setTooltip(new Tooltip(result.message()));
         refreshGlobalCommandState();
     }
 
@@ -548,7 +544,7 @@ public class ProductionWorkspaceWindow extends BorderPane
                 this::executeDatabaseRecoveryCommand);
         panelHost.showReplacement(AppPanelId.DASHBOARD, recoveryPanel);
         activePanelLabel.setText("Workspace: Dashboard — database attention required");
-        inspectorPane.show(
+        showWorkspaceMessage(
                 "Database attention required",
                 DatabaseRecoveryPanel.safeMessage(failure));
     }
@@ -650,7 +646,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         Path target = normalizeNewDatabasePath(selected.get());
         if (Files.exists(target))
         {
-            inspectorPane.show(
+            showWorkspaceMessage(
                     "Database not created",
                     "A file already exists at " + target.toAbsolutePath()
                             + ". Choose a new file name or select the existing database instead.");
@@ -665,7 +661,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         {
             SampleCompanyService.SampleCompanySummary summary = UiServiceRegistry.sampleCompany().createOrRefresh();
             panelHost.refreshOpenPanels();
-            inspectorPane.show(
+            showWorkspaceMessage(
                     "Sample company ready",
                     "Created or refreshed explicit sample data in the active database. "
                             + "Chart ID " + summary.chartId()
@@ -675,7 +671,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         }
         catch (RuntimeException ex)
         {
-            inspectorPane.show(
+            showWorkspaceMessage(
                     "Sample company failed",
                     UiErrors.safeMessage(ex));
         }
@@ -689,7 +685,7 @@ public class ProductionWorkspaceWindow extends BorderPane
         List<String> dirtyTitles = panelHost.dirtyPanelTitles();
         if (!dirtyTitles.isEmpty() && !databaseChangePrompt.confirmDiscard(source, target, dirtyTitles))
         {
-            inspectorPane.show(
+            showWorkspaceMessage(
                     "Database switch cancelled",
                     "Still connected to " + source.toAbsolutePath()
                             + ". Target was " + target.toAbsolutePath() + ".");
@@ -706,7 +702,7 @@ public class ProductionWorkspaceWindow extends BorderPane
             refreshActiveCompanySelector();
             panelHost.refreshOpenPanels();
             updateActiveDatabaseLabel();
-            inspectorPane.show(
+            showWorkspaceMessage(
                     "Database connected",
                     "Connected database: " + result.activeDatabasePath().toAbsolutePath()
                             + ". Active company: " + result.activeCompanyCode() + ".");
@@ -718,7 +714,7 @@ public class ProductionWorkspaceWindow extends BorderPane
             workspaceContext.setDatabaseFailure(previousFailure);
             updateActiveDatabaseLabel();
             refreshActiveCompanySelector();
-            inspectorPane.show(
+            showWorkspaceMessage(
                     "Database switch failed",
                     "Still connected to " + source.toAbsolutePath() + ". Target "
                             + target.toAbsolutePath() + " was not activated. " + UiErrors.safeMessage(ex));
@@ -733,7 +729,7 @@ public class ProductionWorkspaceWindow extends BorderPane
     {
         if (getScene() == null || getScene().getWindow() == null)
         {
-            inspectorPane.show("Database selection unavailable", "The application window is not ready.");
+            showWorkspaceMessage("Database selection unavailable", "The application window is not ready.");
             return Optional.empty();
         }
 
@@ -746,7 +742,7 @@ public class ProductionWorkspaceWindow extends BorderPane
     {
         if (getScene() == null || getScene().getWindow() == null)
         {
-            inspectorPane.show("Database creation unavailable", "The application window is not ready.");
+            showWorkspaceMessage("Database creation unavailable", "The application window is not ready.");
             return Optional.empty();
         }
 
@@ -820,7 +816,7 @@ public class ProductionWorkspaceWindow extends BorderPane
                 activeCompanySelector.getValue().code());
         if (!result.selected())
         {
-            inspectorPane.show("Company selection failed", result.message());
+            showWorkspaceMessage("Company selection failed", result.message());
             refreshActiveCompanySelector();
         }
     }
@@ -838,16 +834,10 @@ public class ProductionWorkspaceWindow extends BorderPane
         }
     }
 
-    private NavigationPane.InspectorContext inspectorContext()
+    private void showWorkspaceMessage(String title, String message)
     {
-        AppPanelId active = panelHost.activePanelId();
-        String capabilities = databaseFailure == null
-                ? (active == null ? "No active panel" : "Active panel: " + panelHost.getActiveTitle())
-                : "Database unavailable: select, repair, or create a database";
-        return new NavigationPane.InspectorContext(
-                workspaceContext.activeCompanyCode(),
-                workspaceContext.activePeriodDate().toString(),
-                capabilities);
+        commandStatusLabel.setText(title + ": " + message);
+        commandStatusLabel.setTooltip(new Tooltip(title + "\n" + message));
     }
 
     private void setNavigationVisible(boolean visible)
@@ -865,21 +855,6 @@ public class ProductionWorkspaceWindow extends BorderPane
         }
     }
 
-    private void setInspectorVisible(boolean visible)
-    {
-        boolean present = workspace.getItems().contains(inspectorPane);
-        if (visible && !present)
-        {
-            workspace.getItems().add(inspectorPane);
-            restoreDividerPositions();
-        }
-        else if (!visible && present)
-        {
-            workspace.getItems().remove(inspectorPane);
-            restoreDividerPositions();
-        }
-    }
-
     private void restoreDividerPositions()
     {
         double width = workspace.getWidth() > 0.0
@@ -889,20 +864,9 @@ public class ProductionWorkspaceWindow extends BorderPane
         restoringDividers = true;
         try
         {
-            if (workspace.getItems().size() == 3)
+            if (workspace.getItems().size() == 2)
             {
-                workspace.setDividerPositions(safe.leftDividerPosition(), safe.rightDividerPosition());
-            }
-            else if (workspace.getItems().size() == 2)
-            {
-                if (workspace.getItems().contains(navigationPane))
-                {
-                    workspace.setDividerPositions(safe.leftDividerPosition());
-                }
-                else
-                {
-                    workspace.setDividerPositions(safe.rightDividerPosition());
-                }
+                workspace.setDividerPositions(safe.leftDividerPosition());
             }
         }
         finally
@@ -914,20 +878,20 @@ public class ProductionWorkspaceWindow extends BorderPane
     private void rememberCurrentDividerPositions()
     {
         if (restoringDividers
-                || workspace.getItems().size() != 3
+                || workspace.getItems().size() != 2
                 || !MainWindow.sharedSessionState().preferences().rememberWindowState())
         {
             return;
         }
         double[] positions = workspace.getDividerPositions();
-        if (positions.length != 2)
+        if (positions.length != 1)
         {
             return;
         }
         WorkspaceDividerState candidate;
         try
         {
-            candidate = new WorkspaceDividerState(positions[0], positions[1]);
+            candidate = new WorkspaceDividerState(positions[0], WorkspaceShellLayoutPolicy.RETIRED_RIGHT_DIVIDER);
         }
         catch (IllegalArgumentException ex)
         {

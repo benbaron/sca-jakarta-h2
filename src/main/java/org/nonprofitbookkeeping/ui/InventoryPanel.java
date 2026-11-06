@@ -289,14 +289,10 @@ public class InventoryPanel implements AppPanel
         Label taggingHelp = new Label("Event and Budget apply to the offset line. Both lines retain the item Fund. Zero-value nonfinancial movements cannot carry accounting tags.");
         taggingHelp.setWrapText(true);
 
-        SplitPane split = new SplitPane(new VBox(6, new Label("Inventory Items"), itemTable), new VBox(6, new Label("Movement History"), movementTable));
-        split.setOrientation(Orientation.VERTICAL);
-        split.setDividerPositions(0.58);
-        split.setId("inventoryTablesSplit");
-        CompanySplitPaneStateBinder.bind(split, "inventory-tables", 0.58);
+        VBox items = new VBox(6, new Label("Inventory Items"), itemTable);
+        VBox movements = new VBox(6, new Label("Movement History"), movementTable);
         VBox.setVgrow(itemTable, Priority.ALWAYS);
         VBox.setVgrow(movementTable, Priority.ALWAYS);
-        VBox.setVgrow(split, Priority.ALWAYS);
         movementInputs.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
         VBox controls = new VBox(6, itemActions, lifecycleHelp, lifecycleInputs, lifecycleActions,
                 movementInputs, tagging, taggingHelp, movementActions);
@@ -306,8 +302,10 @@ public class InventoryPanel implements AppPanel
         controlsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         controlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         controlsScroll.setMinSize(0, 0);
-        split.setMinSize(0, 0);
-        SplitPane workspace = new SplitPane(controlsScroll, split);
+        WorkPaneTabs inventoryViews = new WorkPaneTabs("inventoryWorkPanes")
+                .addPane("Items", items)
+                .addPane("Movement History", movements);
+        SplitPane workspace = new SplitPane(controlsScroll, inventoryViews);
         workspace.setId("inventoryMovementWorkspaceSplit");
         workspace.setOrientation(Orientation.VERTICAL);
         workspace.setMinSize(0, 0);

@@ -71,7 +71,7 @@ public interface AppPanel
                 case NEW_ACTIVE -> invoke(command, this::onNew);
                 case SAVE_ACTIVE -> invoke(command, this::onSave);
                 case POST_VALIDATE -> onRunCommand(command);
-                case CLOSE_ALL_TABS, CLOSE_INSPECTOR -> new RunCommandResult(false,
+                case CLOSE_ALL_TABS -> new RunCommandResult(false,
                         GlobalCommandRegistry.label(command) + " is owned by the workspace shell.");
             };
         }

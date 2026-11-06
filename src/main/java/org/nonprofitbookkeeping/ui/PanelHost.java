@@ -294,7 +294,7 @@ public class PanelHost extends TabPane
 
     private Tab createTab(AppPanelId id, AppPanel panel)
     {
-        Tab tab = new Tab(panel.title(), panel.root());
+        Tab tab = new Tab(panel.title(), PanelViewport.wrap(panel.root()));
         tab.setUserData(id);
         tab.setClosable(!WorkspaceLayoutPolicy.isPermanentTab(id));
         panel.setCommandCapabilitiesChangedListener(this::notifyCommandCapabilitiesChanged);

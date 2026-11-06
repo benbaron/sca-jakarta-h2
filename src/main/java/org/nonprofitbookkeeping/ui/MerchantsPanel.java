@@ -52,7 +52,6 @@ public final class MerchantsPanel implements AppPanel
     private final Button refresh = new Button("Refresh");
     private final BooleanSupplier discardConfirmation;
     private final SplitPane workspace = new SplitPane();
-    private final SplitPane mainSplit = new SplitPane();
     private final PauseTransition layoutDelay = new PauseTransition(Duration.millis(250));
     private Long editingId;
     private boolean populating;
@@ -135,13 +134,7 @@ public final class MerchantsPanel implements AppPanel
         workspace.setDividerPositions(0.58);
         workspace.setMinSize(0, 0);
         VBox.setVgrow(workspace, Priority.ALWAYS);
-        mainSplit.getItems().setAll(headerScroll, workspace);
-        mainSplit.setOrientation(Orientation.VERTICAL);
-        mainSplit.setId("merchantsMainSplit");
-        mainSplit.setMinSize(0, 0);
-        mainSplit.setDividerPositions(0.25);
-        VBox.setVgrow(mainSplit, Priority.ALWAYS);
-        root.getChildren().setAll(mainSplit);
+        root.getChildren().setAll(headerScroll, workspace);
         String company = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
         if (company == null || company.isBlank())
         {
@@ -151,14 +144,12 @@ public final class MerchantsPanel implements AppPanel
         var preferences = UiServiceRegistry.companyUiPreferences();
         Map<String, String> state = preferences.loadState(layoutCompany, "ui.merchants.divider.");
         restoreDivider(workspace, state.get("ui.merchants.divider.workspace"), 0.58);
-        restoreDivider(mainSplit, state.get("ui.merchants.divider.main"), 0.25);
         layoutDelay.setOnFinished(event ->
         {
             try
             {
                 preferences.saveState(layoutCompany, Map.of(
-                        "ui.merchants.divider.workspace", Double.toString(workspace.getDividerPositions()[0]),
-                        "ui.merchants.divider.main", Double.toString(mainSplit.getDividerPositions()[0])));
+                        "ui.merchants.divider.workspace", Double.toString(workspace.getDividerPositions()[0])));
             }
             catch (RuntimeException ex)
             {
@@ -166,7 +157,6 @@ public final class MerchantsPanel implements AppPanel
             }
         });
         workspace.getDividers().get(0).positionProperty().addListener((obs, oldValue, value) -> layoutDelay.playFromStart());
-        mainSplit.getDividers().get(0).positionProperty().addListener((obs, oldValue, value) -> layoutDelay.playFromStart());
         installDirtyListeners();
         FullTextTooltipInstaller.install(root);
     }

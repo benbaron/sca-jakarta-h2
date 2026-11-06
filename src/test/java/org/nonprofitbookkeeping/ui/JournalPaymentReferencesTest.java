@@ -384,10 +384,10 @@ class JournalPaymentReferencesTest
             ((ComboBox<?>)cell.getGraphic()).getSelectionModel().select(0);
             assertTrue(panel.hasUnsavedChanges(), "Recipient-only edits protect the transaction draft");
             for (int index = 0; index < 60; index++) details.getItems().add(new JournalWorkspacePanel.SupplementalRow());
+            stage.setWidth(520);
+            stage.setHeight(550);
             panel.root().setStyle("-fx-font-size: 20px;");
-            ((ScrollPane)panel.root().lookup("#journalWorkspaceEditorScroll")).setVvalue(1);
-            ((SplitPane)panel.root().lookup("#journalWorkspaceEditorSplit")).setDividerPositions(0.12, 0.30);
-            ((SplitPane)panel.root().lookup("#journalWorkspaceDetailSplit")).setDividerPositions(0.65);
+            ((TabPane)panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(3);
             var split = (SplitPane)panel.root().lookup("#journalNmrDetailSplit");
             split.setDividerPositions(0.3);
             stage.getScene().getRoot().applyCss(); stage.getScene().getRoot().layout();
@@ -497,10 +497,10 @@ class JournalPaymentReferencesTest
         {
             var details = (TableView<JournalWorkspacePanel.SupplementalRow>)panel.root().lookup("#journalWorkspaceSupplementalRECEIVABLETable");
             for (int index = 0; index < 60; index++) details.getItems().add(new JournalWorkspacePanel.SupplementalRow());
+            stage.setWidth(520);
+            stage.setHeight(550);
             panel.root().setStyle("-fx-font-size: 20px;");
-            ((ScrollPane)panel.root().lookup("#journalWorkspaceEditorScroll")).setVvalue(1);
-            ((SplitPane)panel.root().lookup("#journalWorkspaceEditorSplit")).setDividerPositions(0.12, 0.30);
-            ((SplitPane)panel.root().lookup("#journalWorkspaceDetailSplit")).setDividerPositions(0.65);
+            ((TabPane)panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(3);
             var split = (SplitPane)panel.root().lookup("#journalMerchantDetailSplit"); split.setDividerPositions(0.3);
             stage.getScene().getRoot().applyCss(); stage.getScene().getRoot().layout();
             assertEquals(1, split.getDividers().size()); double before = details.getHeight();

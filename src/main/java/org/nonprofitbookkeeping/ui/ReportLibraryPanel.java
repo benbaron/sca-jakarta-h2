@@ -2,7 +2,6 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -56,7 +55,6 @@ import java.util.Map;
 public class ReportLibraryPanel implements AppPanel
 {
     private static final String STATE_DIVIDER = "reportLibrary.divider";
-    private static final String STATE_PREVIEW_DIVIDER = "reportLibrary.previewDivider";
 
     private final BorderPane root = new BorderPane();
     private final ListView<ReportDefinition> reportList = new ListView<>();
@@ -106,10 +104,9 @@ public class ReportLibraryPanel implements AppPanel
                     UiServiceRegistry.supplementalOpenItems(),
                     reportPresentationMetadata);
     private final PauseTransition dividerSaveDelay = new PauseTransition(Duration.millis(350));
-    private final PauseTransition previewDividerSaveDelay = new PauseTransition(Duration.millis(350));
 
     private SplitPane workspaceSplit;
-    private SplitPane parameterPreviewSplit;
+    private final WorkPaneTabs reportViews = new WorkPaneTabs("reportLibraryWorkPanes");
     private ReportResult currentResult;
     private AssetInventoryReportQueryService.FilterCatalog domainFilterCatalog;
     private List<ReportAccountOption> reportAccounts = List.of();
@@ -366,17 +363,9 @@ public class ReportLibraryPanel implements AppPanel
         previewRegion.setMinHeight(0.0);
         VBox.setVgrow(previewHost, Priority.ALWAYS);
 
-        parameterPreviewSplit = new SplitPane(parameterRegion, previewRegion);
-        parameterPreviewSplit.setId("reportLibraryParameterPreviewSplit");
-        parameterPreviewSplit.setOrientation(Orientation.VERTICAL);
-        parameterPreviewSplit.setDividerPositions(loadDividerPosition(
-                STATE_PREVIEW_DIVIDER, 0.32, 0.16, 0.68));
-        installDividerPersistence(
-                parameterPreviewSplit,
-                STATE_PREVIEW_DIVIDER,
-                previewDividerSaveDelay);
-
-        workspaceSplit = new SplitPane(reportList, parameterPreviewSplit);
+        reportViews.addPane("Parameters", parameterRegion)
+                .addPane("Preview", previewRegion);
+        workspaceSplit = new SplitPane(reportList, reportViews);
         workspaceSplit.setId("reportLibrarySplit");
         workspaceSplit.setDividerPositions(loadDividerPosition());
         installDividerPersistence(workspaceSplit, STATE_DIVIDER, dividerSaveDelay);
@@ -388,16 +377,26 @@ public class ReportLibraryPanel implements AppPanel
             String stateKey,
             PauseTransition delay)
     {
-        delay.setOnFinished(event -> preferencesService.saveState(
-                companyCode,
-                Map.of(stateKey, Double.toString(split.getDividerPositions()[0]))));
+        UiStateWriteContext context = UiStateWriteContext.capture(MainWindow.sharedSessionState(), companyCode);
+        delay.setOnFinished(event ->
+        {
+            if (context.canSave())
+            {
+                preferencesService.saveState(companyCode,
+                        Map.of(stateKey, Double.toString(split.getDividerPositions()[0])));
+            }
+        });
         split.getDividers().get(0).positionProperty().addListener(
                 (obs, oldValue, newValue) -> delay.playFromStart());
     }
 
     private void configureActions(Button run, Button export, Button drillLedger)
     {
-        run.setOnAction(event -> runReport());
+        run.setOnAction(event ->
+        {
+            reportViews.getSelectionModel().select(1);
+            runReport();
+        });
         export.setOnAction(event -> exportReport());
         drillLedger.setOnAction(event -> drillToJournal());
         reportList.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, definition) -> {

@@ -160,14 +160,9 @@ public final class FundTransfersPanel implements AppPanel
         workspace.setOrientation(Orientation.VERTICAL);
         workspace.setId("fundTransfersWorkspaceSplit");
         workspace.setMinSize(0, 0);
-        SplitPane main = new SplitPane(headerScroll, workspace);
-        main.setOrientation(Orientation.VERTICAL);
-        main.setId("fundTransfersMainSplit");
-        main.setMinSize(0, 0);
-        VBox.setVgrow(main, Priority.ALWAYS);
-        root.getChildren().setAll(main);
+        VBox.setVgrow(workspace, Priority.ALWAYS);
+        root.getChildren().setAll(headerScroll, workspace);
         persistDivider(workspace, "workspace", 0.55);
-        persistDivider(main, "main", 0.30);
         FullTextTooltipInstaller.install(root);
     }
 

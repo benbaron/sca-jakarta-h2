@@ -127,14 +127,8 @@ final class CheckExceptionsPane implements AppPanel
         detail.setMinSize(0, 0);
         detail.setDividerPositions(.65);
         CompanySplitPaneStateBinder.bind(detail, "check-review-detail", .65);
-        SplitPane split = new SplitPane(scroll(header, "checkReviewHeaderScroll"), detail);
-        split.setId("checkReviewSplit");
-        split.setOrientation(Orientation.VERTICAL);
-        split.setMinSize(0, 0);
-        split.setDividerPositions(.25);
-        CompanySplitPaneStateBinder.bind(split, "check-review", .25);
-        root.getChildren().add(split);
-        VBox.setVgrow(split, Priority.ALWAYS);
+        root.getChildren().addAll(scroll(header, "checkReviewHeaderScroll"), detail);
+        VBox.setVgrow(detail, Priority.ALWAYS);
         CompanyTableStateBinder.applyProductionPanel(root, AppPanelId.RECONCILIATION_RUNS);
         table.getSelectionModel().selectedItemProperty().addListener((obs, old, row) ->
         {

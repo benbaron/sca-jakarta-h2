@@ -35,12 +35,7 @@ public final class GlobalCommandRegistry
                     new KeyCodeCombination(
                             KeyCode.W,
                             KeyCombination.CONTROL_DOWN,
-                            KeyCombination.SHIFT_DOWN)),
-            new Definition(
-                    AppCommand.CLOSE_INSPECTOR,
-                    "Close Inspector",
-                    "Esc",
-                    new KeyCodeCombination(KeyCode.ESCAPE)));
+                            KeyCombination.SHIFT_DOWN)));
 
     private GlobalCommandRegistry()
     {

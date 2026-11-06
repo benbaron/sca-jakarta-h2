@@ -1,15 +1,23 @@
 ---
-plan_version: 446
+plan_version: 449
 active_phase: P29
-active_slice: P29-C4
-active_status: IN_PROGRESS
-active_branch: codex/P29-C4-windows-rendering
+active_slice: P29-S2
+active_status: VERIFYING
+active_branch: codex/P29-S2-workspace-simplification
 active_pull_request: null
-active_head: 23367e3275b57f170ecf761c424632b32776b980
-next_action: "Validate Windows software-rendering startup policy and Windows presentation CI, publish a draft, then owner verifies the normal launch command."
+active_head: 4123280337d9a50bfe17c0a6113702ecfc9161fd
+next_action: "Commit and push the authorized P29-S2 branch, open a draft pull request, verify the remote head and record final-head CI status; owner Windows visual review remains pending."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P29-S2 publication authorized — 2026-11-05 America/Denver: owner explicitly requests pushing the completed UI changes to the remote. Native fetch confirms main remains `4123280337d9a50bfe17c0a6113702ecfc9161fd`; the task branch does not yet exist remotely and no open PR exists. The complete staged patch exactly matches the prior validated handoff (SHA-256 `90ff8c7271b669fbfa064fb5a053f63ab0005b5d4b0728e0f6eab9327e06b453`) before these publication-ledger edits. The recorded clean verification and 333-test final UI acceptance remain the local evidence; no source, dependency or test implementation is changed during publication. Commit/push the reviewed branch without force, create its draft PR, then verify the remote head/tree and inspect CI. Native Windows owner acceptance is pending.
+
+P29-S2 local handoff — 2026-11-04 America/Denver: implementation is complete as uncommitted local changes on `codex/P29-S2-workspace-simplification`, based on current main/head `4123280337d9a50bfe17c0a6113702ecfc9161fd`; no PR or remote publication. Inspector, its controls, context action, shortcut and unused snapshot publisher are removed. Named work panes retain the owning controller/draft, every canonical route satisfies the two-section maximum including nested tabs, and every hosted destination/tab exposes overflow access. Banking New/Save follows the selected record type; explicit Run Report opens Preview. Menu/submenu scenes receive readable Windows-style light/dark palettes. Scrolling/layout review additionally reproduced stale deferred layout saves after logout in the common split binder, Report Library and Company Administration; their shared session/company/database context guard now preserves valid saves and discards stale callbacks without changing service authorization.
+
+Validation: baseline compile passed. `DISPLAY= /workspace/.cloud-setup/maven.sh clean verify` passed **1,125 tests, zero failures/errors, 83 expected display skips** in 08:21 (`/workspace/work/final-clean-verify.log`). The final source, including the layout-save guard, then passed the **entire UI package: 333 tests, zero failures/errors/skips** in 03:34 on a local-only virtual display (`/workspace/work/ui-acceptance.log`). This final display run has no uncaught JavaFX-thread layout-save exceptions. It covers the complete production-route inventory, menu palettes, actual two-axis overflow, draft/save scope, permissions, table state and lifecycle cases. Earlier geometry/source-fixture failures were corrected for the requested composition; none remains in executed checks. Rendered 1280×800 and 680×520 / 17px views were reviewed, including real cascading menus and reachable overflow controls. Workflow YAML, document links, whitespace and scope checks pass. Linux and Windows CI selectors include the new menu/overflow tests; **no GitHub or native Windows result is claimed**. No accounting, schema, migration or dependency changes. The complete layout inventory and owner testing steps are in [P29-S2](P29-S2-workspace-simplification.md). Remaining: owner Windows visual/scaling review, explicit publication instruction, commit/draft publication and final-head CI. P29-S2 remains VERIFYING rather than DONE before review/merge.
+
+P29-S2 workspace simplification — 2026-11-04 America/Denver: owner confirms the JavaFX application, existing menu labels/commands, complete Inspector removal and at most two major visible work sections including nested splits, then extends scope to overflow access in every pane. Current fetched main `41232803` includes merged #409; clean checkout fast-forwarded before fresh branch `codex/P29-S2-workspace-simplification`. Select [P29-S2](P29-S2-workspace-simplification.md) IN_PROGRESS. Baseline compile passed. Implement shared-controller named work panes, a two-column shell, Windows-style cascading menus and two-axis pane/tab overflow. No accounting/schema/service changes. Focused/production JavaFX tests and full clean verification are in progress. No publication or Windows acceptance is inferred.
 
 P29-C4 Windows rendering compatibility — 2026-11-03 America/Denver: #408 merged at current main `23367e3275b57f170ecf761c424632b32776b980`. Owner reports continued blank/white presentation after a clean compile, then confirms that software rendering shows the controls. This isolates a graphics-pipeline compatibility problem without identifying the specific driver defect. [P29 governing contract](P29-S1-light-theme-contrast.md) now requires a Windows-only software default before toolkit startup, preserving explicit `prism.order` selections and platform defaults elsewhere. Fresh branch `codex/P29-C4-windows-rendering` implements the launcher policy; units verify defaults, overrides, platform isolation, idempotence and launch order. The presentation test uses production decorations, and Windows CI must execute startup snapshot/contrast tests without skips. No schema/accounting/theme changes. Local Maven/JDK compilation is unavailable; the merged C3 workflow is baseline evidence and final-head CI owns executable validation.
 

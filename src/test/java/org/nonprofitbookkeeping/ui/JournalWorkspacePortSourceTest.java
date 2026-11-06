@@ -52,14 +52,17 @@ class JournalWorkspacePortSourceTest
     }
 
     @Test
-    void complianceLayerProvidesOverallEditorScrollAndTableContractWithoutVisibleCommentary() throws Exception
+    void complianceLayerPreservesTableContractAcrossScrollableWorkPanes() throws Exception
     {
         String source = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/JournalWorkspaceCompliancePanel.java"));
 
         assertTrue(source.contains("installOverallEditorScroll"));
-        assertTrue(source.contains("journalWorkspaceEditorScroll"));
-        assertTrue(source.contains("setFitToWidth(true)"));
-        assertTrue(source.contains("setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED)"));
+        String panes = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/WorkPaneTabs.java"));
+        String viewport = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/PanelViewport.java"));
+        assertTrue(panes.contains("PanelViewport.wrap(content)"));
+        assertTrue(viewport.contains("setFitToWidth(true)"));
+        assertTrue(viewport.contains("setVbarPolicy(ScrollBarPolicy.AS_NEEDED)"));
+        assertTrue(viewport.contains("setHbarPolicy(ScrollBarPolicy.AS_NEEDED)"));
         assertTrue(source.contains("installTableCompliance"));
         assertTrue(source.contains("TableView.UNCONSTRAINED_RESIZE_POLICY"));
         assertTrue(source.contains("column.setSortable(true)"));
@@ -67,8 +70,8 @@ class JournalWorkspacePortSourceTest
         assertTrue(source.contains("column.setReorderable(true)"));
         assertTrue(source.contains("restoreTableState"));
         assertTrue(source.contains("installTableStatePersistence"));
-        assertTrue(source.contains("wrapTableInSplitRegion"));
-        assertTrue(source.contains("new SplitPane(table)"));
+        assertTrue(source.contains("markCompanyStateOwned(table)"));
+        assertTrue(source.contains("journalWorkspaceEditorSplit"));
         assertTrue(source.contains("installDividerState"));
         assertTrue(source.contains("CompanyUiFormat"));
         assertTrue(source.contains("CompanyUiPreferencesService"));

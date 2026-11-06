@@ -109,10 +109,14 @@ public final class PropertyCustodyPanel implements AppPanel
         notes.setPrefRowCount(3);
         VBox editor = new VBox(6, new Label("Custody event draft"), form);
         ScrollPane editorScroll = new ScrollPane(editor); editorScroll.setFitToWidth(true); editorScroll.setId("propertyCustodyEditorScroll");
-        SplitPane lower = new SplitPane(history, editorScroll); lower.setId("propertyCustodyHistoryEditorSplit");
-        SplitPane workspace = new SplitPane(subjects, lower); workspace.setId("propertyCustodyWorkspaceSplit"); workspace.setOrientation(javafx.geometry.Orientation.VERTICAL);
-        persistDivider(lower, "history-editor", 0.55); persistDivider(workspace, "workspace", 0.42);
-        VBox.setVgrow(workspace, Priority.ALWAYS); root.setCenter(workspace);
+        WorkPaneTabs custodyViews = new WorkPaneTabs("propertyCustodyWorkPanes")
+                .addPane("Custody event draft", editorScroll)
+                .addPane("Custody history", history);
+        SplitPane workspace = new SplitPane(subjects, custodyViews);
+        workspace.setId("propertyCustodyWorkspaceSplit");
+        workspace.setOrientation(javafx.geometry.Orientation.VERTICAL);
+        persistDivider(workspace, "workspace-v2", 0.42);
+        root.setCenter(workspace);
         installDirtyTracking();
         FullTextTooltipInstaller.install(root);
     }

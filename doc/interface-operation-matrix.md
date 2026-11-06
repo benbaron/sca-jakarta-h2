@@ -40,7 +40,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Dashboard | yes | no | no | New opens the canonical Journal entry workflow. |
 | Journal | yes | yes | yes | Retired Ledger Register/Transaction Editor aliases normalize here. |
 | Event Accounting | no | no | no | Read-only Activity-linked accounting, related configured-bank context, Journal drill-through and navigation to Events / Activities maintenance. |
-| Banking | yes | yes | no | Durable bank/configuration editing plus panel-local statement import/review actions. |
+| Banking | yes | yes | no | New/Save follows the selected Banks or Bank accounts work pane; hidden drafts are retained. Statement import/review actions remain panel-local. |
 | Asset Register | yes | yes | no | Stable asset identity and governed lifecycle operations. |
 | Inventory | yes | item editor only | no | Stable item identity and governed movement/lifecycle operations. |
 | Property Custody | yes | custody event draft | no | Save Custody Event appends assignment/confirmation/loan/return/transfer/removal history; Correct Selected appends a replacement. |
@@ -205,3 +205,8 @@ Report Library **Functional Expenses** is read-only: select Start/End, Fund and 
 ## P26-S1 acquisition Save and navigation
 
 Asset Register exposes explicit acquisition route, BANK or existing debit choices, source transaction and full claimed/remaining amounts. Save Asset and File/toolbar Save share non-mutating preview, confirmation and asynchronous atomic acceptance. Busy Save/New/editor/table guards, request retention, visible errors, dirty protection, company formatting with exact four-decimal edit values and live BOOKKEEPING_WRITE permission gates apply. Open Acquisition in Journal performs real navigation. Remove Acquisition Link requires a reason and authoritative eligibility; retained-history explanation replaces physical Delete. Existing table/editor and register/history dividers preserve independently scrollable regions; table columns retain company layout. Existing SCLX Preview/Save handles portable links. See [S1](P26-S1-asset-acquisitions.md).
+
+
+## P29-S2 work-pane composition
+
+[Workspace simplification](P29-S2-workspace-simplification.md) governs the Inspector-free shell, menu/submenu styling, two-section maximum and overflow access in every destination and tab. Named views retain the owning controller, service, permission, Save scope and dirty-state behavior listed above.

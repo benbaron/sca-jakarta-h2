@@ -124,19 +124,14 @@ public final class EventAccountingPanel implements AppPanel
         configureLinkedTable();
         configureBankTable();
 
-        SplitPane details = new SplitPane(linkedRegion(), bankRegion());
-        details.setId("eventAccountingDetailSplit");
-        details.setOrientation(Orientation.VERTICAL);
-        details.setDividerPositions(0.55);
-        details.setMinSize(0, 0);
-        CompanySplitPaneStateBinder.bind(details, "event-accounting-detail", 0.55);
-
-        SplitPane outer = new SplitPane(infoRegion(), details);
+        WorkPaneTabs eventViews = new WorkPaneTabs("eventAccountingWorkPanes")
+                .addPane("Linked transactions", linkedRegion())
+                .addPane("Bank activity", bankRegion());
+        SplitPane outer = new SplitPane(infoRegion(), eventViews);
         outer.setId("eventAccountingOuterSplit");
         outer.setOrientation(Orientation.VERTICAL);
-        outer.setDividerPositions(0.36);
         outer.setMinSize(0, 0);
-        CompanySplitPaneStateBinder.bind(outer, "event-accounting-outer", 0.36);
+        CompanySplitPaneStateBinder.bind(outer, "event-accounting-workspace-v2", 0.36);
         root.setCenter(outer);
         root.setBottom(status);
     }

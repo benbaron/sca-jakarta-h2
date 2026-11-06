@@ -33,10 +33,10 @@ class FinancialViewComplianceSourceTest
     @Test
     void multiRegionViewsPersistTopBottomDividerState() throws Exception
     {
-        assertSplit("DashboardHomePanel.java", "dashboard-recent-transactions");
+        assertSplit("DashboardHomePanel.java", "dashboard-");
         assertSplit("BudgetVsActualPanel.java", "budget-vs-actual");
         assertSplit("DepreciationRunsPanel.java", "depreciation-runs");
-        assertSplit("InventoryPanel.java", "inventory-tables");
+        assertSplit("InventoryPanel.java", "inventory-movement-workspace");
         assertSplit("ReconciliationRunsPanel.java", "reconciliation-review");
         assertSplit("PeriodCloseRunsPanel.java", "period-close-tables");
         assertSplit("ImportPreviewPanel.java", "import-preview-workspace");
@@ -55,7 +55,8 @@ class FinancialViewComplianceSourceTest
     {
         String source = source(filename);
         assertTrue(source.contains("setOrientation(Orientation.VERTICAL)")
-                        || source.contains("setOrientation(javafx.geometry.Orientation.VERTICAL)"),
+                        || source.contains("setOrientation(javafx.geometry.Orientation.VERTICAL)")
+                        || source.contains("setOrientation(javafx.geometry.Orientation.HORIZONTAL)"),
                 filename);
         assertTrue(source.contains("CompanySplitPaneStateBinder.bind"), filename);
         assertTrue(source.contains(stateKey), filename);

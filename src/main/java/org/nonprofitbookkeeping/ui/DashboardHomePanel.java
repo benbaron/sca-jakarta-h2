@@ -14,13 +14,11 @@ import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -51,7 +49,6 @@ public final class DashboardHomePanel implements AppPanel
     private final Supplier<String> groupCodeSupplier;
     private final CompanyUiFormat companyFormat;
     private final BorderPane root = new BorderPane();
-    private final GridPane dashboardGrid = new GridPane();
     private final Label loadMessage = new Label();
     private final Label bookCash = moneyLabel();
     private final Label clearedCash = new Label("Cleared balance not available");
@@ -224,7 +221,6 @@ public final class DashboardHomePanel implements AppPanel
         recentTransactions.getItems().setAll(snapshot.recentTransactions());
         reconciliations.getItems().setAll(snapshot.reconciliations());
         budgetActuals.getItems().setAll(snapshot.budgetActuals());
-        DashboardSnapshotPublisher.publish(snapshot);
     }
 
     private void buildView()
@@ -241,42 +237,26 @@ public final class DashboardHomePanel implements AppPanel
         loadMessage.setManaged(false);
         loadMessage.setVisible(false);
         root.setTop(loadMessage);
-        root.setCenter(buildDashboardScrollPane());
+        root.setCenter(buildDashboardWorkPanes());
     }
 
-    private ScrollPane buildDashboardScrollPane()
+    private Node buildDashboardWorkPanes()
     {
-        dashboardGrid.getStyleClass().add("dashboard-grid");
-        dashboardGrid.setHgap(10);
-        dashboardGrid.setVgap(10);
-        dashboardGrid.setPadding(new Insets(12));
-        for (int index = 0; index < 4; index++)
-        {
-            ColumnConstraints column = new ColumnConstraints();
-            column.setPercentWidth(25.0);
-            column.setHgrow(Priority.ALWAYS);
-            column.setMinWidth(0.0);
-            dashboardGrid.getColumnConstraints().add(column);
-        }
+        return new WorkPaneTabs("dashboardWorkPanes")
+                .addPane("Overview", dashboardPair(cashCard(), surplusCard(), "overview"))
+                .addPane("Budget", dashboardPair(budgetPerformanceCard(), budgetActualCard(), "budget"))
+                .addPane("Open items / Reconciliation", dashboardPair(openItemsCard(), reconciliationCard(), "operations"))
+                .addPane("Recent transactions / Links", dashboardPair(recentTransactionsCard(), quickLinksCard(), "activity"));
+    }
 
-        dashboardGrid.add(cashCard(), 0, 0);
-        dashboardGrid.add(surplusCard(), 1, 0);
-        dashboardGrid.add(budgetPerformanceCard(), 2, 0);
-        dashboardGrid.add(openItemsCard(), 3, 0);
-        dashboardGrid.add(recentTransactionsCard(), 0, 1, 4, 1);
-        dashboardGrid.add(reconciliationCard(), 0, 2, 2, 1);
-        dashboardGrid.add(budgetActualCard(), 2, 2);
-        dashboardGrid.add(quickLinksCard(), 3, 2);
-
-        ScrollPane scrollPane = new ScrollPane(dashboardGrid);
-        scrollPane.setId("dashboardHomeScrollPane");
-        scrollPane.setFitToWidth(true);
-        scrollPane.setPannable(true);
-        scrollPane.getStyleClass().add("dashboard-scroll");
-        scrollPane.viewportBoundsProperty().addListener(
-                (observable, oldBounds, bounds) ->
-                        DashboardLayoutPolicy.apply(dashboardGrid, bounds.getWidth()));
-        return scrollPane;
+    private SplitPane dashboardPair(Node first, Node second, String key)
+    {
+        SplitPane pair = new SplitPane(first, second);
+        pair.setOrientation(javafx.geometry.Orientation.HORIZONTAL);
+        pair.setId("dashboard-" + key + "-split");
+        pair.setMinSize(0, 0);
+        CompanySplitPaneStateBinder.bind(pair, "dashboard-" + key + "-v2", 0.5);
+        return pair;
     }
 
     private Node cashCard()
@@ -349,7 +329,7 @@ public final class DashboardHomePanel implements AppPanel
         Label showing = muted("Showing up to " + RECENT_TRANSACTION_LIMIT + " transactions");
         Hyperlink viewJournal = link("View Journal  →", AppPanelId.JOURNAL_PANE);
         return card("Recent Transactions",
-                tableAndFooter(recentTransactions, footer(showing, viewJournal), "dashboard-recent-transactions"),
+                tableAndFooter(recentTransactions, footer(showing, viewJournal)),
                 null);
     }
 
@@ -360,7 +340,7 @@ public final class DashboardHomePanel implements AppPanel
                 "Go to Banking & Reconciliation  →",
                 AppPanelId.RECONCILIATION_RUNS);
         return card("Bank Reconciliation Status",
-                tableAndFooter(reconciliations, footer(new Label(), go), "dashboard-reconciliations"),
+                tableAndFooter(reconciliations, footer(new Label(), go)),
                 null);
     }
 
@@ -371,7 +351,7 @@ public final class DashboardHomePanel implements AppPanel
                 "View Budget vs Actual Report  →",
                 AppPanelId.BUDGET_VS_ACTUAL);
         return card("Budget vs Actual (YTD)",
-                tableAndFooter(budgetActuals, footer(new Label(), go), "dashboard-budget-actuals"),
+                tableAndFooter(budgetActuals, footer(new Label(), go)),
                 null);
     }
 
@@ -643,14 +623,12 @@ public final class DashboardHomePanel implements AppPanel
         return footer;
     }
 
-    private static SplitPane tableAndFooter(TableView<?> table, Node footer, String stateKey)
+    private static Node tableAndFooter(TableView<?> table, Node footer)
     {
-        SplitPane split = new SplitPane(table, footer);
-        split.setOrientation(javafx.geometry.Orientation.VERTICAL);
-        split.setDividerPositions(0.84);
-        split.setMinSize(0.0, 0.0);
-        CompanySplitPaneStateBinder.bind(split, stateKey, 0.84);
-        return split;
+        BorderPane region = new BorderPane(table);
+        region.setBottom(footer);
+        region.setMinSize(0, 0);
+        return region;
     }
 
     private static HBox quickLink(

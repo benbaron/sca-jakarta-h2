@@ -194,7 +194,6 @@ class NmrPoliciesPanelTest
             stage.setWidth(520);
             stage.setHeight(550);
             panel.root().setStyle("-fx-font-size: 17px;");
-            ((SplitPane) panel.root().lookup("#nmrPolicyMainSplit")).setDividerPositions(.25);
             ((SplitPane) panel.root().lookup("#nmrPolicyDetailSplit")).setDividerPositions(.80);
             panel.root().applyCss();
             ((VBox) panel.root()).layout();

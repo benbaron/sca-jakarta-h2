@@ -408,15 +408,10 @@ public class ImportPreviewPanel implements AppPanel
 		sclxCounts.setPlaceholder(
 			new Label("Preview an SCLX file to see exact section counts."));
 		
-		SplitPane rowTables = new SplitPane(
-			tableRegion("Accepted COA Rows", acceptedCoaRows),
-			tableRegion("Rejected COA Rows", rejectedCoaRows));
-		rowTables.setId("importPreviewRowsSplit");
-		rowTables.setOrientation(Orientation.VERTICAL);
-		rowTables.setDividerPositions(0.58);
-		CompanySplitPaneStateBinder.bind(rowTables, "import-preview-rows",
-			0.58);
-		
+        WorkPaneTabs rowTables = new WorkPaneTabs("importPreviewCoaWorkPanes")
+                .addPane("Accepted COA Rows", tableRegion("Accepted COA Rows", acceptedCoaRows))
+                .addPane("Rejected COA Rows", tableRegion("Rejected COA Rows", rejectedCoaRows));
+
 		previewTabs.setId("importPreviewResultTabs");
 		previewTabs.getTabs().addAll(
 			tab("COA Rows", rowTables),
@@ -441,10 +436,9 @@ public class ImportPreviewPanel implements AppPanel
         operationController.busyProperty().addListener(
                 (observable, oldValue, newValue) -> commandCapabilitiesChangedListener.run());
 		
-		VBox warningRegion =
-			new VBox(6, new Label("Preview Messages"), warnings,
-				new Label("Selected message and resolution"), messageDetails);
-		VBox.setVgrow(warnings, Priority.ALWAYS);
+        WorkPaneTabs warningRegion = new WorkPaneTabs("importPreviewMessagePanes")
+                .addPane("Preview Messages", warnings)
+                .addPane("Selected message and resolution", messageDetails);
 		SplitPane center = new SplitPane(warningRegion, previewTabs);
 		center.setId("importPreviewWorkspaceSplit");
 		center.setOrientation(Orientation.VERTICAL);

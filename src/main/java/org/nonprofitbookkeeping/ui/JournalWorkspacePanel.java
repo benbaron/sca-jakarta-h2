@@ -121,9 +121,8 @@ public final class JournalWorkspacePanel implements AppPanel
     private final Button deleteButton = new Button("Delete");
     private final Button removeLineButton = new Button("Remove Line");
     private final Button drillReconciliationButton = new Button("Open Selected Line Reconciliation");
-    private final SplitPane outerSplit = new SplitPane();
+    private final WorkPaneTabs workPanes = new WorkPaneTabs("journalWorkPanes");
     private final SplitPane editorSplit = new SplitPane();
-    private final SplitPane detailSplit = new SplitPane();
     private final TabPane supplementalTabs = new TabPane();
     private final Map<SupplementalKind, CheckBox> supplementalSelections = new EnumMap<>(SupplementalKind.class);
     private final Map<SupplementalKind, TableView<SupplementalRow>> supplementalTables = new EnumMap<>(SupplementalKind.class);
@@ -155,29 +154,22 @@ public final class JournalWorkspacePanel implements AppPanel
         Node additionalDetails = buildAdditionalDetailsRegion();
         Node supplementalDetails = buildSupplementalRegion();
 
-        detailSplit.setId("journalWorkspaceDetailSplit");
-        detailSplit.setOrientation(Orientation.HORIZONTAL);
-        detailSplit.getItems().setAll(additionalDetails, supplementalDetails);
-        detailSplit.setDividerPositions(0.36);
-        detailSplit.setMinSize(0, 0);
-
         editorSplit.setId("journalWorkspaceEditorSplit");
         editorSplit.setOrientation(Orientation.VERTICAL);
-        editorSplit.getItems().setAll(entryHeaderRegion, lineRegion, detailSplit);
-        editorSplit.setDividerPositions(0.22, 0.64);
-        editorSplit.setMinSize(0, 0);
+        editorSplit.getItems().setAll(entryHeaderRegion, lineRegion);
+        editorSplit.setDividerPositions(0.38);
+        editorSplit.setMinSize(0, 500);
 
-        outerSplit.setId("journalWorkspaceOuterSplit");
-        outerSplit.setOrientation(Orientation.VERTICAL);
-        outerSplit.getItems().setAll(journalRegion, editorSplit);
-        outerSplit.setDividerPositions(0.43);
-        outerSplit.setMinSize(0, 0);
-        SplitPane workspaceSplit = new SplitPane(workspaceHeader, outerSplit);
-        workspaceSplit.setId("journalWorkspaceFiltersSplit");
-        workspaceSplit.setOrientation(Orientation.VERTICAL);
-        workspaceSplit.setDividerPositions(0.22);
-        workspaceSplit.setMinSize(0, 0);
-        root.setCenter(workspaceSplit);
+        SplitPane register = new SplitPane(workspaceHeader, journalRegion);
+        register.setId("journalWorkspaceFiltersSplit");
+        register.setOrientation(Orientation.VERTICAL);
+        register.setDividerPositions(0.30);
+        register.setMinSize(0, 0);
+        workPanes.addPane("Journal", register)
+                .addPane("Entry", editorSplit)
+                .addPane("Additional Details", additionalDetails)
+                .addPane("Supplemental Details", supplementalDetails);
+        root.setCenter(workPanes);
 
         configureEditorListeners();
         loadReferenceData();
@@ -382,7 +374,7 @@ public final class JournalWorkspacePanel implements AppPanel
         saveScope.setWrapText(true);
         VBox content = new VBox(8, editorMode, form, totals, saveScope, validationMessage);
         content.setPadding(new Insets(6));
-        content.setMinSize(0, 0);
+        content.setMinSize(Region.USE_PREF_SIZE, 0);
         ScrollPane scroll = scrollable(content, true);
         scroll.setId("journalWorkspaceEntryHeaderScroll");
         return scroll;
@@ -397,15 +389,11 @@ public final class JournalWorkspacePanel implements AppPanel
         drillReconciliationButton.setOnAction(event -> openSelectedLineReconciliation());
         removeLineButton.setOnAction(event -> removeSelectedLine());
         ToolBar tools = new ToolBar(addLine, duplicateLine, removeLineButton, drillReconciliationButton);
-        SplitPane taggingSplit = new SplitPane(buildTaggingControls(), lineTable);
-        taggingSplit.setId("journalTaggingSplit");
-        taggingSplit.setOrientation(Orientation.VERTICAL);
-        taggingSplit.setDividerPositions(0.4);
-        taggingSplit.setMinSize(0, 0);
-        VBox region = new VBox(6, sectionHeading("Entry Lines"), tools, taggingSplit);
+        VBox region = new VBox(6, sectionHeading("Entry Lines"), tools, buildTaggingControls(), lineTable);
         region.setPadding(new Insets(4));
-        region.setMinSize(0, 0);
-        VBox.setVgrow(taggingSplit, Priority.ALWAYS);
+        region.setMinSize(0, Region.USE_COMPUTED_SIZE);
+        lineTable.setMinHeight(100);
+        VBox.setVgrow(lineTable, Priority.ALWAYS);
         return region;
     }
 
@@ -461,6 +449,7 @@ public final class JournalWorkspacePanel implements AppPanel
         updateTagActions();
         ScrollPane scroll = scrollable(new VBox(4, help, controls), true);
         scroll.setId("journalTaggingScroll");
+        scroll.setMinHeight(90);
         scroll.setPrefHeight(130);
         return scroll;
     }
@@ -1041,6 +1030,10 @@ public final class JournalWorkspacePanel implements AppPanel
         recalculateTotals();
         updateActionState();
         status.setText("New journal entry ready.");
+        if (confirmDiscard)
+        {
+            workPanes.getSelectionModel().select(1);
+        }
     }
 
     private void editSelectedTransaction()
@@ -1067,6 +1060,7 @@ public final class JournalWorkspacePanel implements AppPanel
         }
         long generation = ++editorGeneration;
         status.setText("Loading transaction #" + transactionId + "...");
+        workPanes.getSelectionModel().select(1);
         UiAsync.run("journal-workspace-edit-" + transactionId,
                 () -> UiServiceRegistry.transactionEntry().load(transactionId),
                 view -> {
@@ -1779,6 +1773,8 @@ public final class JournalWorkspacePanel implements AppPanel
         saveButton.setDisable(saveInProgress);
         newButton.setDisable(saveInProgress);
         editorSplit.setDisable(saveInProgress);
+        workPanes.getTabs().get(2).getContent().setDisable(saveInProgress);
+        workPanes.getTabs().get(3).getContent().setDisable(saveInProgress);
         editButton.setDisable(saveInProgress || journalTable.getSelectionModel().getSelectedItem() == null);
         deleteButton.setDisable(saveInProgress || (editTransactionId == null && journalTable.getSelectionModel().getSelectedItem() == null));
         removeLineButton.setDisable(lineTable.getSelectionModel().getSelectedItem() == null || lineTable.getItems().size() <= 2);
