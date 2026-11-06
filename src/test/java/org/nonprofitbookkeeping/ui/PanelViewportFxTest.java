@@ -16,6 +16,70 @@ import static org.junit.jupiter.api.Assertions.*;
 class PanelViewportFxTest
 {
     @Test
+    void initiallyDisabledTabsCanBeEnabledAfterAddingScrollContainers()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            Platform.setImplicitExit(false);
+            for (boolean disableParent : new boolean[] { false, true })
+            {
+                Button editable = new Button("Add detail");
+                Button restricted = new Button("Restricted action");
+                var restriction = new javafx.beans.property.SimpleBooleanProperty(true);
+                restricted.disableProperty().bind(restriction);
+                VBox form = new VBox(editable, restricted);
+                var tab = new javafx.scene.control.Tab("Details", form);
+                var tabs = new javafx.scene.control.TabPane(tab);
+                if (disableParent) tabs.setDisable(true);
+                else tab.setDisable(true);
+                assertTrue(form.isDisable(), "JavaFX explicitly disables the original tab content");
+
+                PanelViewport.prepare(tabs);
+                Stage stage = new Stage();
+                try
+                {
+                    stage.setScene(new Scene(tabs, 600, 400));
+                    stage.show();
+                    tabs.applyCss();
+                    tabs.layout();
+                    if (disableParent) tabs.setDisable(false);
+                    else tab.setDisable(false);
+
+                    assertFalse(form.isDisabled(), "The tab's obsolete disable flag must not remain on the inner form");
+                    assertFalse(editable.isDisabled());
+                    assertTrue(restricted.isDisabled(), "Independent permission/readiness bindings must be preserved");
+                    restriction.set(false);
+                    assertFalse(restricted.isDisabled());
+                    tab.setDisable(true);
+                    assertTrue(editable.isDisabled());
+                    tab.setDisable(false);
+                    assertFalse(editable.isDisabled());
+                }
+                finally
+                {
+                    stage.close();
+                }
+            }
+            return null;
+        });
+    }
+
+    @Test
+    void wrappingAnEnabledTabPreservesAnIndependentlyDisabledForm()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            VBox form = new VBox(new Button("Busy action"));
+            var tab = new javafx.scene.control.Tab("Details", form);
+            var tabs = new javafx.scene.control.TabPane(tab);
+            form.setDisable(true);
+            PanelViewport.prepare(tabs);
+            assertTrue(form.isDisable());
+            return null;
+        });
+    }
+
+    @Test
     void smallWindowCanScrollToLastFormControlAtLargeTextSize()
     {
         FxTestSupport.onFx(() ->

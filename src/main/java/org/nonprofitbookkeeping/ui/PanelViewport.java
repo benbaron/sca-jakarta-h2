@@ -54,6 +54,13 @@ final class PanelViewport extends ScrollPane
                     prepare(content);
                     if (!(content instanceof PanelViewport))
                     {
+                        // Tab writes its effective disabled state onto its content.
+                        // Transfer that ownership to the new viewport so the old
+                        // root does not stay disabled after the tab is enabled.
+                        if (tab.isDisabled() && !content.disableProperty().isBound())
+                        {
+                            content.setDisable(false);
+                        }
                         tab.setContent(wrap(content));
                     }
                 }

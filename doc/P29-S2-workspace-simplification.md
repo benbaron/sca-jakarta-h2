@@ -47,6 +47,12 @@ Only the left shell divider remains active. Existing two-field preference files 
 
 Rendered UI tests exposed delayed divider/table-layout callbacks firing after logout. The common split binder, Report Library and Company Administration now capture the original company/database scope with `UiStateWriteContext` and skip stale or unauthenticated layout saves. Authoritative preference-service authorization remains unchanged. The regression first proves a valid layout save, then proves that logout, company change and database change preserve the retained value rather than writing through the stale callback. This is a narrow prerequisite for reliable layout/overflow changes, with no accounting or schema change.
 
+## Supplemental-tab availability correction
+
+The owner's Windows screenshot showed Receivable checked while its editor remained disabled. JavaFX writes a tab's effective disabled state directly to its content root. Wrapping an initially disabled tab after construction left that flag on the inner root; enabling the tab subsequently enabled only the new viewport. `PanelViewport.prepare` now clears the obsolete tab-owned flag when transferring content into its viewport. Independently bound controls and disabled forms in enabled tabs retain their own state.
+
+`JournalSupplementalAvailabilityTest` exercises the production `PanelFactory` route with an ACCOUNTANT session and all six supplemental types. Each checkbox enables the real inner table and Add action; Add/Remove operate on the live draft, and unchecking/rechecking retains correct availability. Generic viewport regressions also cover a disabled parent TabPane and independently restricted controls. These checks are included in both Linux display and Windows presentation CI. Earlier direct Journal-controller tests bypassed the factory's viewport preparation and therefore missed this regression.
+
 ## Validation and owner checks
 
 Run baseline compile, focused shell/menu/pane/overflow tests, the complete production JavaFX route and business-editor regressions, and `mvn clean verify`. Test every canonical destination for a maximum of two visible split sections across all inner tabs. Exercise actual horizontal and vertical scrollbars in small windows and confirm the final form command remains reachable. Retain save, correction, permissions, table-state and dirty-draft assertions when adapting retired geometry assertions.
@@ -57,10 +63,13 @@ Owner Windows checks:
 2. Confirm no right Inspector, toggle button, View menu entry, right-click action or Inspector shortcut exists.
 3. Visit every destination and named work pane at laptop size, then reduce width/height and increase text/display scaling. Reach the bottom/right of every form and table using the provided scrollbars.
 4. In Journal, create/edit an entry, switch through Entry, Additional Details and Supplemental Details, and confirm the draft survives. New/Edit opens Entry; Save retains the existing full transaction scope.
+   Check each supplemental type and confirm its table and Add Open Item Detail action become usable. Uncheck/recheck it and confirm it enables again. Remove Detail should remain disabled until a row is selected.
 5. Check report Parameters/Preview, asset/history, inventory/movement, bank/account and review-evidence/history view switching without losing selection.
 
 Local automated display checks do not establish native Windows appearance or owner acceptance. The owner explicitly authorized remote publication on 2026-11-05. Native Windows visual acceptance remains separate from automated validation.
 
 ## Local verification result
 
-Baseline compile and clean verification passed (1,125 tests, zero failures/errors, 83 expected display skips). After the final presentation/layout-save refinements, the complete UI package passed on a local-only virtual display: 333 tests, zero failures/errors/skips, with no uncaught layout-save exceptions. Screens at 1280×800 and 680×520 with enlarged text were reviewed. Source/workflow/document checks pass. Native Windows appearance/scaling, owner acceptance and GitHub final-head CI remain unclaimed and pending; the branch is published in draft [PR #410](https://github.com/benbaron/sca-jakarta-h2/pull/410). Final-head CI and native Windows owner review remain pending.
+Initial baseline compile and headless clean verification passed (1,125 tests, zero failures/errors, 83 expected display skips). The initial complete UI package passed 333 tests on a local-only virtual display. Screens at 1280×800 and 680×520 with enlarged text were reviewed.
+
+After the owner's supplemental-tab report, the new production-route and generic regressions reproduced the disabled inner editor before the fix. Focused acceptance passed 10 tests. The corrected source then passed `DISPLAY=:95 /workspace/.cloud-setup/maven.sh clean verify`: **1,162 tests, zero failures/errors/skips**, including all **336 UI tests**, in 12:12 (`/workspace/work/supplemental-display-clean-verify.log`). No uncaught JavaFX-thread exception was logged. Source/workflow/document checks pass. Native Windows appearance/scaling and owner acceptance remain pending; local virtual-display execution does not establish them. The branch is published in draft [PR #410](https://github.com/benbaron/sca-jakarta-h2/pull/410); inspect final-head CI separately.
