@@ -1,15 +1,19 @@
 ---
-plan_version: 450
+plan_version: 451
 active_phase: P29
 active_slice: P29-S2
 active_status: VERIFYING
 active_branch: codex/P29-S2-workspace-simplification
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/410
-active_head: 57eba6414b580410e5a8af8004db65c5f09b13c1
-next_action: "Inspect final-head CI for draft PR 410, correct any failing checks, and obtain owner Windows visual/scaling review before merge."
+active_head: 1cd916d782fbddceefd3f076143ccc1e79c42ab3
+next_action: "Verify the supplemental-tab correction and following ledger commit on remote draft PR 410, inspect final-head CI and correct any failures, then obtain owner Windows visual/scaling acceptance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P29-S2 supplemental-tab correction — 2026-11-05 America/Denver: owner supplies a Windows ACCOUNTANT screenshot with Receivable checked but the complete inner editor disabled. Reproduced both generically and through `PanelFactory.create(JOURNAL_PANE)`: JavaFX `Tab.updateDisabled()` sets the original content root's disable flag; adding the overflow viewport later leaves that flag stranded on the old root. Enabling the tab only enables the new viewport. `PanelViewport.prepare` now transfers this tab-owned state to the viewport while preserving independently disabled/bound child controls and enabled-tab form state. Regression covers all six supplemental kinds with an ACCOUNTANT, live Add/Remove draft actions, rechecking, parent-tab disabling and independently restricted controls. Earlier direct Journal-controller tests did not execute the production scroll preparation. Baseline compile passed; the new tests failed before the fix and focused acceptance passed all 10 tests afterward. Final corrected-source `DISPLAY=:95 /workspace/.cloud-setup/maven.sh clean verify` passed **1,162 tests, zero failures/errors/skips**, including **336 UI tests**, in 12:12 (`/workspace/work/supplemental-display-clean-verify.log`), with no uncaught JavaFX-thread exceptions. The initial headless verification attempt was stopped before completion to add an upfront toolkit-availability check to the new regression before it mutates session/database state; the final complete display-enabled clean run is the acceptance evidence. Workflow Linux/Windows selectors include the new production Journal regression. Whitespace checks pass. Implementation commit `1cd916d782fbddceefd3f076143ccc1e79c42ab3`, tree `e60d5e03c3ecdd983eda1e3c880b72d73babe263`, follows expected remote parent `da9678f6e6ffc5322dec3e34ba5b097dccb4f947`; this next commit records verification only. Existing PR 410 remains open/draft and owns this correction. Owner publication authorization persists; merging is not authorized. Remaining: verify the pushed final head/tree and its CI, then owner Windows visual/scaling acceptance. No accounting/schema/dependency changes.
+
+Prior-head CI evidence: workflow `42143227520` at `da9678f6e6ffc5322dec3e34ba5b097dccb4f947` passed the Windows presentation job and Linux clean headless verification; the later duplicate `Run tests` step failed and prevented its production JavaFX step. Connected job-log retrieval returns `Transport closed`; CLI log access and the temporary artifact download return HTTP 403, so the failure details could not be read in this environment. Do not infer a cause or claim CI success. Inspect the new final-head run; any failure remains to be diagnosed before merge. Native Windows owner acceptance remains pending.
 
 P29-S2 draft publication — 2026-11-05 America/Denver: committed the reviewed 76-file UI slice as `57eba6414b580410e5a8af8004db65c5f09b13c1`, tree `efaca3bdc9e194ec5f1d325fc819a5172568c163`, and pushed without force to `origin/codex/P29-S2-workspace-simplification`. Native remote and connected draft [PR #410](https://github.com/benbaron/sca-jakarta-h2/pull/410) confirm the matching implementation head; base main remains `4123280337d9a50bfe17c0a6113702ecfc9161fd`. Initial-head Maven workflow `42143093762` started; no CI success is claimed. This following publication-ledger commit changes documentation only and must be verified against its final remote head/CI after pushing. Product/test bytes remain those of the recorded local validation. P29-S2 stays VERIFYING pending final-head CI and owner Windows appearance/scaling review, then owner review/merge. Publication is authorized; merging has not been requested.
 
