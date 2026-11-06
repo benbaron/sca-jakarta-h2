@@ -89,10 +89,9 @@ final class CheckExceptionsPane implements AppPanel
         note.setWrapText(true);
         evidence.setId("checkEvidenceReference");
         newNumber.setId("checkReplacementNumber");
-        Label explanation = new Label("Age review never changes the ledger or extinguishes an obligation. Save Review changes delivery/evidence facts only. Void requires an explicit cancellation reason and reverses the whole selected transaction. Reissue reverses one check transaction and creates a linked new check with unchanged allocation: no double expense. Cleared-state changes belong to Match. Retained correction history cannot be deleted or edited; correct the current instrument by reversal.");
+        Label explanation = new Label("Check history cannot be edited or deleted; use Void or Reissue to correct it.");
         explanation.setWrapText(true);
-        Label policy = new Label("D04 stale-triggered accounting awaits the accounting authority. Choose an age cutoff for review; no expiry is assumed. External evidence references are factual pointers, not attachments or proof verification. Bank errors/differences must be resolved in Bank Transactions or the matching workflow.");
-        policy.setWrapText(true);
+        ageCutoff.setTooltip(new javafx.scene.control.Tooltip("Find older checks for review. Age alone never cancels a check or changes accounting."));
         Button refresh = action("Refresh", "checkReviewRefresh", this::refresh, false);
         Button allBanks = action("All banks", "checkReviewAllBanks", () ->
         {
@@ -102,7 +101,7 @@ final class CheckExceptionsPane implements AppPanel
         exceptionsOnly.setOnAction(event -> filter());
         FlowPane filters = new FlowPane(8, 8, new Label("Bank"), bank, new Label("Review through"), through,
                 new Label("Issued on/before (age review)"), ageCutoff, exceptionsOnly, refresh, allBanks);
-        VBox header = new VBox(8, explanation, policy, filters, status);
+        VBox header = new VBox(8, explanation, filters, status);
         GridPane form = new GridPane();
         form.setHgap(8);
         form.setVgap(8);

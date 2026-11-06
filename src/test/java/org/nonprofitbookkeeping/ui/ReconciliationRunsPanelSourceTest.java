@@ -40,7 +40,7 @@ public class ReconciliationRunsPanelSourceTest
         assertTrue(source.contains("Finalize"));
         assertTrue(source.contains("Save Manual Line"));
         assertTrue(source.contains("Import Bank Statement…"));
-        assertTrue(source.contains("OFX/QFX, mapped CSV, and normalized CSV"));
+        assertTrue(source.contains("OFX/QFX, mapped CSV or normalized bank CSV"));
         assertFalse(source.contains("CSV Import"));
         assertFalse(source.contains("OFX Import"));
         assertFalse(source.contains("QIF Import"));

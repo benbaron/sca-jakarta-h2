@@ -153,8 +153,6 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
         // scroll panes and tables retain native two-axis scrolling.
         installDividerState(findById(workspaceRoot, "journalWorkspaceFiltersSplit", SplitPane.class), "filters-v2");
         installDividerState(findById(workspaceRoot, "journalWorkspaceEditorSplit", SplitPane.class), "editor-v2");
-        installDividerState(findById(workspaceRoot, "journalNmrDetailSplit", SplitPane.class), "nmrDetail");
-        installDividerState(findById(workspaceRoot, "journalMerchantDetailSplit", SplitPane.class), "merchantDetail");
     }
 
     private void installCompanyDateEditors(Node workspaceRoot)

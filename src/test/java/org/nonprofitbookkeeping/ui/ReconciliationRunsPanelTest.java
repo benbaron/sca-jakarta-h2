@@ -27,8 +27,8 @@ public class ReconciliationRunsPanelTest
         assertTrue(source.contains("Overwrite ledger cleared state"));
         assertTrue(source.contains("Never overwrite; require manual resolution"));
         assertTrue(source.contains("Decide per imported line"));
-        assertTrue(source.contains("Warn only preserves ledger cleared state"));
-        assertTrue(source.contains("Use Mark Cleared before matching"));
+        assertTrue(source.contains("warnOnly.setTooltip"));
+        assertTrue(source.contains("Mark an uncleared ledger line cleared before matching"));
         assertFalse(source.contains("Approve Selected"));
         assertFalse(source.contains("Reject Selected"));
         assertFalse(source.contains("View Approval Audit"));

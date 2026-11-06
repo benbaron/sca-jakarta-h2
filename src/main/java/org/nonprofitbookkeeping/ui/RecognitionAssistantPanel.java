@@ -96,11 +96,10 @@ public final class RecognitionAssistantPanel implements AppPanel
 
         Label title = new Label("Recognition Assistant");
         title.getStyleClass().add("panel-title");
-        Label guidance = new Label("Preview straight-line installments from the selected canonical prepaid or deferred item. Nothing is posted until Save Selected Recognition is used.");
-        guidance.setWrapText(true);
+        kind.setTooltip(new javafx.scene.control.Tooltip("Preview prepaid or deferred installments; Save Selected Recognition creates the entry."));
         status.setId("recognitionStatus");
         status.setWrapText(true);
-        root.setTop(new VBox(6, title, new HBox(8, new Label("Item type"), kind, refresh), guidance,
+        root.setTop(new VBox(6, title, new HBox(8, new Label("Item type"), kind, refresh),
                 status, new Separator()));
 
         GridPane form = new GridPane();

@@ -51,7 +51,7 @@ class InventoryPanelSourceTest
         assertTrue(source.contains("Reactivate Item"));
         assertTrue(source.contains("Dispose Item"));
         assertTrue(source.contains("changeStatus("));
-        assertTrue(source.contains("disposed items remain terminal retained history"));
+        assertTrue(source.contains("Items cannot be deleted. Reduce quantity to zero before retiring them."));
         assertTrue(source.contains("private final Label itemStatus"));
         assertFalse(source.contains("itemStatus.getItems().setAll(InventoryItem.Status.values())"));
     }

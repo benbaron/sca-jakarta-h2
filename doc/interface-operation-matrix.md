@@ -21,7 +21,6 @@ Status: reconciled to current production architecture through P20-S3 JavaFX perm
 | Validate | Journal-only non-mutating validation command; no write permission is added merely because it is global. | Canonical Journal editor/service validation; not a posting or approval workflow. |
 | Copy/Paste | Native JavaFX text-control behavior. | Focused standard text control; production shell does not intercept `Ctrl+C`/`Ctrl+V`. |
 | Close All Tabs | Closes closable workspace tabs with dirty-state protection. | `ProductionWorkspaceWindow` / `PanelHost`. |
-| Close Inspector | Hides the production inspector. | Production shell state. |
 | Find / command palette | Not installed or advertised. | Retired with legacy shell authority in P17-C11. |
 | Database create/open/switch/recovery | Prepares and validates the target database/service bundle before activation. | `DatabaseSessionController`, migration/location services, `UiServiceRegistry`, company-session validation. |
 | Import / export | Format-specific production actions; there is no generic Jobs workflow. | `ImportExportOrchestrationService` plus format-specific preview/review/commit services. |
@@ -33,7 +32,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 
 ## Production command capability matrix
 
-`Close All Tabs` and `Close Inspector` are shell-owned. Panel-owned capabilities are exact and must never be enabled as placeholders.
+`Close All Tabs` is shell-owned. Panel-owned capabilities are exact and must never be enabled as placeholders.
 
 | Destination | New | Save | Validate | Notes |
 |---|---:|---:|---:|---|

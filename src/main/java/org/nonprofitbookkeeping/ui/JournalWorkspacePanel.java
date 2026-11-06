@@ -1,6 +1,5 @@
 package org.nonprofitbookkeeping.ui;
 
-
 import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -180,8 +179,7 @@ public final class JournalWorkspacePanel implements AppPanel
     {
         Label title = new Label("Journal");
         title.getStyleClass().add("panel-title");
-        Label caption = new Label("Review complete transactions. Fund + Event filters must match the same line; displayed totals include all transaction lines.");
-        caption.setWrapText(true);
+        searchText.setTooltip(new javafx.scene.control.Tooltip("Fund and Event must match the same line. Results show complete transactions."));
 
         searchText.setPromptText("Memo, payee, check/reference or bank");
         searchText.setPrefColumnCount(18);
@@ -226,6 +224,7 @@ public final class JournalWorkspacePanel implements AppPanel
         deleteButton.setOnAction(event -> deleteOrReverseCurrentTransaction());
         UiPermissionGate.gate(newButton, ApplicationPermission.BOOKKEEPING_WRITE, "Create a journal entry");
         UiPermissionGate.gate(editButton, ApplicationPermission.BOOKKEEPING_WRITE, "Edit a journal entry");
+        saveButton.setTooltip(new javafx.scene.control.Tooltip("Saves the header, entry lines, additional details and every supplemental tab together."));
         UiPermissionGate.gate(saveButton, ApplicationPermission.BOOKKEEPING_WRITE, "Save a journal entry");
         UiPermissionGate.gate(deleteButton, ApplicationPermission.BOOKKEEPING_WRITE, "Delete or reverse a journal entry");
         refreshButton.setOnAction(event -> reloadJournal());
@@ -240,7 +239,7 @@ public final class JournalWorkspacePanel implements AppPanel
         fundFilter.setOnAction(event -> reloadJournal());
         eventFilter.setOnAction(event -> reloadJournal());
 
-        VBox header = new VBox(6, title, caption, filters, actions, status, new Separator());
+        VBox header = new VBox(6, title, filters, actions, status, new Separator());
         ScrollPane headerScroll = scrollable(header, true);
         headerScroll.setId("journalWorkspaceFiltersScroll");
         headerScroll.setPrefHeight(155);
@@ -251,8 +250,9 @@ public final class JournalWorkspacePanel implements AppPanel
     private Node buildJournalRegion()
     {
         Label heading = sectionHeading("Journal Transactions");
-        Label help = new Label("One row represents one canonical transaction. Double-click a row to load it into the editor below.");
-        VBox region = new VBox(6, heading, help, journalTable);
+
+        VBox region = new VBox(6, heading, journalTable);
+        journalTable.setTooltip(new Tooltip("Double-click a transaction to open Entry."));
         region.setPadding(new Insets(4, 0, 4, 0));
         region.setMinSize(0, 0);
         VBox.setVgrow(journalTable, Priority.ALWAYS);
@@ -370,9 +370,7 @@ public final class JournalWorkspacePanel implements AppPanel
         totals.setAlignment(Pos.CENTER_LEFT);
         validationMessage.setWrapText(true);
 
-        Label saveScope = new Label("Save Entry saves the header, entry lines, additional details and all supplemental tabs together.");
-        saveScope.setWrapText(true);
-        VBox content = new VBox(8, editorMode, form, totals, saveScope, validationMessage);
+        VBox content = new VBox(8, editorMode, form, totals, validationMessage);
         content.setPadding(new Insets(6));
         content.setMinSize(Region.USE_PREF_SIZE, 0);
         ScrollPane scroll = scrollable(content, true);
@@ -421,6 +419,8 @@ public final class JournalWorkspacePanel implements AppPanel
         applyFund.setOnAction(event -> applyTags(true, false));
         applyEvent.setOnAction(event -> applyTags(false, false));
         clearEvent.setOnAction(event -> applyTags(false, true));
+        applyFund.setTooltip(new Tooltip("Apply this Fund to selected lines only; Event assignments stay as entered."));
+        applyEvent.setTooltip(new Tooltip("Apply this Event to selected lines only; Fund assignments stay as entered."));
         UiPermissionGate.gate(applyFund, ApplicationPermission.BOOKKEEPING_WRITE, "Assign a fund");
         UiPermissionGate.gate(applyEvent, ApplicationPermission.BOOKKEEPING_WRITE, "Assign an event");
         UiPermissionGate.gate(clearEvent, ApplicationPermission.BOOKKEEPING_WRITE, "Clear an event assignment");
@@ -440,14 +440,13 @@ public final class JournalWorkspacePanel implements AppPanel
         Button budgetCategories = new Button("Budget Categories");
         budgetCategories.setId("journalBudgetCategories");
         budgetCategories.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.BUDGET_CATEGORIES, ""));
-        Label help = new Label("Select one or more lines, find a Fund or Event, then Apply. Only selected lines change; Fund and Event are independent.");
-        help.setWrapText(true);
+
         javafx.scene.layout.FlowPane controls = new javafx.scene.layout.FlowPane(8, 6,
                 new Label("Fund"), fundChoiceSearch, selectedFund, applyFund,
                 new Label("Event / Activity"), eventChoiceSearch, selectedEvent, applyEvent, clearEvent,
                 refresh, events, funds, budgetCategories, counterparties, merchants);
         updateTagActions();
-        ScrollPane scroll = scrollable(new VBox(4, help, controls), true);
+        ScrollPane scroll = scrollable(new VBox(4, controls), true);
         scroll.setId("journalTaggingScroll");
         scroll.setMinHeight(90);
         scroll.setPrefHeight(130);
@@ -677,9 +676,8 @@ public final class JournalWorkspacePanel implements AppPanel
         addDetailField(grid, 2, "Payee", payeeBox);
         addDetailField(grid, 3, "Bank account", bankAccountBox);
 
-        Label scope = new Label("Only H2-backed transaction fields are editable here. Payment method, Check / Reference and issue/delivery dates belong to individual BANK lines. Check numbers must be unique within the issuing account, including retained reversed checks. The header bank is compatibility context only.");
-        scope.setWrapText(true);
-        VBox content = new VBox(8, sectionHeading("Additional Details"), grid, scope);
+        bankAccountBox.setTooltip(new javafx.scene.control.Tooltip("Header bank context only. Enter payment method and check details on each bank line."));
+        VBox content = new VBox(8, sectionHeading("Additional Details"), grid);
         content.setPadding(new Insets(4));
         content.setMinSize(0, 0);
         ScrollPane scroll = scrollable(content, true);
@@ -812,40 +810,18 @@ public final class JournalWorkspacePanel implements AppPanel
                 markDirty();
             }
         });
-        Label lifecycleHelp = new Label(
-                "Open-item rows use a stable Item ID, INCREASE/DECREASE effect, and a 1-based Ledger Line. "
-                        + "Save Entry saves all supplemental tabs with the transaction. SCLX preserves item links. "
-                        + (kind == SupplementalKind.OTHER_LIABILITY
-                            ? "Select NMR recipient to explicitly designate an NMR item; its linked ledger line requires an event. "
-                                + "Use the same recipient, account, fund and event on every allocation. Blank is unclassified; line NMR flags do not designate items. Select movement explicitly; merchant discharge requires Merchant on the linked line and NMR evidence. Withholding alone does not settle NMR."
-                            : kind == SupplementalKind.RECEIVABLE
-                                ? "Merchant role is optional. Receipt/settlement requires Merchant and Event on the receivable line. Enter comma-separated 1-based payout/fee/evidenced NMR line numbers with the same Merchant, Fund and Event; each whole line may be claimed once. Observed withholding is a dated nonfinancial fact requiring evidence; blank is unknown and zero is explicit. It never settles NMR or receivable. Save Entry saves all facts together."
-                                : "Remove Detail is saved through the owning transaction correction controls."));
-        lifecycleHelp.setWrapText(true);
-        lifecycleHelp.getStyleClass().add("field-help");
-        Node panel;
-        if (kind == SupplementalKind.OTHER_LIABILITY || kind == SupplementalKind.RECEIVABLE)
-        {
-            VBox controls = new VBox(6, new HBox(8, add, apply, remove), lifecycleHelp);
-            controls.setMinSize(0, 0);
-            controls.setPrefWidth(560);
-            ScrollPane controlsScroll = scrollable(controls, false);
-            controlsScroll.setId(kind == SupplementalKind.RECEIVABLE ? "journalMerchantDetailControlsScroll" : "journalNmrDetailControlsScroll");
-            table.setMinSize(0, 0);
-            SplitPane split = new SplitPane(controlsScroll, table);
-            split.setId(kind == SupplementalKind.RECEIVABLE ? "journalMerchantDetailSplit" : "journalNmrDetailSplit");
-            split.setOrientation(Orientation.VERTICAL);
-            split.setDividerPositions(0.35);
-            split.setMinSize(0, 0);
-            panel = split;
-        }
-        else
-        {
-            VBox box = new VBox(6, new HBox(8, add, apply, remove), lifecycleHelp, table);
-            VBox.setVgrow(table, Priority.ALWAYS);
-            box.setMinSize(0, 0);
-            panel = box;
-        }
+        add.setTooltip(new Tooltip("Add a draft open item linked to a 1-based entry-line number."));
+        apply.setTooltip(new Tooltip("Apply an existing open item; Save Entry saves every supplemental tab."));
+        remove.setTooltip(new Tooltip("Remove the selected detail from this entry; Save Entry applies the correction."));
+        table.setTooltip(new Tooltip(kind == SupplementalKind.RECEIVABLE
+                ? "Link payout and fee lines by number; Merchant, Fund and Event must match."
+                : kind == SupplementalKind.OTHER_LIABILITY
+                    ? "Choose an NMR recipient explicitly; keep its account, Fund and Event consistent."
+                    : "Link each detail to an entry-line number and choose Increase or Decrease."));
+        table.setMinSize(0, 0);
+        VBox panel = new VBox(6, new javafx.scene.layout.FlowPane(8, 6, add, apply, remove), table);
+        panel.setMinSize(0, 0);
+        VBox.setVgrow(table, Priority.ALWAYS);
         Tab tab = new Tab(kind.tabTitle(), panel);
         tab.setClosable(false);
         return tab;

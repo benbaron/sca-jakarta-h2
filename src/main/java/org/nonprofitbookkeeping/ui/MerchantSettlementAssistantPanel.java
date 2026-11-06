@@ -83,8 +83,7 @@ public final class MerchantSettlementAssistantPanel implements AppPanel
         root.setMinSize(0, 0);
         Label title = new Label("Merchant Settlement Assistant");
         title.getStyleClass().add("panel-title");
-        Label guidance = new Label("Preview actual payout, fee, and optional evidenced NMR discharge against one existing merchant receivable. The saved result is one canonical Journal transaction; bank clearing remains in reconciliation.");
-        guidance.setWrapText(true);
+        title.setTooltip(new javafx.scene.control.Tooltip("Preview one merchant receivable settlement, then save its Journal entry."));
         Button refresh = new Button("Refresh");
         refresh.setId("merchantSettlementRefresh");
         refresh.setOnAction(event -> refresh());
@@ -95,7 +94,7 @@ public final class MerchantSettlementAssistantPanel implements AppPanel
                 "Use the correction workflow and identify the original merchant receipt or settlement."));
         status.setId("merchantSettlementStatus");
         status.setWrapText(true);
-        root.getChildren().add(new VBox(6, title, guidance, new FlowPane(8, 6, refresh, correction), status, new Separator()));
+        root.getChildren().add(new VBox(6, title, new FlowPane(8, 6, refresh, correction), status, new Separator()));
 
         configureReceivables();
         configureNmrItems();

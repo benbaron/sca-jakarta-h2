@@ -43,6 +43,20 @@ An enabled global command must identify a real operation in the active productio
 
 Default command labels, accelerators, and Help shortcut text come from `GlobalCommandRegistry`; `AppPanel.commandLabel` may supply the selected subpane's specific save scope. Help must not advertise an uninstalled shortcut. The workspace must not intercept standard Copy/Paste accelerators merely to route them to empty panel hooks; focused JavaFX text controls own their native editing behavior. A handled result is returned only after a declared operation has been invoked successfully; undeclared commands and thrown failures return a factual not-handled result.
 
+## Panel instructions and help
+
+Keep operating instructions in the [panel and function guide](ui/panel-guide.md),
+organized under Markdown function headings for later manual assembly. Remove
+redundant introductions, implementation details and development-phase notes from
+panels. Put short, control-specific hints in hover tooltips, installed before
+permission gating so permission explanations remain authoritative.
+
+Do not reserve a pane, splitter section or empty region for explanatory prose.
+Keep current errors, validation, results, confirmation details and status visible.
+Where a durable record has no Delete action, retain a brief visible explanation
+of its supported correction/deactivation action. Tooltips supplement meaningful
+labels and do not hide information required to understand the current result.
+
 ## Tables
 
 Every production table must support the following column behavior:

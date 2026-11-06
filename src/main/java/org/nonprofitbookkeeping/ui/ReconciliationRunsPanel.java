@@ -101,8 +101,7 @@ public class ReconciliationRunsPanel implements AppPanel
         root.setPadding(new Insets(8));
         Label title = new Label("Bank Reconciliation");
         title.getStyleClass().add("panel-title");
-        Label subtitle = new Label("Work through setup, statement entry, matching, and final review without crowding the laptop workspace.");
-        subtitle.getStyleClass().add("help-text");
+
         configureSelectors();
         configureTables();
         configureWorkflowTabs();
@@ -114,12 +113,13 @@ public class ReconciliationRunsPanel implements AppPanel
         UiPermissionGate.gate(autoMatchButton, ApplicationPermission.BOOKKEEPING_WRITE, "Auto-match reconciliation lines");
         UiPermissionGate.gate(matchButton, ApplicationPermission.BOOKKEEPING_WRITE, "Match reconciliation lines");
         UiPermissionGate.gate(unmatchButton, ApplicationPermission.BOOKKEEPING_WRITE, "Unmatch reconciliation lines");
+        warnOnly.setTooltip(new javafx.scene.control.Tooltip("Mark an uncleared ledger line cleared before matching; Warn only leaves it unchanged."));
         UiPermissionGate.gate(markClearedButton, ApplicationPermission.BOOKKEEPING_WRITE, "Mark a ledger line cleared");
         UiPermissionGate.gate(explainDifferenceButton, ApplicationPermission.BOOKKEEPING_WRITE, "Record a reconciliation difference explanation");
         UiPermissionGate.gate(saveUnresolvedButton, ApplicationPermission.BOOKKEEPING_WRITE, "Save an unresolved reconciliation");
         UiPermissionGate.gate(finalizeButton, ApplicationPermission.BOOKKEEPING_WRITE, "Finalize a reconciliation");
         UiPermissionGate.gate(successorButton, ApplicationPermission.BOOKKEEPING_WRITE, "Start a successor reconciliation");
-        root.setTop(new VBox(6, title, subtitle, sessionSummary, status, new Separator()));
+        root.setTop(new VBox(6, title, sessionSummary, status, new Separator()));
         root.setCenter(workflowTabs);
         loadBankAccountsAndSessions();
     }
@@ -317,16 +317,12 @@ public class ReconciliationRunsPanel implements AppPanel
         manual.addRow(2, new Label("Reference"), manualReference);
         manual.addRow(3, new Label("Amount"), manualAmount);
 
-        Label importHelp = new Label(
-                "File imports use the governed Import Preview workspace for OFX/QFX, mapped CSV, and normalized CSV. "
-                        + "QIF is not a supported production import format.");
-        importHelp.getStyleClass().add("help-text");
+        Label sourceTitle = new Label("Statement Source");
+        sourceTitle.setTooltip(new javafx.scene.control.Tooltip("Preview OFX/QFX, mapped CSV or normalized bank CSV before accepting rows."));
         VBox pane = new VBox(8,
-                new Label("Statement Source"),
-                new Label("Enter a manual statement line here, or open the governed bank-statement import workflow."),
+                sourceTitle,
                 manual,
                 new HBox(8, addManualButton, importBankStatementButton),
-                importHelp,
                 new HBox(8, backButton("Back: Setup", 0), nextButton("Next: Match", 2)));
         pane.setPadding(new Insets(8));
         return pane;
@@ -402,13 +398,9 @@ public class ReconciliationRunsPanel implements AppPanel
     {
         differenceExplanation.setPromptText("Explain the reconciliation difference; no accounting entry is created");
         differenceExplanation.setPrefWidth(320);
-        Label explanationHelp = new Label("Explanation records a reconciliation fact only; it does not create or change a Journal transaction.");
-        explanationHelp.getStyleClass().add("help-text");
-        Label clearingHelp = new Label("Warn only preserves ledger cleared state. Use Mark Cleared before matching an uncleared ledger line.");
-        clearingHelp.getStyleClass().add("help-text");
-        clearingHelp.setWrapText(true);
-        VBox explanation = new VBox(3, new HBox(8, explainDifferenceButton, differenceExplanation), explanationHelp);
-        VBox matching = new VBox(3, new HBox(8, autoMatchButton, matchButton, unmatchButton, markClearedButton), clearingHelp);
+        differenceExplanation.setTooltip(new javafx.scene.control.Tooltip("Records a reconciliation explanation without changing Journal entries."));
+        VBox explanation = new VBox(3, new HBox(8, explainDifferenceButton, differenceExplanation));
+        VBox matching = new VBox(3, new HBox(8, autoMatchButton, matchButton, unmatchButton, markClearedButton));
         return new HBox(8, matching, explanation);
     }
 
@@ -444,7 +436,7 @@ public class ReconciliationRunsPanel implements AppPanel
         form.addRow(1, new Label("Successor Ending Balance"), successorEndingBalance);
         form.addRow(2, new Label("Actor"), successorActor);
         form.addRow(3, new Label("Reason"), successorReason);
-        Label help = new Label("Finalized sessions are immutable. Start a successor to continue reconciliation without changing the finalized predecessor.");
+        Label help = new Label("Finalized sessions are read-only; start a successor to continue.");
         help.getStyleClass().add("help-text");
         return new VBox(6, new Separator(), new Label("Continue After Finalization"), help, form, successorButton);
     }

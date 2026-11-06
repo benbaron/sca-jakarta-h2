@@ -103,12 +103,10 @@ public class BankTransactionsPanel implements AppPanel
         root.setPadding(new Insets(8));
         Label title = new Label("Bank Transactions");
         title.getStyleClass().add("panel-title");
-        Label authority = new Label(
-                "Ledger Activity is the accounting record. Statement Review contains imported bank evidence used for matching or explicit acceptance.");
-        authority.setWrapText(true);
+        title.setTooltip(new javafx.scene.control.Tooltip("Ledger Activity shows accounting; Statement Review shows imported bank records."));
         Button refresh = new Button("Refresh");
         refresh.setOnAction(event -> reload());
-        root.setTop(new VBox(6, title, authority, refresh));
+        root.setTop(new VBox(6, title, refresh));
 
         Tab ledgerTab = new Tab("Ledger Activity", buildLedgerActivityPane());
         ledgerTab.setClosable(false);

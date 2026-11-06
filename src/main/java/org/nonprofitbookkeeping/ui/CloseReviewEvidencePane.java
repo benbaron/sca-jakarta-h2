@@ -38,7 +38,7 @@ final class CloseReviewEvidencePane implements AppPanel
     private final TableView<CloseReviewEvidenceService.Reference> references = new TableView<>();
     private final TableView<CloseReviewEvidenceService.Review> history = new TableView<>();
     private final Map<String, String> reasons = new LinkedHashMap<>();
-    private final Label status = new Label("Preview the selected dates before recording review facts. No close authorization is granted.");
+    private final Label status = new Label("Preview the selected dates before recording review facts.");
     private final Button save = new Button("Save Review"), preview = new Button("Preview Review Snapshot");
     private AccountingReadiness captured;
     private UUID request = UUID.randomUUID();
@@ -59,7 +59,7 @@ final class CloseReviewEvidencePane implements AppPanel
         preview.disableProperty().bind(busy.or(saved).or(UiPermissionGate.deniedProperty(ApplicationPermission.EXPORT)));
         UiPermissionGate.gate(save, ApplicationPermission.BOOKKEEPING_WRITE, "Record factual review evidence");
         preview.setOnAction(event -> preview()); save.setOnAction(event -> onSave());
-        Label explanation = new Label("External references are descriptive; documents are not independently verified. Blockers remain blockers. Saved reviews cannot be edited or deleted; record a new review to correct them.");
+        Label explanation = new Label("Saved reviews cannot be edited or deleted; start a new review to correct one.");
         explanation.setWrapText(true);
         root.getChildren().addAll(new FlowPane(8, 8, preview, save, fresh, refresh), explanation, status);
         kind.getItems().setAll(CloseReviewEvidenceService.ReferenceKind.values());

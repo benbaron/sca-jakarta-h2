@@ -34,7 +34,7 @@ class ActivitiesPanelLifecycleSourceTest
         assertTrue(source.contains("editorScroll.setMinHeight(0.0)"));
         assertTrue(source.contains("preferencesService.saveState"));
         assertTrue(source.contains("hasUnsavedChanges()"));
-        assertTrue(source.contains("Inactive Activities remain visible here"));
+        assertTrue(source.contains("Used events cannot be deleted; clear Active and Save to deactivate"));
         assertTrue(source.contains("permanent deletion is unavailable"));
         assertFalse(source.contains("Delete disabled"));
         assertFalse(source.contains("AccountType.BANK"));

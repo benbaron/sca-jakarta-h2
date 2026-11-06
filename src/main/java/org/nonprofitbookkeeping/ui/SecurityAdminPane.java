@@ -77,14 +77,11 @@ final class SecurityAdminPane
     private void build()
     {
         root.setPadding(new Insets(12));
-        Label help = new Label(
-                "Credentials belong to application accounts, never roles. Only the singleton ADMIN account may set, replace, or clear passwords. Passwordless login is the default.");
-        help.setWrapText(true);
+        account.setTooltip(new javafx.scene.control.Tooltip("Only ADMIN can set, replace or clear an account password."));
         credentialState.setWrapText(true);
         currentSession.setWrapText(true);
         status.setWrapText(true);
-        Label saveHelp = new Label("Save Password updates the chosen account. File → Save Timeout saves only the inactivity timeout.");
-        saveHelp.setWrapText(true);
+        inactivityMinutes.setTooltip(new javafx.scene.control.Tooltip("File Save saves the timeout. Use Save Password for the selected account password."));
 
         account.setId("securityCredentialAccount");
         account.setConverter(new StringConverter<>()
@@ -153,8 +150,6 @@ final class SecurityAdminPane
         GridPane.setHgrow(password, Priority.ALWAYS);
 
         root.getChildren().setAll(
-                help,
-                saveHelp,
                 currentSession,
                 form,
                 new HBox(8, refreshRoles, refresh),

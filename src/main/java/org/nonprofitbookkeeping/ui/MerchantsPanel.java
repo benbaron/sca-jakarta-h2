@@ -77,8 +77,6 @@ public final class MerchantsPanel implements AppPanel
     {
         Label title = new Label("Merchants");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Maintain company-owned merchants used by Journal. Merchants are retained for history; clear Active and save to retire one.");
-        help.setWrapText(true);
 
         Button newMerchant = new Button("New Merchant");
         newMerchant.setId("merchantsNew");
@@ -108,7 +106,7 @@ public final class MerchantsPanel implements AppPanel
                 loadForm(row);
             }
         });
-        VBox header = new VBox(6, title, help, new javafx.scene.layout.FlowPane(8, 6, newMerchant, edit, save, refresh, journal), search, status, lifecycle);
+        VBox header = new VBox(6, title, new javafx.scene.layout.FlowPane(8, 6, newMerchant, edit, save, refresh, journal), search, status, lifecycle);
         ScrollPane headerScroll = new ScrollPane(header);
         headerScroll.setId("merchantsHeaderScroll");
         headerScroll.setFitToWidth(true);
@@ -222,7 +220,7 @@ public final class MerchantsPanel implements AppPanel
         fields.add(active, 1, 3);
         GridPane.setHgrow(name, Priority.ALWAYS);
         GridPane.setHgrow(notes, Priority.ALWAYS);
-        Label lifecycleHelp = new Label("Merchants are retained to preserve Journal, audit and import history. Clear Active and save to preserve those references while removing the merchant from new choices.");
+        Label lifecycleHelp = new Label("Merchants cannot be deleted; clear Active and Save to retire them.");
         lifecycleHelp.setWrapText(true);
         VBox editor = new VBox(8, new Label("Merchant editor"), fields, lifecycleHelp);
         editor.setPadding(new Insets(8));

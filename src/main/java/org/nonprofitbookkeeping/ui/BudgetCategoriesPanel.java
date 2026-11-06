@@ -76,8 +76,6 @@ public final class BudgetCategoriesPanel implements AppPanel
     {
         Label title = new Label("Budget Categories");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Maintain company-owned budget buckets used by Budget, Journal, Inventory and Event cost reporting. Categories are retained for history; clear Active and save to retire one.");
-        help.setWrapText(true);
 
         Button newCategory = new Button("New Category");
         newCategory.setId("budgetCategoriesNew");
@@ -100,7 +98,7 @@ public final class BudgetCategoriesPanel implements AppPanel
         search.setId("budgetCategoriesSearch");
         search.setPromptText("Search code or name");
         search.textProperty().addListener((observable, oldValue, newValue) -> applyFilter());
-        VBox header = new VBox(6, title, help, new javafx.scene.layout.FlowPane(8, 6, newCategory, save, refresh, journal), search, status, lifecycle);
+        VBox header = new VBox(6, title, new javafx.scene.layout.FlowPane(8, 6, newCategory, save, refresh, journal), search, status, lifecycle);
         ScrollPane headerScroll = new ScrollPane(header);
         headerScroll.setId("budgetCategoriesHeaderScroll");
         headerScroll.setFitToWidth(true);
@@ -196,7 +194,7 @@ public final class BudgetCategoriesPanel implements AppPanel
         fields.add(new Label("Description"), 0, 5); fields.add(description, 1, 5);
         fields.add(active, 1, 6);
         GridPane.setHgrow(code, Priority.ALWAYS); GridPane.setHgrow(name, Priority.ALWAYS); GridPane.setHgrow(description, Priority.ALWAYS);
-        Label lifecycleHelp = new Label("Categories with Journal, Budget, alias or import history are never physically deleted. Clear Active and save to preserve those references while removing the category from new choices.");
+        Label lifecycleHelp = new Label("Categories cannot be deleted; clear Active and Save to retire them.");
         lifecycleHelp.setWrapText(true);
         VBox editor = new VBox(8, new Label("Budget Category editor"), fields, lifecycleHelp);
         editor.setPadding(new Insets(8));

@@ -21,6 +21,8 @@ public class HelpPanel implements AppPanel
     static final String UI_RULES_URL = REPOSITORY_URL + "/blob/main/doc/ui_design_rules.md";
     static final String WORKFLOW_URL = REPOSITORY_URL + "/blob/main/doc/workflow/development-workflow.md";
 
+    static final String PANEL_GUIDE_URL = REPOSITORY_URL + "/blob/main/doc/ui/panel-guide.md";
+
     private final VBox root = new VBox(8);
     private final Label linkStatus = new Label();
 
@@ -32,35 +34,13 @@ public class HelpPanel implements AppPanel
         Label title = new Label("Help");
         title.getStyleClass().add("panel-title");
 
-        Label gettingStarted = wrapped("Getting Started\n"
-                + "1) Select your H2 database in File -> Database -> Select Database File… or create one with File -> Database -> Create New Database…\n"
-                + "2) Choose an existing active company from the toolbar, or use Administration -> Company Admin to create and maintain companies.\n"
-                + "3) Choose the accounting month in the toolbar and select Set Active Period.\n"
-                + "4) Use Journal for transaction entry/review, Banking and Bank Reconciliation for bank work, and Import Preview before accepting supported imports.");
-
-        Label navigation = wrapped("Production destinations\n"
-                + "Accounting: Journal, Payees / Counterparties, Merchants, Merchant Settlement Assistant, Event Accounting, Banking, Bank Reconciliation, Bank Transactions\n"
-                + "Planning: Budget Editor, Budget vs Actual, Recognition Assistant\n"
-                + "Assets & Inventory: Asset Register, Depreciation Runs, Inventory\n"
-                + "Import & Oversight: Import Preview, Opening Conversion, Audit History, Period Close\n"
-                + "Period Close -> Readiness: preview automated findings and open their correction screens. Preview does not attest external evidence or authorize closing.\n"
-                + "Period Close -> Review Evidence: record external references and factual self-attestation with Save Review. Retained reviews do not excuse blockers or authorize closing.\n"
-                + "Save Closed Range requires a current matching review, zero blockers and reasons for every warning. The service rechecks all accounting content before committing; a reopened range needs a new review to close again.\n"
-                + "Reports: Report Library\n"
-                + "Administration: Chart of Accounts, Funds, Events / Activities, Administration, Diagnostics");
-
-        Label events = wrapped("Events / Activities\n"
-                + "Open Events / Activities under Administration, or use the Events / Activities button in Event Accounting. "
-                + "Choose New Event, enter a distinct code and a name, and Save. Search by name or code; annual events may share a name but need different codes. "
-                + "Select a row and choose Edit to rename it. Clear Active and Save to deactivate; select Active and Save to reactivate. "
-                + "Used events retain their history and cannot be permanently deleted. Return to Event Accounting to review the event. "
-                + "Fund, Event/Activity and Budget remain separate Journal classifications.");
+        Label gettingStarted = wrapped("Select a database, company and accounting period, then open a workspace.");
 
         Label shortcuts = wrapped(GlobalCommandRegistry.shortcutHelpText()
-                + "\n\nCopy and Paste use the standard shortcuts of the focused text control; "
-                + "the workspace does not intercept them.");
+                + "\nCopy/Paste use the focused text control.");
 
         VBox links = new VBox(4,
+                externalLink("Panel and function guide", PANEL_GUIDE_URL),
                 externalLink("Project repository", REPOSITORY_URL),
                 externalLink("Current execution plan", PLAN_URL),
                 externalLink("UI design rules", UI_RULES_URL),
@@ -72,9 +52,6 @@ public class HelpPanel implements AppPanel
                 title,
                 new Separator(),
                 gettingStarted,
-                new Separator(),
-                navigation,
-                events,
                 new Separator(),
                 shortcuts,
                 new Separator(),

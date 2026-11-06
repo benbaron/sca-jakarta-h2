@@ -19,10 +19,12 @@ class HelpComplianceSourceTest
         assertTrue(source.contains("/blob/main/doc/PLAN.md"));
         assertTrue(source.contains("/blob/main/doc/ui_design_rules.md"));
         assertTrue(source.contains("/blob/main/doc/workflow/development-workflow.md"));
-        assertTrue(source.contains("Journal, Payees / Counterparties, Merchants, Merchant Settlement Assistant, Event Accounting, Banking, Bank Reconciliation, Bank Transactions"));
-        assertTrue(source.contains("Import Preview, Opening Conversion, Audit History, Period Close"));
-        assertTrue(source.contains("Merchant Settlement Assistant"));
-        assertTrue(source.contains("Administration -> Company Admin"));
+        assertTrue(source.contains("/blob/main/doc/ui/panel-guide.md"));
+        assertTrue(source.contains("Panel and function guide"));
+        String guide = Files.readString(Path.of("doc/ui/panel-guide.md"));
+        assertTrue(guide.contains("## Journal: supplemental details"));
+        assertTrue(guide.contains("## Administration: company profiles, charts and reporting defaults"));
+        assertTrue(guide.contains("## Bank Reconciliation: check review, Void and Reissue"));
         assertTrue(source.contains("helpContentScroll"));
 
         assertFalse(source.contains("nonprofitbookkeeping/sca-jakarta-h2"));

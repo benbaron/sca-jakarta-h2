@@ -58,11 +58,10 @@ final class AccountingReadinessPane extends BorderPane
         open.disableProperty().bind(findings.getSelectionModel().selectedItemProperty().isNull()
                 .or(UiPermissionGate.deniedProperty(ApplicationPermission.EXPORT)).or(busy));
         open.setOnAction(event -> openSelected());
-        Label explanation = new Label("Automated observations only. External evidence is not independently verified. Record factual self-attestations in Review Evidence; this preview does not authorize or certify period close.");
-        explanation.setWrapText(true);
+
         status.setWrapText(true);
         status.setId("periodCloseReadinessStatus");
-        VBox controls = new VBox(8, new HBox(8, preview, open), explanation, status);
+        VBox controls = new VBox(8, new HBox(8, preview, open), status);
         controls.setMinSize(0, 0);
         findings.setId("periodCloseReadinessFindings");
         findings.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);

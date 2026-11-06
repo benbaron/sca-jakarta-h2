@@ -91,7 +91,7 @@ public class ImportPreviewPanel implements AppPanel
 	private final Supplier<
 		NormalizedBankCsvReviewService> normalizedBankCsvReviewService;
 	private final Label status = new Label(
-		"Choose an SCLX, COA CSV, OFX/QFX, mapped CSV, or normalized bank CSV file to preview before import.");
+		"Choose a file to preview before importing.");
 	private final TableView<PreviewMessageRow> warnings = new TableView<>();
 	private final TextArea messageDetails = new TextArea();
 	private final TableView<CoaCsvMapper.CoaCsvRow> acceptedCoaRows =
@@ -1337,8 +1337,7 @@ public class ImportPreviewPanel implements AppPanel
 			});
 			
 	}
-	
-	
+
 	static AccountType parseAccountTypeToken(String token)
 	{
 		return CoaCsvImportService.parseAccountTypeToken(token);

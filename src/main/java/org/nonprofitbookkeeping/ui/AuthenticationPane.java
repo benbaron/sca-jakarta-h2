@@ -106,9 +106,7 @@ final class AuthenticationPane
         root.setMaxWidth(680);
         Label title = new Label("Sign in");
         title.getStyleClass().add("panel-title");
-        Label help = new Label(
-                "Choose an application account for the active company. Built-in accounts are passwordless until ADMIN deliberately sets a password.");
-        help.setWrapText(true);
+        account.setTooltip(new javafx.scene.control.Tooltip("Choose an account for this company; leave Password blank if none is set."));
         bootstrapMessage.setWrapText(true);
         roles.setWrapText(true);
         status.setWrapText(true);
@@ -135,7 +133,6 @@ final class AuthenticationPane
 
         root.getChildren().setAll(
                 title,
-                help,
                 bootstrapMessage,
                 form,
                 new HBox(8, login, adopt),

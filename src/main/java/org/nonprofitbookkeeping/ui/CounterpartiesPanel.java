@@ -82,8 +82,6 @@ public final class CounterpartiesPanel implements AppPanel
     {
         Label title = new Label("Payees / Counterparties");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Maintain company-owned payees used by Journal. Counterparties are retained for history; clear Active and save to retire one.");
-        help.setWrapText(true);
 
         Button newCounterparty = new Button("New Payee");
         newCounterparty.setId("counterpartiesNew");
@@ -116,7 +114,7 @@ public final class CounterpartiesPanel implements AppPanel
                 loadForm(row);
             }
         });
-        VBox header = new VBox(6, title, help, new javafx.scene.layout.FlowPane(8, 6, newCounterparty, edit, save, refresh, journal), search, status, lifecycle);
+        VBox header = new VBox(6, title, new javafx.scene.layout.FlowPane(8, 6, newCounterparty, edit, save, refresh, journal), search, status, lifecycle);
         ScrollPane headerScroll = new ScrollPane(header);
         headerScroll.setId("counterpartiesHeaderScroll");
         headerScroll.setFitToWidth(true);
@@ -244,7 +242,7 @@ public final class CounterpartiesPanel implements AppPanel
         GridPane.setHgrow(email, Priority.ALWAYS);
         GridPane.setHgrow(phone, Priority.ALWAYS);
         GridPane.setHgrow(notes, Priority.ALWAYS);
-        Label lifecycleHelp = new Label("Counterparties are retained to preserve Journal, contact, audit and import history. Clear Active and save to preserve those references while removing the party from new choices.");
+        Label lifecycleHelp = new Label("Payees cannot be deleted; clear Active and Save to retire them.");
         lifecycleHelp.setWrapText(true);
         VBox editor = new VBox(8, new Label("Counterparty editor"), fields, lifecycleHelp);
         editor.setPadding(new Insets(8));

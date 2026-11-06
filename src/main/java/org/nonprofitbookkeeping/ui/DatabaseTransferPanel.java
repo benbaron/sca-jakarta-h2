@@ -52,10 +52,8 @@ public final class DatabaseTransferPanel implements AppPanel
         root.setPadding(new Insets(8));
         Label title = new Label("Database Transfer");
         title.getStyleClass().add("panel-title");
-        Label guidance = new Label(
-                "Backups use H2's supported live backup operation. Restore always creates and validates a new database copy; it never overwrites the active database or switches automatically.");
-        guidance.setWrapText(true);
-        root.setTop(new VBox(6, title, guidance, new Separator()));
+        restoreButton.setTooltip(new javafx.scene.control.Tooltip("Restore validates a new copy. Switch to it explicitly when ready."));
+        root.setTop(new VBox(6, title, new Separator()));
 
         status.setWrapText(true);
         status.textProperty().bind(actions.statusProperty());

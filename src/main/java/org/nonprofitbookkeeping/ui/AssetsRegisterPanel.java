@@ -216,9 +216,7 @@ public class AssetsRegisterPanel implements AppPanel
         form.add(acquisitionBankLabel, 0, row); form.add(acquisitionBank, 1, row++);
         form.add(acquisitionLineLabel, 0, row); form.add(acquisitionLine, 1, row++);
         form.add(acquisitionSummary, 0, row++, 2, 1);
-        Label acquisitionHelp = new Label("Save Asset / File Save accepts the register and acquisition together. For payable invoices, checks, or richer allocations, enter Journal first and Link existing entry. Opening / register only creates no accounting; legacy links are never guessed.");
-        acquisitionHelp.setWrapText(true);
-        form.add(acquisitionHelp, 0, row++, 2, 1);
+        acquisitionSource.setTooltip(new javafx.scene.control.Tooltip("Save Asset saves the asset and acquisition together. Use Journal for complex entries."));
         GridPane.setHgrow(acquisitionSource, Priority.ALWAYS);
         GridPane.setHgrow(acquisitionBank, Priority.ALWAYS);
         GridPane.setHgrow(acquisitionLine, Priority.ALWAYS);
@@ -257,8 +255,7 @@ public class AssetsRegisterPanel implements AppPanel
         form.add(lifecycleActor, 1, row++);
         form.add(new Label("Lifecycle reason"), 0, row);
         form.add(lifecycleReason, 1, row++);
-        Label lifecycleGuidance = new Label(
-                "Fixed assets are retained and never physically deleted. Deactivate temporarily stops depreciation and financial lifecycle actions; Reactivate resumes them. Use Sale or Retirement for financial disposal; DISPOSED remains retained history until that lifecycle event is reversed.");
+        Label lifecycleGuidance = new Label("Assets cannot be deleted. Use Sale or Retirement for disposal.");
         lifecycleGuidance.setWrapText(true);
         form.add(lifecycleGuidance, 0, row, 2, 1);
         for (Node field : java.util.List.of(

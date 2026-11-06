@@ -24,6 +24,12 @@ P03 provides one spreadsheet-like transaction editor inside the unified Journal 
 
 ## Unified Journal layout contract
 
+Detailed operating instructions live in the [panel and function guide](panel-guide.md).
+Journal panes use concise control tooltips instead of persistent instruction blocks.
+Each supplemental kind has one bounded table with a compact wrapping action bar;
+merchant/NMR instructions do not consume separate split sections. Table overflow
+remains independently accessible in both directions.
+
 The production Accounting navigation exposes one **Journal** destination. `LEDGER_REGISTER` and `TXN_EDITOR` remain stable compatibility identifiers but normalize to the canonical `JOURNAL_PANE` destination.
 
 The Journal workspace contains:

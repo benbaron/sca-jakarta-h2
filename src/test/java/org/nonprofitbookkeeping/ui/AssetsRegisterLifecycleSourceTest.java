@@ -19,7 +19,7 @@ class AssetsRegisterLifecycleSourceTest
         assertTrue(source.contains("Deactivate Asset"));
         assertTrue(source.contains("Reactivate Asset"));
         assertTrue(source.contains("fixedAssets().changeStatus("));
-        assertTrue(source.contains("Fixed assets are retained and never physically deleted"));
+        assertTrue(source.contains("Assets cannot be deleted. Use Sale or Retirement for disposal."));
         assertTrue(source.contains("lifecycleStatus"));
         assertFalse(source.contains("ComboBox<FixedAsset.Status>"));
         assertFalse(source.contains("statusChoice"));

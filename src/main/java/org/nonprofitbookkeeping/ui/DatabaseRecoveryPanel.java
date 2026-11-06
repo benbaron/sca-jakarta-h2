@@ -71,8 +71,7 @@ final class DatabaseRecoveryPanel implements AppPanel
         Label heading = new Label("Database attention required");
         heading.getStyleClass().add("panel-title");
 
-        Label explanation = new Label(
-                "The selected database could not be opened. The application workspace remains available so you can retry or repair this database, select another database, or create a new one.");
+        Label explanation = new Label("Could not open this database. Retry, repair, select another, or create one.");
         explanation.setWrapText(true);
 
         Label pathHeading = new Label("Selected database");

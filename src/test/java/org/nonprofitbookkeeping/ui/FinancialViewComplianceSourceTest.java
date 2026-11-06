@@ -34,7 +34,8 @@ class FinancialViewComplianceSourceTest
     void multiRegionViewsPersistTopBottomDividerState() throws Exception
     {
         assertSplit("DashboardHomePanel.java", "dashboard-");
-        assertSplit("BudgetVsActualPanel.java", "budget-vs-actual");
+        assertTrue(source("BudgetVsActualPanel.java").contains("root.setCenter(table)"));
+        assertFalse(source("BudgetVsActualPanel.java").contains("new SplitPane"));
         assertSplit("DepreciationRunsPanel.java", "depreciation-runs");
         assertSplit("InventoryPanel.java", "inventory-movement-workspace");
         assertSplit("ReconciliationRunsPanel.java", "reconciliation-review");
