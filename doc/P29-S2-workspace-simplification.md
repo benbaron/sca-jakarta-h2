@@ -56,6 +56,22 @@ The owner's Windows screenshot showed Receivable checked while its editor remain
 
 ## Validation and owner checks
 
+### CI scrollbar regression correction
+
+After removing Journal's tagging help paragraph, the controls may fit at 900px
+without vertical overflow. The previous test incorrectly required them to
+overflow at that width, making its result depend on font/wrapping metrics.
+`JournalFundEventTaggingTest` now checks actual last-action reachability at laptop
+and reduced widths. A controlled viewport regression separately proves that
+fitting controls have no unnecessary scrollbar and overflowing controls expose
+a usable scrollbar that reaches the last action. It selects the pane's own
+scrollbar, excluding hidden combo-box list scrollbars. Existing mixed-draft,
+reference-refresh, table-state and permission checks remain.
+
+The production `AS_NEEDED` policy is unchanged. CI emits concise Surefire failure
+annotations so test names/assertions remain readable without a full-job download.
+The one-time job used to inspect old reports has been removed. Focused Temurin 17 validation passed 8 tests; the exact production JavaFX selector passed 82 tests with no failures/errors/skips. Final clean verification and GitHub checks are recorded in PLAN.
+
 ### Panel text review
 
 All 29 canonical destinations, their inner panes, Administration's nested views,
