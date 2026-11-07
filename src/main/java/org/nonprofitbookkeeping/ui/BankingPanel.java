@@ -47,6 +47,8 @@ import java.util.function.Supplier;
 public class BankingPanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
+    private final WorkPaneTabs workPanes = new WorkPaneTabs("bankingWorkPanes");
+    private Runnable capabilitiesChanged = () -> { };
     private final TableView<Bank> banks = new TableView<>();
     private final TableView<CompanyBankAccount> bankAccounts = new TableView<>();
     private final ComboBox<Bank> bankSelector = new ComboBox<>();
@@ -102,7 +104,11 @@ public class BankingPanel implements AppPanel
         root.setPadding(new Insets(8));
         Label title = new Label("Banking");
         title.getStyleClass().add("panel-title");
-        newBank.setOnAction(event -> onNew());
+        newBank.setOnAction(event ->
+        {
+            workPanes.getSelectionModel().select(0);
+            onNew();
+        });
         saveBank.setOnAction(event -> saveBank());
         newAccount.setOnAction(event -> startNewBankAccount());
         saveAccount.setOnAction(event -> saveBankAccount());
@@ -118,11 +124,14 @@ public class BankingPanel implements AppPanel
         bankDirty = new FormDirtyTracker(this::bankSnapshot);
         accountDirty = new FormDirtyTracker(this::accountSnapshot);
 
-        SplitPane split = new SplitPane(bankListPane(), bankAccountPane());
-        split.setId("bankingWorkspaceSplit");
-        split.setOrientation(Orientation.VERTICAL);
-        split.setDividerPositions(0.50);
-        CompanySplitPaneStateBinder.bind(split, "banking-workspace", 0.50);
+        workPanes.addPane("Banks", bankListPane())
+                .addPane("Bank accounts", bankAccountPane());
+        workPanes.getSelectionModel().selectedIndexProperty().addListener(
+                (observable, oldValue, newValue) -> capabilitiesChanged.run());
+        newBank.visibleProperty().bind(workPanes.getSelectionModel().selectedIndexProperty().isEqualTo(0));
+        newBank.managedProperty().bind(newBank.visibleProperty());
+        saveBank.visibleProperty().bind(newBank.visibleProperty());
+        saveBank.managedProperty().bind(saveBank.visibleProperty());
         Button importStatement = new Button("Import Bank Statement…");
         importStatement.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(
                 AppPanelId.IMPORT_PREVIEW, "Banking: import statement"));
@@ -132,7 +141,7 @@ public class BankingPanel implements AppPanel
         root.setTop(new VBox(6, title,
                 new HBox(8, newBank, saveBank, refresh, importStatement, reviewRows),
                 status, new Separator()));
-        root.setCenter(split);
+        root.setCenter(workPanes);
 
         installFormatCorrection();
         clearBankForm();
@@ -162,6 +171,11 @@ public class BankingPanel implements AppPanel
     @Override
     public void onNew()
     {
+        if (workPanes.getSelectionModel().getSelectedIndex() == 1)
+        {
+            startNewBankAccount();
+            return;
+        }
         if (!hasUnsavedChanges() || confirmDiscard())
         {
             clearBankForm();
@@ -734,7 +748,34 @@ public class BankingPanel implements AppPanel
         bankName.setText(value);
     }
 
-    @Override public void onSave() { if (bankDirty.isDirty()) saveBank(); else saveBankAccount(); }
+    @Override
+    public void onSave()
+    {
+        if (workPanes.getSelectionModel().getSelectedIndex() == 0)
+        {
+            saveBank();
+        }
+        else
+        {
+            saveBankAccount();
+        }
+    }
+
+    @Override
+    public String commandLabel(AppCommand command)
+    {
+        if (command == AppCommand.SAVE_ACTIVE)
+        {
+            return workPanes.getSelectionModel().getSelectedIndex() == 0 ? saveBank.getText() : saveAccount.getText();
+        }
+        return AppPanel.super.commandLabel(command);
+    }
+
+    @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        capabilitiesChanged = java.util.Objects.requireNonNull(listener, "listener");
+    }
     @Override
     public String commandResultMessage(AppCommand command)
     {

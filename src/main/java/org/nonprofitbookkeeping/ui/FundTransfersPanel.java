@@ -80,9 +80,8 @@ public final class FundTransfersPanel implements AppPanel
     {
         Label title = new Label("Fund Transfers");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Allocate resources between unrestricted or designated funds in this company. This changes fund allocations; it does not move money between bank accounts. History displays the latest 500 transfers.");
-        help.setWrapText(true);
-        Label retention = new Label("Saved transfers cannot be edited or deleted because the ledger and transfer report retain their history. Reverse Selected, then enter a corrected transfer. SCLX preserves transfer history and ledger links. Keep a whole-database backup for complete recovery.");
+        title.setTooltip(new javafx.scene.control.Tooltip("Reallocate between funds in this company; bank balances do not move."));
+        Label retention = new Label("Saved transfers cannot be edited or deleted. Reverse to correct them.");
         retention.setId("fundTransfersRetention");
         retention.setWrapText(true);
         Button add = action("New", "fundTransfersNew", this::onNew, true);
@@ -111,7 +110,7 @@ public final class FundTransfersPanel implements AppPanel
         UiPermissionGate.gate(reversalDate, ApplicationPermission.BOOKKEEPING_WRITE, "Choose reversal date");
         UiPermissionGate.gate(reason, ApplicationPermission.BOOKKEEPING_WRITE, "Explain reversal");
         FlowPane correction = new FlowPane(8, 6, new Label("Reversal date"), reversalDate, reason, reverse);
-        VBox header = new VBox(6, title, help, new FlowPane(8, 6, add, save, refresh, journal, funds), correction, status, retention);
+        VBox header = new VBox(6, title, new FlowPane(8, 6, add, save, refresh, journal, funds), correction, status, retention);
         ScrollPane headerScroll = scroll(header, "fundTransfersHeaderScroll");
         headerScroll.setPrefHeight(200);
 
@@ -160,14 +159,9 @@ public final class FundTransfersPanel implements AppPanel
         workspace.setOrientation(Orientation.VERTICAL);
         workspace.setId("fundTransfersWorkspaceSplit");
         workspace.setMinSize(0, 0);
-        SplitPane main = new SplitPane(headerScroll, workspace);
-        main.setOrientation(Orientation.VERTICAL);
-        main.setId("fundTransfersMainSplit");
-        main.setMinSize(0, 0);
-        VBox.setVgrow(main, Priority.ALWAYS);
-        root.getChildren().setAll(main);
+        VBox.setVgrow(workspace, Priority.ALWAYS);
+        root.getChildren().setAll(headerScroll, workspace);
         persistDivider(workspace, "workspace", 0.55);
-        persistDivider(main, "main", 0.30);
         FullTextTooltipInstaller.install(root);
     }
 

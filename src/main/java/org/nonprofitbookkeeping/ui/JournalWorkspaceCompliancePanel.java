@@ -5,7 +5,6 @@ import javafx.animation.PauseTransition;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.event.Event;
-import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -150,64 +149,10 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
 
     private void installOverallEditorScroll(Node workspaceRoot)
     {
-        SplitPane outer = findById(workspaceRoot, "journalWorkspaceOuterSplit", SplitPane.class);
-        SplitPane editor = findById(workspaceRoot, "journalWorkspaceEditorSplit", SplitPane.class);
-        if (outer == null || editor == null)
-        {
-            throw new IllegalStateException("Journal workspace split regions are unavailable.");
-        }
-
-        unwrapLegacyScroll(workspaceRoot, "journalWorkspaceEntryHeaderScroll");
-        unwrapLegacyScroll(workspaceRoot, "journalWorkspaceAdditionalDetailsScroll");
-
-        int index = outer.getItems().indexOf(editor);
-        if (index < 0)
-        {
-            return;
-        }
-        outer.getItems().remove(index);
-        editor.setMinHeight(720);
-        editor.setPrefHeight(980);
-
-        ScrollPane scroll = new ScrollPane(editor);
-        scroll.setId("journalWorkspaceEditorScroll");
-        scroll.setFitToWidth(true);
-        scroll.setFitToHeight(false);
-        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scroll.setPannable(true);
-        scroll.setMinSize(0, 0);
-        outer.getItems().add(index, scroll);
-
-        installDividerState(findById(workspaceRoot, "journalWorkspaceFiltersSplit", SplitPane.class), "filters");
-        installDividerState(outer, "outer");
-        installDividerState(editor, "editor");
-        installDividerState(findById(workspaceRoot, "journalTaggingSplit", SplitPane.class), "tagging");
-        installDividerState(findById(workspaceRoot, "journalNmrDetailSplit", SplitPane.class), "nmrDetail");
-        installDividerState(findById(workspaceRoot, "journalMerchantDetailSplit", SplitPane.class), "merchantDetail");
-        SplitPane detail = findById(workspaceRoot, "journalWorkspaceDetailSplit", SplitPane.class);
-        if (detail != null)
-        {
-            installDividerState(detail, "detail");
-        }
-    }
-
-    private void unwrapLegacyScroll(Node workspaceRoot, String id)
-    {
-        ScrollPane scroll = findById(workspaceRoot, id, ScrollPane.class);
-        if (scroll == null || scroll.getContent() == null)
-        {
-            return;
-        }
-        Node content = scroll.getContent();
-        Parent parent = scroll.getParent();
-        if (parent instanceof SplitPane splitPane)
-        {
-            int index = splitPane.getItems().indexOf(scroll);
-            splitPane.getItems().remove(index);
-            scroll.setContent(null);
-            splitPane.getItems().add(index, content);
-        }
+        // Each named work pane has an overflow viewport. Forms keep their own
+        // scroll panes and tables retain native two-axis scrolling.
+        installDividerState(findById(workspaceRoot, "journalWorkspaceFiltersSplit", SplitPane.class), "filters-v2");
+        installDividerState(findById(workspaceRoot, "journalWorkspaceEditorSplit", SplitPane.class), "editor-v2");
     }
 
     private void installCompanyDateEditors(Node workspaceRoot)
@@ -237,7 +182,6 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
             installCompanyCellFormatting(table);
             restoreTableState(table, tableKey);
             installTableStatePersistence(table, tableKey);
-            wrapTableInSplitRegion(table, tableKey);
         }
     }
 
@@ -286,28 +230,6 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
                 }
             }
         }
-    }
-
-    private void wrapTableInSplitRegion(TableView<?> table, String tableKey)
-    {
-        Parent parent = table.getParent();
-        if (!(parent instanceof VBox box))
-        {
-            return;
-        }
-        int index = box.getChildren().indexOf(table);
-        if (index < 0)
-        {
-            return;
-        }
-        box.getChildren().remove(index);
-
-        SplitPane tableSplit = new SplitPane(table);
-        tableSplit.setId(tableKey + "ComplianceSplit");
-        tableSplit.setOrientation(Orientation.VERTICAL);
-        tableSplit.setMinSize(0, 0);
-        VBox.setVgrow(tableSplit, Priority.ALWAYS);
-        box.getChildren().add(index, tableSplit);
     }
 
     private void installTotalFormatting(Node workspaceRoot)

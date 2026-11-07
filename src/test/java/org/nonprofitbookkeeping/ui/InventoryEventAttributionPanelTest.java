@@ -137,8 +137,9 @@ class InventoryEventAttributionPanelTest
 
             SplitPane workspace = (SplitPane) panel.root().lookup("#inventoryMovementWorkspaceSplit");
             ScrollPane controls = (ScrollPane) panel.root().lookup("#inventoryMovementControlsScroll");
-            SplitPane tables = (SplitPane) panel.root().lookup("#inventoryTablesSplit");
-            assertEquals(2, tables.getItems().size());
+            var panes = (javafx.scene.control.TabPane) panel.root().lookup("#inventoryWorkPanes");
+            assertEquals(2, panes.getTabs().size());
+            panes.getSelectionModel().select(1);
             for (double width : new double[] {900, 600})
             {
                 stage.setWidth(width);
@@ -177,10 +178,10 @@ class InventoryEventAttributionPanelTest
                         .anyMatch(bar -> ((ScrollBar) bar).getOrientation() == orientation && ((ScrollBar) bar).isVisible()),
                         "Movement history must scroll " + orientation);
             }
-            tables.setDividerPositions(0.25);
+            workspace.setDividerPositions(0.25);
             ((javafx.scene.Parent) panel.root()).layout();
             double historyHeight = history.getHeight();
-            tables.setDividerPositions(0.75);
+            workspace.setDividerPositions(0.75);
             ((javafx.scene.Parent) panel.root()).layout();
             assertTrue(history.getHeight() < historyHeight - 10, "History independently resizes");
             MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.viewer());

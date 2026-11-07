@@ -12,28 +12,26 @@ public class WorkspaceShellLayoutPolicyTest
     private static final double TOLERANCE = 0.001;
 
     @Test
-    public void referenceWidthKeepsCompactSidebarsAndBroadCenter()
+    public void referenceWidthGivesRetiredInspectorSpaceToWork()
     {
         WorkspaceShellLayoutPolicy.ShellGeometry geometry =
                 WorkspaceShellLayoutPolicy.forWidth(1180.0);
 
         assertEquals(210.0, geometry.navigationWidth(), TOLERANCE);
-        assertEquals(224.2, geometry.inspectorWidth(), TOLERANCE);
-        assertEquals(745.8, geometry.centerWidth(), TOLERANCE);
+        assertEquals(970.0, geometry.centerWidth(), TOLERANCE);
         assertEquals(210.0 / 1180.0, geometry.leftDividerPosition(), TOLERANCE);
-        assertEquals(0.81, geometry.rightDividerPosition(), TOLERANCE);
+        assertEquals(1180.0, geometry.navigationWidth() + geometry.centerWidth(), TOLERANCE);
     }
 
     @Test
-    public void laptopMinimumStillAllocatesAllThreePanes()
+    public void laptopWidthAllocatesNavigationAndWorkOnly()
     {
         WorkspaceShellLayoutPolicy.ShellGeometry geometry =
                 WorkspaceShellLayoutPolicy.forWidth(900.0);
 
         assertEquals(162.0, geometry.navigationWidth(), TOLERANCE);
-        assertEquals(180.0, geometry.inspectorWidth(), TOLERANCE);
-        assertEquals(558.0, geometry.centerWidth(), TOLERANCE);
-        assertTrue(geometry.leftDividerPosition() < geometry.rightDividerPosition());
+        assertEquals(738.0, geometry.centerWidth(), TOLERANCE);
+        assertEquals(0.999, geometry.dividerState().rightDividerPosition(), TOLERANCE);
     }
 
     @Test
@@ -43,8 +41,7 @@ public class WorkspaceShellLayoutPolicyTest
                 WorkspaceShellLayoutPolicy.forWidth(700.0);
 
         assertEquals(160.0, geometry.navigationWidth(), TOLERANCE);
-        assertEquals(180.0, geometry.inspectorWidth(), TOLERANCE);
-        assertEquals(360.0, geometry.centerWidth(), TOLERANCE);
+        assertEquals(540.0, geometry.centerWidth(), TOLERANCE);
     }
 
     @Test
@@ -55,7 +52,7 @@ public class WorkspaceShellLayoutPolicyTest
                 new WorkspaceDividerState(0.10, 0.95));
 
         assertEquals(0.18, state.leftDividerPosition(), TOLERANCE);
-        assertEquals(0.80, state.rightDividerPosition(), TOLERANCE);
+        assertEquals(0.999, state.rightDividerPosition(), TOLERANCE);
     }
 
     @Test
@@ -63,7 +60,8 @@ public class WorkspaceShellLayoutPolicyTest
     {
         WorkspaceDividerState requested = new WorkspaceDividerState(0.22, 0.76);
 
-        assertEquals(requested, WorkspaceShellLayoutPolicy.safeDividerState(1180.0, requested));
+        assertEquals(new WorkspaceDividerState(0.22, 0.999),
+                WorkspaceShellLayoutPolicy.safeDividerState(1180.0, requested));
     }
 
     @Test

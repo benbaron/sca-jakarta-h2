@@ -184,24 +184,19 @@ public class AssetsRegisterPanel implements AppPanel
         VBox lifecycleRegion = new VBox(6, new Label("Lifecycle History"), lifecycleTable);
         lifecycleRegion.setMinHeight(0.0);
         VBox.setVgrow(lifecycleTable, Priority.ALWAYS);
-        SplitPane historySplit = new SplitPane(tableRegion, lifecycleRegion);
-        historySplit.setMinHeight(0);
-        table.setMinHeight(0); lifecycleTable.setMinHeight(0);
-        historySplit.setOrientation(Orientation.VERTICAL);
-        historySplit.setDividerPositions(0.62);
-        historySplit.setId("assetRegisterHistorySplit");
-        CompanySplitPaneStateBinder.bind(historySplit, "asset-register-history", 0.62);
         ScrollPane editorScroll = new ScrollPane(buildForm());
         editorScroll.setId("assetRegisterEditorScroll");
         editorScroll.setFitToWidth(true);
-        editorScroll.setMinHeight(0.0);
         editorScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         editorScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        SplitPane split = new SplitPane(historySplit, editorScroll);
+        WorkPaneTabs assetViews = new WorkPaneTabs("assetRegisterWorkPanes")
+                .addPane("Asset editor", editorScroll)
+                .addPane("Lifecycle History", lifecycleRegion);
+        SplitPane split = new SplitPane(tableRegion, assetViews);
         split.setId("assetRegisterWorkspaceSplit");
         split.setOrientation(Orientation.VERTICAL);
-        split.setDividerPositions(0.55);
-        CompanySplitPaneStateBinder.bind(split, "asset-register-workspace", 0.55);
+        split.setMinSize(0, 0);
+        CompanySplitPaneStateBinder.bind(split, "asset-register-workspace-v2", 0.5);
         root.setCenter(split);
         companyFormat.install(acquisitionDate);
         clearForm();
@@ -221,9 +216,7 @@ public class AssetsRegisterPanel implements AppPanel
         form.add(acquisitionBankLabel, 0, row); form.add(acquisitionBank, 1, row++);
         form.add(acquisitionLineLabel, 0, row); form.add(acquisitionLine, 1, row++);
         form.add(acquisitionSummary, 0, row++, 2, 1);
-        Label acquisitionHelp = new Label("Save Asset / File Save accepts the register and acquisition together. For payable invoices, checks, or richer allocations, enter Journal first and Link existing entry. Opening / register only creates no accounting; legacy links are never guessed.");
-        acquisitionHelp.setWrapText(true);
-        form.add(acquisitionHelp, 0, row++, 2, 1);
+        acquisitionSource.setTooltip(new javafx.scene.control.Tooltip("Save Asset saves the asset and acquisition together. Use Journal for complex entries."));
         GridPane.setHgrow(acquisitionSource, Priority.ALWAYS);
         GridPane.setHgrow(acquisitionBank, Priority.ALWAYS);
         GridPane.setHgrow(acquisitionLine, Priority.ALWAYS);
@@ -262,8 +255,7 @@ public class AssetsRegisterPanel implements AppPanel
         form.add(lifecycleActor, 1, row++);
         form.add(new Label("Lifecycle reason"), 0, row);
         form.add(lifecycleReason, 1, row++);
-        Label lifecycleGuidance = new Label(
-                "Fixed assets are retained and never physically deleted. Deactivate temporarily stops depreciation and financial lifecycle actions; Reactivate resumes them. Use Sale or Retirement for financial disposal; DISPOSED remains retained history until that lifecycle event is reversed.");
+        Label lifecycleGuidance = new Label("Assets cannot be deleted. Use Sale or Retirement for disposal.");
         lifecycleGuidance.setWrapText(true);
         form.add(lifecycleGuidance, 0, row, 2, 1);
         for (Node field : java.util.List.of(

@@ -2,6 +2,12 @@
 
 This document records cross-cutting UI display and interaction rules for the production SCA bookkeeping application. It applies to every production pane unless a more specific governing document narrows the behavior for a particular domain.
 
+## Work panes and overflow access
+
+P29-S2 replaces the three-column shell with left navigation and the work area. The right Inspector and its controls/shortcut are removed. Every work pane shows at most two major sections, including nested subdivisions. Extra functions use named work panes sharing the same controller and draft. Labels and local command/tool bars are chrome, not additional independent sections.
+
+Every destination and logical tab has horizontal and vertical overflow access when its content exceeds the available size. Forms retain scrolling and tables retain independent horizontal/vertical scrolling; reducing the window must not make controls unreachable. Do not disable a needed scrollbar axis. The earlier obligation to add nested resize bars around every Journal subsection is superseded by the two-section limit. See [P29-S2](P29-S2-workspace-simplification.md) for the complete route review and user checks.
+
 ## Full text hover tooltips
 
 Every production JavaFX widget with visible non-blank display text should expose that full text in a hover tooltip so clipped, abbreviated, or partially hidden labels remain readable. This applies to labels, buttons, check boxes, radio buttons, menu buttons, table/list/tree cells, combo boxes, choice boxes, date pickers, spinners, and similar non-text-entry controls.
@@ -10,7 +16,7 @@ Text boxes and other `TextInputControl` instances are excluded so user-entered o
 
 ## Theme text contrast
 
-Production exposes the Java-17-compatible AtlantaFX 2.0.1 theme set: Primer, Nord and Cupertino in light/dark variants plus Dracula, alongside JavaFX System Default. Application shell CSS uses AtlantaFX palette variables for surfaces and controls. Ordinary workspace text uses exact black or white according to the effective painted background, choosing the greater WCAG contrast. White/pastel reports retain black text even inside dark themes; dark surfaces use white text. Transparent backgrounds inherit the composed ancestor surface. Enforcement runs after CSS/layout, covers dynamically created controls and never modifies a skin during its construction. The native Windows title bar remains operating-system controlled. Existing persisted Light/Dark settings map to Primer Light/Primer Dark. Theme changes apply immediately and must preserve readable menus, toolbar controls, forms, tabs, navigation, inspector content, tables and lists.
+Production exposes the Java-17-compatible AtlantaFX 2.0.1 theme set: Primer, Nord and Cupertino in light/dark variants plus Dracula, alongside JavaFX System Default. Application shell CSS uses AtlantaFX palette variables for surfaces and controls. Ordinary workspace text uses exact black or white according to the effective painted background, choosing the greater WCAG contrast. White/pastel reports retain black text even inside dark themes; dark surfaces use white text. Transparent backgrounds inherit the composed ancestor surface. Enforcement runs after CSS/layout, covers dynamically created controls and never modifies a skin during its construction. The native Windows title bar remains operating-system controlled. Existing persisted Light/Dark settings map to Primer Light/Primer Dark. Theme changes apply immediately and must preserve readable menus, toolbar controls, forms, tabs, navigation, work panes, tables and lists.
 
 ## Windows rendering compatibility
 
@@ -37,6 +43,20 @@ An enabled global command must identify a real operation in the active productio
 
 Default command labels, accelerators, and Help shortcut text come from `GlobalCommandRegistry`; `AppPanel.commandLabel` may supply the selected subpane's specific save scope. Help must not advertise an uninstalled shortcut. The workspace must not intercept standard Copy/Paste accelerators merely to route them to empty panel hooks; focused JavaFX text controls own their native editing behavior. A handled result is returned only after a declared operation has been invoked successfully; undeclared commands and thrown failures return a factual not-handled result.
 
+## Panel instructions and help
+
+Keep operating instructions in the [panel and function guide](ui/panel-guide.md),
+organized under Markdown function headings for later manual assembly. Remove
+redundant introductions, implementation details and development-phase notes from
+panels. Put short, control-specific hints in hover tooltips, installed before
+permission gating so permission explanations remain authoritative.
+
+Do not reserve a pane, splitter section or empty region for explanatory prose.
+Keep current errors, validation, results, confirmation details and status visible.
+Where a durable record has no Delete action, retain a brief visible explanation
+of its supported correction/deactivation action. Tooltips supplement meaningful
+labels and do not hide information required to understand the current result.
+
 ## Tables
 
 Every production table must support the following column behavior:
@@ -49,16 +69,16 @@ Every production table must support the following column behavior:
 Table layout requirements:
 
 - Every table has both vertical and horizontal scroll bars when content exceeds the visible area.
-- Every table is separated in its own `SplitPane` region from any surrounding data in the table's major pane.
+- Every table has a bounded, independently scrolling region. A paired major section uses a draggable `SplitPane`; local labels and tools remain with their table so they do not create extra subdivisions.
 - Tables must not rely on clipping, oversized minimum widths, or wrapping-only behavior to hide unavailable content.
 
 ### Unified Journal implementation
 
 The production Journal is created through `JournalWorkspaceCompliancePanel`, which decorates the service-backed `JournalWorkspacePanel` without replacing its accounting services. The compliance layer must preserve the following behavior:
 
-- the complete editor region is wrapped in one `journalWorkspaceEditorScroll` vertical `ScrollPane`;
-- the Journal/editor, editor subsections, and additional/supplemental detail regions retain draggable `SplitPane` dividers;
-- every Journal, entry-line, and supplemental table uses unconstrained resizing, sortable/resizable/reorderable columns, independent table scrolling, and a dedicated table `SplitPane` region;
+- Journal, Entry, Additional Details and Supplemental Details are separate work panes with their own overflow viewports;
+- each selected work pane retains at most two major sections and the appropriate draggable divider;
+- every Journal, entry-line, and supplemental table uses unconstrained resizing, sortable/resizable/reorderable columns, independent table scrolling, and a bounded table region;
 - column width, order, sort direction, sort priority, and divider positions are stored through company-owned UI preference state rather than Java global user preferences;
 - money and date display/edit behavior uses the active company's `CompanyUiPreferences` through `CompanyUiFormat`.
 

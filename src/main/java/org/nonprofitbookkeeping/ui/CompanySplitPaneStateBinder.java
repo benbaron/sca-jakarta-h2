@@ -19,24 +19,35 @@ final class CompanySplitPaneStateBinder
 
     static void bind(SplitPane split, String stableKey, double defaultPosition)
     {
-        String company = activeCompanyCode();
-        CompanyUiPreferencesService service = UiServiceRegistry.companyUiPreferences();
+        bind(split, stableKey, defaultPosition, UiServiceRegistry.companyUiPreferences(), MainWindow.sharedSessionState());
+    }
+
+    static void bind(SplitPane split, String stableKey, double defaultPosition,
+                     CompanyUiPreferencesService service, UiSessionState session)
+    {
+        String company = activeCompanyCode(session);
+        UiStateWriteContext context = UiStateWriteContext.capture(session, company);
         String stateKey = "ui.split." + safeKey(stableKey) + ".divider";
         Map<String, String> state = service.loadState(company, stateKey);
         split.setDividerPositions(clamp(parseDouble(state.get(stateKey), defaultPosition)));
 
         PauseTransition delay = new PauseTransition(Duration.millis(350));
-        delay.setOnFinished(event -> service.saveState(
-                company,
-                Map.of(stateKey, Double.toString(split.getDividers().get(0).getPosition()))));
+        delay.setOnFinished(event ->
+        {
+            if (context.canSave())
+            {
+                service.saveState(company,
+                        Map.of(stateKey, Double.toString(split.getDividers().get(0).getPosition())));
+            }
+        });
         split.getDividers().get(0).positionProperty().addListener(
                 (observable, oldPosition, newPosition) -> delay.playFromStart());
         split.getProperties().put(BINDING_PROPERTY, delay);
     }
 
-    private static String activeCompanyCode()
+    private static String activeCompanyCode(UiSessionState session)
     {
-        String company = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+        String company = session.multiCompany().activeCompanyCode();
         return company == null || company.isBlank() ? "DEFAULT" : company.trim().toUpperCase(Locale.ROOT);
     }
 

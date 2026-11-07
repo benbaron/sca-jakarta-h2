@@ -93,16 +93,14 @@ public class UserAdminPanel implements AppPanel
     {
         Label title = new Label("User Admin");
         title.getStyleClass().add("panel-title");
-        Label help = new Label(
-                "Maintain durable users, global role definitions, dated company assignments, and account credentials. Effective role state is derived from H2 assignments; runtime operation enforcement completes in P20-S3.");
-        help.setWrapText(true);
+
         actor.setPromptText("Authenticated audit actor");
         actor.setEditable(false);
         Button refresh = new Button("Refresh");
         refresh.setOnAction(event -> refreshWithDiscardProtection());
         HBox actions = new HBox(8, refresh, new Label("Authenticated audit actor"), actor, status);
         HBox.setHgrow(actor, Priority.ALWAYS);
-        VBox header = new VBox(6, title, help, actions);
+        VBox header = new VBox(6, title, actions);
         header.setPadding(new Insets(8));
         root.setTop(header);
 
@@ -154,8 +152,8 @@ public class UserAdminPanel implements AppPanel
         form.addRow(row++, new Label("Display Name"), displayName);
         form.addRow(row++, new Label("Email"), email);
         form.add(userActive, 1, row++);
-        Label lifecycle = explanatoryLabel(
-                "Users are never hard-deleted. Reserved security accounts keep their fixed username and active state. End or revoke every active non-reserved assignment before deactivating another user.");
+        Label lifecycle = new Label("Users cannot be deleted. End active assignments before deactivation.");
+        lifecycle.setWrapText(true);
         form.add(lifecycle, 0, row++, 2, 1);
         Button add = new Button("New User");
         add.setOnAction(event -> newUser());
@@ -176,8 +174,8 @@ public class UserAdminPanel implements AppPanel
         form.addRow(row++, new Label("Description"), roleDescription);
         form.add(roleActive, 1, row++);
         roleDescription.setPrefRowCount(4);
-        Label lifecycle = explanatoryLabel(
-                "Roles are global definitions and are never hard-deleted. ADMIN, MANAGER, ACCOUNTANT, and VIEWER are fixed runtime security roles and cannot be renamed or deactivated. Historical assignments remain.");
+        Label lifecycle = new Label("Roles cannot be deleted; reserved security roles cannot be renamed or deactivated.");
+        lifecycle.setWrapText(true);
         form.add(lifecycle, 0, row++, 2, 1);
         Button add = new Button("New Role");
         add.setOnAction(event -> newRole());
@@ -197,9 +195,7 @@ public class UserAdminPanel implements AppPanel
         form.addRow(row++, new Label("User"), assignUser);
         form.addRow(row++, new Label("Role"), assignRole);
         form.addRow(row++, new Label("Start Date"), assignmentStart);
-        Label boundary = explanatoryLabel(
-                "Assignments are scoped to the active company and determine effective reserved-role state. The singleton ADMIN assignment is permanent; other changes create dated history rows. Ending and revocation dates cannot be in the future.");
-        form.add(boundary, 0, row++, 2, 1);
+        assignmentStart.setTooltip(new javafx.scene.control.Tooltip("Role assignments apply to this company and retain dated history."));
         Button add = new Button("New Assignment");
         add.setOnAction(event -> newAssignment());
         Button assign = new Button("Save Assignment");
@@ -237,14 +233,6 @@ public class UserAdminPanel implements AppPanel
         GridPane.setHgrow(assignmentEnd, Priority.ALWAYS);
         GridPane.setHgrow(assignmentReason, Priority.ALWAYS);
         return form;
-    }
-
-    private Label explanatoryLabel(String text)
-    {
-        Label label = new Label(text);
-        label.setWrapText(true);
-        GridPane.setHgrow(label, Priority.ALWAYS);
-        return label;
     }
 
     private void configureUsersTable()

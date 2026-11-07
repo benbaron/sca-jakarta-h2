@@ -57,7 +57,6 @@ public final class CounterpartiesPanel implements AppPanel
     private final Button refresh = new Button("Refresh");
     private final BooleanSupplier discardConfirmation;
     private final SplitPane workspace = new SplitPane();
-    private final SplitPane mainSplit = new SplitPane();
     private final PauseTransition layoutDelay = new PauseTransition(Duration.millis(250));
     private Long editingId;
     private boolean populating;
@@ -83,8 +82,6 @@ public final class CounterpartiesPanel implements AppPanel
     {
         Label title = new Label("Payees / Counterparties");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Maintain company-owned payees used by Journal. Counterparties are retained for history; clear Active and save to retire one.");
-        help.setWrapText(true);
 
         Button newCounterparty = new Button("New Payee");
         newCounterparty.setId("counterpartiesNew");
@@ -117,7 +114,7 @@ public final class CounterpartiesPanel implements AppPanel
                 loadForm(row);
             }
         });
-        VBox header = new VBox(6, title, help, new javafx.scene.layout.FlowPane(8, 6, newCounterparty, edit, save, refresh, journal), search, status, lifecycle);
+        VBox header = new VBox(6, title, new javafx.scene.layout.FlowPane(8, 6, newCounterparty, edit, save, refresh, journal), search, status, lifecycle);
         ScrollPane headerScroll = new ScrollPane(header);
         headerScroll.setId("counterpartiesHeaderScroll");
         headerScroll.setFitToWidth(true);
@@ -143,13 +140,7 @@ public final class CounterpartiesPanel implements AppPanel
         workspace.setDividerPositions(0.58);
         workspace.setMinSize(0, 0);
         VBox.setVgrow(workspace, Priority.ALWAYS);
-        mainSplit.getItems().setAll(headerScroll, workspace);
-        mainSplit.setOrientation(Orientation.VERTICAL);
-        mainSplit.setId("counterpartiesMainSplit");
-        mainSplit.setMinSize(0, 0);
-        mainSplit.setDividerPositions(0.25);
-        VBox.setVgrow(mainSplit, Priority.ALWAYS);
-        root.getChildren().setAll(mainSplit);
+        root.getChildren().setAll(headerScroll, workspace);
         String company = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
         if (company == null || company.isBlank())
         {
@@ -159,14 +150,12 @@ public final class CounterpartiesPanel implements AppPanel
         var preferences = UiServiceRegistry.companyUiPreferences();
         Map<String, String> state = preferences.loadState(layoutCompany, "ui.counterparties.divider.");
         restoreDivider(workspace, state.get("ui.counterparties.divider.workspace"), 0.58);
-        restoreDivider(mainSplit, state.get("ui.counterparties.divider.main"), 0.25);
         layoutDelay.setOnFinished(event ->
         {
             try
             {
                 preferences.saveState(layoutCompany, Map.of(
-                        "ui.counterparties.divider.workspace", Double.toString(workspace.getDividerPositions()[0]),
-                        "ui.counterparties.divider.main", Double.toString(mainSplit.getDividerPositions()[0])));
+                        "ui.counterparties.divider.workspace", Double.toString(workspace.getDividerPositions()[0])));
             }
             catch (RuntimeException ex)
             {
@@ -174,7 +163,6 @@ public final class CounterpartiesPanel implements AppPanel
             }
         });
         workspace.getDividers().get(0).positionProperty().addListener((obs, oldValue, value) -> layoutDelay.playFromStart());
-        mainSplit.getDividers().get(0).positionProperty().addListener((obs, oldValue, value) -> layoutDelay.playFromStart());
         installDirtyListeners();
         FullTextTooltipInstaller.install(root);
     }
@@ -254,7 +242,7 @@ public final class CounterpartiesPanel implements AppPanel
         GridPane.setHgrow(email, Priority.ALWAYS);
         GridPane.setHgrow(phone, Priority.ALWAYS);
         GridPane.setHgrow(notes, Priority.ALWAYS);
-        Label lifecycleHelp = new Label("Counterparties are retained to preserve Journal, contact, audit and import history. Clear Active and save to preserve those references while removing the party from new choices.");
+        Label lifecycleHelp = new Label("Payees cannot be deleted; clear Active and Save to retire them.");
         lifecycleHelp.setWrapText(true);
         VBox editor = new VBox(8, new Label("Counterparty editor"), fields, lifecycleHelp);
         editor.setPadding(new Insets(8));

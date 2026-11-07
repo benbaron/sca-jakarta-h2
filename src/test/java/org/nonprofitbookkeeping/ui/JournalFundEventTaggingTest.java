@@ -150,25 +150,29 @@ class JournalFundEventTaggingTest
             assertEquals("RELIEF", table().getItems().get(1).getFund().code());
             for (double width : new double[] {900, 600})
             {
-                ((SplitPane) panel.root().lookup("#journalTaggingSplit")).setDividerPositions(0.12);
+                ((javafx.scene.control.TabPane) panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(1);
+                ((SplitPane) panel.root().lookup("#journalWorkspaceEditorSplit")).setDividerPositions(0.7);
                 stage.setWidth(width);
                 panel.root().setStyle("-fx-font-size: " + (width == 600 ? 17 : 13) + "px;");
                 panel.root().applyCss();
                 ((javafx.scene.Parent) panel.root()).layout();
                 ScrollPane tagging = (ScrollPane) panel.root().lookup("#journalTaggingScroll");
                 assertTrue(tagging.getViewportBounds().getWidth() > 0);
+                assertTrue(tagging.getViewportBounds().getHeight() >= 60,
+                        "Entry lines must not squeeze the Fund/Event controls out of view");
                 assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, tagging.getHbarPolicy());
                 assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, tagging.getVbarPolicy());
-                assertTrue(tagging.getContent().getBoundsInLocal().getHeight() > tagging.getViewportBounds().getHeight(), "Tag contents should scroll at " + width);
+                assertTagActionsReachable(tagging);
             }
-            SplitPane split = (SplitPane) panel.root().lookup("#journalTaggingSplit");
+            SplitPane split = (SplitPane) panel.root().lookup("#journalWorkspaceEditorSplit");
             ScrollPane tags = (ScrollPane) panel.root().lookup("#journalTaggingScroll");
             split.setDividerPositions(0.2);
             ((javafx.scene.Parent) panel.root()).layout();
             double smallHeight = tags.getHeight();
             split.setDividerPositions(0.7);
             ((javafx.scene.Parent) panel.root()).layout();
-            assertTrue(tags.getHeight() > smallHeight + 10, "Tag area has a working divider");
+            assertTrue(tags.getHeight() <= smallHeight, "Tags stay bounded while the entry/table region is resized");
+            ((javafx.scene.control.TabPane) panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(0);
             SplitPane filtersSplit = (SplitPane) panel.root().lookup("#journalWorkspaceFiltersSplit");
             ScrollPane filters = (ScrollPane) panel.root().lookup("#journalWorkspaceFiltersScroll");
             filtersSplit.setDividerPositions(0.1);
@@ -179,6 +183,9 @@ class JournalFundEventTaggingTest
             ((javafx.scene.Parent) panel.root()).layout();
             assertTrue(filters.getHeight() > filterHeight + 10);
             assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, filters.getHbarPolicy());
+            ((javafx.scene.control.TabPane) panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(1);
+            panel.root().applyCss();
+            ((javafx.scene.Parent) panel.root()).layout();
             assertTrue(table().getColumns().get(0).getWidth() > table().getWidth(), "Saved wide column retained");
             assertTrue(table().lookupAll(".scroll-bar").stream().map(ScrollBar.class::cast)
                     .anyMatch(bar -> bar.getOrientation() == javafx.geometry.Orientation.HORIZONTAL && bar.isVisible()), "Wide table should scroll horizontally");
@@ -190,6 +197,91 @@ class JournalFundEventTaggingTest
             assertFalse(button("journalRefreshChoices").isDisabled());
             return null;
         });
+    }
+
+    @Test
+    void taggingControlsFitWithoutScrollbarsAndScrollWhenTheViewportIsReduced() throws Exception
+    {
+        FxTestSupport.onFx(() ->
+        {
+            panel = new JournalWorkspaceCompliancePanel();
+            stage = new Stage();
+            stage.setScene(new Scene((javafx.scene.Parent) panel.root(), 900, 900));
+            stage.show();
+            ((TabPane) panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(1);
+            ((SplitPane) panel.root().lookup("#journalWorkspaceEditorSplit")).setDividerPositions(0.25);
+            panel.root().setStyle("-fx-font-size: 17px;");
+            panel.root().applyCss();
+            ((javafx.scene.Parent) panel.root()).layout();
+            ScrollPane tags = (ScrollPane) panel.root().lookup("#journalTaggingScroll");
+
+            // Measure the actual controls, rather than assuming a system font's wrap height.
+            double fittingHeight = Math.ceil(tags.getContent().prefHeight(tags.getViewportBounds().getWidth())) + 32;
+            tags.setMinHeight(fittingHeight);
+            tags.setPrefHeight(fittingHeight);
+            tags.setMaxHeight(fittingHeight);
+            ((javafx.scene.Parent) panel.root()).layout();
+            return null;
+        });
+        await(() ->
+        {
+            ((javafx.scene.Parent) panel.root()).layout();
+            ScrollPane tags = (ScrollPane) panel.root().lookup("#journalTaggingScroll");
+            return tags.getContent().getBoundsInLocal().getHeight() < tags.getViewportBounds().getHeight()
+                    && !verticalScrollbar(tags).isVisible();
+        }, "Fitting tagging controls did not settle");
+        FxTestSupport.onFx(() ->
+        {
+            ScrollPane tags = (ScrollPane) panel.root().lookup("#journalTaggingScroll");
+            assertTrue(tags.getContent().getBoundsInLocal().getHeight() < tags.getViewportBounds().getHeight());
+            assertFalse(verticalScrollbar(tags).isVisible(), "Fitting controls must not require a scrollbar");
+            assertTagActionsReachable(tags);
+
+            // A controlled small viewport proves real overflow even after the help paragraph is removed.
+            tags.setMinHeight(0);
+            tags.setPrefHeight(64);
+            tags.setMaxHeight(64);
+            ((javafx.scene.Parent) panel.root()).layout();
+            return null;
+        });
+        await(() ->
+        {
+            ((javafx.scene.Parent) panel.root()).layout();
+            ScrollPane tags = (ScrollPane) panel.root().lookup("#journalTaggingScroll");
+            return tags.getContent().getBoundsInLocal().getHeight() > tags.getViewportBounds().getHeight()
+                    && verticalScrollbar(tags).isVisible();
+        }, "Tagging overflow scrollbar did not settle");
+        FxTestSupport.onFx(() ->
+        {
+            ScrollPane tags = (ScrollPane) panel.root().lookup("#journalTaggingScroll");
+            assertTrue(tags.getContent().getBoundsInLocal().getHeight() > tags.getViewportBounds().getHeight());
+            assertTrue(verticalScrollbar(tags).isVisible(), "Overflowing controls need a usable scrollbar");
+            assertTrue(verticalScrollbar(tags).getMax() > verticalScrollbar(tags).getMin());
+            assertTagActionsReachable(tags);
+            return null;
+        });
+    }
+
+    private void assertTagActionsReachable(ScrollPane tags)
+    {
+        tags.setHvalue(tags.getHmax());
+        tags.setVvalue(tags.getVmax());
+        tags.layout();
+        var viewport = tags.lookup(".viewport");
+        var visible = viewport.localToScene(viewport.getLayoutBounds());
+        var last = button("journalMerchants");
+        var bounds = last.localToScene(last.getBoundsInLocal());
+        assertTrue(bounds.getMinY() >= visible.getMinY() - 1 && bounds.getMaxY() <= visible.getMaxY() + 1,
+                "The last tagging action must be reachable vertically");
+        assertTrue(bounds.getMinX() >= visible.getMinX() - 1 && bounds.getMaxX() <= visible.getMaxX() + 1,
+                "The last tagging action must be reachable horizontally");
+    }
+
+    private static ScrollBar verticalScrollbar(ScrollPane scroll)
+    {
+        return scroll.lookupAll(".scroll-bar").stream().map(ScrollBar.class::cast)
+                .filter(bar -> bar.getParent() == scroll && bar.getOrientation() == javafx.geometry.Orientation.VERTICAL)
+                .findFirst().orElseThrow();
     }
 
     @Test
@@ -231,10 +323,15 @@ class JournalFundEventTaggingTest
 
     private static void await(BooleanSupplier condition) throws Exception
     {
+        await(condition, "Journal choices did not finish loading");
+    }
+
+    private static void await(BooleanSupplier condition, String message) throws Exception
+    {
         long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(10);
         while (!FxTestSupport.onFx(condition::getAsBoolean))
         {
-            assertTrue(System.nanoTime() < deadline, "Journal choices did not finish loading");
+            assertTrue(System.nanoTime() < deadline, message);
             Thread.sleep(25);
         }
     }

@@ -76,6 +76,7 @@ public class CompanyAdminPanel implements AppPanel
     private final CompanySessionController companyController;
     private final org.nonprofitbookkeeping.service.CompanyUiPreferencesService preferencesService;
     private final String layoutOwnerCompany;
+    private final UiStateWriteContext layoutContext;
 
     private Long editingCompanyId;
     private boolean populating;
@@ -96,6 +97,7 @@ public class CompanyAdminPanel implements AppPanel
         this.companyController = Objects.requireNonNull(companyController, "companyController");
         this.preferencesService = UiServiceRegistry.companyUiPreferences();
         this.layoutOwnerCompany = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+        this.layoutContext = UiStateWriteContext.capture(MainWindow.sharedSessionState(), layoutOwnerCompany);
         build();
         restoreLayoutState();
         installLayoutStateListeners();
@@ -111,8 +113,6 @@ public class CompanyAdminPanel implements AppPanel
 
         Label title = new Label("Company Admin");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Company rows in the active H2 database define which companies exist. Create or edit a profile and informational EIN here, deactivate unused companies without deleting their history, explicitly select an active company for the workspace, select its current Chart of Accounts, and choose safe Report Library opening defaults.");
-        help.setWrapText(true);
 
         Button add = new Button("New");
         add.setOnAction(event -> onNew());
@@ -121,6 +121,7 @@ public class CompanyAdminPanel implements AppPanel
         UiPermissionGate.gate(add, ApplicationPermission.COMPANY_ADMIN, "Create a company");
         UiPermissionGate.gate(save, ApplicationPermission.COMPANY_ADMIN, "Save company administration changes");
         UiPermissionGate.gate(makeActiveChart, ApplicationPermission.COMPANY_ADMIN, "Change the active Chart of Accounts");
+        defaultReport.setTooltip(new javafx.scene.control.Tooltip("Applies when a new Report Library opens; current report filters stay as selected."));
         UiPermissionGate.gate(defaultReport, ApplicationPermission.COMPANY_ADMIN, "Change company reporting defaults");
         UiPermissionGate.gate(defaultReportExportFormat, ApplicationPermission.COMPANY_ADMIN, "Change company reporting defaults");
         Button refresh = new Button("Refresh");
@@ -130,7 +131,7 @@ public class CompanyAdminPanel implements AppPanel
         activeCompany.setText("Workspace company: " + currentCompanyCode());
 
         HBox actions = new HBox(8, add, save, selectActive, refresh);
-        root.setTop(new VBox(6, title, help, actions, activeCompany, status));
+        root.setTop(new VBox(6, title, actions, activeCompany, status));
 
         configureCompaniesTable();
         VBox tableRegion = new VBox(6, new Label("Companies in this database"), companies);
@@ -185,7 +186,7 @@ public class CompanyAdminPanel implements AppPanel
             GridPane.setHgrow(field, Priority.ALWAYS);
         }
 
-        Label lifecycle = new Label("Companies are not hard-deleted. Clear Active and save to deactivate a non-current company. The current company and the last active company are protected by the application service.");
+        Label lifecycle = new Label("Companies cannot be deleted; clear Active and Save to deactivate.");
         lifecycle.setWrapText(true);
 
         chartAssignment.setId("companyChartAssignment");
@@ -196,15 +197,13 @@ public class CompanyAdminPanel implements AppPanel
         makeActiveChart.setDisable(true);
         makeActiveChart.setOnAction(event -> assignActiveChart());
         chartStatus.setWrapText(true);
-        Label chartHelp = new Label("The active-chart pointer controls new account maintenance and chart-targeted imports. Selecting a DRAFT chart promotes it to ACTIVE. Existing ACTIVE charts, accounts, transactions, and historical references remain attached to their original chart; nothing is moved or auto-retired.");
-        chartHelp.setWrapText(true);
+        chartAssignment.setTooltip(new javafx.scene.control.Tooltip("Select the chart for new accounts and imports; existing records keep their chart."));
         VBox chartEditor = new VBox(
                 6,
                 new Label("Chart of Accounts assignment"),
                 chartAssignment,
                 makeActiveChart,
-                chartStatus,
-                chartHelp);
+                chartStatus);
         chartEditor.setPadding(new Insets(8));
 
         GridPane reportingGrid = new GridPane();
@@ -214,9 +213,6 @@ public class CompanyAdminPanel implements AppPanel
         reportingGrid.addRow(1, new Label("Default export format"), defaultReportExportFormat);
         GridPane.setHgrow(defaultReport, Priority.ALWAYS);
         GridPane.setHgrow(defaultReportExportFormat, Priority.ALWAYS);
-        Label reportingHelp = new Label(
-                "These defaults apply only when a new Report Library is opened. Report dates, fund, row limit, account, asset, and inventory filters remain controlled by the active accounting period or the operator and are not stored as company reporting policy.");
-        reportingHelp.setWrapText(true);
         reportingDefaultsStatus.setWrapText(true);
         Button saveReportingDefaults = new Button("Save Reporting Defaults");
         saveReportingDefaults.setId("companySaveReportingDefaults");
@@ -229,20 +225,17 @@ public class CompanyAdminPanel implements AppPanel
                 new Label("Reporting defaults"),
                 reportingGrid,
                 saveReportingDefaults,
-                reportingDefaultsStatus,
-                reportingHelp);
+                reportingDefaultsStatus);
         reportingEditor.setPadding(new Insets(8));
 
-        Label deferrals = new Label("EIN is stored as informational company metadata only; this application does not provide a tax-filing workflow. Bank accounts are maintained in the Banking workspace.");
-        deferrals.setWrapText(true);
+        ein.setTooltip(new javafx.scene.control.Tooltip("Informational company EIN."));
         VBox editor = new VBox(
                 8,
                 new Label("Company profile"),
                 form,
                 lifecycle,
                 chartEditor,
-                reportingEditor,
-                deferrals);
+                reportingEditor);
         editor.setPadding(new Insets(8));
         return editor;
     }
@@ -732,6 +725,10 @@ public class CompanyAdminPanel implements AppPanel
 
     private void saveLayoutState()
     {
+        if (!layoutContext.canSave())
+        {
+            return;
+        }
         Map<String, String> state = new LinkedHashMap<>();
         state.put(STATE_PREFIX + "divider", Double.toString(split.getDividers().get(0).getPosition()));
         state.put(STATE_PREFIX + "table.order", companies.getColumns().stream()

@@ -74,8 +74,7 @@ public final class OpeningConversionPanel implements AppPanel
         root.setMinSize(0, 0);
         Label title = new Label("Opening Conversion Review");
         title.getStyleClass().add("panel-title");
-        Label explanation = new Label("Review existing account openings, configured bank baselines, outstanding bank items, fixed assets, inventory, and supplemental schedules. Acceptance records an audit fact only; it does not create or balance accounting entries.");
-        explanation.setWrapText(true);
+        title.setTooltip(new javafx.scene.control.Tooltip("Review opening balances. Acceptance records the review without creating entries."));
 
         asOf.setId("openingConversionAsOf");
         previewButton.setId("openingConversionPreview");
@@ -113,7 +112,7 @@ public final class OpeningConversionPanel implements AppPanel
         VBox.setVgrow(workspace, Priority.ALWAYS);
 
         FlowPane actions = new FlowPane(8, 6, new Label("As of"), asOf, previewButton, saveButton);
-        ScrollPane header = new ScrollPane(new VBox(6, title, explanation, actions, note, status));
+        ScrollPane header = new ScrollPane(new VBox(6, title, actions, note, status));
         header.setFitToWidth(true);
         header.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         header.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);

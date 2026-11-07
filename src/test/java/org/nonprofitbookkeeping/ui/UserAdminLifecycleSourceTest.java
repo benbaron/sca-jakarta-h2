@@ -26,7 +26,8 @@ class UserAdminLifecycleSourceTest
         assertTrue(panel.contains("Revoke Selected"));
         assertTrue(panel.contains("securityAdmin = new SecurityAdminPane()"));
         assertTrue(panel.contains("tab(\"Authentication\", securityAdmin.root())"));
-        assertTrue(panel.contains("runtime operation enforcement completes in P20-S3"));
+        assertFalse(panel.contains("runtime operation enforcement completes in P20-S3"));
+        assertTrue(panel.contains("UiPermissionGate.gate"));
         assertTrue(panel.contains("userAdminRolesSplit"));
         assertTrue(panel.contains("CompanySplitPaneStateBinder.bind"));
         assertFalse(panel.contains("Delete Role"));

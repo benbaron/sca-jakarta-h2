@@ -71,9 +71,8 @@ public final class NmrPoliciesPanel implements AppPanel
     {
         Label title = new Label("NMR Policies");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Record dated source policy for this company. Saving does not verify external approval, calculate NMR, or create accounting entries. No rate or currency is prefilled.");
-        help.setWrapText(true);
-        Label retained = new Label("Saved version terms cannot be edited or deleted. End a version with a reason, then add a non-overlapping successor. Rule descriptions are recorded evidence, not calculated rules. Whole-database backup preserves these records; SCLX exports and imports saved policy versions through Import Preview; import requires Company Administration permission.");
+
+        Label retained = new Label("Saved versions cannot be edited or deleted; end a version and add a successor.");
         retained.setId("nmrPolicyRetention");
         retained.setWrapText(true);
         status.setWrapText(true);
@@ -96,7 +95,7 @@ public final class NmrPoliciesPanel implements AppPanel
         UiPermissionGate.gate(add, ApplicationPermission.COMPANY_ADMIN, "Create NMR policy configuration");
         UiPermissionGate.gate(save, ApplicationPermission.COMPANY_ADMIN, "Save NMR policy configuration");
         UiPermissionGate.gate(end, ApplicationPermission.COMPANY_ADMIN, "End an NMR policy version");
-        VBox header = new VBox(6, title, help, new FlowPane(8, 6, add, save, end, refresh), status, retained);
+        VBox header = new VBox(6, title, new FlowPane(8, 6, add, save, end, refresh), status, retained);
         ScrollPane headerScroll = scroll(header, "nmrPolicyHeaderScroll", true);
 
         table.setId("nmrPolicyTable");
@@ -202,13 +201,8 @@ public final class NmrPoliciesPanel implements AppPanel
         details.setOrientation(Orientation.VERTICAL);
         details.setMinSize(0, 0);
         CompanySplitPaneStateBinder.bind(details, "nmr-policy-detail", .45);
-        SplitPane main = new SplitPane(headerScroll, details);
-        main.setId("nmrPolicyMainSplit");
-        main.setOrientation(Orientation.VERTICAL);
-        main.setMinSize(0, 0);
-        CompanySplitPaneStateBinder.bind(main, "nmr-policy-main", .25);
-        root.getChildren().setAll(main);
-        VBox.setVgrow(main, Priority.ALWAYS);
+        root.getChildren().setAll(headerScroll, details);
+        VBox.setVgrow(details, Priority.ALWAYS);
         CompanyTableStateBinder.applyProductionPanel(root, AppPanelId.SETTINGS);
         FullTextTooltipInstaller.install(root);
     }

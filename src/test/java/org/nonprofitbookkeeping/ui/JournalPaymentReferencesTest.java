@@ -384,21 +384,16 @@ class JournalPaymentReferencesTest
             ((ComboBox<?>)cell.getGraphic()).getSelectionModel().select(0);
             assertTrue(panel.hasUnsavedChanges(), "Recipient-only edits protect the transaction draft");
             for (int index = 0; index < 60; index++) details.getItems().add(new JournalWorkspacePanel.SupplementalRow());
+            stage.setWidth(520);
+            stage.setHeight(550);
             panel.root().setStyle("-fx-font-size: 20px;");
-            ((ScrollPane)panel.root().lookup("#journalWorkspaceEditorScroll")).setVvalue(1);
-            ((SplitPane)panel.root().lookup("#journalWorkspaceEditorSplit")).setDividerPositions(0.12, 0.30);
-            ((SplitPane)panel.root().lookup("#journalWorkspaceDetailSplit")).setDividerPositions(0.65);
-            var split = (SplitPane)panel.root().lookup("#journalNmrDetailSplit");
-            split.setDividerPositions(0.3);
+            ((TabPane)panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(3);
             stage.getScene().getRoot().applyCss(); stage.getScene().getRoot().layout();
-            assertEquals(1, split.getDividers().size(), "Controls/table expose a real draggable divider");
-            double before = details.getHeight();
-            split.setDividerPositions(0.55); stage.getScene().getRoot().layout();
-            assertTrue(details.getHeight() < before, "Divider movement resizes the actual table viewport");
+            assertCompactSupplementalControls(details);
             assertEquals(0, details.getMinWidth()); assertEquals(0, details.getMinHeight());
             return null;
         });
-        // Let JavaFX pulse the nested VirtualFlow after font and divider changes.
+        // Let JavaFX pulse the table VirtualFlow after the font and window changes.
         await(() ->
         {
             var details = (TableView<?>)panel.root().lookup("#journalWorkspaceSupplementalOTHER_LIABILITYTable");
@@ -413,11 +408,7 @@ class JournalPaymentReferencesTest
                 assertTrue(details.lookupAll(".scroll-bar").stream().map(ScrollBar.class::cast)
                         .anyMatch(bar -> bar.getOrientation() == orientation && bar.isVisible()), "Supplemental table overflows in " + orientation);
             }
-            var controls = (ScrollPane)panel.root().lookup("#journalNmrDetailControlsScroll");
-            assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, controls.getHbarPolicy());
-            assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, controls.getVbarPolicy());
-            assertTrue(controls.getContent().getBoundsInLocal().getWidth() > controls.getViewportBounds().getWidth(), "Controls overflow horizontally without a forced panel minimum");
-            assertTrue(controls.getContent().getBoundsInLocal().getHeight() > controls.getViewportBounds().getHeight(), "Scaled help scrolls vertically within its region");
+            assertCompactSupplementalControls(details);
             var now = java.time.Instant.now();
             session.setAuthenticatedUser(new AuthenticatedUserSession(9001L, "operator", "Operator", "NMR_DETAIL",
                     java.util.Set.of(org.nonprofitbookkeeping.service.ReservedSecurityRole.VIEWER), now, now));
@@ -497,14 +488,12 @@ class JournalPaymentReferencesTest
         {
             var details = (TableView<JournalWorkspacePanel.SupplementalRow>)panel.root().lookup("#journalWorkspaceSupplementalRECEIVABLETable");
             for (int index = 0; index < 60; index++) details.getItems().add(new JournalWorkspacePanel.SupplementalRow());
+            stage.setWidth(520);
+            stage.setHeight(550);
             panel.root().setStyle("-fx-font-size: 20px;");
-            ((ScrollPane)panel.root().lookup("#journalWorkspaceEditorScroll")).setVvalue(1);
-            ((SplitPane)panel.root().lookup("#journalWorkspaceEditorSplit")).setDividerPositions(0.12, 0.30);
-            ((SplitPane)panel.root().lookup("#journalWorkspaceDetailSplit")).setDividerPositions(0.65);
-            var split = (SplitPane)panel.root().lookup("#journalMerchantDetailSplit"); split.setDividerPositions(0.3);
+            ((TabPane)panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(3);
             stage.getScene().getRoot().applyCss(); stage.getScene().getRoot().layout();
-            assertEquals(1, split.getDividers().size()); double before = details.getHeight();
-            split.setDividerPositions(0.55); stage.getScene().getRoot().layout(); assertTrue(details.getHeight() < before);
+            assertCompactSupplementalControls(details);
             assertEquals(0, details.getMinWidth()); assertEquals(0, details.getMinHeight()); return null;
         });
         await(() ->
@@ -519,15 +508,28 @@ class JournalPaymentReferencesTest
             {
                 assertTrue(details.lookupAll(".scroll-bar").stream().map(ScrollBar.class::cast).anyMatch(bar -> bar.getOrientation() == orientation && bar.isVisible()));
             }
-            var controls = (ScrollPane)panel.root().lookup("#journalMerchantDetailControlsScroll");
-            assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, controls.getHbarPolicy()); assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED, controls.getVbarPolicy());
-            assertTrue(controls.getContent().getBoundsInLocal().getWidth() > controls.getViewportBounds().getWidth());
-            assertTrue(controls.getContent().getBoundsInLocal().getHeight() > controls.getViewportBounds().getHeight());
+            assertCompactSupplementalControls(details);
             var now = java.time.Instant.now();
             session.setAuthenticatedUser(new AuthenticatedUserSession(9001L, "operator", "Operator", "NMR_DETAIL",
                     java.util.Set.of(org.nonprofitbookkeeping.service.ReservedSecurityRole.VIEWER), now, now));
             assertTrue(button("journalWorkspaceSaveButton").isDisabled()); return null;
         });
+    }
+
+    private static void assertCompactSupplementalControls(TableView<?> table)
+    {
+        VBox content = assertInstanceOf(VBox.class, table.getParent());
+        assertEquals(2, content.getChildren().size(), "Only local actions and the table occupy the editor");
+        var actions = assertInstanceOf(javafx.scene.layout.FlowPane.class, content.getChildren().get(0));
+        assertTrue(table.getHeight() > actions.getHeight(), "The table receives the space freed by the instruction panel");
+        assertEquals(3, actions.getChildren().size());
+        for (var node : actions.getChildren())
+        {
+            Button action = assertInstanceOf(Button.class, node);
+            assertTrue(action.isVisible());
+            assertNotNull(action.getTooltip());
+            assertTrue(action.getTooltip().getText().length() <= 100, "Hover instructions stay concise");
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -44,7 +44,8 @@ class AssetsRegisterPanelSourceTest
         assertTrue(source.contains("recordLifecycleEvent("));
         assertTrue(source.contains("previewLifecycleReversal("));
         assertTrue(source.contains("reverseLifecycleEvent("));
-        assertTrue(source.contains("assetRegisterHistorySplit"));
+        assertTrue(source.contains("assetRegisterWorkPanes"));
+        assertTrue(source.contains(".addPane(\"Lifecycle History\", lifecycleRegion)"));
         assertTrue(source.contains("No partial accounting was retained."));
         assertFalse(source.contains("FixedAsset.Status.DISPOSED, FixedAsset.Status.ACTIVE"));
     }

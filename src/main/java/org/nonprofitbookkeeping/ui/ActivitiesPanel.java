@@ -97,9 +97,7 @@ public class ActivitiesPanel implements AppPanel
 
         Label title = new Label("Events / Activities");
         title.getStyleClass().add("panel-title");
-        Label help = new Label(
-                "Create and find named events, projects, or occasions here. Use a distinct code for each annual event; names may repeat. Renaming preserves existing Journal links.");
-        help.setWrapText(true);
+        codeField.setTooltip(new javafx.scene.control.Tooltip("Use a different code for each annual event; names may repeat."));
         lifecycleStatus.setWrapText(true);
 
         Button add = new Button("New Event");
@@ -136,7 +134,7 @@ public class ActivitiesPanel implements AppPanel
         search.setPromptText("Search event name or code");
         search.setAccessibleText("Search Events / Activities by name or code");
         search.textProperty().addListener((obs, before, after) -> applySearch());
-        VBox header = new VBox(6, title, help, actions, search, status, lifecycleStatus);
+        VBox header = new VBox(6, title, actions, search, status, lifecycleStatus);
         ScrollPane headerScroll = new ScrollPane(header);
         headerScroll.setId("activitiesHeaderScroll");
         headerScroll.setFitToWidth(true);
@@ -250,8 +248,7 @@ public class ActivitiesPanel implements AppPanel
         GridPane.setHgrow(codeField, Priority.ALWAYS);
         GridPane.setHgrow(nameField, Priority.ALWAYS);
 
-        Label lifecycle = new Label(
-                "Clearing Active and saving deactivates the Activity without changing historical Journal lines. Inactive Activities remain visible here but are omitted from new Journal Activity choices. Delete Unused is available only when there are no Journal transaction-split references and no durable interchange identity; otherwise deactivate the Activity instead.");
+        Label lifecycle = new Label("Used events cannot be deleted; clear Active and Save to deactivate.");
         lifecycle.setWrapText(true);
         VBox editor = new VBox(8, new Label("Event / Activity editor"), form, lifecycle);
         editor.setPadding(new Insets(8));

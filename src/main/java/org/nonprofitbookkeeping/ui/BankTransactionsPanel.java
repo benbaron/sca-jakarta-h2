@@ -103,12 +103,10 @@ public class BankTransactionsPanel implements AppPanel
         root.setPadding(new Insets(8));
         Label title = new Label("Bank Transactions");
         title.getStyleClass().add("panel-title");
-        Label authority = new Label(
-                "Ledger Activity is the accounting record. Statement Review contains imported bank evidence used for matching or explicit acceptance.");
-        authority.setWrapText(true);
+        title.setTooltip(new javafx.scene.control.Tooltip("Ledger Activity shows accounting; Statement Review shows imported bank records."));
         Button refresh = new Button("Refresh");
         refresh.setOnAction(event -> reload());
-        root.setTop(new VBox(6, title, authority, refresh));
+        root.setTop(new VBox(6, title, refresh));
 
         Tab ledgerTab = new Tab("Ledger Activity", buildLedgerActivityPane());
         ledgerTab.setClosable(false);
@@ -154,7 +152,7 @@ public class BankTransactionsPanel implements AppPanel
         ScrollPane controlsScroll = new ScrollPane(controls);
         controlsScroll.setFitToWidth(false);
         controlsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        controlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        controlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         controlsScroll.setPannable(true);
 
         buildLedgerTable();
@@ -188,7 +186,7 @@ public class BankTransactionsPanel implements AppPanel
         exportControlsScroll.setId("bankStatementExportControlsScroll");
         exportControlsScroll.setFitToWidth(false);
         exportControlsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        exportControlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        exportControlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         exportControlsScroll.setPannable(true);
 
         buildReviewTable();

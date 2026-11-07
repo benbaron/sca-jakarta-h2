@@ -139,8 +139,6 @@ public class SettingsPanel implements AppPanel
         grid.add(nativeWindow, 0, row++, 2, 1);
         grid.add(rememberState, 0, row++, 2, 1);
 
-        grid.add(deferredPreferenceLabel("defaultPrivilege"), 0, row++, 2, 1);
-
         grid.add(new Label("Correction method"), 0, row);
         grid.add(correctionMethod, 1, row++);
 
@@ -148,8 +146,6 @@ public class SettingsPanel implements AppPanel
         grid.add(closedPeriodPolicy, 1, row++);
 
         grid.add(requireReopenReason, 0, row++, 2, 1);
-
-        grid.add(deferredPreferenceLabel("defaultReopenScope"), 0, row++, 2, 1);
 
         grid.add(new Label("Period start day"), 0, row);
         grid.add(periodStartDay, 1, row++);
@@ -171,11 +167,7 @@ public class SettingsPanel implements AppPanel
         grid.add(new Label("Connected database file"), 0, row);
         grid.add(activeDatabase, 1, row++);
 
-        Label databaseHelp = new Label(
-                "Database selection is connected session state. Use File → Select Database File… "
-                        + "or Create New Database… so the target is migrated and validated before this path changes.");
-        databaseHelp.setWrapText(true);
-        grid.add(databaseHelp, 0, row++, 2, 1);
+        activeDatabase.setTooltip(new javafx.scene.control.Tooltip("Change databases using File → Database → Select Database File or Create New Database."));
 
         Button apply = new Button("Apply");
         apply.setOnAction(e -> applyToSession(false));
@@ -380,15 +372,6 @@ public class SettingsPanel implements AppPanel
                 readCompanyUiPreferences(),
                 activeCompany.getValue(),
                 activeDatabase.getText());
-    }
-
-    private static Label deferredPreferenceLabel(String key)
-    {
-        PreferenceConsumerMatrix.Entry entry = PreferenceConsumerMatrix.entry(key);
-        Label label = new Label(entry.userMessage());
-        label.setWrapText(true);
-        label.getStyleClass().add("preference-deferred-note");
-        return label;
     }
 
     private record SettingsSnapshot(

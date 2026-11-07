@@ -6,7 +6,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
@@ -14,38 +13,23 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /** Icon-led, categorized navigation pane for the production workspace. */
 public class NavigationPane extends VBox
 {
     private final Map<AppPanelId, Button> index = new EnumMap<>(AppPanelId.class);
     private final Consumer<AppPanelId> openPanel;
-    private final BiConsumer<String, String> openInspector;
-    private final Supplier<InspectorContext> inspectorContextSupplier;
     private AppPanelId highlightedPanel;
 
-    public NavigationPane(
-            Consumer<AppPanelId> openPanel,
-            BiConsumer<String, String> openInspector,
-            Supplier<InspectorContext> inspectorContextSupplier)
+    public NavigationPane(Consumer<AppPanelId> openPanel)
     {
-        this(openPanel, openInspector, inspectorContextSupplier, null);
+        this(openPanel, null);
     }
 
-    public NavigationPane(
-            Consumer<AppPanelId> openPanel,
-            BiConsumer<String, String> openInspector,
-            Supplier<InspectorContext> inspectorContextSupplier,
-            Runnable collapseAction)
+    public NavigationPane(Consumer<AppPanelId> openPanel, Runnable collapseAction)
     {
         this.openPanel = Objects.requireNonNull(openPanel, "openPanel");
-        this.openInspector = Objects.requireNonNull(openInspector, "openInspector");
-        this.inspectorContextSupplier = Objects.requireNonNull(
-                inspectorContextSupplier,
-                "inspectorContextSupplier");
 
         getStyleClass().addAll("navigation-pane", "nav");
         setMinWidth(0);
@@ -60,6 +44,7 @@ public class NavigationPane extends VBox
         brand.setPadding(new Insets(8, 10, 10, 10));
 
         VBox content = new VBox(2);
+        content.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
         content.getStyleClass().add("navigation-content");
         addItem(content, AppPanelId.DASHBOARD, "Dashboard", UiIcons.Glyph.DASHBOARD);
 
@@ -106,7 +91,7 @@ public class NavigationPane extends VBox
         ScrollPane scrollPane = new ScrollPane(content);
         scrollPane.getStyleClass().add("navigation-scroll");
         scrollPane.setFitToWidth(true);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
         getChildren().addAll(brand, scrollPane);
@@ -158,26 +143,6 @@ public class NavigationPane extends VBox
         return visiblePanels();
     }
 
-    static String inspectorBody(NavItem item, InspectorContext context)
-    {
-        Objects.requireNonNull(item, "item");
-        Objects.requireNonNull(context, "context");
-        if (item.panelId() == null)
-        {
-            return InspectorPresentationModel.navigationGroupBody(
-                    context.activeCompany(),
-                    context.dateRange());
-        }
-        return InspectorPresentationModel.panelBody(
-                item.label(),
-                item.panelId().name(),
-                context.activeCompany(),
-                context.dateRange(),
-                context.panelCapabilities(),
-                "single-select, Enter, or double-click.",
-                "open Journal or the relevant report destination for cross-panel queries.");
-    }
-
     private void addItem(VBox target, AppPanelId id, String label, UiIcons.Glyph glyph)
     {
         Button button = new Button(label, UiIcons.icon(glyph, 16));
@@ -188,16 +153,6 @@ public class NavigationPane extends VBox
         button.setOnAction(event -> {
             highlight(id);
             openPanel.accept(id);
-        });
-        button.setOnMouseClicked(event -> {
-            if (event.getButton() == MouseButton.SECONDARY)
-            {
-                NavItem item = new NavItem(id, label);
-                openInspector.accept(
-                        "Details: " + label,
-                        inspectorBody(item, inspectorContextSupplier.get()));
-                event.consume();
-            }
         });
         index.put(id, button);
         target.getChildren().add(button);
@@ -211,14 +166,4 @@ public class NavigationPane extends VBox
         target.getChildren().add(section);
     }
 
-    public record NavItem(AppPanelId panelId, String label)
-    {
-    }
-
-    public record InspectorContext(
-            String activeCompany,
-            String dateRange,
-            String panelCapabilities)
-    {
-    }
 }

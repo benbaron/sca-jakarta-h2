@@ -96,11 +96,10 @@ public final class RecognitionAssistantPanel implements AppPanel
 
         Label title = new Label("Recognition Assistant");
         title.getStyleClass().add("panel-title");
-        Label guidance = new Label("Preview straight-line installments from the selected canonical prepaid or deferred item. Nothing is posted until Save Selected Recognition is used.");
-        guidance.setWrapText(true);
+        kind.setTooltip(new javafx.scene.control.Tooltip("Preview prepaid or deferred installments; Save Selected Recognition creates the entry."));
         status.setId("recognitionStatus");
         status.setWrapText(true);
-        root.setTop(new VBox(6, title, new HBox(8, new Label("Item type"), kind, refresh), guidance,
+        root.setTop(new VBox(6, title, new HBox(8, new Label("Item type"), kind, refresh),
                 status, new Separator()));
 
         GridPane form = new GridPane();
@@ -123,13 +122,15 @@ public final class RecognitionAssistantPanel implements AppPanel
         VBox proposalRegion = new VBox(6, new Label("Due recognition proposals"), proposals);
         proposalRegion.setMinHeight(0);
         VBox.setVgrow(proposals, Priority.ALWAYS);
-        ScrollPane editor = new ScrollPane(new VBox(6, form, proposalRegion));
+        ScrollPane editor = new ScrollPane(form);
         editor.setId("recognitionEditorScroll");
         editor.setFitToWidth(true);
         editor.setMinHeight(0);
         editor.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         editor.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        SplitPane split = new SplitPane(items, editor);
+        SplitPane split = new SplitPane(items, new WorkPaneTabs("recognitionWorkPanes")
+                .addPane("Recognition draft", editor)
+                .addPane("Due recognition proposals", proposalRegion));
         split.setId("recognitionWorkspaceSplit");
         split.setOrientation(Orientation.VERTICAL);
         split.setDividerPositions(0.42);

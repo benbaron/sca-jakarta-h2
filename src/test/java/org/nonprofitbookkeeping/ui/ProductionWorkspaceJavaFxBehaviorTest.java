@@ -57,9 +57,9 @@ public class ProductionWorkspaceJavaFxBehaviorTest
 
             host.show(AppPanelId.LEDGER_REGISTER);
 
-            assertEquals(2, host.openPanelCount());
+            assertEquals(1, host.openPanelCount());
             assertSame(firstLedgerTab, host.getSelectionModel().getSelectedItem());
-            assertEquals(AppPanelId.LEDGER_REGISTER, host.activePanelId());
+            assertEquals(AppPanelId.JOURNAL_PANE, host.activePanelId());
             return null;
         });
     }
@@ -80,7 +80,7 @@ public class ProductionWorkspaceJavaFxBehaviorTest
     }
 
     @Test
-    public void ledgerRegisterTabAppearsBeforeTransactionEditorWhenOpenedInWorkflowOrder()
+    public void legacyJournalRoutesShareOneTabAfterDashboard()
     {
         FxTestSupport.onFx(() -> {
             PanelHost host = new PanelHost();
@@ -89,8 +89,9 @@ public class ProductionWorkspaceJavaFxBehaviorTest
             host.show(AppPanelId.LEDGER_REGISTER);
             host.show(AppPanelId.TXN_EDITOR);
 
-            assertTrue(indexOf(host, AppPanelId.LEDGER_REGISTER) < indexOf(host, AppPanelId.TXN_EDITOR));
-            assertEquals(AppPanelId.TXN_EDITOR, host.activePanelId());
+            assertTrue(indexOf(host, AppPanelId.DASHBOARD) < indexOf(host, AppPanelId.JOURNAL_PANE));
+            assertEquals(2, host.openPanelCount());
+            assertEquals(AppPanelId.JOURNAL_PANE, host.activePanelId());
             return null;
         });
     }

@@ -4,6 +4,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
 import org.nonprofitbookkeeping.model.CompanyUiPreferences;
 import org.nonprofitbookkeeping.repository.CompanyUiPreferenceRepository;
 import org.nonprofitbookkeeping.service.CompanyUiPreferencesService;
@@ -16,8 +17,52 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ResourceLock("ui-service-registry")
 class CompanyTableStateBinderTest
 {
+    @Test
+    void delayedDividerSaveCannotOutliveItsSessionOrCompany()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            UiSessionState session = new UiSessionState();
+            MemoryRepository repository = new MemoryRepository();
+            CompanyUiPreferencesService service = new CompanyUiPreferencesService(repository);
+            var split = new javafx.scene.control.SplitPane(new BorderPane(), new BorderPane());
+            try
+            {
+                session.setMultiCompany(new org.nonprofitbookkeeping.model.MultiCompanyState("DEFAULT", java.util.List.of("DEFAULT")));
+                session.setAuthenticatedUser(UiPermissionTestSessions.manager());
+                CompanySplitPaneStateBinder.bind(split, "session-test", 0.5, service, session);
+                var timer = (javafx.animation.PauseTransition) split.getProperties().get("sca.companySplitPaneStateBinding");
+                split.setDividerPositions(0.6);
+                timer.stop();
+                timer.getOnFinished().handle(new javafx.event.ActionEvent());
+                assertEquals("0.6", service.loadState("DEFAULT", "ui.split.session-test").get("ui.split.session-test.divider"));
+                session.clearAuthenticatedUser();
+                split.setDividerPositions(0.7);
+                timer.stop();
+                timer.getOnFinished().handle(new javafx.event.ActionEvent());
+                assertEquals("0.6", service.loadState("DEFAULT", "ui.split.session-test").get("ui.split.session-test.divider"));
+                session.setAuthenticatedUser(UiPermissionTestSessions.manager());
+                session.setMultiCompany(new org.nonprofitbookkeeping.model.MultiCompanyState("OTHER", java.util.List.of("DEFAULT", "OTHER")));
+                timer.getOnFinished().handle(new javafx.event.ActionEvent());
+                assertEquals("0.6", service.loadState("DEFAULT", "ui.split.session-test").get("ui.split.session-test.divider"));
+                session.setMultiCompany(new org.nonprofitbookkeeping.model.MultiCompanyState("DEFAULT", java.util.List.of("DEFAULT")));
+                session.setDatabaseSelection(new org.nonprofitbookkeeping.model.DatabaseSelectionState(
+                        "/different/company.mv.db", java.util.List.of("/different/company.mv.db")));
+                timer.getOnFinished().handle(new javafx.event.ActionEvent());
+                assertEquals("0.6", service.loadState("DEFAULT", "ui.split.session-test").get("ui.split.session-test.divider"));
+            }
+            finally
+            {
+                var timer = (javafx.animation.PauseTransition) split.getProperties().get("sca.companySplitPaneStateBinding");
+                if (timer != null) timer.stop();
+            }
+            return null;
+        });
+    }
+
     @Test
     void enforcesTableContractAndRestoresCompanyOwnedOrderAndSort()
     {

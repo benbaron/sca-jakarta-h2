@@ -63,8 +63,7 @@ public class ChartOfAccountsPanel implements AppPanel
 
         Label title = new Label("Chart of Accounts");
         title.getStyleClass().add("panel-title");
-        Label lifecycle = new Label(
-                "Accounts are edited by stable database identity. Clear Active and Save to retire an account while preserving historical references; this editor does not physically delete accounts.");
+        Label lifecycle = new Label("Accounts cannot be deleted; clear Active and Save to retire them.");
         lifecycle.setWrapText(true);
 
         Button add = new Button("+ Add");

@@ -123,9 +123,7 @@ public class BudgetEditorPanel implements AppPanel
         HBox scopeRow = new HBox(8, new Label("Fund scope"), fundScope,
                 new Label("Event scope"), eventScope);
         HBox actions = new HBox(8, refresh, newDraft, createRevisionButton, activateButton, archiveButton);
-        Label lifecycle = new Label(
-                "Budget versions are retained as history. Archive Draft retires an abandoned draft without deleting it. "
-                + "Active versions are archived automatically when a replacement is activated; archived versions are read-only.");
+        Label lifecycle = new Label("Versions cannot be deleted. Archive a draft to retire it.");
         lifecycle.setId("budgetEditorLifecycleHint");
         lifecycle.setWrapText(true);
         root.setTop(new VBox(6, title, versionRow, scopeRow, actions, lifecycle, status, new Separator()));
@@ -159,15 +157,12 @@ public class BudgetEditorPanel implements AppPanel
             dirtyState.markClean();
         });
 
-        Label details = new Label("Select an explicit draft version, edit a category amount, and save it. Create Revision copies the selected active version before editing; activation targets only the selected draft.");
-        details.setId("budgetEditorWorkflowHint");
-        details.setWrapText(true);
+        amountField.setTooltip(new javafx.scene.control.Tooltip("Choose a draft version and category, enter an amount, then Save."));
         GridPane editor = new GridPane();
         editor.setHgap(8);
         editor.setVgap(8);
         editor.setPadding(new Insets(8));
         editor.addRow(0, new Label("Budget amount"), amountField, saveTargetButton);
-        editor.add(details, 0, 1, 3, 1);
         ScrollPane editorScroll = new ScrollPane(editor);
         editorScroll.setId("budgetEditorScroll");
         editorScroll.setFitToWidth(true);

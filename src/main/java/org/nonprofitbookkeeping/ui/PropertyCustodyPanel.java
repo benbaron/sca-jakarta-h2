@@ -57,14 +57,13 @@ public final class PropertyCustodyPanel implements AppPanel
     private void build()
     {
         Label title = new Label("Property Custody"); title.getStyleClass().add("panel-title");
-        Label help = new Label("Record physical guardianship, confirmations, loans, returns, transfers, and removals. Custody events never create accounting. A removal must cite the canonical lifecycle event or reducing inventory movement that already recorded its accounting treatment.");
-        help.setWrapText(true);
+        title.setTooltip(new javafx.scene.control.Tooltip("Record custody history; removal must reference its existing accounting record."));
         Button add = button("New Custody Event", "propertyCustodyNew", this::onNew);
         Button save = button("Save Custody Event", "propertyCustodySave", this::onSave);
         Button correct = button("Correct Selected Event", "propertyCustodyCorrect", this::correctSelected);
         Button refresh = button("Refresh", "propertyCustodyRefresh", this::reloadSubjects);
         for (Button b : List.of(add, save, correct)) UiPermissionGate.gate(b, ApplicationPermission.BOOKKEEPING_WRITE, b.getText());
-        VBox header = new VBox(6, title, help, new FlowPane(8, 6, add, save, correct, refresh), status);
+        VBox header = new VBox(6, title, new FlowPane(8, 6, add, save, correct, refresh), status);
         root.setTop(header);
 
         subjectColumn("Subject", PropertyCustodyService.SubjectView::name, 220);
@@ -109,10 +108,14 @@ public final class PropertyCustodyPanel implements AppPanel
         notes.setPrefRowCount(3);
         VBox editor = new VBox(6, new Label("Custody event draft"), form);
         ScrollPane editorScroll = new ScrollPane(editor); editorScroll.setFitToWidth(true); editorScroll.setId("propertyCustodyEditorScroll");
-        SplitPane lower = new SplitPane(history, editorScroll); lower.setId("propertyCustodyHistoryEditorSplit");
-        SplitPane workspace = new SplitPane(subjects, lower); workspace.setId("propertyCustodyWorkspaceSplit"); workspace.setOrientation(javafx.geometry.Orientation.VERTICAL);
-        persistDivider(lower, "history-editor", 0.55); persistDivider(workspace, "workspace", 0.42);
-        VBox.setVgrow(workspace, Priority.ALWAYS); root.setCenter(workspace);
+        WorkPaneTabs custodyViews = new WorkPaneTabs("propertyCustodyWorkPanes")
+                .addPane("Custody event draft", editorScroll)
+                .addPane("Custody history", history);
+        SplitPane workspace = new SplitPane(subjects, custodyViews);
+        workspace.setId("propertyCustodyWorkspaceSplit");
+        workspace.setOrientation(javafx.geometry.Orientation.VERTICAL);
+        persistDivider(workspace, "workspace-v2", 0.42);
+        root.setCenter(workspace);
         installDirtyTracking();
         FullTextTooltipInstaller.install(root);
     }

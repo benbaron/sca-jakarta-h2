@@ -113,30 +113,22 @@ public final class EventAccountingPanel implements AppPanel
 
         Label title = new Label("Event Accounting");
         title.getStyleClass().add("panel-title");
-        Label caption = new Label(
-                "Read-only Activity/event/project accounting from canonical Journal splits. " +
-                        "No posting, approval, reconciliation, or close state is created here.");
-        caption.setWrapText(true);
-        root.setTop(new VBox(4, title, caption));
+
+        root.setTop(new VBox(4, title));
 
         companyFormat.install(fromDate);
         companyFormat.install(throughDate);
         configureLinkedTable();
         configureBankTable();
 
-        SplitPane details = new SplitPane(linkedRegion(), bankRegion());
-        details.setId("eventAccountingDetailSplit");
-        details.setOrientation(Orientation.VERTICAL);
-        details.setDividerPositions(0.55);
-        details.setMinSize(0, 0);
-        CompanySplitPaneStateBinder.bind(details, "event-accounting-detail", 0.55);
-
-        SplitPane outer = new SplitPane(infoRegion(), details);
+        WorkPaneTabs eventViews = new WorkPaneTabs("eventAccountingWorkPanes")
+                .addPane("Linked transactions", linkedRegion())
+                .addPane("Bank activity", bankRegion());
+        SplitPane outer = new SplitPane(infoRegion(), eventViews);
         outer.setId("eventAccountingOuterSplit");
         outer.setOrientation(Orientation.VERTICAL);
-        outer.setDividerPositions(0.36);
         outer.setMinSize(0, 0);
-        CompanySplitPaneStateBinder.bind(outer, "event-accounting-outer", 0.36);
+        CompanySplitPaneStateBinder.bind(outer, "event-accounting-workspace-v2", 0.36);
         root.setCenter(outer);
         root.setBottom(status);
     }
@@ -194,11 +186,7 @@ public final class EventAccountingPanel implements AppPanel
                 new Label("Related bank inflows"), bankInflows,
                 new Label("Related bank outflows"), bankOutflows);
 
-        Label bankExplanation = new Label(
-                "Related bank movement means a configured ASSET/BANK account split in a transaction that also contains the selected Activity. " +
-                        "It is contextual evidence, not an assertion that the bank split itself is allocated to the Activity.");
-        bankExplanation.setWrapText(true);
-        bankExplanation.getStyleClass().add("muted-text");
+        bankTable.setTooltip(new javafx.scene.control.Tooltip("These bank rows share an event transaction; they are not event allocations."));
 
         Label factsTitle = new Label("Closeout review facts");
         factsTitle.getStyleClass().add("section-title");
@@ -206,7 +194,6 @@ public final class EventAccountingPanel implements AppPanel
                 controls,
                 new Separator(),
                 summary,
-                bankExplanation,
                 factsTitle,
                 reviewFacts);
         content.setPadding(new Insets(6, 0, 6, 0));
@@ -223,10 +210,8 @@ public final class EventAccountingPanel implements AppPanel
     {
         Label heading = new Label("Activity-tagged Journal splits");
         heading.getStyleClass().add("section-title");
-        Label help = new Label(
-                "Each row is one canonical split explicitly tagged with the selected Activity. Double-click a row to open its transaction in Journal.");
-        help.setWrapText(true);
-        VBox box = new VBox(5, heading, help, linkedTable);
+
+        VBox box = new VBox(5, heading, linkedTable);
         box.setMinSize(0, 0);
         VBox.setVgrow(linkedTable, Priority.ALWAYS);
         return box;
@@ -236,10 +221,8 @@ public final class EventAccountingPanel implements AppPanel
     {
         Label heading = new Label("Related configured-bank movement");
         heading.getStyleClass().add("section-title");
-        Label help = new Label(
-                "These are configured bank-account splits from the same canonical transactions. Inflow/outflow follows the current debit-normal ASSET/BANK authority.");
-        help.setWrapText(true);
-        VBox box = new VBox(5, heading, help, bankTable);
+
+        VBox box = new VBox(5, heading, bankTable);
         box.setMinSize(0, 0);
         VBox.setVgrow(bankTable, Priority.ALWAYS);
         return box;

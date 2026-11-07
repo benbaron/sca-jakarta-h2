@@ -252,9 +252,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         mappings.setPrefRowCount(6);
         mappings.setWrapText(false);
 
-        Label mappingHelp = new Label(
-                "MAP_CODES requires every source code to have one explicit sourceCode=targetCode line.");
-        mappingHelp.setWrapText(true);
+        mappings.setTooltip(new javafx.scene.control.Tooltip("Map every source code using one sourceCode=targetCode line."));
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(8);
@@ -263,7 +261,6 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         grid.addRow(2, new Label("New chart version"), chartVersion);
         grid.add(new Label("Code mappings"), 0, 3);
         grid.add(mappings, 1, 3);
-        grid.add(mappingHelp, 1, 4);
         grid.setPadding(new Insets(8));
 
         Runnable visibility = () -> {
@@ -272,7 +269,6 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
             chartVersion.setDisable(!newChart);
             boolean mapped = mode.getValue() == CoaImportMode.MAP_CODES;
             mappings.setDisable(!mapped);
-            mappingHelp.setDisable(!mapped);
         };
         mode.valueProperty().addListener((observable, oldValue, newValue) -> visibility.run());
         visibility.run();

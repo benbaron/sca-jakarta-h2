@@ -41,11 +41,10 @@ final class CompanyBankAccountsSummaryPanel implements AppPanel
         root.setPadding(new Insets(8));
         Label title = new Label("Configured Bank Accounts");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Bank accounts shown here are the existing configured bank accounts managed by BankConfigurationService. Use the Banking workspace to create or edit banks and configured accounts.");
-        help.setWrapText(true);
+        title.setTooltip(new javafx.scene.control.Tooltip("Create or edit banks and accounts in Banking."));
         Button refresh = new Button("Refresh");
         refresh.setOnAction(event -> refresh());
-        root.setTop(new VBox(6, title, help, new HBox(8, refresh, status)));
+        root.setTop(new VBox(6, title, new HBox(8, refresh, status)));
 
         accounts.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         accounts.setPlaceholder(new Label("No configured bank accounts for the active company."));

@@ -6,6 +6,5 @@ public enum AppCommand
     POST_VALIDATE,
     NEW_ACTIVE,
     SAVE_ACTIVE,
-    CLOSE_ALL_TABS,
-    CLOSE_INSPECTOR
+    CLOSE_ALL_TABS
 }

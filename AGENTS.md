@@ -419,8 +419,8 @@ The production workspace includes:
 - menu;
 - toolbar;
 - collapsible/resizable left navigation;
-- tabbed center;
-- collapsible/resizable right inspector;
+- tabbed work area with no more than two major visible sections per pane, including nested subdivisions;
+- no right Inspector pane (owner-directed P29-S2 replacement);
 - visible draggable dividers;
 - status bar;
 - external CSS;

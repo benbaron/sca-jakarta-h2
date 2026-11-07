@@ -1,7 +1,7 @@
 package org.nonprofitbookkeeping.model;
 
 /**
- * Persisted safe divider positions for the production three-pane workspace.
+ * Persisted shell divider format. The retired right-divider field remains for file compatibility.
  */
 public record WorkspaceDividerState(double leftDividerPosition,
                                     double rightDividerPosition)

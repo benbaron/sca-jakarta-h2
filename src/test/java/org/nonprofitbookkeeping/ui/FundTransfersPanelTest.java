@@ -146,7 +146,6 @@ class FundTransfersPanelTest
             stage.setWidth(520);
             stage.setHeight(550);
             panel.root().setStyle("-fx-font-size: 17px;");
-            ((SplitPane) panel.root().lookup("#fundTransfersMainSplit")).setDividerPositions(0.25);
             ((SplitPane) panel.root().lookup("#fundTransfersWorkspaceSplit")).setDividerPositions(0.85);
             panel.root().applyCss();
             ((VBox) panel.root()).layout();
@@ -165,7 +164,7 @@ class FundTransfersPanelTest
             assertTrue(CompanyTableStateBinder.isCompanyStateOwned(table));
             CompanyTableStateBinder.saveNow(table);
             assertFalse(UiServiceRegistry.companyUiPreferences().loadState("DEFAULT", "ui.table.fund_transfers.").isEmpty());
-            assertEquals(2, ((SplitPane) panel.root().lookup("#fundTransfersMainSplit")).getItems().size());
+            assertEquals(2, ((SplitPane) panel.root().lookup("#fundTransfersWorkspaceSplit")).getItems().size());
             assertTrue(table.lookupAll(".scroll-bar").stream().anyMatch(node -> node instanceof ScrollBar bar && bar.isVisible()
                     && bar.getOrientation() == javafx.geometry.Orientation.HORIZONTAL));
             return null;

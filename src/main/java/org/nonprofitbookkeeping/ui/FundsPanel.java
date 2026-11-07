@@ -99,8 +99,6 @@ public class FundsPanel implements AppPanel
 
         Label title = new Label("Funds");
         title.getStyleClass().add("panel-title");
-        Label help = new Label("Edit funds by stable database identity. Referenced funds remain in history and are deactivated; only unused funds can be physically deleted.");
-        help.setWrapText(true);
 
         Button add = new Button("New");
         add.setOnAction(event -> onNew());
@@ -117,7 +115,7 @@ public class FundsPanel implements AppPanel
         transfers.setId("fundsTransfers");
         transfers.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.FUND_TRANSFERS, ""));
         HBox actions = new HBox(8, add, save, deleteUnused, refresh, transfers);
-        root.setTop(new VBox(6, title, help, actions, status));
+        root.setTop(new VBox(6, title, actions, status));
 
         configureTable();
         Node editor = buildEditor();
@@ -241,7 +239,7 @@ public class FundsPanel implements AppPanel
         GridPane.setHgrow(parentField, Priority.ALWAYS);
         GridPane.setHgrow(restrictionField, Priority.ALWAYS);
 
-        Label lifecycle = new Label("Clearing Active and saving deactivates a referenced fund without removing historical transactions, budgets, assets, inventory, aliases, transfers, or child-fund relationships. Active child funds require an active parent hierarchy: deactivate or reparent active children before a parent, and reactivate parents before children.");
+        Label lifecycle = new Label("Referenced funds cannot be deleted; clear Active and Save to deactivate.");
         lifecycle.setWrapText(true);
         VBox editor = new VBox(8, new Label("Fund editor"), form, lifecycle);
         editor.setPadding(new Insets(8));

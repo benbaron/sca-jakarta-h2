@@ -28,8 +28,7 @@ public class AppPanelConsistencyTest
     public void navigationExposesOneJournalDestinationAndNoRetiredAliases()
     {
         EnumSet<AppPanelId> indexed = FxTestSupport.onFx(() -> {
-            NavigationPane nav = new NavigationPane(id -> { }, (t, b) -> { },
-                    () -> new NavigationPane.InspectorContext("TEST", "ALL", "default"));
+            NavigationPane nav = new NavigationPane(id -> { });
             return nav.indexedPanelIds();
         });
 

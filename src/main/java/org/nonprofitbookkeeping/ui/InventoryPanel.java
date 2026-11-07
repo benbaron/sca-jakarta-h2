@@ -213,8 +213,7 @@ public class InventoryPanel implements AppPanel
         drill.setOnAction(e -> drillSelectedMovement());
 
         HBox itemActions = new HBox(8, refresh, newItem, editItem);
-        Label lifecycleHelp = new Label(
-                "Inventory items are never physically deleted. Use governed movements to reach zero quantity before deactivation or disposal; disposed items remain terminal retained history.");
+        Label lifecycleHelp = new Label("Items cannot be deleted. Reduce quantity to zero before retiring them.");
         lifecycleHelp.setWrapText(true);
         lifecycleActor.setPrefWidth(120);
         lifecycleReason.setPrefWidth(300);
@@ -286,28 +285,25 @@ public class InventoryPanel implements AppPanel
         javafx.scene.layout.FlowPane tagging = new javafx.scene.layout.FlowPane(8, 6,
                 new Label("Event / Activity"), movementEvent, confirmNonEvent,
                 new Label("Budget category"), movementBudget, clearBudget, refreshTags, maintainBudget);
-        Label taggingHelp = new Label("Event and Budget apply to the offset line. Both lines retain the item Fund. Zero-value nonfinancial movements cannot carry accounting tags.");
-        taggingHelp.setWrapText(true);
+        movementEvent.setTooltip(new javafx.scene.control.Tooltip("Event and Budget classify the offset line; both lines keep the item Fund."));
 
-        SplitPane split = new SplitPane(new VBox(6, new Label("Inventory Items"), itemTable), new VBox(6, new Label("Movement History"), movementTable));
-        split.setOrientation(Orientation.VERTICAL);
-        split.setDividerPositions(0.58);
-        split.setId("inventoryTablesSplit");
-        CompanySplitPaneStateBinder.bind(split, "inventory-tables", 0.58);
+        VBox items = new VBox(6, new Label("Inventory Items"), itemTable);
+        VBox movements = new VBox(6, new Label("Movement History"), movementTable);
         VBox.setVgrow(itemTable, Priority.ALWAYS);
         VBox.setVgrow(movementTable, Priority.ALWAYS);
-        VBox.setVgrow(split, Priority.ALWAYS);
         movementInputs.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
         VBox controls = new VBox(6, itemActions, lifecycleHelp, lifecycleInputs, lifecycleActions,
-                movementInputs, tagging, taggingHelp, movementActions);
+                movementInputs, tagging, movementActions);
         ScrollPane controlsScroll = new ScrollPane(controls);
         controlsScroll.setId("inventoryMovementControlsScroll");
         controlsScroll.setFitToWidth(true);
         controlsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         controlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         controlsScroll.setMinSize(0, 0);
-        split.setMinSize(0, 0);
-        SplitPane workspace = new SplitPane(controlsScroll, split);
+        WorkPaneTabs inventoryViews = new WorkPaneTabs("inventoryWorkPanes")
+                .addPane("Items", items)
+                .addPane("Movement History", movements);
+        SplitPane workspace = new SplitPane(controlsScroll, inventoryViews);
         workspace.setId("inventoryMovementWorkspaceSplit");
         workspace.setOrientation(Orientation.VERTICAL);
         workspace.setMinSize(0, 0);

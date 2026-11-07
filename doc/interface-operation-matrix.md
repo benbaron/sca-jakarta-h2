@@ -21,7 +21,6 @@ Status: reconciled to current production architecture through P20-S3 JavaFX perm
 | Validate | Journal-only non-mutating validation command; no write permission is added merely because it is global. | Canonical Journal editor/service validation; not a posting or approval workflow. |
 | Copy/Paste | Native JavaFX text-control behavior. | Focused standard text control; production shell does not intercept `Ctrl+C`/`Ctrl+V`. |
 | Close All Tabs | Closes closable workspace tabs with dirty-state protection. | `ProductionWorkspaceWindow` / `PanelHost`. |
-| Close Inspector | Hides the production inspector. | Production shell state. |
 | Find / command palette | Not installed or advertised. | Retired with legacy shell authority in P17-C11. |
 | Database create/open/switch/recovery | Prepares and validates the target database/service bundle before activation. | `DatabaseSessionController`, migration/location services, `UiServiceRegistry`, company-session validation. |
 | Import / export | Format-specific production actions; there is no generic Jobs workflow. | `ImportExportOrchestrationService` plus format-specific preview/review/commit services. |
@@ -33,14 +32,14 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 
 ## Production command capability matrix
 
-`Close All Tabs` and `Close Inspector` are shell-owned. Panel-owned capabilities are exact and must never be enabled as placeholders.
+`Close All Tabs` is shell-owned. Panel-owned capabilities are exact and must never be enabled as placeholders.
 
 | Destination | New | Save | Validate | Notes |
 |---|---:|---:|---:|---|
 | Dashboard | yes | no | no | New opens the canonical Journal entry workflow. |
 | Journal | yes | yes | yes | Retired Ledger Register/Transaction Editor aliases normalize here. |
 | Event Accounting | no | no | no | Read-only Activity-linked accounting, related configured-bank context, Journal drill-through and navigation to Events / Activities maintenance. |
-| Banking | yes | yes | no | Durable bank/configuration editing plus panel-local statement import/review actions. |
+| Banking | yes | yes | no | New/Save follows the selected Banks or Bank accounts work pane; hidden drafts are retained. Statement import/review actions remain panel-local. |
 | Asset Register | yes | yes | no | Stable asset identity and governed lifecycle operations. |
 | Inventory | yes | item editor only | no | Stable item identity and governed movement/lifecycle operations. |
 | Property Custody | yes | custody event draft | no | Save Custody Event appends assignment/confirmation/loan/return/transfer/removal history; Correct Selected appends a replacement. |
@@ -205,3 +204,8 @@ Report Library **Functional Expenses** is read-only: select Start/End, Fund and 
 ## P26-S1 acquisition Save and navigation
 
 Asset Register exposes explicit acquisition route, BANK or existing debit choices, source transaction and full claimed/remaining amounts. Save Asset and File/toolbar Save share non-mutating preview, confirmation and asynchronous atomic acceptance. Busy Save/New/editor/table guards, request retention, visible errors, dirty protection, company formatting with exact four-decimal edit values and live BOOKKEEPING_WRITE permission gates apply. Open Acquisition in Journal performs real navigation. Remove Acquisition Link requires a reason and authoritative eligibility; retained-history explanation replaces physical Delete. Existing table/editor and register/history dividers preserve independently scrollable regions; table columns retain company layout. Existing SCLX Preview/Save handles portable links. See [S1](P26-S1-asset-acquisitions.md).
+
+
+## P29-S2 work-pane composition
+
+[Workspace simplification](P29-S2-workspace-simplification.md) governs the Inspector-free shell, menu/submenu styling, two-section maximum and overflow access in every destination and tab. Named views retain the owning controller, service, permission, Save scope and dirty-state behavior listed above.

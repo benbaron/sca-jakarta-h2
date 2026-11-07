@@ -117,6 +117,7 @@ class PaneSaveCoverageTest
         FxTestSupport.onFx(() ->
         {
             window.openPanel(AppPanelId.SETTINGS);
+            window.applyCss();
             TabPane outer = (TabPane) window.lookup("#administrationTabs");
             selectTab(outer, "User Admin");
             TabPane inner = (TabPane) window.lookup("#userAdminMaintenanceTabs");
@@ -347,6 +348,7 @@ class PaneSaveCoverageTest
         FxTestSupport.onFx(() ->
         {
             window.openPanel(AppPanelId.RECONCILIATION_RUNS);
+            window.applyCss();
             assertTrue(saveMenu().isDisable());
             TabPane workflow = (TabPane) window.lookup("#reconciliationWorkflowTabs");
             selectTab(workflow, "5. Checks / Exceptions");
@@ -375,6 +377,7 @@ class PaneSaveCoverageTest
         FxTestSupport.onFx(() ->
         {
             window.openPanel(AppPanelId.SETTINGS);
+            window.applyCss();
             selectTab((TabPane) window.lookup("#administrationTabs"), "NMR Policies");
             assertTrue(saveMenu().isDisable());
             window.executeCommand(AppCommand.NEW_ACTIVE);
@@ -404,6 +407,32 @@ class PaneSaveCoverageTest
                 .findFirst().orElseThrow();
     }
 
+    @Test
+    void bankingSaveFollowsSelectedWorkPaneAndPreservesHiddenBankDraft()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            BankingPanel banking = new BankingPanel();
+            window.panelHost().showReplacement(AppPanelId.BANKING, banking);
+            window.applyCss();
+            banking.setBankNameForTests("Bank draft retained across views");
+            int before = UiServiceRegistry.bankConfiguration().listBanks("DEFAULT").size();
+            var panes = (TabPane) banking.root().lookup("#bankingWorkPanes");
+            selectTab(panes, "Bank accounts");
+            assertEquals("Save Bank Account", saveMenu().getText());
+            saveMenu().fire();
+            assertEquals(before, UiServiceRegistry.bankConfiguration().listBanks("DEFAULT").size(),
+                    "Saving the account view must never save a hidden bank draft");
+            assertTrue(banking.hasUnsavedChanges());
+            selectTab(panes, "Banks");
+            assertEquals("Save Bank", saveMenu().getText());
+            saveMenu().fire();
+            assertEquals(before + 1, UiServiceRegistry.bankConfiguration().listBanks("DEFAULT").size());
+            assertFalse(banking.hasUnsavedChanges());
+            return null;
+        });
+    }
+
     private Button saveButton()
     {
         ToolBar toolbar = (ToolBar) ((VBox) window.getTop()).getChildren().get(1);
@@ -415,6 +444,8 @@ class PaneSaveCoverageTest
     {
         tabs.getSelectionModel().select(tabs.getTabs().stream()
                 .filter(tab -> label.equals(tab.getText())).findFirst().orElseThrow());
+        tabs.applyCss();
+        tabs.layout();
     }
 
     private static void await(BooleanSupplier condition) throws Exception

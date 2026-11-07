@@ -44,6 +44,19 @@ class ProductionPanelRouteComplianceTest
                 ProductionWorkspaceWindow window = new ProductionWorkspaceWindow(
                         stateStore,
                         UiServiceRegistry::prepareDatabaseConnection);
+                var workspace = (javafx.scene.control.SplitPane) window.getCenter();
+                assertEquals(2, workspace.getItems().size(), "Only navigation and work area remain");
+                var menus = (javafx.scene.control.MenuBar) ((javafx.scene.layout.VBox) window.getTop()).getChildren().get(0);
+                assertEquals(List.of("File", "Workspace", "Destinations", "View"),
+                        menus.getMenus().stream().map(javafx.scene.control.Menu::getText).toList());
+                var databaseMenu = (javafx.scene.control.Menu) menus.getMenus().get(0).getItems().get(0);
+                assertEquals("Database", databaseMenu.getText());
+                assertEquals(List.of("Select Database File…", "Create New Database…", "Retry / Repair Current Database",
+                                "Create / Refresh Sample Company Data"),
+                        databaseMenu.getItems().stream().map(javafx.scene.control.MenuItem::getText).toList());
+                databaseMenu.getItems().forEach(item -> assertNotNull(item.getOnAction()));
+                assertEquals(List.of("Toggle Navigation"),
+                        menus.getMenus().get(3).getItems().stream().map(javafx.scene.control.MenuItem::getText).toList());
                 javafx.scene.Scene scene = new javafx.scene.Scene(window, 1280, 800);
                 scene.getStylesheets().add(getClass().getResource("/ui/styles.css").toExternalForm());
                 scene.getStylesheets().add(getClass().getResource("/ui/competing-accent.css").toExternalForm());
@@ -82,6 +95,10 @@ class ProductionPanelRouteComplianceTest
                     window.layout();
                     javafx.scene.Node root = window.panelHost().activeRoot();
                     assertNotNull(root, panelId + " must create a production root.");
+                    assertTrue(maximumVisibleSections(root) <= 2,
+                            panelId + " must have at most two major visible sections, including nested splits");
+                    assertTrue(window.panelHost().getSelectionModel().getSelectedItem().getContent() instanceof PanelViewport,
+                            panelId + " must have a two-axis overflow viewport");
                     if (panelId == AppPanelId.REPORT_LIBRARY)
                     {
                         @SuppressWarnings("unchecked")
@@ -168,5 +185,30 @@ class ProductionPanelRouteComplianceTest
                 UiServiceRegistry.reconnectToDatabase(Path.of(originalDatabase.activeDatabasePath()));
             }
         }
+    }
+
+    private static int maximumVisibleSections(javafx.scene.Node node)
+    {
+        if (node instanceof javafx.scene.control.SplitPane split)
+        {
+            return split.getItems().stream().mapToInt(ProductionPanelRouteComplianceTest::maximumVisibleSections).sum();
+        }
+        if (node instanceof javafx.scene.control.TabPane tabs)
+        {
+            return tabs.getTabs().stream().filter(tab -> tab.getContent() != null)
+                    .mapToInt(tab -> maximumVisibleSections(tab.getContent())).max().orElse(1);
+        }
+        if (node instanceof javafx.scene.control.ScrollPane scroll)
+        {
+            assertEquals(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED, scroll.getHbarPolicy());
+            assertEquals(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED, scroll.getVbarPolicy());
+            return scroll.getContent() == null ? 1 : maximumVisibleSections(scroll.getContent());
+        }
+        if (node instanceof javafx.scene.Parent parent && !(node instanceof javafx.scene.control.Control))
+        {
+            return parent.getChildrenUnmodifiable().stream()
+                    .mapToInt(ProductionPanelRouteComplianceTest::maximumVisibleSections).max().orElse(1);
+        }
+        return 1;
     }
 }

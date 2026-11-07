@@ -2,13 +2,11 @@ package org.nonprofitbookkeeping.ui;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
-import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
@@ -40,6 +38,7 @@ public class BudgetVsActualPanel implements AppPanel
         Label title = new Label("Budget vs Actual");
         title.getStyleClass().add("panel-title");
         status.setId("budgetVsActualStatus");
+        status.setWrapText(true);
         table.setId("budgetVsActualTable");
         Button run = new Button("Run");
         run.setId("budgetVsActualRunButton");
@@ -73,15 +72,8 @@ public class BudgetVsActualPanel implements AppPanel
         table.getColumns().addAll(category, fund, event, budget, actual, variance);
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         table.setPlaceholder(new Label("No active budget version is selected for comparison."));
-        Label explanation = new Label("Compares actual activity through the active period against the active normalized budget version.");
-        explanation.setId("budgetVsActualExplanation");
-        explanation.setWrapText(true);
-        SplitPane splitPane = new SplitPane(table, explanation);
-        splitPane.setId("budgetVsActualSplitPane");
-        splitPane.setOrientation(Orientation.VERTICAL);
-        splitPane.setDividerPositions(0.82);
-        CompanySplitPaneStateBinder.bind(splitPane, "budget-vs-actual", 0.82);
-        root.setCenter(splitPane);
+        run.setTooltip(new javafx.scene.control.Tooltip("Compare actuals through the active period with the active budget version."));
+        root.setCenter(table);
         ActivePeriodContext.activeDateProperty().addListener((obs, oldDate, newDate) -> reload());
         reload();
     }
@@ -89,7 +81,7 @@ public class BudgetVsActualPanel implements AppPanel
     private void reload()
     {
         LocalDate selectedPeriodStart = ActivePeriodContext.get();
-        status.setText("Running active budget comparison for the selected accounting period...");
+        status.setText("Running budget comparison…");
         UiAsync.run("budget-vs-actual", () -> {
             FiscalPeriodRange range = UiServiceRegistry.budgetPlan().fiscalRange(selectedPeriodStart);
             return new VarianceResult(range, UiServiceRegistry.budgetPlan().activeVariance(range),

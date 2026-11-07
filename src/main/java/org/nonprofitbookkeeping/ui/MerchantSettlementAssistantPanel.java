@@ -83,8 +83,7 @@ public final class MerchantSettlementAssistantPanel implements AppPanel
         root.setMinSize(0, 0);
         Label title = new Label("Merchant Settlement Assistant");
         title.getStyleClass().add("panel-title");
-        Label guidance = new Label("Preview actual payout, fee, and optional evidenced NMR discharge against one existing merchant receivable. The saved result is one canonical Journal transaction; bank clearing remains in reconciliation.");
-        guidance.setWrapText(true);
+        title.setTooltip(new javafx.scene.control.Tooltip("Preview one merchant receivable settlement, then save its Journal entry."));
         Button refresh = new Button("Refresh");
         refresh.setId("merchantSettlementRefresh");
         refresh.setOnAction(event -> refresh());
@@ -95,7 +94,7 @@ public final class MerchantSettlementAssistantPanel implements AppPanel
                 "Use the correction workflow and identify the original merchant receipt or settlement."));
         status.setId("merchantSettlementStatus");
         status.setWrapText(true);
-        root.getChildren().add(new VBox(6, title, guidance, new FlowPane(8, 6, refresh, correction), status, new Separator()));
+        root.getChildren().add(new VBox(6, title, new FlowPane(8, 6, refresh, correction), status, new Separator()));
 
         configureReceivables();
         configureNmrItems();
@@ -155,15 +154,13 @@ public final class MerchantSettlementAssistantPanel implements AppPanel
         formScroll.setFitToWidth(true);
         formScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         formScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        SplitPane lower = new SplitPane(nmrItems, formScroll);
-        lower.setId("merchantSettlementDetailSplit");
-        lower.setDividerPositions(0.42);
-        SplitPane workspace = new SplitPane(receivables, lower);
+        WorkPaneTabs settlementViews = new WorkPaneTabs("merchantSettlementWorkPanes")
+                .addPane("Settlement draft", formScroll)
+                .addPane("NMR items", nmrItems);
+        SplitPane workspace = new SplitPane(receivables, settlementViews);
         workspace.setId("merchantSettlementWorkspaceSplit");
         workspace.setOrientation(Orientation.VERTICAL);
-        workspace.setDividerPositions(0.42);
-        CompanySplitPaneStateBinder.bind(workspace, "merchant-settlement-workspace", 0.42);
-        CompanySplitPaneStateBinder.bind(lower, "merchant-settlement-detail", 0.42);
+        CompanySplitPaneStateBinder.bind(workspace, "merchant-settlement-workspace-v2", 0.42);
         VBox.setVgrow(workspace, Priority.ALWAYS);
         root.getChildren().add(workspace);
 

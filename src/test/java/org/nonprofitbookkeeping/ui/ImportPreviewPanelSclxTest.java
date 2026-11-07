@@ -48,6 +48,8 @@ class ImportPreviewPanelSclxTest
             ImportPreviewPanel panel = new ImportPreviewPanel(
                     new ImportPreviewService(), source -> preview());
             new Scene((javafx.scene.Parent) panel.root(), 1000, 700);
+            panel.root().applyCss();
+            ((javafx.scene.Parent) panel.root()).layout();
 
             panel.applySclxPreview(preview());
 
@@ -89,6 +91,8 @@ class ImportPreviewPanelSclxTest
             ImportPreviewPanel panel = new ImportPreviewPanel(
                     new ImportPreviewService(), source -> mappedPreview());
             new Scene((javafx.scene.Parent) panel.root(), 1000, 700);
+            panel.root().applyCss();
+            ((javafx.scene.Parent) panel.root()).layout();
 
             panel.applySclxPreview(mappedPreview());
 
@@ -115,6 +119,8 @@ class ImportPreviewPanelSclxTest
             ImportPreviewPanel panel = new ImportPreviewPanel(
                     new ImportPreviewService(), source -> blocked);
             new Scene((javafx.scene.Parent) panel.root(), 1000, 700);
+            panel.root().applyCss();
+            ((javafx.scene.Parent) panel.root()).layout();
 
             panel.applySclxPreview(blocked);
 
@@ -139,6 +145,8 @@ class ImportPreviewPanelSclxTest
             ImportPreviewPanel panel = new ImportPreviewPanel(
                     new ImportPreviewService(), source -> blocked);
             new Scene((javafx.scene.Parent) panel.root(), 1000, 700);
+            panel.root().applyCss();
+            ((javafx.scene.Parent) panel.root()).layout();
 
             panel.applySclxPreview(Path.of("owner-selected.sclx"), blocked);
 

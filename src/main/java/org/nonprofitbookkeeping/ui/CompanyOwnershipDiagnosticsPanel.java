@@ -79,17 +79,13 @@ public final class CompanyOwnershipDiagnosticsPanel implements AppPanel
 
         Label title = new Label("Company Ownership Diagnostics");
         title.getStyleClass().add("panel-title");
-        Label help = new Label(
-                "These records predate authoritative multi-company ownership or contain conflicting references. "
-                        + "For a direct ownerless record, the active company receiving the import is authoritative. "
-                        + "No accounting reference is changed automatically.");
-        help.setWrapText(true);
+
         Button refresh = new Button("Refresh");
         refresh.setId("ownershipDiagnosticsRefreshButton");
         refresh.setOnAction(event -> reload());
         status.setId("ownershipDiagnosticsStatus");
         status.setWrapText(true);
-        root.setTop(new VBox(6, title, help, refresh, status));
+        root.setTop(new VBox(6, title, refresh, status));
 
         configureTable();
         VBox tableRegion = new VBox(6, new Label("Open blocking diagnostics"), issues);
@@ -166,6 +162,7 @@ public final class CompanyOwnershipDiagnosticsPanel implements AppPanel
         assignOwner.setId("ownershipDiagnosticsAssignOwnerButton");
         assignOwner.setDisable(true);
         assignOwner.setOnAction(event -> confirmAssignment());
+        assignOwner.setTooltip(new javafx.scene.control.Tooltip("Assign only the selected record to this company and retain an audit note."));
         UiPermissionGate.gate(assignOwner, ApplicationPermission.DATABASE_ADMIN, "Repair company ownership");
 
         GridPane form = new GridPane();
@@ -182,12 +179,7 @@ public final class CompanyOwnershipDiagnosticsPanel implements AppPanel
             GridPane.setHgrow(field, Priority.ALWAYS);
         }
 
-        Label warning = new Label(
-                "Assignment changes only the selected record's company owner and records an audit event. "
-                        + "If the row already belongs to another company, is stale, or would violate a company-scoped "
-                        + "constraint, the entire operation is rolled back.");
-        warning.setWrapText(true);
-        return new VBox(8, new Label("Resolve selected diagnostic"), form, warning);
+        return new VBox(8, new Label("Resolve selected diagnostic"), form);
     }
 
     private void reload()

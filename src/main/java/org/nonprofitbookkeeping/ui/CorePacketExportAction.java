@@ -31,7 +31,7 @@ final class CorePacketExportAction
             Supplier<LocalDate> end, Supplier<Path> destination, Consumer<String> status)
     {
         button.setId("reportLibraryCorePacketExport");
-        button.setTooltip(new Tooltip("Exports statements and operational schedules from one snapshot using Packet start/end, all funds and all events. Exceptions remain visible; this does not certify period close."));
+        button.setTooltip(new Tooltip("Export statements and schedules for Packet start/end, across all funds and events."));
         UiPermissionGate.gate(button, ApplicationPermission.EXPORT, "Export accounting packet");
         button.setOnAction(event ->
         {
