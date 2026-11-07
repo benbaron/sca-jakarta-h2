@@ -14,6 +14,12 @@ Every production JavaFX widget with visible non-blank display text should expose
 
 Text boxes and other `TextInputControl` instances are excluded so user-entered or potentially sensitive typed text is not automatically repeated in a tooltip. Controls that already define a custom tooltip may keep it when the tooltip carries more specific help text.
 
+Tooltip popups set their foreground and background together: black text on a
+light neutral bubble in light themes, white text on a dark neutral bubble in
+dark themes. This includes the skin's painted text, automatic full-text and
+custom help tooltips, and existing tooltips reopened after a theme change.
+Ordinary workspace foreground rules must not override that pairing.
+
 ## Theme text contrast
 
 Production exposes the Java-17-compatible AtlantaFX 2.0.1 theme set: Primer, Nord and Cupertino in light/dark variants plus Dracula, alongside JavaFX System Default. Application shell CSS uses AtlantaFX palette variables for surfaces and controls. Ordinary workspace text uses exact black or white according to the effective painted background, choosing the greater WCAG contrast. White/pastel reports retain black text even inside dark themes; dark surfaces use white text. Transparent backgrounds inherit the composed ancestor surface. Enforcement runs after CSS/layout, covers dynamically created controls and never modifies a skin during its construction. The native Windows title bar remains operating-system controlled. Existing persisted Light/Dark settings map to Primer Light/Primer Dark. Theme changes apply immediately and must preserve readable menus, toolbar controls, forms, tabs, navigation, work panes, tables and lists.
