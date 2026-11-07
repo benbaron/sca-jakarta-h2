@@ -32,3 +32,25 @@ Owner diagnostic testing confirmed that `JAVA_TOOL_OPTIONS='-Dprism.order=sw'` r
 Unit tests cover Windows detection, idempotence, explicit overrides (including an empty value), other platforms and configuration before the actual application-launch callback. The display test uses production window decorations. A separate Windows CI job must run the real application-root snapshot and contrast tests without skips.
 
 Owner review: close the app, update to this slice and run the normal launch command without setting `JAVA_TOOL_OPTIONS`. Confirm the console reports the Windows software default and the login/workspace paints correctly. The diagnostic proves a graphics-pipeline compatibility issue; it does not identify the particular driver or hardware defect.
+
+## P29-C5 — Tooltip popup contrast
+
+After merged PR #410, owner testing found black tooltip text on a dark gray
+bubble in a light theme. An actual popup regression reproduces a 1.26:1 contrast
+ratio: workspace foreground selectors reach the tooltip skin while the
+user-agent stylesheet supplies its dark bubble. Pair the tooltip background and
+foreground in application CSS, including the skin's Text node. Light themes use
+a light neutral bubble with black text; dark themes use a dark neutral bubble
+with white text. Preserve tooltip contents, wrapping, installation and permission
+explanations.
+
+The regression opens automatic full-text and custom help tooltips under every
+theme, checks at least 4.5:1 contrast and the actual painted text, and reuses the
+same tooltips across theme changes. It belongs to `ThemeTextContrastFxTest`,
+already required by the Linux and Windows display jobs. Focused display, clean
+verification and exact-head CI results are recorded in PLAN.
+
+Owner check: hover an ordinary label and a control with help text in Primer
+Light, Nord Light, Cupertino Light and System Default. Confirm a light bubble
+with readable black text. Switch to each dark theme, hover the same controls,
+then switch back; confirm the text remains readable after each change.

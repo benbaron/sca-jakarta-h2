@@ -1,15 +1,19 @@
 ---
-plan_version: 454
+plan_version: 456
 active_phase: P29
-active_slice: P29-S2
+active_slice: P29-C5
 active_status: VERIFYING
-active_branch: codex/P29-S2-workspace-simplification
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/410
-active_head: d03aeb00a553898d52a815f0795b2542953a21b4
-next_action: "Complete clean verification for the Journal AS_NEEDED test correction, publish it to PR 410, then require successful exact-head Linux and Windows CI before owner review."
+active_branch: codex/P29-C5-tooltip-contrast
+active_pull_request: null
+active_head: fd51b94584a24e835600a55cb0def2d2946c90b7
+next_action: "Publish the tooltip correction to a fresh draft PR, complete Temurin 17 clean verification, and require exact-head Linux/Windows CI before owner Windows hover review."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+P29-C5 tooltip contrast — 2026-11-06 America/Denver: owner reports black tooltip text on a dark gray bubble in a light theme. Connected GitHub and native fetch confirm PR #410 merged at current main `fd51b94584a24e835600a55cb0def2d2946c90b7`, containing accepted code head `49440d9225cbd8ff55f42755437358edaad1209f`. Exact-head workflow `42330245186` passed Linux and Windows; final local clean verification passed 1,130 tests with zero failures/errors and 88 expected display skips, with 82 separate display-enabled selector tests passing without skips. The local-only previous final ledger is preserved on the old branch. P29-S2's implementation is merged; this narrow new correction uses fresh branch `codex/P29-C5-tooltip-contrast` and the [P29 contrast contract](P29-S1-light-theme-contrast.md). Inspect actual Tooltip popup CSS/paint under every theme, including reused automatic and custom help tooltips after theme changes. Correct foreground/background together without changing tooltip content or permissions. Baseline compile passed. Focused display reproduction and implementation remain in progress. Publication authorization persists; merging is not authorized. Native Windows visual acceptance remains pending.
+
+P29-C5 implementation and focused acceptance: the actual popup test reproduces black text on `#1e1e1e` with **1.26:1 contrast** before the correction (`/workspace/work/tooltip-reproduction-97.log`). Application CSS now pairs light/black and dark/white tooltip surfaces, including the painted Text node, with no production Java behavior change. Final focused Temurin 17.0.21+9 display acceptance passed **15 tests, zero failures/errors/skips** (`/workspace/work/tooltip-focused-final.log`), covering every theme, automatic and custom help, reuse after theme changes, existing workspace/report contrast, full-text installation, menu styling and actual application startup. Rendered light/dark tooltip snapshots were reviewed (`/workspace/work/tooltip-light.png`, `/workspace/work/tooltip-dark.png`). The first virtual-display attempt could not start inside the restricted network namespace and executed no test; the actual reproduction and acceptance used the working local-only `:97` display, with TCP disabled. Documents changed: PLAN, P29 contrast contract and UI design rules. Whitespace checks pass. Full clean verification and new exact-head GitHub results remain pending; do not claim completion from focused checks alone. No accounting, permission, schema, dependency or tooltip-content changes. Keep VERIFYING until final gates and owner review; no merge is authorized.
 
 P29-S2 CI correction validation — 2026-11-06 America/Denver: owner resumes the failing-test correction. Original report artifact `13478589999` and subsequent CI annotations identify the same obsolete assertion in `JournalFundEventTaggingTest.explicitSelectedLineTagsPreserveMixedDraftOnRefreshAndRespectPermissions`: “Tag contents should scroll at 900.0.” The reduced tagging controls can fit after the help paragraph was removed. The test now checks actual last-action reachability at both widths, with all existing mixed-draft, reference-refresh, table-state and permission assertions retained. A new controlled-viewport regression proves both no-scroll fitting content and usable scrolling for real overflow. It waits for layout and selects only the ScrollPane's own scrollbar, excluding hidden combo-box ListView scrollbars. Production UI, scroll policies, accounting and permissions are unchanged. The temporary report-inspection job is removed; the failure-only Surefire annotation step remains.
 
