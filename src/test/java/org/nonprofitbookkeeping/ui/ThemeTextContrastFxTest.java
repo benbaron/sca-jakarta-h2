@@ -6,15 +6,18 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.nonprofitbookkeeping.model.UiThemePreference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class ThemeTextContrastFxTest
 {
@@ -42,6 +45,70 @@ class ThemeTextContrastFxTest
             assertComputedForeground(preference, Color.BLACK);
             assertComputedForeground(preference, Color.WHITE);
         }
+    }
+
+    @Test
+    void automaticAndCustomTooltipPopupsRemainReadableAcrossThemeChanges()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            javafx.application.Platform.setImplicitExit(false);
+            Label automatic = new Label("Full display text");
+            Button help = new Button("Action with help");
+            Tooltip custom = new Tooltip("Concise control instructions");
+            help.setTooltip(custom);
+            VBox workspace = new VBox(automatic, help);
+            workspace.getStyleClass().add("production-workspace");
+            FullTextTooltipInstaller.install(workspace);
+            WorkspaceTextContrastEnforcer.install(workspace);
+            Scene scene = new Scene(workspace, 400, 200);
+            scene.getStylesheets().add(getClass().getResource("/ui/styles.css").toExternalForm());
+            Stage stage = new Stage();
+            try
+            {
+                stage.setScene(scene);
+                stage.show();
+                for (UiThemePreference preference : UiThemePreference.values())
+                {
+                    AtlantaFxThemeManager.apply(preference);
+                    boolean dark = AtlantaFxThemeManager.isDark(preference);
+                    workspace.getStyleClass().removeAll("theme-light", "theme-dark", "theme-system", "theme-atlantafx");
+                    workspace.getStyleClass().add(dark ? "theme-dark" : "theme-light");
+                    workspace.getStyleClass().add(preference == UiThemePreference.SYSTEM_DEFAULT
+                            ? "theme-system" : "theme-atlantafx");
+                    WorkspaceTextContrastEnforcer.apply(workspace, dark);
+                    settle(workspace);
+                    for (Tooltip tooltip : new Tooltip[] { automatic.getTooltip(), custom })
+                    {
+                        try
+                        {
+                            tooltip.show(tooltip == custom ? help : automatic,
+                                    stage.getX() + 30, stage.getY() + 80);
+                            var popupRoot = tooltip.getScene().getRoot();
+                            popupRoot.applyCss();
+                            popupRoot.layout();
+                            Label bubble = (Label) tooltip.getSkin().getNode();
+                            SurfaceContrastAssertions.assertReadable(bubble);
+                            assertEquals(dark ? Color.WHITE : Color.BLACK, bubble.getTextFill(),
+                                    preference + " tooltip foreground after theme change");
+                            Text paintedText = (Text) bubble.lookup(".text");
+                            assertNotNull(paintedText, preference + " tooltip text");
+                            assertEquals(bubble.getTextFill(), paintedText.getFill(),
+                                    preference + " painted tooltip foreground");
+                        }
+                        finally
+                        {
+                            tooltip.hide();
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                stage.close();
+            }
+            return null;
+        });
     }
 
     private void assertComputedForeground(UiThemePreference preference, Color expected)

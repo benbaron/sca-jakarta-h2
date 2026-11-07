@@ -917,3 +917,28 @@ dashboard-footer-link,
 {
     -fx-background-color: #414141;
 }
+
+/* Popup skins inherit workspace foreground rules, so pair tooltip paints. */
+.tooltip
+{
+    -fx-background-color: #f9f9f9;
+    -fx-text-fill: #000000;
+    -fx-border-color: #c7c7c7;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+}
+.tooltip .text,
+.production-workspace.theme-light .tooltip .text
+{
+    -fx-fill: #000000;
+}
+.production-workspace.theme-dark .tooltip
+{
+    -fx-background-color: #2c2c2c;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #5a5a5a;
+}
+.production-workspace.theme-dark .tooltip .text
+{
+    -fx-fill: #ffffff;
+}
