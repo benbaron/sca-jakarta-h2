@@ -246,6 +246,18 @@ public class PeriodCloseRangeService
                     em.getTransaction().commit();
                     return existing;
                 }
+                if ("CALCULATED".equals(kind))
+                {
+                    FiscalPeriodRange calculated = FiscalPeriodRange.of(
+                            companyEntity.getFiscalYearStartMonth(),
+                            companyEntity.getFiscalYearStartDay(), start);
+                    if (!end.equals(calculated.periodEnd()))
+                    {
+                        throw new IllegalArgumentException(
+                                "Calculated period ends on " + calculated.periodEnd()
+                                        + "; use CUSTOM and review the exact dates for a different range");
+                    }
+                }
                 AccountingReadiness assessed = CoreAccountingPacketService.assessLocked(jpa, em, company, start, end);
                 if (assessed.blockers() != 0) throw new IllegalStateException("Readiness has blocking findings; correct them before closing");
                 if (!review.payload().dataRevision().equals(assessed.dataRevision())) throw new IllegalStateException("Recorded review is stale; preview and record a new review");

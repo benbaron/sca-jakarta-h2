@@ -24,8 +24,8 @@ class DepreciationRunsPanelSourceTest
         assertTrue(source.contains("UiAsync.run(\"depreciation-period-preview\""));
         assertTrue(source.contains("UiAsync.run(\"period-depreciation-run\""));
         assertTrue(source.contains("confirmBatch(preview)"));
-        assertTrue(source.contains("ActivePeriodContext.periodStartFor("));
-        assertTrue(source.contains("start.plusMonths(1).minusDays(1)"));
+        assertTrue(source.contains("budgetPlan().fiscalRange(ActivePeriodContext.get())"));
+        assertFalse(source.contains("plusMonths(1)"));
         assertTrue(source.contains("DateRangeContext.set(new DateRange(preview.periodStart(), preview.periodEnd()))"));
         assertTrue(source.contains("AppPanelId.REPORT_LIBRARY"));
         assertTrue(source.contains("Successful asset runs remain committed"));

@@ -230,14 +230,14 @@ public class ProductionWorkspaceWindow extends BorderPane
 
     void setActivePeriodDate(LocalDate date)
     {
-        ActivePeriodContext.set(date);
+        setActivePeriod(YearMonth.from(Objects.requireNonNull(date, "date")));
     }
 
     void setActivePeriod(YearMonth period)
     {
-        setActivePeriodDate(ActivePeriodContext.periodStartFor(
+        ActivePeriodContext.select(
                 period,
-                MainWindow.sharedSessionState().preferences().periodStartDayOfMonth()));
+                MainWindow.sharedSessionState().preferences().periodStartDayOfMonth());
     }
 
     static List<YearMonth> periodChoicesFor(LocalDate anchorDate)

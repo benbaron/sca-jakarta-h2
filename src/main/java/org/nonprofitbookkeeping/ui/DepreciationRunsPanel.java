@@ -22,9 +22,9 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.service.DepreciationPeriodBatchService;
 import org.nonprofitbookkeeping.service.DepreciationRunView;
+import org.nonprofitbookkeeping.service.FiscalPeriodRange;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 /** Accounting-period fixed-asset depreciation preview, execution, and history workspace. */
@@ -53,6 +53,7 @@ public class DepreciationRunsPanel implements AppPanel
         Label title = new Label("Depreciation Runs");
         title.getStyleClass().add("panel-title");
         status.setWrapText(true);
+        period.setId("depreciationActivePeriod");
 
         refresh.setId("depreciationPeriodPreviewButton");
         run.setId("runPeriodDepreciationButton");
@@ -176,22 +177,22 @@ public class DepreciationRunsPanel implements AppPanel
 
     private void reload(String operationOutcome)
     {
-        CalculatedPeriod active = activePeriod();
+        FiscalPeriodRange active = UiServiceRegistry.budgetPlan().fiscalRange(ActivePeriodContext.get());
         busy.set(true);
         currentPreview = null;
         run.setDisable(true);
         openReport.setDisable(true);
         previewTable.getItems().clear();
         period.setText("Active accounting period: "
-                + companyFormat.formatDate(active.start()) + " through "
-                + companyFormat.formatDate(active.end())
-                + "; depreciation posting date " + companyFormat.formatDate(active.end()) + ".");
+                + companyFormat.formatDate(active.periodStart()) + " through "
+                + companyFormat.formatDate(active.periodEnd())
+                + "; depreciation posting date " + companyFormat.formatDate(active.periodEnd()) + ".");
         status.setText(operationOutcome == null
                 ? "Building depreciation preview from authoritative fixed-asset history..."
                 : operationOutcome + " Refreshing authoritative depreciation data...");
         UiAsync.run("depreciation-period-preview",
                 () -> new DepreciationPanelData(
-                        batchService.preview(activeCompanyCode(), active.start(), active.end()),
+                        batchService.preview(activeCompanyCode(), active.periodStart(), active.periodEnd()),
                         UiServiceRegistry.fixedAssets().listDepreciationRuns(activeCompanyCode())),
                 data -> {
                     currentPreview = data.preview();
@@ -290,20 +291,6 @@ public class DepreciationRunsPanel implements AppPanel
                 + ". Select Fixed Asset Depreciation History & Schedule if it is not already selected.");
     }
 
-    private static CalculatedPeriod activePeriod()
-    {
-        LocalDate active = ActivePeriodContext.get();
-        if (active == null)
-        {
-            active = LocalDate.now();
-        }
-        int startDay = ApplicationSessionContext.sharedSessionState()
-                .preferences().periodStartDayOfMonth();
-        LocalDate start = ActivePeriodContext.periodStartFor(
-                java.time.YearMonth.from(active), startDay);
-        return new CalculatedPeriod(start, start.plusMonths(1).minusDays(1));
-    }
-
     private static String activeCompanyCode()
     {
         String company = ApplicationSessionContext.sharedSessionState()
@@ -319,10 +306,6 @@ public class DepreciationRunsPanel implements AppPanel
     private static String blank(String value)
     {
         return value == null ? "" : value;
-    }
-
-    private record CalculatedPeriod(LocalDate start, LocalDate end)
-    {
     }
 
     private record DepreciationPanelData(

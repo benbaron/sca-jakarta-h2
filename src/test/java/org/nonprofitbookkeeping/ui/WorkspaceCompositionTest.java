@@ -41,6 +41,39 @@ public class WorkspaceCompositionTest
     }
 
     @Test
+    void startupNormalizesLoadedDayButPreferenceAndCompanyChangesRetainSelection()
+    {
+        LocalDate previous = ActivePeriodContext.get();
+        try
+        {
+            UiSessionState session = new UiSessionState();
+            AppPreferencesState defaults = session.preferences();
+            session.setPreferences(new AppPreferencesState(
+                    defaults.themePreference(), defaults.useNativeWindowDecorations(),
+                    defaults.rememberWindowState(), defaults.defaultPrivilege(), defaults.correctionMethod(),
+                    defaults.closedPeriodPolicy(), defaults.requireReopenReason(), defaults.defaultReopenScope(),
+                    defaults.confirmEnteredTransactionDeletion(), 15));
+            ActivePeriodContext.set(LocalDate.of(2027, 6, 27));
+            WorkspaceContext context = WorkspaceServicesFactory.create(
+                    session, new NoopAppStateStore(), WorkspaceCompositionTest::preparedConnection).context();
+            assertEquals(LocalDate.of(2027, 6, 15), context.activePeriodDate());
+
+            session.setPreferences(defaults);
+            session.setMultiCompany(new MultiCompanyState("OTHER", List.of("OTHER")));
+            session.setDatabaseSelection(new DatabaseSelectionState("data/other.mv.db", List.of("data/other.mv.db")));
+            assertEquals(LocalDate.of(2027, 6, 15), ActivePeriodContext.get());
+            assertEquals(ActivePeriodContext.get(), context.activePeriodDate());
+
+            ActivePeriodContext.select(java.time.YearMonth.of(2027, 7), defaults.periodStartDayOfMonth());
+            assertEquals(LocalDate.of(2027, 7, 1), context.activePeriodDate());
+        }
+        finally
+        {
+            ActivePeriodContext.set(previous);
+        }
+    }
+
+    @Test
     public void panelHostUsesLifecycleOwnedPanelFactory()
     {
         UiSessionState session = new UiSessionState();

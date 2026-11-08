@@ -23,12 +23,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.ClosedPeriodPolicy;
+import org.nonprofitbookkeeping.service.FiscalPeriodRange;
 import org.nonprofitbookkeeping.service.PeriodCloseEventView;
 import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
 import org.nonprofitbookkeeping.service.PeriodCloseRangeView;
 
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.Locale;
 
 /** Authoritative period-close, reopen, and factual-history workspace. */
@@ -73,8 +73,11 @@ public class PeriodCloseRunsPanel implements AppPanel
         reason.setPromptText("Optional close/reopen reason");
         companyFormat.install(startDate);
         companyFormat.install(endDate);
+        startDate.setId("periodCloseStartDate");
+        endDate.setId("periodCloseEndDate");
 
         Button useActiveMonth = new Button("Use Active Period");
+        useActiveMonth.setId("periodCloseUseActivePeriod");
         useActiveMonth.setOnAction(event -> setCalculatedMonth());
         close.setId("periodCloseSaveClosedRange");
         close.setOnAction(event -> closeRange());
@@ -266,22 +269,10 @@ public class PeriodCloseRunsPanel implements AppPanel
 
     private void setCalculatedMonth()
     {
-        LocalDate active = ActivePeriodContext.get();
-        if (active == null)
-        {
-            active = LocalDate.now();
-        }
-        int configuredStartDay = MainWindow.sharedSessionState().preferences().periodStartDayOfMonth();
-        CalculatedRange range = calculatedPeriod(active, configuredStartDay);
-        startDate.setValue(range.start());
-        endDate.setValue(range.end());
+        FiscalPeriodRange range = UiServiceRegistry.budgetPlan().fiscalRange(ActivePeriodContext.get());
+        startDate.setValue(range.periodStart());
+        endDate.setValue(range.periodEnd());
         rangeKind.setValue("CALCULATED");
-    }
-
-    static CalculatedRange calculatedPeriod(LocalDate active, int configuredStartDay)
-    {
-        LocalDate start = ActivePeriodContext.periodStartFor(YearMonth.from(active), configuredStartDay);
-        return new CalculatedRange(start, start.plusMonths(1).minusDays(1));
     }
 
     private void closeRange()
@@ -421,10 +412,6 @@ public class PeriodCloseRunsPanel implements AppPanel
     private static String blank(String value)
     {
         return value == null ? "" : value;
-    }
-
-    record CalculatedRange(LocalDate start, LocalDate end)
-    {
     }
 
     private record PeriodCloseData(

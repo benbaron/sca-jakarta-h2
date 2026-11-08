@@ -45,6 +45,7 @@ public final class WorkspaceServicesFactory
         Objects.requireNonNull(databaseSwitcher, "databaseSwitcher");
         Objects.requireNonNull(afterSuccessfulDatabaseSwitch, "afterSuccessfulDatabaseSwitch");
 
+        ActivePeriodContext.initialize(sessionState.preferences().periodStartDayOfMonth());
         WorkspaceContext context = WorkspaceContext.fromSession(sessionState);
         DatabaseSessionController databaseSessionController = new DatabaseSessionController(
                 sessionState,

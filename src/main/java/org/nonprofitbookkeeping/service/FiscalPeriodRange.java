@@ -2,6 +2,7 @@ package org.nonprofitbookkeeping.service;
 
 import java.time.LocalDate;
 import java.time.MonthDay;
+import java.time.YearMonth;
 import java.util.Objects;
 
 /**
@@ -46,6 +47,17 @@ public record FiscalPeriodRange(
     {
         Objects.requireNonNull(company, "company");
         return of(company.fiscalYearStartMonth(), company.fiscalYearStartDay(), selectedPeriodStart);
+    }
+
+    /** Resolves the explicit toolbar month using the configured monthly start day. */
+    public static LocalDate startFor(YearMonth period, int configuredStartDay)
+    {
+        Objects.requireNonNull(period, "period is required");
+        if (configuredStartDay < 1 || configuredStartDay > 28)
+        {
+            throw new IllegalArgumentException("configuredStartDay must be between 1 and 28");
+        }
+        return period.atDay(configuredStartDay);
     }
 
     public static FiscalPeriodRange of(int fiscalStartMonth, int fiscalStartDay, LocalDate selectedPeriodStart)
