@@ -21,7 +21,8 @@ final class CheckExceptionsPane implements AppPanel
     private final VBox root = new VBox(8);
     private final TableView<Row> table = new TableView<>();
     private final ComboBox<BankAccountOption> bank = new ComboBox<>();
-    private final DatePicker through = new DatePicker(ActivePeriodContext.get());
+    private final DatePicker through = new DatePicker(
+            UiServiceRegistry.budgetPlan().fiscalRange(ActivePeriodContext.get()).periodEnd());
     private final DatePicker ageCutoff = new DatePicker();
     private final DatePicker actionDate = new DatePicker(ActivePeriodContext.get());
     private final DatePicker delivery = new DatePicker();

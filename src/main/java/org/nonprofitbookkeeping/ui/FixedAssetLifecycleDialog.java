@@ -37,7 +37,8 @@ final class FixedAssetLifecycleDialog
         ComboBox<FixedAssetLifecycleEvent.EventType> type = new ComboBox<>(
                 FXCollections.observableArrayList(FixedAssetLifecycleEvent.EventType.values()));
         type.setValue(FixedAssetLifecycleEvent.EventType.SALE);
-        DatePicker date = new DatePicker(LocalDate.now());
+        DatePicker date = new DatePicker(ActivePeriodContext.get());
+        date.setId("assetLifecycleDate");
         TextField proceeds = new TextField(companyFormat.formatMoney(BigDecimal.ZERO));
         TextField impairment = new TextField(companyFormat.formatMoney(BigDecimal.ZERO));
         ComboBox<Account> proceedsAccount = accountBox(postingAccounts.stream()
@@ -121,7 +122,8 @@ final class FixedAssetLifecycleDialog
         dialog.setTitle("Reverse Fixed-Asset Lifecycle Event");
         dialog.setHeaderText("Create a canonical reversal and restore the governed asset state.");
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-        DatePicker date = new DatePicker(LocalDate.now());
+        DatePicker date = new DatePicker(ActivePeriodContext.get());
+        date.setId("assetLifecycleReversalDate");
         TextField reason = new TextField();
         TextField actor = new TextField(DesktopActorIdentity.current());
         actor.setEditable(false);

@@ -73,6 +73,7 @@ public final class PropertyCustodyPanel implements AppPanel
         subjectColumn("Location", PropertyCustodyService.SubjectView::location, 160);
         subjectColumn("Confirmation", v -> v.confirmationOverdue() ? "OVERDUE" : v.confirmationStatus().name(), 130);
         subjects.setId("propertyCustodySubjects");
+        date.setId("propertyCustodyEventDate");
         subjects.getSelectionModel().selectedItemProperty().addListener((o, old, value) -> {
             if (populating || value == null) return;
             if (dirty && old != null && !confirmDiscard())
@@ -145,7 +146,7 @@ public final class PropertyCustodyPanel implements AppPanel
 
     private void resetEditor(PropertyCustodyService.SubjectView subject)
     {
-        populating = true; correctionId = null; type.setValue(PropertyCustodyEvent.EventType.CONFIRMATION); date.setValue(ActivePeriodContext.get());
+        populating = true; correctionId = null; type.setValue(PropertyCustodyEvent.EventType.CONFIRMATION); date.setValue(LocalDate.now());
         quantity.setText(subject.quantity().toPlainString()); guardian.setText(subject.guardianName()); location.setText(subject.location());
         email.clear(); phone.clear(); condition.setValue(subject.condition()); confirmation.setValue(PropertyCustodyEvent.ConfirmationStatus.NOT_REQUIRED);
         confirmationDue.setValue(null); confirmationDate.setValue(null); expectedReturn.setValue(null); removalReason.clear(); authorizationReference.clear(); lifecycleSource.clear(); movementSource.clear(); notes.clear();

@@ -40,7 +40,7 @@ public final class RecognitionAssistantPanel implements AppPanel
     private final TableView<SupplementalOpenItemQueryService.Row> items = new TableView<>();
     private final DatePicker serviceStart = new DatePicker();
     private final DatePicker serviceEnd = new DatePicker();
-    private final DatePicker runThrough = new DatePicker(ActivePeriodContext.get());
+    private final DatePicker runThrough = new DatePicker(defaultRunThrough());
     private final ComboBox<Account> destination = new ComboBox<>();
     private final ComboBox<ExpenseFunction> expenseFunction = new ComboBox<>();
     private final TableView<SupplementalRecognitionService.Proposal> proposals = new TableView<>();
@@ -180,10 +180,15 @@ public final class RecognitionAssistantPanel implements AppPanel
         proposals.setPlaceholder(new Label("Preview to calculate due installments."));
     }
 
+    private static LocalDate defaultRunThrough()
+    {
+        return UiServiceRegistry.budgetPlan().fiscalRange(ActivePeriodContext.get()).periodEnd();
+    }
+
     private void reload()
     {
         clearPreview(null);
-        LocalDate asOf = runThrough.getValue() == null ? ActivePeriodContext.get() : runThrough.getValue();
+        LocalDate asOf = runThrough.getValue() == null ? defaultRunThrough() : runThrough.getValue();
         try
         {
             items.getItems().setAll(UiServiceRegistry.supplementalRecognition().openItems(kind.getValue(), asOf));

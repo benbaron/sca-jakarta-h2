@@ -114,6 +114,13 @@ Do not add disabled placeholder Delete buttons. A Delete button should be presen
 
 ## Accounting period display
 
+Entry dates and reporting cutoffs have different defaults: new accounting drafts
+propose period start; recognition/check-review cutoffs and whole-period export
+ends use the company fiscal period end. Preserve existing drafts and factual
+dates. Bank export dates follow until explicitly edited, including raw text or
+clearing a field; normal DatePicker skin/format updates are not manual edits.
+See the [workflow defaults matrix](accounting/period-and-correction-policy.md#workflow-date-defaults-p10-c2).
+
 Period selection, Set Active Period and the active-range label belong to Period Close, not the main toolbar. Keep the close-date draft independent: applying a default period must not replace its dates or an unsaved review.
 
 Period Close and Depreciation use the same `FiscalPeriodRange` end as reports
