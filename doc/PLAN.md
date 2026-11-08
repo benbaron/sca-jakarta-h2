@@ -4,14 +4,16 @@ active_phase: P10
 active_slice: P10-C3
 active_status: VERIFYING
 active_branch: codex/P10-C3-reconciliation-coverage
-active_pull_request: null
-active_head: ff4e77fd18f0e30da84ea0b1fa962d74d2d5458b
-next_action: "Publish locally verified P10-C3 as a draft, inspect exact-head CI and obtain owner review/merge; C4 waits for merge."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/415
+active_head: 17ecec37b5eefe93aa4922e667f502b0006ebbc8
+next_action: "Inspect final-head CI on draft PR 415 and complete owner review/merge before activating P10-C4 period display/reopen commands."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P10-C3 reconciliation coverage — 2026-11-08 America/Denver
+
+Published implementation `17ecec37b5eefe93aa4922e667f502b0006ebbc8`, tree `93cfce66d4b3fdf9690d3349b564123be0de86af`, on `codex/P10-C3-reconciliation-coverage` and opened [draft PR #415](https://github.com/benbaron/sca-jakarta-h2/pull/415). Native fetch confirms identical implementation commits/trees; connected metadata confirms the PR head/base and draft status. This following documentation-only commit records publication. Local final validation is complete as below; final-head CI and owner review/merge remain pending. C3 is VERIFYING; C4 stays blocked on its merge. No merge authorized.
 
 Owner says merged/proceed. PR #414 is merged into current main `ff4e77fd18f0e30da84ea0b1fa962d74d2d5458b`; accepted head `5c11312c619e46eca06d3ea9fa57d90c8e5844f7` passed workflow `42435195035`. C2 is DONE. Fresh clean `codex/P10-C3-reconciliation-coverage` owns this slice; C4 waits for its merge. Baseline compilation passed. Required inspection: BankReconciliationWorkspaceService, canonical split/statement/configured-bank models, V57/V60, reconciliation mutation/authorization, period/correction and production-panel tests. Required reading: AGENTS, PLAN, banking/import/lifecycle/WARN_ONLY contracts, period policy and UI rules/matrix/editor guidelines. Reuse existing production services and persisted session dates; no schema, donor model or historical rewrite.
 
