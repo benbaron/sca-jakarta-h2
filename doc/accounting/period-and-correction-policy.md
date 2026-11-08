@@ -4,6 +4,21 @@
 
 The Period Close workspace owns the shared active accounting period used for transaction-entry and reporting defaults. Its selector chooses a calculated month, not an authoritative `accounting_period` row and not an individual day. The active period start date is calculated from the selected year/month and the period start day configured in Settings. Browsing reports or historical activity does not change it. After startup initialization, the active period changes only through an explicit Set Active Period action.
 
+## Workflow date defaults (P10-C2)
+
+| Workflow/date | New default | Existing draft/history |
+|---|---|---|
+| Journal, fund transfer, merchant settlement, inventory movement, asset lifecycle/reversal accounting | Selected period start | Retain entered dates across period changes |
+| New bank-funded asset purchase | Selected period start when choosing NEW_PURCHASE, only if acquisition date is untouched | Manual dates and loaded acquisitions are never reset; master/opening/existing-entry routes keep factual dates |
+| Recognition run-through; check-review through | Selected company's capped period end | Retain edited or open draft cutoff; service/delivery/age/evidence dates remain explicit |
+| Bank statement export | Selected period start through capped end | Follow new period selections/refresh of current company fiscal settings only until either date is edited/cleared; refresh never replaces custom dates |
+| Historical acquisition, custody, conversion, imported statements | Factual or explicitly entered date (today where already proposed) | Never infer a historical fact from the accounting period |
+
+These are editable proposals, not automatic accounting or evidence. Applying a
+period does not rewrite an open financial draft, recognition schedule, custom
+report/export range, asset master or stored history. Service guards continue to
+reject closed accounting dates; defaults never reopen them or alter authorization.
+
 ## Period-close authority
 
 ### P10-C1 calculated-period consistency

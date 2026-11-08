@@ -46,6 +46,7 @@ import org.nonprofitbookkeeping.model.AccountClassification;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 /** H2-backed fixed asset register panel. */
@@ -90,6 +91,8 @@ public class AssetsRegisterPanel implements AppPanel
     private Long selectedAssetId;
     private FixedAsset.Status editingStatus = FixedAsset.Status.ACTIVE;
     private boolean suppressSelection;
+    private boolean acquisitionDateEdited;
+    private boolean applyingAcquisitionDefault;
 
     public AssetsRegisterPanel()
     {
@@ -397,7 +400,38 @@ public class AssetsRegisterPanel implements AppPanel
         };
         acquisitionBank.setConverter(accountConverter);
         acquisitionSource.getItems().setAll(AssetAcquisitionSource.values());
-        acquisitionSource.valueProperty().addListener((obs, oldValue, newValue) -> updateAcquisitionControls());
+        acquisitionDate.valueProperty().addListener((obs, oldValue, newValue) ->
+        {
+            if (!applyingAcquisitionDefault)
+            {
+                acquisitionDateEdited = true;
+            }
+        });
+        acquisitionDate.getEditor().textProperty().addListener((obs, oldValue, newValue) ->
+        {
+            if (!applyingAcquisitionDefault && acquisitionDate.getConverter() != null
+                    && !Objects.equals(newValue, acquisitionDate.getConverter().toString(acquisitionDate.getValue())))
+            {
+                acquisitionDateEdited = true;
+            }
+        });
+        acquisitionSource.valueProperty().addListener((obs, oldValue, newValue) ->
+        {
+            if (selectedAssetId == null && !acquisitionDateEdited)
+            {
+                applyingAcquisitionDefault = true;
+                try
+                {
+                    acquisitionDate.setValue(newValue == AssetAcquisitionSource.NEW_PURCHASE
+                            ? ActivePeriodContext.get() : LocalDate.now());
+                }
+                finally
+                {
+                    applyingAcquisitionDefault = false;
+                }
+            }
+            updateAcquisitionControls();
+        });
         acquisitionLine.setConverter(new StringConverter<>()
         {
             @Override
@@ -1031,6 +1065,7 @@ public class AssetsRegisterPanel implements AppPanel
         usefulLifeMonths.getSelectionModel().select(Integer.valueOf(60));
         table.getSelectionModel().clearSelection();
         updateAcquisitionControls();
+        acquisitionDateEdited = false;
         status.setText("Ready for a new fixed asset; select an explicit acquisition route.");
         dirtyState.markClean();
     }

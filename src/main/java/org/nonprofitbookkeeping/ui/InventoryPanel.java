@@ -72,7 +72,7 @@ public class InventoryPanel implements AppPanel
     private final TextArea notes = new TextArea();
     private final TextField movementQuantity = new TextField("1.0000");
     private final TextField movementUnitCost = new TextField();
-    private final DatePicker movementDate = new DatePicker(LocalDate.now());
+    private final DatePicker movementDate = new DatePicker(ActivePeriodContext.get());
     private final TextField movementNotes = new TextField();
     private final ComboBox<Account> movementOffsetAccount = new ComboBox<>();
     private final ComboBox<TransactionLineEditorModel.Option> movementEvent = new ComboBox<>();
@@ -230,6 +230,8 @@ public class InventoryPanel implements AppPanel
                 new Label("Actor"), movementActor);
         javafx.scene.layout.FlowPane movementActions = new javafx.scene.layout.FlowPane(8, 6,
                 confirmNonfinancial, receive, issue, adjust, reverse, drill);
+        movementDate.setId("inventoryMovementDate");
+        acquisitionDate.setId("inventoryAcquisitionDate");
         movementQuantity.setId("inventoryMovementQuantity");
         movementUnitCost.setId("inventoryMovementUnitCost");
         movementNotes.setId("inventoryMovementNotes");

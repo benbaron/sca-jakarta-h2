@@ -16,6 +16,8 @@ Status: reconciled to current production architecture through P20-S3 JavaFX perm
 
 Period Close owns the month selector, Set Active Period action and applied fiscal-range label. The global toolbar has no period controls/status. Applying a period changes shared defaults only; Use Active Period separately copies them into close dates. Entry/review/custom-date drafts retain their contents.
 
+Period-dependent workflow defaults are governed by the [date matrix](accounting/period-and-correction-policy.md#workflow-date-defaults-p10-c2): accounting starts, cutoff ends, explicit historical facts and detached custom export ranges. These controls never waive guarded service validation.
+
 ## Global commands
 
 | Command/source | Current behavior | Authority / boundary |

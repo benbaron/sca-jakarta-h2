@@ -58,6 +58,15 @@ public class BankTransactionsPanel implements AppPanel
     private final ComboBox<BankAccountOption> exportAccount = new ComboBox<>();
     private final DatePicker exportFrom = new DatePicker();
     private final DatePicker exportThrough = new DatePicker();
+    private boolean followActivePeriodDefaults = true;
+    private boolean applyingActivePeriodDefaults;
+    private final ChangeListener<LocalDate> activePeriodListener = (observable, previous, selected) ->
+    {
+        if (followActivePeriodDefaults)
+        {
+            applyActivePeriodDefaults(selected);
+        }
+    };
     private final Button exportCsv = new Button("Export Bank CSV…");
     private final Button exportOfx = new Button("Export OFX 2.x…");
     private final Button exportQfx = new Button("Export QFX…");
@@ -278,6 +287,10 @@ public class BankTransactionsPanel implements AppPanel
 
     private void reload()
     {
+        if (followActivePeriodDefaults)
+        {
+            applyActivePeriodDefaults(ActivePeriodContext.get());
+        }
         String activeCompany;
         try
         {
@@ -382,9 +395,16 @@ public class BankTransactionsPanel implements AppPanel
 
     private void configureStatementExport()
     {
-        LocalDate activeDate = ActivePeriodContext.get();
-        exportFrom.setValue(activeDate.withDayOfMonth(1));
-        exportThrough.setValue(activeDate);
+        applyActivePeriodDefaults(ActivePeriodContext.get());
+        exportFrom.setId("bankStatementExportFrom");
+        exportThrough.setId("bankStatementExportThrough");
+        companyFormat.install(exportFrom);
+        companyFormat.install(exportThrough);
+        exportFrom.valueProperty().addListener((observable, oldValue, newValue) -> detachExportDates());
+        exportThrough.valueProperty().addListener((observable, oldValue, newValue) -> detachExportDates());
+        exportFrom.getEditor().textProperty().addListener((observable, oldValue, text) -> detachExportText(exportFrom, text));
+        exportThrough.getEditor().textProperty().addListener((observable, oldValue, text) -> detachExportText(exportThrough, text));
+        ActivePeriodContext.activeDateProperty().addListener(new WeakChangeListener<>(activePeriodListener));
         exportAccount.setPrefWidth(260);
         exportCsv.setId("bankStatementExportCsvButton");
         exportOfx.setId("bankStatementExportOfxButton");
@@ -400,6 +420,39 @@ public class BankTransactionsPanel implements AppPanel
         exportOfx.setOnAction(event -> requestStatementExport(BankStatementExportFormat.OFX_2_XML));
         exportQfx.setOnAction(event -> requestStatementExport(BankStatementExportFormat.QFX_2_XML));
         exportStatus.textProperty().bind(exportActions.statusProperty());
+    }
+
+    private void applyActivePeriodDefaults(LocalDate selectedStart)
+    {
+        var range = UiServiceRegistry.budgetPlan().fiscalRange(selectedStart);
+        applyingActivePeriodDefaults = true;
+        try
+        {
+            exportFrom.setValue(range.periodStart());
+            exportThrough.setValue(range.periodEnd());
+        }
+        finally
+        {
+            applyingActivePeriodDefaults = false;
+        }
+    }
+
+    private void detachExportDates()
+    {
+        if (!applyingActivePeriodDefaults)
+        {
+            followActivePeriodDefaults = false;
+        }
+    }
+
+    private void detachExportText(DatePicker picker, String text)
+    {
+        // Skin installation and display-format changes also update editor text.
+        String displayed = picker.getConverter().toString(picker.getValue());
+        if (!Objects.equals(text, displayed))
+        {
+            detachExportDates();
+        }
     }
 
     static void bindExportButtonAvailability(

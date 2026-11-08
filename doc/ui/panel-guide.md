@@ -117,6 +117,11 @@ Statement opens Import Preview. Review / Export Statements opens Bank Transactio
 
 ## Bank Transactions
 
+Statement export starts with the selected accounting period's full start/end
+range. It follows later period selections until either export date is edited or
+cleared. Refresh re-evaluates untouched fiscal defaults and preserves a custom
+range. Imported bank dates remain source facts.
+
 Ledger Activity is the accounting record. Statement Review contains imported bank
 evidence for matching or explicit acceptance. Import alone does not create a
 second bank ledger. Review selected rows before accepting them or opening their
@@ -130,6 +135,10 @@ supported production import format. Select the intended configured bank account
 and statement dates before matching.
 
 ## Bank Reconciliation: matching and continuation
+
+Checks / Exceptions initially reviews through the accounting period end. Its
+review/correction date remains separately editable and is never advanced by a
+period change. Enter delivery/evidence and age-review dates explicitly.
 
 Match statement rows to ledger lines and review differences. A difference
 explanation records a reconciliation fact without creating or changing a Journal
@@ -172,12 +181,20 @@ untagged activity separately; scoped results avoid double counting.
 
 ## Recognition Assistant
 
+Run through initially uses accounting period end; edit it independently. Service
+start/end remain explicit item facts. Changing the active period preserves this draft.
+
 Choose a prepaid or deferred open item and Preview its straight-line installments.
 The preview does not create an entry. **Save Selected Recognition** accepts the
 selected ready proposal as a Journal transaction. File/toolbar Save has the same
 scope. Correct saved recognition through Journal.
 
 ## Asset Register and Depreciation Runs
+
+Choosing New bank purchase proposes the active period start only for a new,
+untouched acquisition-date draft. Historical/opening dates and manual edits are
+retained. Sale/retirement/impairment and reversal dialogs propose the period start.
+Review the actual date before accepting accounting.
 
 Choose an acquisition route. Save Asset/File Save saves the register record and
 acquisition together. For payable invoices, checks or more complex allocations,
@@ -192,6 +209,9 @@ depreciation through the existing asset workflow.
 
 ## Inventory
 
+New movement dates propose accounting period start. Item acquisition dates remain
+factual; existing movement and item drafts retain their dates when periods change.
+
 Maintain item identity and review Movement History. Inventory items are retained;
 use the appropriate movements to reach zero quantity before deactivation or
 disposal. Disposed items remain terminal history.
@@ -202,6 +222,8 @@ is independent and optional. Zero-value nonfinancial movements cannot carry
 accounting tags. Review the preview before committing or reversing a movement.
 
 ## Property Custody
+
+New factual custody events propose today, independently of the accounting period.
 
 Record guardianship, confirmations, loans, returns, transfers and removals.
 Custody events do not create accounting entries. A removal must reference the
