@@ -4,9 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,24 +12,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PeriodCloseRunsPanelTest
 {
     @Test
-    void calculatedPeriodHonorsConfiguredStartDay()
-    {
-        PeriodCloseRunsPanel.CalculatedRange range = PeriodCloseRunsPanel.calculatedPeriod(
-                LocalDate.of(2026, 8, 15), 10);
-
-        assertEquals(LocalDate.of(2026, 8, 10), range.start());
-        assertEquals(LocalDate.of(2026, 9, 9), range.end());
-    }
-
-    @Test
     void periodCloseWorkspaceUsesRealCloseReopenAndHistoryOperations() throws Exception
     {
         String source = Files.readString(
                 Path.of("src/main/java/org/nonprofitbookkeeping/ui/PeriodCloseRunsPanel.java"));
 
         assertTrue(source.contains("new Button(\"Use Active Period\")"));
-        assertTrue(source.contains("periodStartDayOfMonth()"));
-        assertTrue(source.contains("ActivePeriodContext.periodStartFor("));
+        assertTrue(source.contains("budgetPlan().fiscalRange(ActivePeriodContext.get())"));
+        assertFalse(source.contains("plusMonths(1)"));
         assertTrue(source.contains("new Button(\"Save Closed Range\")"));
         assertTrue(source.contains("new Button(\"Reopen Selected\")"));
         assertTrue(source.contains("capturedService.closeRange("));

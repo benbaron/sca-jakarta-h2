@@ -3,18 +3,19 @@ package org.nonprofitbookkeeping.ui;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import org.nonprofitbookkeeping.service.FiscalPeriodRange;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.Objects;
 
 /**
- * Shared application context for the explicitly selected accounting as-of date.
+ * Shared selected accounting-period start, independent of report browsing dates.
  */
 public final class ActivePeriodContext
 {
     private static final ObjectProperty<LocalDate> activeDate =
-            new SimpleObjectProperty<>(LocalDate.now());
+            new SimpleObjectProperty<>(LocalDate.now().withDayOfMonth(1));
 
     private ActivePeriodContext()
     {
@@ -32,12 +33,18 @@ public final class ActivePeriodContext
 
     public static LocalDate periodStartFor(YearMonth period, int configuredStartDay)
     {
-        Objects.requireNonNull(period, "period is required");
-        if (configuredStartDay < 1 || configuredStartDay > 28)
-        {
-            throw new IllegalArgumentException("configuredStartDay must be between 1 and 28");
-        }
-        return period.atDay(configuredStartDay);
+        return FiscalPeriodRange.startFor(period, configuredStartDay);
+    }
+
+    /** Applies loaded startup preferences before workspace consumers are created. */
+    static void initialize(int configuredStartDay)
+    {
+        select(YearMonth.from(get()), configuredStartDay);
+    }
+
+    public static void select(YearMonth period, int configuredStartDay)
+    {
+        set(periodStartFor(period, configuredStartDay));
     }
 
     public static ReadOnlyObjectProperty<LocalDate> activeDateProperty()

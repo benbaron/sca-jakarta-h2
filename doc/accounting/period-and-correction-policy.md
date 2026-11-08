@@ -2,9 +2,32 @@
 
 ## Active period
 
-The global toolbar period is the active accounting period for transaction entry. The toolbar selects a calculated month, not an authoritative `accounting_period` row and not an individual day. The active period start date is calculated from the selected year/month and the period start day configured in Settings. Browsing reports or historical activity does not change it. The active period changes only through an explicit Set Active Period action.
+The global toolbar period is the active accounting period for transaction entry. The toolbar selects a calculated month, not an authoritative `accounting_period` row and not an individual day. The active period start date is calculated from the selected year/month and the period start day configured in Settings. Browsing reports or historical activity does not change it. After startup initialization, the active period changes only through an explicit Set Active Period action.
 
 ## Period-close authority
+
+### P10-C1 calculated-period consistency
+
+`FiscalPeriodRange` is the shared calculation for reports, Dashboard, Period
+Close and Depreciation. Preserve its existing fiscal-year cap: the inclusive end
+is the earlier of the day before the next monthly start and the fiscal-year end.
+For example, a June 15 start with a July 1 fiscal year ends June 30 in all four
+workflows. This correction does not redesign the fiscal calendar or create
+additional selectable stub periods.
+
+The desktop initializes the selected month using the loaded period-start-day
+preference before creating workspace consumers. Settings changes apply to the
+next explicit period selection; an already selected start remains unchanged.
+Company/database switches retain that selection and resolve fiscal bounds from
+the new company's authority. Consumers must use the selected start, rather than
+recalculate it from newer preferences. Browsing and custom date edits do not
+change the active selection or reopen a closed range.
+
+New interactive `CALCULATED` closes must have the shared calculated end for
+their explicit start and company fiscal year. Edited dates can be closed as
+`CUSTOM` after review of those exact dates. Historical imports and exact retries
+retain their original dates and history, including legacy calculated ranges.
+No persisted close range is rewritten by this correction.
 
 `period_close_range` is the authoritative company-scoped close state. A close range may be:
 

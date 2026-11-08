@@ -70,6 +70,20 @@ public class ActivePeriodContextTest
     }
 
     @Test
+    void initializationUsesLoadedPreferenceAndExplicitSelectionPreservesItsStart()
+    {
+        ActivePeriodContext.set(LocalDate.of(2028, 2, 29));
+        ActivePeriodContext.initialize(15);
+        assertEquals(LocalDate.of(2028, 2, 15), ActivePeriodContext.get());
+
+        ActivePeriodContext.select(YearMonth.of(2027, 12), 28);
+        assertEquals(LocalDate.of(2027, 12, 28), ActivePeriodContext.get());
+        assertThrows(IllegalArgumentException.class, () ->
+                ActivePeriodContext.select(YearMonth.of(2028, 1), 31));
+        assertEquals(LocalDate.of(2027, 12, 28), ActivePeriodContext.get());
+    }
+
+    @Test
     public void periodChoicesFor_returnsPeriodSelectorValuesAroundActivePeriod()
     {
         List<YearMonth> choices = ProductionWorkspaceWindow.periodChoicesFor(LocalDate.of(2026, 7, 4));

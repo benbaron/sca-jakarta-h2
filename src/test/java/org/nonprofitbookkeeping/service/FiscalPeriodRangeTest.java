@@ -27,4 +27,16 @@ class FiscalPeriodRangeTest
 
         assertEquals(LocalDate.of(2027, 6, 30), range.periodEnd());
     }
+
+    @Test
+    void handlesLeapMonthYearRolloverAndNonFirstDayFiscalBoundary()
+    {
+        FiscalPeriodRange leap = FiscalPeriodRange.of(7, 1, LocalDate.of(2028, 2, 1));
+        assertEquals(LocalDate.of(2028, 2, 29), leap.periodEnd());
+        FiscalPeriodRange rollover = FiscalPeriodRange.of(7, 1, LocalDate.of(2027, 12, 15));
+        assertEquals(LocalDate.of(2028, 1, 14), rollover.periodEnd());
+        FiscalPeriodRange boundary = FiscalPeriodRange.of(7, 10, LocalDate.of(2027, 6, 15));
+        assertEquals(LocalDate.of(2027, 7, 9), boundary.periodEnd());
+        assertEquals(LocalDate.of(2026, 7, 10), boundary.fiscalYearStart());
+    }
 }
