@@ -4,14 +4,16 @@ active_phase: P10
 active_slice: P10-C4
 active_status: VERIFYING
 active_branch: codex/P10-C4-period-state-reopen
-active_pull_request: null
-active_head: db95240c1c146c9e21d7b662c1e8c7faa694ae67
-next_action: "Publish the locally verified P10-C4 draft, inspect exact-head CI and obtain owner review/merge before marking the corrective sequence DONE."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/416
+active_head: 456c00c07cc29a37dbfe5cc011a55d8c95a0a97a
+next_action: "Inspect final-head CI on draft PR 416 and complete owner review/merge before marking P10-C4 and the corrective sequence DONE."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P10-C4 period state and reopening — 2026-11-08 America/Denver
+
+Published implementation `456c00c07cc29a37dbfe5cc011a55d8c95a0a97a`, tree `c2e51c315c2630949337acb7ccda00903896717a`, on `codex/P10-C4-period-state-reopen` and opened [draft PR #416](https://github.com/benbaron/sca-jakarta-h2/pull/416). Native fetch confirms identical implementation commit/tree; connected metadata confirms the PR head and draft status. This following documentation-only commit records publication. Final local verification passed as below; exact final-head GitHub CI and owner review/merge remain pending. Keep C4 VERIFYING. The period-correction sequence ends at C4; do not mark it DONE before verified merge. No merge authorized.
 
 Owner says merged/continue. #415 merged at main `db95240c1c146c9e21d7b662c1e8c7faa694ae67`; accepted head `6aa75af9a0917a8b067094d0e1c6c56d5a16f4c3` passed workflow `42502452133`. C3 is DONE; fresh clean `codex/P10-C4-period-state-reopen` owns this slice. Read AGENTS, PLAN, period policy, Dashboard authority and UI rules/interface matrix/editor guidelines; inspect PeriodCloseRangeService/view/exception, Dashboard query/panel, Period Close, Journal correction/error routing, DrillThroughCoordinator and current service/FX tests. Reuse the production range and navigation authorities; no donor model, schema or historical rewrite.
 
