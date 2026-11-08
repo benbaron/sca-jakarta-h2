@@ -29,6 +29,7 @@ import org.nonprofitbookkeeping.service.PeriodCloseRangeService;
 import org.nonprofitbookkeeping.service.PeriodCloseRangeView;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Locale;
 
 /** Authoritative period-close, reopen, and factual-history workspace. */
@@ -38,6 +39,8 @@ public class PeriodCloseRunsPanel implements AppPanel
     private final BorderPane root = new BorderPane();
     private final DatePicker startDate = new DatePicker();
     private final DatePicker endDate = new DatePicker();
+    private final ComboBox<YearMonth> periodSelector = new ComboBox<>();
+    private final Label activePeriodSummary = new Label();
     private final ComboBox<String> rangeKind = new ComboBox<>();
     private final ComboBox<ClosedPeriodPolicy> reopenPolicy = new ComboBox<>();
     private final CheckBox requireReason = new CheckBox("Require reopening reason");
@@ -57,7 +60,7 @@ public class PeriodCloseRunsPanel implements AppPanel
     public PeriodCloseRunsPanel()
     {
         root.setPadding(new Insets(10));
-        root.setMinSize(0, 0);
+        root.setMinHeight(0);
 
         Label title = new Label("Period Close");
         title.getStyleClass().add("panel-title");
@@ -93,22 +96,47 @@ public class PeriodCloseRunsPanel implements AppPanel
         Button refresh = new Button("Refresh");
         refresh.setOnAction(event -> reload());
 
+        periodSelector.setId("periodClosePeriodSelector");
+        periodSelector.setPromptText("Accounting month");
+        Button setPeriod = new Button("Set Active Period");
+        setPeriod.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+        setPeriod.setId("periodCloseSetActivePeriod");
+        setPeriod.setTooltip(new javafx.scene.control.Tooltip(
+                "Set shared defaults for entry, depreciation, Dashboard and reports. Existing drafts stay unchanged; this does not open or close dates."));
+        setPeriod.disableProperty().bind(closing.or(periodSelector.valueProperty().isNull()));
+        periodSelector.disableProperty().bind(closing);
+        setPeriod.setOnAction(event ->
+        {
+            ActivePeriodContext.select(periodSelector.getValue(),
+                    MainWindow.sharedSessionState().preferences().periodStartDayOfMonth());
+            refreshActivePeriod();
+        });
+        activePeriodSummary.setId("periodCloseActivePeriodRange");
+        activePeriodSummary.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+        refreshActivePeriod();
+
         GridPane form = new GridPane();
         form.setHgap(8);
         form.setVgap(8);
-        form.add(new Label("Start date"), 0, 0);
-        form.add(startDate, 1, 0);
-        form.add(new Label("End date"), 2, 0);
-        form.add(endDate, 3, 0);
-        form.add(new Label("Range type"), 0, 1);
-        form.add(rangeKind, 1, 1);
-        form.add(new Label("Actor"), 2, 1);
-        form.add(actor, 3, 1);
-        form.add(new Label("Reopen policy"), 0, 2);
-        form.add(reopenPolicy, 1, 2);
-        form.add(requireReason, 2, 2, 2, 1);
-        form.add(new Label("Reason"), 0, 3);
-        form.add(reason, 1, 3, 3, 1);
+        Label periodLabel = new Label("Accounting period");
+        periodLabel.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+        form.add(periodLabel, 0, 0);
+        form.add(periodSelector, 1, 0);
+        form.add(setPeriod, 2, 0);
+        form.add(activePeriodSummary, 3, 0);
+        form.add(new Label("Start date"), 0, 1);
+        form.add(startDate, 1, 1);
+        form.add(new Label("End date"), 2, 1);
+        form.add(endDate, 3, 1);
+        form.add(new Label("Range type"), 0, 2);
+        form.add(rangeKind, 1, 2);
+        form.add(new Label("Actor"), 2, 2);
+        form.add(actor, 3, 2);
+        form.add(new Label("Reopen policy"), 0, 3);
+        form.add(reopenPolicy, 1, 3);
+        form.add(requireReason, 2, 3, 2, 1);
+        form.add(new Label("Reason"), 0, 4);
+        form.add(reason, 1, 4, 3, 1);
 
         HBox actions = new HBox(8, useActiveMonth, close, reopen, refresh);
         actions.getStyleClass().add("panel-action-row");
@@ -172,6 +200,7 @@ public class PeriodCloseRunsPanel implements AppPanel
     public void onPanelShown()
     {
         applyPreferenceDefaults();
+        refreshActivePeriod();
         readiness.invalidate();
     }
 
@@ -265,6 +294,16 @@ public class PeriodCloseRunsPanel implements AppPanel
                 row -> blank(row.reason()));
 
         history.getColumns().addAll(eventAt, eventType, range, eventActor, eventReason);
+    }
+
+    private void refreshActivePeriod()
+    {
+        LocalDate selectedStart = ActivePeriodContext.get();
+        periodSelector.getItems().setAll(ActivePeriodContext.periodChoicesFor(selectedStart));
+        periodSelector.setValue(YearMonth.from(selectedStart));
+        FiscalPeriodRange range = UiServiceRegistry.budgetPlan().fiscalRange(selectedStart);
+        activePeriodSummary.setText(companyFormat.formatDate(range.periodStart())
+                + " through " + companyFormat.formatDate(range.periodEnd()));
     }
 
     private void setCalculatedMonth()

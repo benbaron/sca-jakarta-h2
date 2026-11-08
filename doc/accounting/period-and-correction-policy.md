@@ -2,7 +2,7 @@
 
 ## Active period
 
-The global toolbar period is the active accounting period for transaction entry. The toolbar selects a calculated month, not an authoritative `accounting_period` row and not an individual day. The active period start date is calculated from the selected year/month and the period start day configured in Settings. Browsing reports or historical activity does not change it. After startup initialization, the active period changes only through an explicit Set Active Period action.
+The Period Close workspace owns the shared active accounting period used for transaction-entry and reporting defaults. Its selector chooses a calculated month, not an authoritative `accounting_period` row and not an individual day. The active period start date is calculated from the selected year/month and the period start day configured in Settings. Browsing reports or historical activity does not change it. After startup initialization, the active period changes only through an explicit Set Active Period action.
 
 ## Period-close authority
 
@@ -14,6 +14,8 @@ is the earlier of the day before the next monthly start and the fiscal-year end.
 For example, a June 15 start with a July 1 fiscal year ends June 30 in all four
 workflows. This correction does not redesign the fiscal calendar or create
 additional selectable stub periods.
+
+Selecting a candidate month does not apply it. Set Active Period applies Settings' start day and shows the fiscal start/end locally, without changing existing close dates or entry/review/custom-report drafts. Use Active Period separately copies the selected range into close dates. Changing this shared default never opens, closes or reopens accounting dates. The main toolbar contains no period selector, action or period status.
 
 The desktop initializes the selected month using the loaded period-start-day
 preference before creating workspace consumers. Settings changes apply to the

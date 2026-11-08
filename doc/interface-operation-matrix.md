@@ -12,6 +12,10 @@ Status: reconciled to current production architecture through P20-S3 JavaFX perm
 - `PanelFactory` applies shared production UI compliance, including company-owned table state, while panels with richer existing binders retain their single authoritative state owner.
 - `UiServiceRegistry` supplies current service authorities. Compatibility repositories/services may remain only where a current production or interchange path still consumes them.
 
+## Contextual accounting period
+
+Period Close owns the month selector, Set Active Period action and applied fiscal-range label. The global toolbar has no period controls/status. Applying a period changes shared defaults only; Use Active Period separately copies them into close dates. Entry/review/custom-date drafts retain their contents.
+
 ## Global commands
 
 | Command/source | Current behavior | Authority / boundary |

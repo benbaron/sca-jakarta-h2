@@ -429,7 +429,7 @@ The production workspace includes:
 
 The default window fits a laptop display. Center content never renders beneath a sidebar.
 
-The top chrome active-period control selects an accounting period, not an arbitrary calendar day. The period start date is derived from the selected period and the Settings-defined period start day.
+The Period Close workspace owns the active-period selector and Set Active Period action; these controls and their period status do not appear in the global chrome. The selector chooses an accounting period, not an arbitrary calendar day. The period start date is derived from the selected period and the Settings-defined period start day.
 
 Avoid hard-coded panel minimum widths that force clipping. When default-size text or tabular content can be hidden by the available pane size, that pane portion must be independently resizable with a `SplitPane` divider and must expose both vertical and horizontal scrolling rather than relying on clipping, wrapping-only behavior, or an enlarged minimum width. Geometry tests must consider child minimum/preferred sizes, viewport behavior, both vertical and horizontal scrolling, divider movement, collapsed sidebars, and scaling.
 

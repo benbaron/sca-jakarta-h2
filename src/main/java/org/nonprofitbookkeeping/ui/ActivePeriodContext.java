@@ -47,6 +47,17 @@ public final class ActivePeriodContext
         set(periodStartFor(period, configuredStartDay));
     }
 
+    static java.util.List<YearMonth> periodChoicesFor(LocalDate anchorDate)
+    {
+        YearMonth anchor = YearMonth.from(Objects.requireNonNull(anchorDate, "anchorDate"));
+        java.util.ArrayList<YearMonth> choices = new java.util.ArrayList<>();
+        for (int offset = -12; offset <= 12; offset++)
+        {
+            choices.add(anchor.plusMonths(offset));
+        }
+        return java.util.List.copyOf(choices);
+    }
+
     public static ReadOnlyObjectProperty<LocalDate> activeDateProperty()
     {
         return activeDate;

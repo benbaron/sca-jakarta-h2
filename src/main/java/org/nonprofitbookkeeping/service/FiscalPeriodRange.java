@@ -49,7 +49,7 @@ public record FiscalPeriodRange(
         return of(company.fiscalYearStartMonth(), company.fiscalYearStartDay(), selectedPeriodStart);
     }
 
-    /** Resolves the explicit toolbar month using the configured monthly start day. */
+    /** Resolves the explicit accounting month using the configured monthly start day. */
     public static LocalDate startFor(YearMonth period, int configuredStartDay)
     {
         Objects.requireNonNull(period, "period is required");

@@ -1,15 +1,32 @@
 ---
-plan_version: 457
+plan_version: 458
 active_phase: P10
-active_slice: P10-C1
-active_status: BLOCKED
-active_branch: codex/P10-C1-period-consistency
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/412
-active_head: e0745ebbe559c1fbc875a3a0d053e82bc9e80b76
-next_action: "Diagnose the preexisting snapshot/readiness discrepancy reproduced on untouched main; retain C1 changes and rerun clean verification after the prerequisite is resolved."
+active_slice: P10-C1B
+active_status: VERIFYING
+active_branch: codex/P10-C1B-contextual-period-selector
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/413
+active_head: aee630a0e20d476f54ebd170a12d5a77b448968a
+next_action: "Inspect final-head CI on draft PR 413 and obtain owner desktop review of Period Close and the simplified toolbar; do not merge automatically."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P10-C1B contextual accounting-period selector — 2026-11-07 America/Denver
+
+Published implementation `aee630a0e20d476f54ebd170a12d5a77b448968a`, tree `79a12cc6f1677efab0be94935baf32f6b88467f1`, to `codex/P10-C1B-contextual-period-selector` and opened [draft PR #413](https://github.com/benbaron/sca-jakarta-h2/pull/413). Native fetch confirms identical local/remote implementation commits and trees; connected PR metadata confirms its head. This following documentation-only commit records publication. Local verification is complete as below; final-head CI and owner desktop review remain pending. No merge is authorized.
+
+Owner explicitly requests moving the period selector/Set Active Period action into one applicable accounting context because global placement is confusing. This amends the prior top-chrome requirement in AGENTS, UI rules and period policy. Connected PR metadata and native fetch confirm #412 merged at current main `c6ee1c43aa471e0609fc354ca2c84e34b60e8367`; its implementation is present, while its recorded readiness verification issue is not assumed resolved by merge. A clean worktree starts fresh `codex/P10-C1B-contextual-period-selector`; do not reuse the merged C1 branch.
+
+Scope: relocate the existing explicit month-selection action into Period Close's form, show its actual fiscal start/end there, and remove both controls and active-period status from the main toolbar. The period remains a shared accounting default for its existing consumers; the local tooltip/manual explains that scope. Selecting a candidate month alone changes nothing; Set Active Period updates the shared context with Settings' start day but leaves existing entry/close/review/custom report drafts untouched. Use Active Period remains the explicit operation that copies defaults into close dates. Closing/reopening, permissions, persisted history and readiness/backup logic stay unchanged. This is a bounded owner-directed UI amendment to the existing period slice, not C2/C3/C4 implementation or a recovery repair.
+
+Required reading: AGENTS, PLAN, period/correction policy, UI rules, interface matrix, editor guidelines, Dashboard authority and panel guide. Required inspection: ProductionWorkspaceWindow chrome/period methods, ActivePeriodContext, PeriodCloseRunsPanel form/commands, PanelViewport, period-context/panel/production command/route tests and current CI selectors. Extend the existing production controls/context rather than importing a donor model. The sandbox baseline could not reach the configured Maven proxy; the configured environment Maven wrapper outside that namespace then passed compilation in 13 seconds (JDK 21, Java 17 release target). No dependencies or accounting services changed.
+
+Implementation: remove period controls/status and unused shell setters/listener; move month choices into ActivePeriodContext and expose the selector, explicit Set Active Period action and formatted applied range in the existing Period Close form. The selector/application controls disable during a close. Preserve the existing Use Active Period command and close/review draft dates. Update current UI rules, Dashboard/period policy, operating manual and preference-consumer description for the new ownership.
+
+Validation: 9 focused context/source tests passed. A combined five-class display run passed 15 tests but logged transient Hikari pool timeouts from retained old shell Dashboard listeners when report-period tests ran after the shell tests; it is not claimed as clean runtime acceptance. The same five classes with independent JVMs (`-DreuseForks=false`) then passed **15 tests, zero failures/errors/skips**, without those timeouts or uncaught FX-thread exceptions (`/tmp/period-context-ui-isolated.log`). This covers candidate selection versus explicit apply, Settings start-day resolution, local range text, unchanged custom close dates, Use Active Period, report following, global toolbar ownership, all canonical routes/two-section/overflow compliance and real close-review controls. Existing listener lifecycle outside the moved controls was not rewritten. The initial full run was deliberately stopped after the narrow rendered preview exposed shortened new-control labels; 926 tests had run with no failures, but no complete gate is claimed for that interrupted run. The form now retains the new label/button/range natural preferred widths and uses its computed content minimum so the existing viewport exposes horizontal scrolling. The period-panel regression checks actual scrollbar visibility, full rendered control widths and range reachability at 13px/18px in a 480px work viewport. Final focused acceptance passed **15 tests, zero failures/errors/skips** with independent JVMs, without timeouts or uncaught FX-thread exceptions (`/tmp/period-context-ui-final.log`). The rendered production root was reviewed at 1280×800 and 800×600 using isolated temporary company/app data (`/tmp/period-context-preview.png`, `/tmp/period-context-preview-small.png`); the toolbar has no period controls/status, and the new row retains full text. The narrow work-viewport regression confirms horizontal access when the form exceeds available width. Final `clean verify` passed **1,135 tests, zero failures/errors, 89 expected display-dependent skips**, BUILD SUCCESS in **06:13** (`/tmp/period-context-verify-final.log`). This final run includes all revised source and geometry coverage; the separate final display run passed all 15 cases without skips. The earlier C1 readiness failure did not reproduce in this run, but no recovery/readiness repair or root-cause resolution is claimed. Final whitespace and document-link checks pass. Publication preflight confirms base/current main remain `c6ee1c43aa471e0609fc354ca2c84e34b60e8367`, with no existing remote C1B branch or matching PR. Only the reviewed 15 source/test/document files are included; generated tracked build files were preserved by the environment wrapper. Documentation links (19) and whitespace pass.
+
+User checks: open Period Close; select a month and apply it, inspect its displayed range, then explicitly copy it into close dates with Use Active Period. Verify no period controls/status appear in the global toolbar. Change an entry/close/review/custom report draft first and confirm applying a default period preserves it. Verify company/date formatting and a narrow/larger-font viewport retain scrolling access to the new form row. Native owner visual acceptance is pending; automated production route/layout acceptance is not a claim of native desktop review. Remaining: publish this verified slice, inspect exact-head CI and obtain owner desktop review; no merge is authorized. Existing publication authorization persists for this reviewed period work; no merge is authorized.
+
 
 ### P10-C1 period consistency correction — 2026-11-07 America/Denver
 
