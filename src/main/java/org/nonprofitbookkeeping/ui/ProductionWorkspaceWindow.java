@@ -29,8 +29,6 @@ import org.nonprofitbookkeeping.model.WorkspaceDividerState;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -50,7 +48,6 @@ public class ProductionWorkspaceWindow extends BorderPane
     private final SplitPane workspace = new SplitPane();
     private final Label activePanelLabel = new Label();
     private final Label commandStatusLabel = new Label();
-    private final Label activePeriodLabel = new Label();
     private final Label activeDatabaseLabel = new Label();
     private final ComboBox<CompanyView> activeCompanySelector = new ComboBox<>();
     private MenuItem newMenuItem;
@@ -107,8 +104,6 @@ public class ProductionWorkspaceWindow extends BorderPane
         navigationPane = new NavigationPane(this::openPanel, () -> setNavigationVisible(false));
         DrillThroughCoordinator.configureOpener(this::openPanel);
 
-        workspaceContext.activePeriodDateProperty().addListener(
-                (observable, oldDate, newDate) -> updateActivePeriodLabel());
         workspaceContext.activeDatabasePathProperty().addListener(
                 (observable, oldPath, newPath) -> updateActiveDatabaseLabel());
         workspaceContext.activeCompanyCodeProperty().addListener(
@@ -221,34 +216,6 @@ public class ProductionWorkspaceWindow extends BorderPane
         }
         presentCommandResult(result);
         return result;
-    }
-
-    LocalDate activePeriodDate()
-    {
-        return workspaceContext.activePeriodDate();
-    }
-
-    void setActivePeriodDate(LocalDate date)
-    {
-        setActivePeriod(YearMonth.from(Objects.requireNonNull(date, "date")));
-    }
-
-    void setActivePeriod(YearMonth period)
-    {
-        ActivePeriodContext.select(
-                period,
-                MainWindow.sharedSessionState().preferences().periodStartDayOfMonth());
-    }
-
-    static List<YearMonth> periodChoicesFor(LocalDate anchorDate)
-    {
-        YearMonth anchor = YearMonth.from(Objects.requireNonNull(anchorDate, "anchorDate"));
-        java.util.ArrayList<YearMonth> choices = new java.util.ArrayList<>();
-        for (int offset = -12; offset <= 12; offset++)
-        {
-            choices.add(anchor.plusMonths(offset));
-        }
-        return choices;
     }
 
     PanelHost panelHost()
@@ -370,24 +337,9 @@ public class ProductionWorkspaceWindow extends BorderPane
         Button navigationButton = new Button("Navigation");
         navigationButton.setOnAction(event -> setNavigationVisible(!workspace.getItems().contains(navigationPane)));
 
-        ComboBox<YearMonth> periodSelector = new ComboBox<>();
-        periodSelector.getItems().setAll(periodChoicesFor(workspaceContext.activePeriodDate()));
-        periodSelector.getSelectionModel().select(YearMonth.from(workspaceContext.activePeriodDate()));
-        periodSelector.setPromptText("Active period");
-
-        Button setPeriodButton = new Button("Set Active Period");
-        setPeriodButton.setOnAction(event ->
-        {
-            if (periodSelector.getValue() != null)
-            {
-                setActivePeriod(periodSelector.getValue());
-            }
-        });
-
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        updateActivePeriodLabel();
         activeCompanySelector.setId("activeCompanySelector");
         activeCompanySelector.setPromptText("Active company");
         activeCompanySelector.setOnShowing(event -> refreshActiveCompanySelector());
@@ -398,16 +350,11 @@ public class ProductionWorkspaceWindow extends BorderPane
                 new Separator(),
                 navigationButton,
                 new Separator(),
-                new Label("Period:"),
-                periodSelector,
-                setPeriodButton,
                 spacer,
                 new Label("Company:"),
                 activeCompanySelector,
                 new Separator(),
-                activeDatabaseLabel,
-                new Separator(),
-                activePeriodLabel);
+                activeDatabaseLabel);
     }
 
     private SplitPane buildWorkspace()
@@ -767,13 +714,6 @@ public class ProductionWorkspaceWindow extends BorderPane
         return raw.toLowerCase().endsWith(".mv.db")
                 ? path
                 : Path.of(raw + ".mv.db");
-    }
-
-    private void updateActivePeriodLabel()
-    {
-        activePeriodLabel.setText("Active period: "
-                + YearMonth.from(workspaceContext.activePeriodDate())
-                + " starts " + workspaceContext.activePeriodDate());
     }
 
     private void updateActiveDatabaseLabel()

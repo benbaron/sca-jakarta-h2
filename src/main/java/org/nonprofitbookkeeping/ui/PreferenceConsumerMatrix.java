@@ -34,7 +34,7 @@ public final class PreferenceConsumerMatrix
             active("requireReopenReason", "desktop session", "PeriodCloseRunsPanel reopening defaults", "Applies when Period Close opens or refreshes."),
             deferred("defaultReopenScope", "compatibility", "Calculated/custom close ranges have no session-scoped reopen mode."),
             active("confirmEnteredTransactionDeletion", "desktop session", "Journal direct-delete confirmation", "Applies to subsequent direct deletes."),
-            active("periodStartDayOfMonth", "desktop session", "ActivePeriodContext and toolbar period selection", "Applies to subsequently selected periods."),
+            active("periodStartDayOfMonth", "desktop session", "ActivePeriodContext and Period Close selection", "Applies to subsequently selected periods."),
             active("currencySymbol", "company H2", "CompanyUiFormat money presentation", "Applies to the selected company."),
             active("moneyPrintFormat", "company H2", "CompanyUiFormat money presentation", "Applies to the selected company."),
             active("dateDisplayFormat", "company H2", "CompanyUiFormat date presentation", "Applies to the selected company."));

@@ -7,8 +7,8 @@ current results and validation; hover over a control for a short local hint.
 ## Getting started
 
 Choose **File → Database → Select Database File…** or **Create New Database…**.
-Choose an active company in the toolbar, select the accounting month, and choose
-**Set Active Period**. Create and maintain companies in **Administration → Company
+Choose an active company in the toolbar. To change accounting defaults, open
+**Period Close**, select the accounting month and choose **Set Active Period**. Create and maintain companies in **Administration → Company
 Admin**. Sign in with an account assigned to the selected company. Leave Password
 blank for an account without a password; ADMIN maintains account passwords.
 
@@ -229,6 +229,12 @@ when the scope or underlying records change.
 
 ## Period Close: readiness and review evidence
 
+Select an accounting month and choose **Set Active Period** to set shared defaults
+for transaction entry, depreciation, Dashboard and following report ranges. The
+local date range shows the applied period. Existing drafts and custom date ranges
+are retained. **Use Active Period** separately copies that range into the close
+dates. Neither selection action closes or reopens a range.
+
 Preview Readiness to inspect automated findings and open their correction screens.
 These findings do not independently verify external evidence or authorize closing.
 In Review Evidence, preview the selected dates, record external references and
@@ -247,7 +253,7 @@ is read-only. Use the owning business function for corrections.
 ## Report Library
 
 Select a report and set Parameters. Run Report opens Preview. Explicit report
-dates may differ from the toolbar period. Export uses the chosen format and
+dates may differ from the accounting period selected in Period Close. Export uses the chosen format and
 requires export permission. Accounting packet export uses its own start/end dates
 and includes all funds/events, with exceptions reported in its manifest.
 

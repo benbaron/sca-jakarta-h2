@@ -114,13 +114,15 @@ Do not add disabled placeholder Delete buttons. A Delete button should be presen
 
 ## Accounting period display
 
+Period selection, Set Active Period and the active-range label belong to Period Close, not the main toolbar. Keep the close-date draft independent: applying a default period must not replace its dates or an unsaved review.
+
 Period Close and Depreciation use the same `FiscalPeriodRange` end as reports
 and Dashboard, including the fiscal-year cap. Their calculated ranges use the
 already selected start; changing Settings does not silently recalculate it.
 Startup applies loaded period-start preferences before opening workspace panels.
 See [period consistency](accounting/period-and-correction-policy.md#p10-c1-calculated-period-consistency).
 
-Accounting periods must be stated in days, quarters, or years as appropriate for the screen, report, or workflow. The start of each fiscal year or period is calculated from the active company's configured start preference. The top chrome active-period selector chooses an accounting period, not an arbitrary day, and the active period start date is derived from the selected period plus the configured period start day.
+Accounting periods must be stated in days, quarters, or years as appropriate for the screen, report, or workflow. The start of each fiscal year or period is calculated from the active company's configured start preference. The Period Close active-period selector chooses an accounting period, not an arbitrary day, and the active period start date is derived from the selected period plus the configured period start day.
 
 ## Completed-phase retrofit obligations
 

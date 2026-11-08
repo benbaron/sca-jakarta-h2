@@ -86,7 +86,7 @@ public class ActivePeriodContextTest
     @Test
     public void periodChoicesFor_returnsPeriodSelectorValuesAroundActivePeriod()
     {
-        List<YearMonth> choices = ProductionWorkspaceWindow.periodChoicesFor(LocalDate.of(2026, 7, 4));
+        List<YearMonth> choices = ActivePeriodContext.periodChoicesFor(LocalDate.of(2026, 7, 4));
 
         assertEquals(25, choices.size());
         assertEquals(YearMonth.of(2025, 7), choices.get(0));

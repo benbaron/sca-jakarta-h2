@@ -75,6 +75,10 @@ public class ProductionWorkspaceCommandRoutingTest
         ProductionWorkspaceWindow window = FxTestSupport.onFx(ProductionWorkspaceCommandRoutingTest::newWindow);
 
         FxTestSupport.onFx(() -> {
+            assertTrue(window.lookupAll(".tool-bar .combo-box").stream().allMatch(
+                    node -> "activeCompanySelector".equals(node.getId())), "Only company selection belongs in the global toolbar");
+            assertTrue(window.lookupAll(".tool-bar .button").stream().noneMatch(
+                    node -> ((Button) node).getText().equals("Set Active Period")));
             window.openPanel(AppPanelId.LEDGER_REGISTER);
             assertTrue(window.panelHost().isOpen(AppPanelId.LEDGER_REGISTER));
 
