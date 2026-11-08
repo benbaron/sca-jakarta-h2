@@ -1,15 +1,27 @@
 ---
-plan_version: 459
+plan_version: 460
 active_phase: P10
-active_slice: P10-C2
+active_slice: P10-C3
 active_status: VERIFYING
-active_branch: codex/P10-C2-period-usage-defaults
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/414
-active_head: 50ec061a2d7d3d4fd0e317ad9af80bc35252d88a
-next_action: "Inspect final-head CI on draft PR 414 and complete owner review/merge before activating P10-C3 reconciliation coverage."
+active_branch: codex/P10-C3-reconciliation-coverage
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/415
+active_head: 17ecec37b5eefe93aa4922e667f502b0006ebbc8
+next_action: "Inspect final-head CI on draft PR 415 and complete owner review/merge before activating P10-C4 period display/reopen commands."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P10-C3 reconciliation coverage — 2026-11-08 America/Denver
+
+Published implementation `17ecec37b5eefe93aa4922e667f502b0006ebbc8`, tree `93cfce66d4b3fdf9690d3349b564123be0de86af`, on `codex/P10-C3-reconciliation-coverage` and opened [draft PR #415](https://github.com/benbaron/sca-jakarta-h2/pull/415). Native fetch confirms identical implementation commits/trees; connected metadata confirms the PR head/base and draft status. This following documentation-only commit records publication. Local final validation is complete as below; final-head CI and owner review/merge remain pending. C3 is VERIFYING; C4 stays blocked on its merge. No merge authorized.
+
+Owner says merged/proceed. PR #414 is merged into current main `ff4e77fd18f0e30da84ea0b1fa962d74d2d5458b`; accepted head `5c11312c619e46eca06d3ea9fa57d90c8e5844f7` passed workflow `42435195035`. C2 is DONE. Fresh clean `codex/P10-C3-reconciliation-coverage` owns this slice; C4 waits for its merge. Baseline compilation passed. Required inspection: BankReconciliationWorkspaceService, canonical split/statement/configured-bank models, V57/V60, reconciliation mutation/authorization, period/correction and production-panel tests. Required reading: AGENTS, PLAN, banking/import/lifecycle/WARN_ONLY contracts, period policy and UI rules/matrix/editor guidelines. Reuse existing production services and persisted session dates; no schema, donor model or historical rewrite.
+
+Conflict found before implementation: banking balance prose and the start query use company-wide legacy period_close_run as coverage authority; this can omit activity across custom gaps/reopened ranges and other banks. Adopt the bank-specific policy in [banking](banking/banking-and-reconciliation.md#balance-calculations): nearest earlier finalized session for this company/configured bank, otherwise its opening date; missing opening date uses the earlier of calendar-month start and earliest existing bank ledger/statement evidence. Older unsettled bank splits remain reviewable through the ending date. Existing session/import dates and explicit successor audit history remain factual. Close/reopen authority and authorization are unchanged. Implementation complete: new-session coverage uses same-bank/company finalized history; no opening date derives the earliest eligible evidence or month start. Older unsettled splits remain selectable after clearing/matching/restart and exact symmetric unmatch; settled predecessor splits remain excluded. Beginning/all/cleared balance arithmetic, imported/stored dates and explicit successor audits retain their existing authorities. No migration, dependency or UI-layout changes.
+
+Baseline: compile and 9 reconciliation mutation/authorization tests passed. Initial focused acceptance passed 14 tests; final service regression set passed 19 tests, zero failures/errors/skips (coverage, authorization, correction, close-range and legacy reconciliation; `/tmp/reconciliation-regressions.log`). A final test refinement also supplies multiple earlier, same-end and future finalized sessions and every mutable status to check nearest-earlier selection; full verification includes that refinement. Display-enabled acceptance with isolated JVMs passed 7 tests, zero failures/errors/skips (`/tmp/reconciliation-ui.log`), including all 29 production routes and reconciliation/import/WARN_ONLY control policies plus Checks / Exceptions. Final `clean verify` passed **1,146 tests, zero failures/errors, 95 expected display-dependent skips**, BUILD SUCCESS in **05:55** (`/tmp/reconciliation-verify.log`). This includes the final nearest-earlier test refinement. The earlier intermittent portability/readiness failure did not recur; no recovery repair is claimed. Relative documentation links and whitespace pass. Publication preflight finds no competing task branch or PR and confirms unchanged main/base. No native owner visual acceptance or merge is claimed.
+
+User checks on disposable data: configure two banks and reconcile/finalize one statement. Start its next statement: coverage starts the following day, while the other bank still starts at its opening date. A custom close with gaps, and later reopening it, must not shift either bank's new statement coverage. Review an older outstanding check, mark cleared, match an in-range statement line and unmatch it; retain visibility and factual dates. Existing finalized sessions remain read-only. Missing bank opening date should include earlier eligible ledger/statement evidence; an ending date before a configured opening must reject without a partial session. Remaining: publication/exact-head CI and owner review/merge; C4 stays blocked.
 
 ### P10-C2 workflow period defaults — 2026-11-07 America/Denver
 
@@ -55,8 +67,8 @@ Required reading: AGENTS, this plan, [period/correction policy](accounting/perio
 
 Slice sequence (one at a time, dependent slices wait for this slice's merge):
 1. **P10-C1 DONE through merged C1/C1B and passing descendant verification (historical blocker below retained):** shared calculated boundaries for Close/Depreciation/reports, normalized desktop startup/selection, preserve selected start when Settings changes, validate new calculated close ends with historical retry/import compatibility, focused behavioral coverage and full verification.
-2. **P10-C2 VERIFYING:** align bank-export and accounting-entry/through-date defaults, preserve factual dates/custom ranges/drafts; inventory/asset/recognition/settlement usage audit.
-3. **P10-C3 BLOCKED on C2 merge:** replace reconciliation's legacy close-run coverage dependency with bank-opening/prior-session authority; cover outstanding items, custom gaps and reopened ranges.
+2. **P10-C2 DONE (merged #414, passing CI):** align bank-export and accounting-entry/through-date defaults, preserve factual dates/custom ranges/drafts; inventory/asset/recognition/settlement usage audit.
+3. **P10-C3 VERIFYING:** replace reconciliation's legacy close-run coverage dependency with bank-opening/prior-session authority; cover outstanding items, custom gaps and reopened ranges.
 4. **P10-C4 BLOCKED on C3 merge:** consistent partial/open/closed display, affected-range navigation, captured/busy reopen commands and post-success refresh without implicit reopening.
 
 Baseline compilation passed using official Maven 3.9.9 and Temurin 17.0.17+10 under `/tmp`, temporary proxy settings and a temporary dependency cache. The initial existing-test run reported one readiness-fixture failure in AtomicPeriodCloseTest (missing reconciliation session in its snapshot); all five atomic tests passed on the subsequent focused run. No production reconciliation or snapshot code is changed to conceal that observation. The first new cross-fiscal-year review fixture needed explicit budget plans for both fiscal years; corrected before acceptance, with no weakened assertion.

@@ -118,3 +118,13 @@ A transaction included in a completed reconciliation cannot be edited or deleted
 ## P26-S1 acquisition protection
 
 New bank purchases respect open dates and finalized reconciliation BANK ranges before atomic canonical entry. Exact accepted request acknowledgement performs no accounting mutation and remains available after closing/reconciliation. Historical existing-entry/register-only metadata creates no new opening ledger. Removing an accepted acquisition link requires open and unreconciled source accounting and no retained depreciation/lifecycle activity; linked basis and generic source transaction rewrites remain blocked. Use the existing lifecycle correction route for subsequent asset history. See [S1](../P26-S1-asset-acquisitions.md).
+
+## Reconciliation coverage (P10-C3)
+
+Accounting close and reopen events do not choose bank statement coverage. New
+reconciliation sessions use the same configured bank's earlier finalized statement
+end plus one day, otherwise its opening date (with earliest-evidence fallback
+when absent). Older unsettled canonical bank lines remain reviewable. Stored
+session dates and imported/finalized history stay factual. See the
+[banking balance contract](../banking/banking-and-reconciliation.md#balance-calculations).
+Reopening a close range still does not release finalized reconciliation protection.

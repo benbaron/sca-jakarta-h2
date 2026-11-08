@@ -207,7 +207,7 @@ public class BankReconciliationWorkspaceService
             {
                 Company company = companyByCode(em, command.companyCode());
                 CompanyBankAccount bankAccount = configuredBankAccount(em, command.bankAccountId(), company);
-                LocalDate startDate = reconciliationStartDate(em, company.getCode(), bankAccount, command.statementEndDate());
+                LocalDate startDate = reconciliationStartDate(em, bankAccount, command.statementEndDate());
                 sessionId = positiveId();
                 em.createNativeQuery("""
                         insert into bank_reconciliation_session
@@ -709,7 +709,7 @@ public class BankReconciliationWorkspaceService
     {
         SessionRow session = session(em, sessionId);
         CompanyBankAccount bankAccount = configuredBankAccount(em, session.bankAccountId(), session.company());
-        List<TxnSplit> ledger = ledgerLines(em, session.company(), bankAccount.getAccount(), session.startDate(), session.endDate());
+        List<TxnSplit> ledger = ledgerLines(em, session);
         List<BankStatementLine> statements = statementLines(em, bankAccount, session.startDate(), session.endDate());
         Map<Long, MatchRow> statementMatches = statementMatches(em, sessionId);
         Map<Long, MatchRow> splitMatches = splitMatches(em, sessionId);
@@ -1254,24 +1254,19 @@ public class BankReconciliationWorkspaceService
         }
     }
 
-    private static List<TxnSplit> ledgerLines(EntityManager em, Company company, Account account, LocalDate start, LocalDate end)
+    private List<TxnSplit> ledgerLines(EntityManager em, SessionRow session)
     {
-        return em.createQuery("""
-                select s from TxnSplit s
-                join fetch s.txn t
-                join fetch s.account a
-                left join fetch s.matchedBankStatementLine
-                where t.company = :company
-                  and a = :account
-                  and t.txnDate >= :start
-                  and t.txnDate <= :end
-                order by t.txnDate, s.id
-                """, TxnSplit.class)
-                .setParameter("company", company)
-                .setParameter("account", account)
-                .setParameter("start", start)
-                .setParameter("end", end)
-                .getResultList();
+        CompanyBankAccount bankAccount = configuredBankAccount(em, session.bankAccountId(), session.company());
+        Map<Long, MatchRow> matches = splitMatches(em, session.id());
+        return ledgerLinesThrough(em, session.company(), bankAccount.getAccount(), session.endDate()).stream()
+                .filter(split -> !split.getTxn().getTxnDate().isBefore(session.startDate())
+                        || outstanding(split) || matches.containsKey(split.getId()))
+                .toList();
+    }
+
+    private static boolean outstanding(TxnSplit split)
+    {
+        return !split.isBankCleared() || split.getMatchedBankStatementLine() == null;
     }
 
     private static List<TxnSplit> ledgerLinesThrough(EntityManager em, Company company, Account account, LocalDate end)
@@ -1309,18 +1304,57 @@ public class BankReconciliationWorkspaceService
                 .getResultList();
     }
 
-    private LocalDate reconciliationStartDate(EntityManager em, String companyCode, CompanyBankAccount bankAccount, LocalDate statementEnd)
+    private LocalDate reconciliationStartDate(EntityManager em, CompanyBankAccount bankAccount, LocalDate statementEnd)
     {
-        Object close = em.createNativeQuery("select max(close_date) from period_close_run where group_code = ? and status = 'COMPLETED' and close_date < ?")
-                .setParameter(1, companyCode)
-                .setParameter(2, statementEnd)
-                .getSingleResult();
-        LocalDate closeDate = dateOrNull(close);
-        if (closeDate != null)
+        if (bankAccount.getOpeningDate() != null && statementEnd.isBefore(bankAccount.getOpeningDate()))
         {
-            return closeDate.plusDays(1);
+            throw new IllegalArgumentException("Statement ending date precedes the configured bank opening date.");
         }
-        return bankAccount.getOpeningDate() == null ? statementEnd.withDayOfMonth(1) : bankAccount.getOpeningDate();
+        Object previous = em.createNativeQuery("""
+                select max(statement_end_date) from bank_reconciliation_session
+                 where company_id = ? and bank_account_id = ?
+                   and status = 'FINALIZED' and statement_end_date < ?
+                """)
+                .setParameter(1, bankAccount.getCompany().getId())
+                .setParameter(2, bankAccount.getId())
+                .setParameter(3, statementEnd)
+                .getSingleResult();
+        LocalDate previousEnd = dateOrNull(previous);
+        if (previousEnd != null)
+        {
+            return previousEnd.plusDays(1);
+        }
+        if (bankAccount.getOpeningDate() != null)
+        {
+            return bankAccount.getOpeningDate();
+        }
+        LocalDate start = statementEnd.withDayOfMonth(1);
+        LocalDate firstLedger = em.createQuery("""
+                select min(s.txn.txnDate) from TxnSplit s
+                 where s.txn.company = :company and s.account = :account and s.txn.txnDate <= :end
+                """, LocalDate.class)
+                .setParameter("company", bankAccount.getCompany())
+                .setParameter("account", bankAccount.getAccount())
+                .setParameter("end", statementEnd)
+                .getSingleResult();
+        LocalDate firstStatement = em.createQuery("""
+                select min(l.transactionDate) from BankStatementLine l
+                 where l.bankAccount = :bankAccount and l.transactionDate <= :end
+                   and l.status not in (:excluded)
+                """, LocalDate.class)
+                .setParameter("bankAccount", bankAccount)
+                .setParameter("end", statementEnd)
+                .setParameter("excluded", List.of(BankStatementLine.Status.ERROR, BankStatementLine.Status.DUPLICATE))
+                .getSingleResult();
+        if (firstLedger != null && firstLedger.isBefore(start))
+        {
+            start = firstLedger;
+        }
+        if (firstStatement != null && firstStatement.isBefore(start))
+        {
+            start = firstStatement;
+        }
+        return start;
     }
 
     private SessionRow requireMutableSession(EntityManager em, long sessionId)
@@ -1384,7 +1418,9 @@ public class BankReconciliationWorkspaceService
                     "Ledger line does not belong to the reconciliation bank account.");
         }
         LocalDate txnDate = split.getTxn() == null ? null : split.getTxn().getTxnDate();
-        if (txnDate == null || txnDate.isBefore(session.startDate()) || txnDate.isAfter(session.endDate()))
+        if (txnDate == null || txnDate.isAfter(session.endDate())
+                || (txnDate.isBefore(session.startDate()) && !outstanding(split)
+                    && !splitMatches(em, session.id()).containsKey(splitId)))
         {
             throw new IllegalArgumentException(
                     "Ledger line is outside the reconciliation statement date range.");

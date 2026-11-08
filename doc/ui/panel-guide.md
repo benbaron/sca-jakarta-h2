@@ -132,7 +132,10 @@ transaction for correction.
 Work through Setup, Statement, Match and Review. Enter a manual statement line or
 open Import Preview for OFX/QFX, mapped CSV or normalized bank CSV. QIF is not a
 supported production import format. Select the intended configured bank account
-and statement dates before matching.
+and statement dates before matching. New coverage continues after that bank's
+nearest earlier finalized statement, or starts at its configured opening date.
+Accounting close/reopen dates do not shorten it. Older unsettled ledger items
+remain available for review; settled predecessor items stay outside the comparison.
 
 ## Bank Reconciliation: matching and continuation
 
