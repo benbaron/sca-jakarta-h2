@@ -280,6 +280,145 @@ public class BankReconciliationMutationIntegrityTest
         }
     }
 
+    @Test
+    void legacyClosesCustomGapsAndReopeningNeverAdvanceBankCoverage(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("close-independent-coverage")))
+        {
+            seed(jpa);
+            execute(jpa, "insert into period_close_run (id, group_code, close_date, status) values "
+                    + "(RANDOM_UUID(), 'SCA', DATE '2026-03-20', 'COMPLETED')");
+            execute(jpa, "insert into period_close_range (id, company_code, start_date, end_date, range_kind, status, closed_by) values "
+                    + "(RANDOM_UUID(), 'SCA', DATE '2026-03-01', DATE '2026-03-10', 'CUSTOM', 'CLOSED', 'tester'), "
+                    + "(RANDOM_UUID(), 'SCA', DATE '2026-03-20', DATE '2026-03-25', 'CUSTOM', 'CLOSED', 'tester')");
+            BankReconciliationWorkspaceService service = new BankReconciliationWorkspaceService(jpa);
+            long original = startMarch(service);
+            assertEquals(LocalDate.of(2026, 3, 1), service.load(original).statementStartDate());
+            assertEquals(STATEMENT, service.load(original).statementEntries().get(0).statementLineId());
+            assertEquals(BANK_SPLIT, service.load(original).ledgerLines().get(0).splitId());
+            execute(jpa, "update period_close_range set status = 'REOPENED', reopened_by = 'tester', reopened_at = CURRENT_TIMESTAMP");
+            assertEquals(LocalDate.of(2026, 3, 1), service.load(startMarch(service)).statementStartDate());
+            assertEquals(LocalDate.of(2026, 3, 1), service.load(original).statementStartDate());
+        }
+    }
+
+    @Test
+    void onlyEarlierFinalizedSessionsForThisConfiguredBankAdvanceCoverage(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("bank-specific-coverage")))
+        {
+            seed(jpa);
+            BankReconciliationWorkspaceService service = new BankReconciliationWorkspaceService(jpa);
+            long original = finalizedMarch(service);
+            execute(jpa, "insert into bank_reconciliation_session (id, company_id, bank_account_id, statement_start_date, statement_end_date, status) values "
+                    + "(8001, 200, 3002, DATE '2026-03-01', DATE '2026-04-20', 'FINALIZED'), "
+                    + "(8002, 210, 3101, DATE '2026-03-01', DATE '2026-04-25', 'FINALIZED'), "
+                    + "(8003, 200, 3001, DATE '2026-04-01', DATE '2026-04-29', 'UNRESOLVED'), "
+                    + "(8004, 200, 3001, DATE '2026-06-01', DATE '2026-06-30', 'FINALIZED'), "
+                    + "(8005, 200, 3001, DATE '2026-02-01', DATE '2026-02-28', 'FINALIZED'), "
+                    + "(8006, 200, 3001, DATE '2026-04-01', DATE '2026-04-28', 'BALANCED'), "
+                    + "(8007, 200, 3001, DATE '2026-04-01', DATE '2026-04-27', 'IN_PROGRESS'), "
+                    + "(8008, 200, 3001, DATE '2026-04-01', DATE '2026-04-30', 'FINALIZED')");
+            var next = service.start(new StartCommand("SCA", CHECKING_CBA, LocalDate.of(2026, 4, 30),
+                    new BigDecimal("-25.75"), ClearedStatePolicy.WARN_ONLY, "April"));
+            assertEquals(LocalDate.of(2026, 4, 1), next.statementStartDate());
+            assertTrue(next.ledgerLines().isEmpty(), "Settled predecessor splits stay outside the next comparison");
+            var explicit = service.startSuccessor(new SuccessorCommand(original, LocalDate.of(2026, 4, 30),
+                    new BigDecimal("-25.75"), null, null, "tester", "Continue March"));
+            assertEquals(next.statementStartDate(), explicit.statementStartDate());
+            assertEquals(0, next.balances().beginningBalance().compareTo(new BigDecimal("-25.75")));
+            assertEquals(0, next.balances().difference().signum());
+            assertEquals(SessionStatus.FINALIZED, service.load(original).status());
+        }
+    }
+
+    @Test
+    void olderOutstandingSplitRemainsReviewableAfterClearingMatchingAndRestart(@TempDir Path tempDir)
+    {
+        Path db = tempDir.resolve("outstanding-carry");
+        long sessionId;
+        long statementId;
+        try (Jpa jpa = new Jpa(db))
+        {
+            seed(jpa);
+            BankReconciliationWorkspaceService service = new BankReconciliationWorkspaceService(jpa);
+            finalizedMarch(service);
+            seedSecondCheckingTransaction(jpa);
+            var next = service.start(new StartCommand("SCA", CHECKING_CBA, LocalDate.of(2026, 4, 30),
+                    new BigDecimal("-35.75"), ClearedStatePolicy.WARN_ONLY, "Outstanding March check"));
+            sessionId = next.sessionId();
+            assertEquals(LocalDate.of(2026, 4, 1), next.statementStartDate());
+            assertEquals(5003L, next.ledgerLines().get(0).splitId());
+            assertEquals(0, next.balances().beginningBalance().compareTo(new BigDecimal("-35.75")));
+            assertEquals(0, next.balances().bookBalanceAllTransactions().compareTo(new BigDecimal("-35.75")));
+            assertThrows(IllegalArgumentException.class, () -> service.markCleared(sessionId, BANK_SPLIT));
+            service.markCleared(sessionId, 5003L);
+            assertEquals(5003L, service.load(sessionId).ledgerLines().get(0).splitId(),
+                    "Cleared but unmatched outstanding items remain reviewable");
+            var manual = service.addManualLine(new ManualStatementLineCommand(sessionId,
+                    LocalDate.of(2026, 4, 16), new BigDecimal("-10.00"), "March check clears", "manual"));
+            statementId = manual.statementEntries().get(0).statementLineId();
+            service.matchSelected(sessionId, statementId, 5003L, false);
+            assertEquals(5003L, service.load(sessionId).ledgerLines().get(0).splitId());
+            assertEquals(0, service.load(sessionId).balances().difference().signum());
+        }
+        try (Jpa jpa = new Jpa(db))
+        {
+            BankReconciliationWorkspaceService service = new BankReconciliationWorkspaceService(jpa);
+            assertEquals(LocalDate.of(2026, 4, 1), service.load(sessionId).statementStartDate());
+            assertEquals(5003L, service.load(sessionId).ledgerLines().get(0).splitId());
+            service.unmatchSelected(sessionId, statementId, 5003L);
+            assertEquals(5003L, service.load(sessionId).ledgerLines().get(0).splitId());
+            assertEquals(0L, relationshipCount(jpa, sessionId, statementId, 5003L));
+        }
+    }
+
+    @Test
+    void missingOpeningDateIncludesEarlierLedgerAndStatementEvidence(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("missing-opening-evidence")))
+        {
+            seed(jpa);
+            execute(jpa, "update company_bank_account set opening_date = null where id = 3001");
+            execute(jpa, "update txn set txn_date = DATE '2025-12-31' where id = 4001");
+            execute(jpa, "update bank_statement_line set transaction_date = DATE '2025-12-30' where id = 7001");
+            BankReconciliationWorkspaceService service = new BankReconciliationWorkspaceService(jpa);
+            var first = service.load(startMarch(service));
+            assertEquals(LocalDate.of(2025, 12, 30), first.statementStartDate());
+            assertEquals(1, first.ledgerLines().size());
+            assertEquals(1, first.statementEntries().size());
+            execute(jpa, "update bank_statement_line set status = 'ERROR' where id = 7001");
+            assertEquals(LocalDate.of(2025, 12, 31), service.load(startMarch(service)).statementStartDate());
+            execute(jpa, "update txn set txn_date = DATE '2026-04-01' where id = 4001");
+            assertEquals(LocalDate.of(2026, 3, 1), service.load(startMarch(service)).statementStartDate());
+            assertEquals(LocalDate.of(2025, 12, 30), service.load(first.sessionId()).statementStartDate(),
+                    "Later evidence changes never rewrite an existing session's dates");
+        }
+    }
+
+    @Test
+    void endingBeforeBankOpeningRejectsWithoutCreatingSession(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("before-opening")))
+        {
+            seed(jpa);
+            BankReconciliationWorkspaceService service = new BankReconciliationWorkspaceService(jpa);
+            assertThrows(IllegalArgumentException.class, () -> service.start(new StartCommand("SCA", CHECKING_CBA,
+                    LocalDate.of(2026, 2, 28), BigDecimal.ZERO, ClearedStatePolicy.WARN_ONLY, null)));
+            assertEquals(0L, count(jpa, "bank_reconciliation_session"));
+        }
+    }
+
+    private static void execute(Jpa jpa, String sql)
+    {
+        try (var em = jpa.em())
+        {
+            em.getTransaction().begin();
+            em.createNativeQuery(sql).executeUpdate();
+            em.getTransaction().commit();
+        }
+    }
+
     private static long startMarch(BankReconciliationWorkspaceService service)
     {
         return service.start(new StartCommand(

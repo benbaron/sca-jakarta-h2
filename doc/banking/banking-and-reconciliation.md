@@ -82,18 +82,30 @@ For the selected bank account and statement/as-of date, it reads all ledger tran
 
 ## Balance calculations
 
-For the selected bank account and date, reconciliation calculates from the most recent period close before the statement date through the selected date:
+For a new session, statement coverage starts the day after the nearest earlier
+FINALIZED session ending date for the same company and configured bank account.
+Without such a session, use the configured opening date. If that date is absent,
+use the earlier of the statement-ending month's first day and the earliest
+canonical bank-split or eligible statement date through the requested ending date.
+Reject a statement ending before the configured opening date. Mutable sessions,
+other banks/companies, legacy close runs, custom closed ranges, gaps and reopened
+ranges do not advance statement coverage. Explicit successors continue from their
+selected finalized predecessor and retain their existing audit trail.
 
-1. beginning balance from the most recent closed period ending before the statement date;
-2. activity after that close date through the statement date;
-3. ending book balance at the statement date.
+Beginning book balance is configured opening balance plus canonical bank activity
+before the stored session start; ending book balance includes all activity through
+the statement end. Cleared book balance includes only cleared bank splits through
+that end, plus opening balance. These balances are recalculated from the ledger,
+not copied from close snapshots or predecessor statement balances.
 
-It produces two balances:
-
-- all relevant transactions;
-- only transactions whose bank ledger line is marked cleared.
-
-Balances are recalculated rather than read from immutable period-balance snapshots.
+The ledger comparison includes in-range splits and older unsettled splits (uncleared
+or lacking a statement relationship). Once included, a current-session relationship
+keeps an older split visible and available for symmetric unmatch. Older settled
+splits stay outside the new comparison. Imported statements remain bounded by the
+stored session dates. Existing difference/finalization and correction protections
+still apply; carrying an outstanding item does not declare it resolved. Existing
+session dates, finalized history and interchange facts are never rewritten.
+Accounting close/reopen governs accounting writes, not bank statement coverage.
 
 ## Cleared state
 
