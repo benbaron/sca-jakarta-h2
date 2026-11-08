@@ -4,14 +4,16 @@ active_phase: P10
 active_slice: P10-C2
 active_status: VERIFYING
 active_branch: codex/P10-C2-period-usage-defaults
-active_pull_request: null
-active_head: 5195319dfb74f18993f3ea7e09fa6d8db0312295
-next_action: "Publish P10-C2 as a fresh draft, verify remote head/tree and CI, then owner reviews/merges before C3 reconciliation coverage begins."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/414
+active_head: 50ec061a2d7d3d4fd0e317ad9af80bc35252d88a
+next_action: "Inspect final-head CI on draft PR 414 and complete owner review/merge before activating P10-C3 reconciliation coverage."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P10-C2 workflow period defaults — 2026-11-07 America/Denver
+
+Published implementation `50ec061a2d7d3d4fd0e317ad9af80bc35252d88a`, tree `c5d2509539267783b0ee72fa7eb61c0c44ec3e05`, on `codex/P10-C2-period-usage-defaults` and opened [draft PR #414](https://github.com/benbaron/sca-jakarta-h2/pull/414). Native fetch confirms identical implementation commits/trees; connected PR metadata confirms its head. This following documentation-only commit records the publication. Local validation is complete as below; final-head CI and owner review/merge remain pending. C2 is VERIFYING; C3 remains blocked on its merge. No merge is authorized.
 
 Owner requests the next slice. Connected metadata and native fetch confirm #413 merged at current main `5195319dfb74f18993f3ea7e09fa6d8db0312295`, containing accepted head `e55d3eb36fe353db04c6709da6979c5661037a6e`. Exact-head workflow `42431395779` completed successfully; recorded local final verification passed 1,135 tests and 15 separate display tests. C1/C1B code and descendant validation are merged; the earlier C1 readiness failure is historical, not a claim of a recovery repair. Owner advancement selects C2 on clean fresh `codex/P10-C2-period-usage-defaults`; no native owner visual result is invented. C3/C4 remain outside this slice.
 
