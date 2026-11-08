@@ -4,14 +4,16 @@ active_phase: P10
 active_slice: P10-C1
 active_status: BLOCKED
 active_branch: codex/P10-C1-period-consistency
-active_pull_request: null
-active_head: 3c259ff0d155f0ebc136c4dbc65f5e95312691a2
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/412
+active_head: e0745ebbe559c1fbc875a3a0d053e82bc9e80b76
 next_action: "Diagnose the preexisting snapshot/readiness discrepancy reproduced on untouched main; retain C1 changes and rerun clean verification after the prerequisite is resolved."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P10-C1 period consistency correction — 2026-11-07 America/Denver
+
+Publication: implementation commit `e0745ebbe559c1fbc875a3a0d053e82bc9e80b76`, tree `071a1a13bf20a5474d984ac0c2b7b35176f48b10`, is pushed to `codex/P10-C1-period-consistency` and [draft PR #412](https://github.com/benbaron/sca-jakarta-h2/pull/412). Native fetch and connected PR metadata confirm the implementation head; local and fetched trees match. This following documentation-only commit records the PR and publication evidence. The prior uncommitted/unpublished statements below describe the implementation handoff, not the present publication state. C1 remains BLOCKED on readiness/full verification; exact-head GitHub CI and owner review are pending. No merge is authorized.
 
 Owner explicitly authorizes GitHub publication. Publication preflight confirms the 19-file working tree is the previously reviewed C1 slice, local base and freshly fetched main both equal `3c259ff0d155f0ebc136c4dbc65f5e95312691a2`, and no remote task branch or matching PR exists. Commit and push this slice without force and create a draft PR carrying the known full-verification blocker. The prior 21 focused and 86 production UI passes remain recorded evidence; they were not rerun for this publication-only action, and the prior temporary logs are no longer present in the resumed environment. No source/test behavior changes are added during publication. C1 remains BLOCKED, and no merge is authorized.
 
