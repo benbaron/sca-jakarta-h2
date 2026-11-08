@@ -4,14 +4,16 @@ active_phase: P10
 active_slice: P10-C1B
 active_status: VERIFYING
 active_branch: codex/P10-C1B-contextual-period-selector
-active_pull_request: null
-active_head: c6ee1c43aa471e0609fc354ca2c84e34b60e8367
-next_action: "Publish the verified contextual period-selector slice as a fresh draft PR, verify its head/tree and CI, and obtain owner desktop review; do not merge automatically."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/413
+active_head: aee630a0e20d476f54ebd170a12d5a77b448968a
+next_action: "Inspect final-head CI on draft PR 413 and obtain owner desktop review of Period Close and the simplified toolbar; do not merge automatically."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P10-C1B contextual accounting-period selector — 2026-11-07 America/Denver
+
+Published implementation `aee630a0e20d476f54ebd170a12d5a77b448968a`, tree `79a12cc6f1677efab0be94935baf32f6b88467f1`, to `codex/P10-C1B-contextual-period-selector` and opened [draft PR #413](https://github.com/benbaron/sca-jakarta-h2/pull/413). Native fetch confirms identical local/remote implementation commits and trees; connected PR metadata confirms its head. This following documentation-only commit records publication. Local verification is complete as below; final-head CI and owner desktop review remain pending. No merge is authorized.
 
 Owner explicitly requests moving the period selector/Set Active Period action into one applicable accounting context because global placement is confusing. This amends the prior top-chrome requirement in AGENTS, UI rules and period policy. Connected PR metadata and native fetch confirm #412 merged at current main `c6ee1c43aa471e0609fc354ca2c84e34b60e8367`; its implementation is present, while its recorded readiness verification issue is not assumed resolved by merge. A clean worktree starts fresh `codex/P10-C1B-contextual-period-selector`; do not reuse the merged C1 branch.
 
