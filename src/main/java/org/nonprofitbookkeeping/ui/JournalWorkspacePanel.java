@@ -106,6 +106,7 @@ public final class JournalWorkspacePanel implements AppPanel
     private final ComboBox<TransactionLineEditorModel.Option> payeeBox = new ComboBox<>();
     private final ComboBox<TransactionLineEditorModel.Option> bankAccountBox = new ComboBox<>();
     private final Label status = new Label("Journal is ready.");
+    private final javafx.scene.control.Hyperlink closedRangeLink = PeriodCloseNavigation.failureLink("journalClosedRangeLink");
     private final Label editorMode = new Label("New journal entry");
     private final Label transactionIdentity = new Label("Unsaved");
     private final Label transactionStatus = new Label("ENTERED after save");
@@ -239,7 +240,8 @@ public final class JournalWorkspacePanel implements AppPanel
         fundFilter.setOnAction(event -> reloadJournal());
         eventFilter.setOnAction(event -> reloadJournal());
 
-        VBox header = new VBox(6, title, filters, actions, status, new Separator());
+        status.textProperty().addListener((observable, oldText, text) -> closedRangeLink.setVisible(false));
+        VBox header = new VBox(6, title, filters, actions, status, closedRangeLink, new Separator());
         ScrollPane headerScroll = scrollable(header, true);
         headerScroll.setId("journalWorkspaceFiltersScroll");
         headerScroll.setPrefHeight(155);
@@ -1154,6 +1156,7 @@ public final class JournalWorkspacePanel implements AppPanel
             return;
         }
 
+        String operationDatabase = PeriodCloseNavigation.database();
         TransactionEntryService service = UiServiceRegistry.transactionEntry();
         Long targetId = editTransactionId;
         UUID requestId = createRequestId;
@@ -1180,6 +1183,7 @@ public final class JournalWorkspacePanel implements AppPanel
                 ex -> {
                     setSaveInProgress(false);
                     status.setText("Save failed: " + UiErrors.safeMessage(ex));
+                    PeriodCloseNavigation.showFailure(closedRangeLink, ex, operationDatabase);
                 });
     }
 
@@ -1429,6 +1433,7 @@ public final class JournalWorkspacePanel implements AppPanel
             status.setText("Select or load a saved transaction before deleting or reversing.");
             return;
         }
+        String operationDatabase = PeriodCloseNavigation.database();
         CorrectionMethod method = MainWindow.sharedSessionState().preferences().correctionMethod();
         if (method == CorrectionMethod.DIRECT_EDIT)
         {
@@ -1454,7 +1459,8 @@ public final class JournalWorkspacePanel implements AppPanel
                         reloadJournal();
                         status.setText("Deleted transaction #" + deletedId + ".");
                     },
-                    ex -> status.setText("Delete failed for transaction #" + targetId + ": " + UiErrors.safeMessage(ex)));
+                    ex -> { status.setText("Delete failed for transaction #" + targetId + ": " + UiErrors.safeMessage(ex));
+                        PeriodCloseNavigation.showFailure(closedRangeLink, ex, operationDatabase); });
         }
         else
         {
@@ -1478,7 +1484,8 @@ public final class JournalWorkspacePanel implements AppPanel
                         status.setText("Created reversing transaction #" + result.reversalTransactionId()
                                 + " for original transaction #" + targetId + ".");
                     },
-                    ex -> status.setText("Reversal failed for transaction #" + targetId + ": " + UiErrors.safeMessage(ex)));
+                    ex -> { status.setText("Reversal failed for transaction #" + targetId + ": " + UiErrors.safeMessage(ex));
+                        PeriodCloseNavigation.showFailure(closedRangeLink, ex, operationDatabase); });
         }
     }
 

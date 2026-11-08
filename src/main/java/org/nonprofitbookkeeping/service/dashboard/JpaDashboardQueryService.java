@@ -587,37 +587,12 @@ public class JpaDashboardQueryService implements DashboardQueryService
             Company company,
             FiscalPeriodRange fiscalRange)
     {
-        Number covering = (Number) em.createNativeQuery("""
-                SELECT COUNT(*)
-                FROM period_close_range
-                WHERE company_id = ?1
-                  AND status = 'CLOSED'
-                  AND start_date <= ?2
-                  AND end_date >= ?3
-                """)
-                .setParameter(1, company.getId())
-                .setParameter(2, Date.valueOf(fiscalRange.periodStart()))
-                .setParameter(3, Date.valueOf(fiscalRange.periodEnd()))
-                .getSingleResult();
-        Number overlapping = (Number) em.createNativeQuery("""
-                SELECT COUNT(*)
-                FROM period_close_range
-                WHERE company_id = ?1
-                  AND status = 'CLOSED'
-                  AND start_date <= ?3
-                  AND end_date >= ?2
-                """)
-                .setParameter(1, company.getId())
-                .setParameter(2, Date.valueOf(fiscalRange.periodStart()))
-                .setParameter(3, Date.valueOf(fiscalRange.periodEnd()))
-                .getSingleResult();
         int periodNumber = Math.toIntExact(
                 ChronoUnit.MONTHS.between(
                         YearMonth.from(fiscalRange.fiscalYearStart()),
                         YearMonth.from(fiscalRange.periodStart())) + 1L);
-        String status = covering.longValue() > 0L
-                ? "CLOSED"
-                : overlapping.longValue() > 0L ? "PARTIALLY_CLOSED" : "OPEN";
+        String status = org.nonprofitbookkeeping.service.PeriodCloseRangeService.coverage(
+                em, company.getCode(), fiscalRange.periodStart(), fiscalRange.periodEnd()).status().name();
         return new DashboardSnapshot.PeriodSummary(
                 Optional.of(fiscalRange.fiscalYear()),
                 Optional.of(periodNumber),

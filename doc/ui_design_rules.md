@@ -140,3 +140,19 @@ These rules apply retroactively to UI surfaces delivered by completed phases. A 
 - P02 services remain the authority for accounting data and internal precision; UI money/date format correction must never alter service command precision, entity precision, or persisted date types.
 - P03 Journal workspace uses the table, money, date, Delete, split-pane, period, and tooltip rules through its production compliance layer.
 - P04 budget surfaces and later table-heavy panels must implement sortable/resizable/reorderable table columns with per-company saved state before those panels are considered design-rule complete.
+
+### P10-C4 close-state and affected-range interaction
+
+Period Close and the Dashboard Cash card use the shared inclusive closed-range
+coverage projection: Open, Partially closed, Closed. Adjacent closed ranges can
+cover the whole selected period; reopened history does not count. Show textual
+state with company-formatted dates. The Dashboard link and Journal closed-date
+error link navigate to actual range/history rows without applying period defaults,
+discarding drafts, reopening or retrying accounting commands. Keep these controls
+in their existing sections and preserve horizontal/vertical overflow.
+
+Close/reopen commands capture their service, scope and inputs on the FX thread.
+Disable conflicting commands while busy, retain rejected inputs, ignore stale
+loads and refresh current range/history/coverage after success. Invalidate old
+readiness/review observations; never silently save a review or clear another
+company/database draft. Dashboard reloads when shown again.

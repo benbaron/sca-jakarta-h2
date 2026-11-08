@@ -488,6 +488,24 @@ public class PeriodCloseRangeService
         }
     }
 
+    /** Shared company-scoped coverage projection; never changes close state. */
+    public static PeriodCloseCoverage coverage(EntityManager em, String companyCode, LocalDate start, LocalDate end)
+    {
+        Long companyId = requireCompanyId(em, normalizeCompanyCode(companyCode));
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = em.createNativeQuery("SELECT " + RANGE_COLUMNS + """
+                FROM period_close_range
+                WHERE company_id = ? AND status = 'CLOSED'
+                  AND start_date <= ? AND end_date >= ?
+                ORDER BY start_date, end_date, id
+                """)
+                .setParameter(1, companyId)
+                .setParameter(2, Date.valueOf(end))
+                .setParameter(3, Date.valueOf(start))
+                .getResultList();
+        return PeriodCloseCoverage.of(start, end, rows.stream().map(PeriodCloseRangeService::mapRange).toList());
+    }
+
     public PeriodCloseRangeView loadRange(UUID rangeId)
     {
         UUID id = Objects.requireNonNull(rangeId, "rangeId");

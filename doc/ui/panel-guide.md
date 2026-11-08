@@ -256,7 +256,8 @@ when the scope or underlying records change.
 
 Select an accounting month and choose **Set Active Period** to set shared defaults
 for transaction entry, depreciation, Dashboard and following report ranges. The
-local date range shows the applied period. Existing drafts and custom date ranges
+local date range shows the applied period and its Open / Partially closed / Closed
+state. Adjacent closed ranges may cover the whole period. Existing drafts and custom date ranges
 are retained. **Use Active Period** separately copies that range into the close
 dates. Neither selection action closes or reopens a range.
 
@@ -269,6 +270,13 @@ deleted; start a new review to correct them. Blockers remain blockers.
 Save Closed Range requires a current matching review, zero blockers and reasons
 for every warning. The close operation rechecks the accounting content before
 saving. A reopened range needs a new review before closing again.
+
+Reopen Selected acts on the selected stored range. Commands are unavailable while
+a close or reopen is running; rejected inputs remain for correction. The result
+refreshes current range/history/coverage. Dashboard's Cash Balances period link
+shows the same state and opens matching ranges. Journal closed-date errors offer
+View Closed Range, which selects the exact blocking range without discarding the
+entry draft. Navigation never reopens a range or retries the accounting operation.
 
 ## Audit History
 

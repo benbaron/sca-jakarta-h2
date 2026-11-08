@@ -94,6 +94,64 @@ class JournalPaymentReferencesTest
     }
 
     @Test
+    void closedDateSaveOffersExactRangeNavigationAndRetainsAccountingDraft() throws Exception
+    {
+        org.nonprofitbookkeeping.service.PeriodCloseRangeView closed;
+        Path database = Path.of(MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
+        try (var jpa = new org.nonprofitbookkeeping.persistence.Jpa(database))
+        {
+            closed = org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa, "DEFAULT",
+                    java.time.LocalDate.of(2026, 2, 1), java.time.LocalDate.of(2026, 2, 28), "CUSTOM", "tester", "Closed February");
+        }
+        FxTestSupport.onFx(() ->
+        {
+            panel = new JournalWorkspaceCompliancePanel();
+            stage = new Stage(); stage.setScene(new Scene(new VBox(panel.root()), 950, 700)); stage.show();
+            return null;
+        });
+        await(() -> choices("journalSelectedFund").getItems().size() >= 2);
+        int before = UiServiceRegistry.transactionEntry().search(null, null, "", 100).size();
+        var context = new java.util.concurrent.atomic.AtomicReference<String>();
+        FxTestSupport.onFx(() ->
+        {
+            ((DatePicker) panel.root().lookup("#journalEntryDate")).setValue(java.time.LocalDate.of(2026, 2, 10));
+            var bank = table().getItems().get(0); var income = table().getItems().get(1);
+            bank.setAccount(new TransactionLineEditorModel.Option(fixture.bank(), "1000", "Bank"));
+            bank.setFund(new TransactionLineEditorModel.Option(fixture.source(), "GENERAL", "General")); bank.setDebit("12.00");
+            income.setAccount(new TransactionLineEditorModel.Option(fixture.income(), "4000", "Income"));
+            income.setFund(bank.getFund()); income.setCredit("12.00");
+            DrillThroughCoordinator.configureOpener(id ->
+            {
+                assertEquals(AppPanelId.PERIOD_CLOSE_RUNS, id);
+                context.set(DrillThroughCoordinator.consumeContext(id));
+            });
+            button("journalWorkspaceSaveButton").fire();
+            return null;
+        });
+        await(() -> panel.root().lookup("#journalClosedRangeLink").isVisible());
+        FxTestSupport.onFx(() ->
+        {
+            var link = (javafx.scene.control.Hyperlink) panel.root().lookup("#journalClosedRangeLink");
+            var header = (javafx.scene.control.ScrollPane) panel.root().lookup("#journalWorkspaceFiltersScroll");
+            header.setVvalue(header.getVmax()); panel.root().applyCss(); ((javafx.scene.Parent) panel.root()).layout();
+            var viewport = header.lookup(".viewport");
+            var clip = viewport.localToScene(viewport.getLayoutBounds());
+            var bounds = link.localToScene(link.getBoundsInLocal());
+            assertTrue(bounds.getMinY() >= clip.getMinY() - 1 && bounds.getMaxY() <= clip.getMaxY() + 1,
+                    "Affected-range navigation must be reachable in the scrolled header");
+            link.fire();
+            assertTrue(panel.hasUnsavedChanges());
+            assertEquals("12.00", table().getItems().get(0).getDebit());
+            assertEquals("12.00", table().getItems().get(1).getCredit());
+            assertEquals(java.time.LocalDate.of(2026, 2, 10), ((DatePicker) panel.root().lookup("#journalEntryDate")).getValue());
+            assertEquals(closed.id(), PeriodCloseNavigation.parse(context.get()).orElseThrow().rangeId());
+            return null;
+        });
+        assertEquals(before, UiServiceRegistry.transactionEntry().search(null, null, "", 100).size());
+        assertTrue(UiServiceRegistry.periodCloseRangeService().loadRange(closed.id()).closed());
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void expenseFunctionChoiceIsExposedInTheRealSharedJournal() throws Exception
     {
