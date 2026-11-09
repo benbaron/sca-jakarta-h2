@@ -4,14 +4,16 @@ active_phase: P29
 active_slice: P29-C6
 active_status: VERIFYING
 active_branch: codex/P29-C6-application-icon
-active_pull_request: null
-active_head: 7a10e9e29c321e60262b051f7e9d4bde3c536a1d
-next_action: "Publish the verified application icon as a draft, inspect exact-head CI and obtain native owner review; await the missing second UI item."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/418
+active_head: cd9fb47345ac98baab55b68cf984356bd67fd3da
+next_action: "Inspect final-head CI on draft PR 418 and obtain native owner review/merge; await the missing second UI item."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P29-C6 native application icon — 2026-11-08 America/Denver
+
+Publication: implementation `cd9fb47345ac98baab55b68cf984356bd67fd3da`, tree `451ff175d97992f576b582234169341d1401d7f0`, is published on `codex/P29-C6-application-icon` in [draft PR #418](https://github.com/benbaron/sca-jakarta-h2/pull/418). Native fetch and connected metadata confirm commit/tree and PR head. This following documentation-only commit records publication. Local verification is complete as below; exact final-head CI, native owner checks and review/merge remain pending. P29-C6 stays VERIFYING. The missing second UI item remains an unanswered clarification; do not infer it. No merge authorized.
 
 Owner requests a drawn application icon displayed through the correct JavaFX API, with native OS placement. This is an explicit P29 presentation correction, independent of the completed period sequence and pending documentation-only #417. Fresh `codex/P29-C6-application-icon` starts from main `7a10e9e29c321e60262b051f7e9d4bde3c536a1d`; worktree was clean. The owner's trailing “2.” has no content; clarification is pending and no second change is inferred. Required reading: AGENTS, PLAN, UI rules/interface matrix/editor guidelines and P29 presentation contract. Required inspection: FxMain/MainApp startup, production window/presentation tests, existing resources and build packaging. No icon was installed. Use the existing primary Stage's `getIcons()` list before show, plus the supported desktop Taskbar ICON_IMAGE facility where available; JavaFX alone does not control macOS Dock branding. Preserve native placement, decorations, startup and financial/security behavior. [Icon contract and owner checks](P29-C6-application-icon.md). Baseline compilation passed in 11 seconds. Original editable Java2D vector artwork generates seven transparent PNG sizes (16–512px), with no new production dependency. MainApp installs them through Stage.getIcons before showing the primary window; supported Taskbar ICON_IMAGE branding uses the 512px asset. Optional native rejection logs a warning and retains window branding. The resource contract passed; final focused resource/actual-Stage/launcher acceptance passed **6 tests, zero failures/errors/skips** (`/tmp/app-icon-ui.log`, 26 seconds), including repeated-install replacement, image decoding/transparency and actual root painting/pulses. The 256px artwork was inspected. Both existing Linux and Windows presentation selectors already include the enhanced actual-Stage test. Final `clean verify` passed **1,158 tests, zero failures/errors, 102 expected display-dependent skips**, BUILD SUCCESS in **06:01** (`/tmp/app-icon-verify.log`). The packaged JAR includes all seven PNGs and ApplicationIcon; document targets and whitespace pass. The known readiness-snapshot failure did not recur; no recovery repair is claimed. No native taskbar/Dock visual acceptance is claimed. No second UI request has arrived. Remaining: draft publication/exact-head CI, owner native checks and review/merge; no merge authorized.
 
