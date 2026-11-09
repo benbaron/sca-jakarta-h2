@@ -1,15 +1,25 @@
 ---
-plan_version: 461
-active_phase: P10
-active_slice: P10-C4
+plan_version: 464
+active_phase: P29
+active_slice: P29-C7
 active_status: VERIFYING
-active_branch: codex/P10-C4-period-state-reopen
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/416
-active_head: 456c00c07cc29a37dbfe5cc011a55d8c95a0a97a
-next_action: "Inspect final-head CI on draft PR 416 and complete owner review/merge before marking P10-C4 and the corrective sequence DONE."
+active_branch: codex/P29-C7-resizable-panel-headers
+active_pull_request: null
+active_head: 7a10e9e29c321e60262b051f7e9d4bde3c536a1d
+next_action: "Publish the locally verified header-resize draft, inspect exact-head CI and obtain owner review/merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P29-C7 resizable control headers — 2026-11-08 America/Denver
+
+Owner requests a horizontal divider between Merchants' cramped top header and its table, then explicitly expands scope to all panels with the same issue. This selects an independent P29-C7 correction from main `7a10e9e29c321e60262b051f7e9d4bde3c536a1d`, clean fresh `codex/P29-C7-resizable-panel-headers`. The icon remains separately pending in #418; no dependency or merge is inferred. Read AGENTS, PLAN, UI rules/interface matrix/editor guidelines and the P29 two-business-section contract. Inspect all 29 canonical factory destinations plus nested Administration tabs, fixed header ScrollPanes, PanelViewport, company split state, Merchants and production geometry/policy tests. No accounting, service mutation, schema or record lifecycle change.
+
+Audit: Merchants, Activities, Budget Categories, Counterparties, Fund Transfers, NMR Policies and Opening Conversion place a scrollable header above a separately resizable workspace with no divider at that boundary. BorderPane action/form headers (including Assets, Import Preview and Period Close) have the same inability to resize independently; Assets/Activities also cap header/action height. Journal already has a header/table divider and must retain it. Pure title/status strips are not expandable control panes. [Scope, design and owner checks](P29-C7-resizable-panel-headers.md).
+
+Use shared production viewport preparation to give action/form headers a real vertical SplitPane (horizontal handle), retaining the original controls/controller and existing business split. Persist the new independent divider by company/database with a stable route/tab path. Header controls remain chrome, not an additional business/data section: the two-major-section rule still applies to the body. Remove restrictive header scroll caps, retain both-axis overflow and computed content minimums, and avoid wrapping an already resizable header a second time. Baseline compilation passed in 14 seconds. Shared keyed viewport preparation now installs the header divider across 23 of 29 canonical routes, including nested Administration and Checks / Exceptions. Fixed maximum scroll heights are released; both-axis scroll and the same controller/body split are retained. New divider keys use bounded, deterministic route/tab identities in existing company-owned UI state with stale-scope guards. Existing body keys are unchanged.
+
+Existing route/Merchants/viewport acceptance passed before the expanded tests. The native mouse-drag and 13px/18px overflow cases passed on first execution; a new restoration assertion initially compared the requested body ratio with JavaFX's adjusted ratio. It now compares the actual laid-out/saved position and verifies independent header/body restoration. The subsequent five-test Merchants/period-geometry run passed with zero failures/errors/skips (`/tmp/header-resize-geometry-final.log`). Period geometry now checks the owning header ScrollPane's actual horizontal scrollbar rather than the superseded whole-panel owner; full-text and right-edge reachability assertions are retained. Reviewed real expanded Merchants and narrow 18px overflow snapshots in `/tmp/header-resize-preview`. The **entire UI package passed 355 tests, zero failures/errors/skips** across 137 classes, in **08:49**, using isolated JVMs (`/tmp/header-resize-ui-all.log`). This includes every production route, the audited 23 affected destinations and 28 distinct control headers, actual native dragging, narrow/large-font overflow, state restore, original body split and draft/Save/permission regressions. New geometry coverage is in MerchantsPanelTest and already included in the production JavaFX workflow selector; no workflow change is needed. Final `clean verify` passed **1,159 tests, zero failures/errors, 104 expected display-dependent skips**, BUILD SUCCESS in **06:13** (`/tmp/header-resize-verify.log`). The 355-test display run separately passed every UI case without skips or uncaught FX/pool-timeout errors. The known readiness failure did not recur; no recovery repair is claimed. Final whitespace, document targets and scope review pass; generated build artifacts were preserved and are excluded. Publication preflight confirms unchanged main/base and no competing branch/PR. Publication/exact-head CI and owner review remain pending. No financial behavior or native owner acceptance is claimed; no merge authorized.
 
 ### P10-C4 period state and reopening — 2026-11-08 America/Denver
 
@@ -83,7 +93,7 @@ Slice sequence (one at a time, dependent slices wait for this slice's merge):
 1. **P10-C1 DONE through merged C1/C1B and passing descendant verification (historical blocker below retained):** shared calculated boundaries for Close/Depreciation/reports, normalized desktop startup/selection, preserve selected start when Settings changes, validate new calculated close ends with historical retry/import compatibility, focused behavioral coverage and full verification.
 2. **P10-C2 DONE (merged #414, passing CI):** align bank-export and accounting-entry/through-date defaults, preserve factual dates/custom ranges/drafts; inventory/asset/recognition/settlement usage audit.
 3. **P10-C3 DONE (merged #415, passing CI):** replace reconciliation's legacy close-run coverage dependency with bank-opening/prior-session authority; cover outstanding items, custom gaps and reopened ranges.
-4. **P10-C4 VERIFYING:** consistent partial/open/closed display, affected-range navigation, captured/busy reopen commands and post-success refresh without implicit reopening.
+4. **P10-C4 DONE (merged #416, passing CI):** consistent partial/open/closed display, affected-range navigation, captured/busy reopen commands and post-success refresh without implicit reopening.
 
 Baseline compilation passed using official Maven 3.9.9 and Temurin 17.0.17+10 under `/tmp`, temporary proxy settings and a temporary dependency cache. The initial existing-test run reported one readiness-fixture failure in AtomicPeriodCloseTest (missing reconciliation session in its snapshot); all five atomic tests passed on the subsequent focused run. No production reconciliation or snapshot code is changed to conceal that observation. The first new cross-fiscal-year review fixture needed explicit budget plans for both fiscal years; corrected before acceptance, with no weakened assertion.
 

@@ -4,7 +4,7 @@ This document records cross-cutting UI display and interaction rules for the pro
 
 ## Work panes and overflow access
 
-P29-S2 replaces the three-column shell with left navigation and the work area. The right Inspector and its controls/shortcut are removed. Every work pane shows at most two major sections, including nested subdivisions. Extra functions use named work panes sharing the same controller and draft. Labels and local command/tool bars are chrome, not additional independent sections.
+P29-S2 replaces the three-column shell with left navigation and the work area. The right Inspector and its controls/shortcut are removed. Every work pane shows at most two major sections, including nested subdivisions. Extra functions use named work panes sharing the same controller and draft. Labels and local command/tool bars are chrome, not additional independent sections. Resizable action/form headers remain chrome; adding a divider above the existing business body does not add a third business/data section.
 
 Every destination and logical tab has horizontal and vertical overflow access when its content exceeds the available size. Forms retain scrolling and tables retain independent horizontal/vertical scrolling; reducing the window must not make controls unreachable. Do not disable a needed scrollbar axis. The earlier obligation to add nested resize bars around every Journal subsection is superseded by the two-section limit. See [P29-S2](P29-S2-workspace-simplification.md) for the complete route review and user checks.
 
@@ -156,3 +156,15 @@ Disable conflicting commands while busy, retain rejected inputs, ignore stale
 loads and refresh current range/history/coverage after success. Invalidate old
 readiness/review observations; never silently save a review or clear another
 company/database draft. Dashboard reloads when shown again.
+
+## P29-C7 independently resizable control headers
+
+Production control headers above a business workspace expose a real horizontal
+drag handle (a vertical SplitPane), including nested Administration views. Fixed
+scrollable VBox headers and actionable BorderPane headers use the shared viewport
+preparation rule. Preserve the existing body splits and draft-owning controller;
+retain Journal's existing header split without duplication. Pure title/status
+strips do not require a new divider. Both axes scroll when needed. Header scroll
+areas must not retain maximum-height caps that defeat expansion. The divider is
+saved by company/database and stable route/tab identity, using the existing UI
+state guard. See the [audit and checks](P29-C7-resizable-panel-headers.md).
