@@ -156,3 +156,13 @@ Disable conflicting commands while busy, retain rejected inputs, ignore stale
 loads and refresh current range/history/coverage after success. Invalidate old
 readiness/review observations; never silently save a review or clear another
 company/database draft. Dashboard reloads when shown again.
+
+## P29-C6 native application identity
+
+Use the original bundled open-ledger artwork for the application icon. Install
+the full resolution set through JavaFX Stage.getIcons before showing the primary
+window; where supported, set the process icon with Taskbar ICON_IMAGE for native
+Dock/taskbar branding. The OS controls placement. Do not add an in-app activity
+bar or system-tray feature to emulate native application identity. Icon branding
+remains consistent before/after sign-in and across themes/decorations. See the
+[icon contract and native checks](P29-C6-application-icon.md).

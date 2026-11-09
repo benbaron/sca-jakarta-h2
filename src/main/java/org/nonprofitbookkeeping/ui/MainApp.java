@@ -51,6 +51,7 @@ public class MainApp extends Application
         inactivityCheck.setCycleCount(Timeline.INDEFINITE);
         inactivityCheck.play();
 
+        ApplicationIcon.install(stage);
         stage.setTitle("Nonprofit Accounting (SCA-Jakarta)");
         stage.setMinWidth(geometry.minimumWidth());
         stage.setMinHeight(geometry.minimumHeight());
