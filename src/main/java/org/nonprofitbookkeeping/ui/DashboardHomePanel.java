@@ -42,6 +42,9 @@ import java.util.function.Supplier;
 /** Database-backed dashboard home rebuilt from the supplied visual reference. */
 public final class DashboardHomePanel implements AppPanel
 {
+    private final Hyperlink periodCloseLink = new Hyperlink();
+    private long loadGeneration;
+
     private static final int RECENT_TRANSACTION_LIMIT = 25;
     private static final BigDecimal ON_TRACK_TOLERANCE = new BigDecimal("0.05");
     private final DashboardQueryService dashboardQueryService;
@@ -153,9 +156,18 @@ public final class DashboardHomePanel implements AppPanel
         open(AppPanelId.TXN_EDITOR, "Dashboard: new transaction");
     }
 
+    @Override
+    public void onPanelShown()
+    {
+        reload();
+    }
+
     void reload()
     {
         showLoadMessage("Loading dashboard data…", false);
+        periodCloseLink.setDisable(true);
+        long generation = ++loadGeneration;
+        String database = PeriodCloseNavigation.database();
         LocalDate asOfDate = asOfDateSupplier.get();
         String groupCode = groupCodeSupplier.get();
         UiDebug.log("dashboard", "Reload requested for group '" + groupCode
@@ -165,12 +177,18 @@ public final class DashboardHomePanel implements AppPanel
                 () -> dashboardQueryService.load(groupCode, asOfDate, RECENT_TRANSACTION_LIMIT),
                 snapshot ->
                 {
+                    if (generation != loadGeneration || !database.equals(PeriodCloseNavigation.database())
+                            || !java.util.Objects.equals(groupCode, groupCodeSupplier.get())
+                            || !java.util.Objects.equals(asOfDate, asOfDateSupplier.get())) return;
                     UiDebug.log("dashboard", "Reload succeeded for group '"
                             + snapshot.organization().code() + "' as of " + snapshot.asOfDate() + ".");
                     applySnapshot(snapshot);
                     showLoadMessage("", false);
                 },
                 ex -> {
+                    if (generation != loadGeneration || !database.equals(PeriodCloseNavigation.database())
+                            || !java.util.Objects.equals(groupCode, groupCodeSupplier.get())
+                            || !java.util.Objects.equals(asOfDate, asOfDateSupplier.get())) return;
                     UiDebug.log("dashboard", "Reload failed: " + UiErrors.safeMessage(ex));
                     showLoadMessage(
                             "Dashboard data could not be loaded: " + UiErrors.safeMessage(ex),
@@ -185,6 +203,18 @@ public final class DashboardHomePanel implements AppPanel
                 + snapshot.reconciliations().size() + " reconciliation row(s), "
                 + snapshot.budgetActuals().size() + " budget row(s), and open-item authority "
                 + (snapshot.openItems().available() ? "available" : "unavailable") + ".");
+        var period = snapshot.period();
+        boolean available = period.startDate().isPresent() && period.endDate().isPresent();
+        periodCloseLink.setDisable(!available);
+        if (available)
+        {
+            LocalDate start = period.startDate().orElseThrow(), end = period.endDate().orElseThrow();
+            periodCloseLink.setText(companyFormat.formatDate(start) + " through " + companyFormat.formatDate(end)
+                    + " · " + displayStatus(period.status()) + " · View Close Ranges");
+            String context = PeriodCloseNavigation.context(snapshot.organization().code(), null, start, end);
+            periodCloseLink.setOnAction(event -> open(AppPanelId.PERIOD_CLOSE_RUNS, context));
+        }
+        else periodCloseLink.setText("Period state unavailable");
         bookCash.setText(companyFormat.formatMoney(snapshot.bookCash()));
         clearedCash.setText(snapshot.reconciledCash()
                 .map(value -> "Reconciled " + companyFormat.formatMoney(value))
@@ -264,12 +294,15 @@ public final class DashboardHomePanel implements AppPanel
         HBox amountRow = new HBox(12, bookCash, cashTrend);
         amountRow.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(cashTrend, Priority.ALWAYS);
+        periodCloseLink.setId("dashboardPeriodCloseLink");
+        periodCloseLink.setWrapText(true);
+        periodCloseLink.setTooltip(new javafx.scene.control.Tooltip("View overlapping close ranges without changing the active period or reopening."));
         VBox body = new VBox(
                 8,
                 muted("All Bank Accounts"),
                 amountRow,
                 clearedCash,
-                mutedNode(cashAsOf));
+                mutedNode(cashAsOf), periodCloseLink);
         return card("Cash Balances", body, null);
     }
 

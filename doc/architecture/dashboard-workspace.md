@@ -65,7 +65,7 @@ P29-S2 groups the eight cards into four named work panes: Overview, Budget, Open
 
 The shared active-period value selected in Period Close is the selected accounting-period **start**. Dashboard projects through that selected period's calculated end, using the same company fiscal-year start month/day authority as Budget and Event Accounting. All canonical transaction, fund-class, bank, budget, recent-transaction, running-balance, and monthly-result queries require the active `Txn.company`; another company in the same H2 database must not affect any Dashboard amount or row.
 
-The Period Information card is derived from the company fiscal range plus authoritative `period_close_range` facts. Legacy `AccountingPeriod` rows are compatibility/history and do not define current Dashboard close status. A selected period is `CLOSED` when one current closed range covers it, `PARTIALLY_CLOSED` when only part overlaps, and `OPEN` otherwise.
+The period state in Cash Balances is derived from the company fiscal range plus authoritative `period_close_range` facts. Legacy `AccountingPeriod` rows are compatibility/history and do not define current Dashboard close status. A selected period is `CLOSED` when the union of current closed ranges covers every day (including adjacent ranges), `PARTIALLY_CLOSED` when only part overlaps, and `OPEN` otherwise. The current two-section Dashboard shows this state as a compact navigation link in Cash Balances, rather than a separate Period Information card. The link opens matching close-range history without changing the active period or reopening. Dashboard refreshes on return.
 
 ## Derived transaction columns
 

@@ -128,3 +128,18 @@ when absent). Older unsettled canonical bank lines remain reviewable. Stored
 session dates and imported/finalized history stay factual. See the
 [banking balance contract](../banking/banking-and-reconciliation.md#balance-calculations).
 Reopening a close range still does not release finalized reconciliation protection.
+
+## Close-state display and navigation (P10-C4)
+
+OPEN means no current closed range overlaps the selected dates. CLOSED means
+the union of current closed ranges covers every selected day, including adjacent
+ranges. PARTIALLY_CLOSED means some selected days remain open. Reopened history
+does not count as closed coverage. Dashboard and Period Close share this rule.
+
+Viewing an affected range is explicit navigation: retain the active period and
+entry/close/review drafts, select its exact row and show factual history. It never
+reopens a range or retries a financial write. Journal Save/Delete/Reversal errors
+provide this route. Reopening remains a separate guarded command with captured
+inputs and a busy guard; refresh close state and invalidate readiness only after
+success. Late responses from a previous company/database must not replace current
+state or clear another scope's draft reason. Dashboard refreshes on return.

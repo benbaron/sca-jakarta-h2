@@ -23,9 +23,9 @@ class PeriodCloseRunsPanelTest
         assertTrue(source.contains("new Button(\"Save Closed Range\")"));
         assertTrue(source.contains("new Button(\"Reopen Selected\")"));
         assertTrue(source.contains("capturedService.closeRange("));
-        assertTrue(source.contains("service().reopenRange("));
-        assertTrue(source.contains("service().listRanges(company)"));
-        assertTrue(source.contains("service().listEvents(company)"));
+        assertTrue(source.contains("capturedService.reopenRange("));
+        assertTrue(source.contains("capturedService.listRanges(company)"));
+        assertTrue(source.contains("capturedService.listEvents(company)"));
         assertTrue(source.contains("new SplitPane(rangePane, historyPane)"));
         assertTrue(source.contains("TableView.UNCONSTRAINED_RESIZE_POLICY"));
         assertTrue(source.contains("column.setSortable(true)"));

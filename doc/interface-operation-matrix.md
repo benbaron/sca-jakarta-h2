@@ -18,6 +18,14 @@ Period Close owns the month selector, Set Active Period action and applied fisca
 
 Period-dependent workflow defaults are governed by the [date matrix](accounting/period-and-correction-policy.md#workflow-date-defaults-p10-c2): accounting starts, cutoff ends, explicit historical facts and detached custom export ranges. These controls never waive guarded service validation.
 
+Period Close and Dashboard show the same Open / Partially closed / Closed coverage,
+including adjacent closed ranges. Dashboard's Cash Balances link navigates to
+matching range history. Journal closed-date Save/Delete/Reversal failures offer
+View Closed Range; navigation preserves drafts and never reopens or retries.
+Reopen Selected captures its scope/inputs before background work and disables
+conflicting commands until it finishes. Stale responses cannot replace current
+company/database state. See [period policy](accounting/period-and-correction-policy.md#close-state-display-and-navigation-p10-c4).
+
 ## Global commands
 
 | Command/source | Current behavior | Authority / boundary |

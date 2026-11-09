@@ -204,6 +204,35 @@ public class JpaDashboardQueryServiceTest
                 .surplus();
     }
 
+    @Test
+    void adjacentClosesGapsAndReopeningUseUnionCoverage(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("dashboard-union-coverage")))
+        {
+            seedTwoCompanies(jpa);
+            try (var em = jpa.em())
+            {
+                em.getTransaction().begin();
+                em.createNativeQuery("delete from period_close_range where company_id = 100").executeUpdate();
+                em.getTransaction().commit();
+            }
+            var first = org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa, "BARONY-RED",
+                    LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 15), "CUSTOM", "tester", "First half");
+            var query = new JpaDashboardQueryService(jpa);
+            assertEquals("PARTIALLY_CLOSED", query.load("BARONY-RED", LocalDate.of(2026, 6, 1), 5).period().status());
+            org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa, "BARONY-RED",
+                    LocalDate.of(2026, 6, 17), LocalDate.of(2026, 6, 30), "CUSTOM", "tester", "Second half with gap");
+            assertEquals("PARTIALLY_CLOSED", query.load("BARONY-RED", LocalDate.of(2026, 6, 1), 5).period().status());
+            org.nonprofitbookkeeping.service.PeriodCloseTestFixture.historical(jpa, "BARONY-RED",
+                    LocalDate.of(2026, 6, 16), LocalDate.of(2026, 6, 16), "CUSTOM", "tester", "Fill gap");
+            assertEquals("CLOSED", query.load("BARONY-RED", LocalDate.of(2026, 6, 1), 5).period().status());
+            new org.nonprofitbookkeeping.service.PeriodCloseRangeService(jpa).reopenRange(first.id(), "tester", "Correction",
+                    org.nonprofitbookkeeping.model.ClosedPeriodPolicy.REQUIRE_REASON, true);
+            assertEquals("PARTIALLY_CLOSED", query.load("BARONY-RED", LocalDate.of(2026, 6, 1), 5).period().status());
+            assertEquals("OPEN", query.load("BARONY-RED", LocalDate.of(2026, 7, 1), 5).period().status());
+        }
+    }
+
     private static void seedTwoCompanies(Jpa jpa)
     {
         try (EntityManager em = jpa.em())
