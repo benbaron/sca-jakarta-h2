@@ -1,17 +1,23 @@
 ---
-plan_version: 461
+plan_version: 462
 active_phase: P10
 active_slice: P10-C4
-active_status: VERIFYING
-active_branch: codex/P10-C4-period-state-reopen
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/416
-active_head: 456c00c07cc29a37dbfe5cc011a55d8c95a0a97a
-next_action: "Inspect final-head CI on draft PR 416 and complete owner review/merge before marking P10-C4 and the corrective sequence DONE."
+active_status: DONE
+active_branch: null
+active_pull_request: null
+active_head: 7a10e9e29c321e60262b051f7e9d4bde3c536a1d
+next_action: "The P10 period-correction sequence is DONE. Select an explicit next task/slice with the owner; no dependent period slice remains."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P10-C4 period state and reopening — 2026-11-08 America/Denver
+
+Closure — 2026-11-08 America/Denver: #416 is now owner-merged at main `7a10e9e29c321e60262b051f7e9d4bde3c536a1d`. Connected metadata confirms merged/closed status, and fresh native fetch confirms accepted head `7483f9a8e92b834172833961e43e85cac75a8e5e` is an ancestor of main. Exact-head Maven PR Tests workflow `42506471261` completed SUCCESS. P10-C4 and the C1/C1B/C2/C3/C4 period-correction sequence are DONE. Completed behavior: shared fiscal boundaries/defaults, contextual period selection, bank-specific reconciliation coverage, inclusive close-state display and explicit draft-preserving navigation/captured reopening. No further period slice remains.
+
+This supersedes the prior local unmerged-status handoff below; its facts describe the earlier check. Closure branch `codex/P10-period-plan-closeout` contains documentation only. Recorded final implementation validation remains 1,157 clean-verification tests (zero failures/errors, 102 expected display skips), 14 separate display passes and successful exact-head CI. No code changed or tests rerun for this closure. The intermittent readiness-snapshot defect remains a known unresolved observation; completion does not claim recovery repair or invent native owner visual evidence. Clear obsolete active branch/PR fields and retain the accepted main head in front matter. Under AGENTS §3.1, obtain an unambiguous next task/slice before starting unrelated implementation; historical VERIFYING/BLOCKED entries are not automatically new authorization. Publication: [draft documentation closeout #417](https://github.com/benbaron/sca-jakarta-h2/pull/417), branch `codex/P10-period-plan-closeout`, implementation `ae168487cb3e3953d9ee1f56e5f7e16263d1d9a9`, tree `c8400e7bee4842e5137f3de11b92e992267b90b2`; local/fetched identities match. This following documentation-only commit records publication. Remaining: owner review of the closeout and selection of the next objective. No merge is authorized for this new documentation branch.
+
+Latest validation handoff — 2026-11-08 America/Denver: owner reports merged/continue, but connected GitHub metadata still reports #416 OPEN / draft / unmerged. Fresh native fetch leaves main at `db95240c1c146c9e21d7b662c1e8c7faa694ae67` (merged #415); accepted branch head `7483f9a8e92b834172833961e43e85cac75a8e5e` is not its ancestor. Exact-head Maven PR Tests workflow `42506471261` completed SUCCESS. C4 remains VERIFYING pending the actual accepted merge; AGENTS §4 forbids advancing without it. No implementation, test rerun or merge is needed/claimed in this validation-only check. This local documentation handoff preserves the already-green published head instead of retriggering CI for a ledger-only push. After owner merges #416, verify native ancestry and metadata, mark the period-correction sequence DONE, and select further work only from an unambiguous documented slice. C4 is the final slice in this sequence.
 
 Published implementation `456c00c07cc29a37dbfe5cc011a55d8c95a0a97a`, tree `c2e51c315c2630949337acb7ccda00903896717a`, on `codex/P10-C4-period-state-reopen` and opened [draft PR #416](https://github.com/benbaron/sca-jakarta-h2/pull/416). Native fetch confirms identical implementation commit/tree; connected metadata confirms the PR head and draft status. This following documentation-only commit records publication. Final local verification passed as below; exact final-head GitHub CI and owner review/merge remain pending. Keep C4 VERIFYING. The period-correction sequence ends at C4; do not mark it DONE before verified merge. No merge authorized.
 
@@ -83,7 +89,7 @@ Slice sequence (one at a time, dependent slices wait for this slice's merge):
 1. **P10-C1 DONE through merged C1/C1B and passing descendant verification (historical blocker below retained):** shared calculated boundaries for Close/Depreciation/reports, normalized desktop startup/selection, preserve selected start when Settings changes, validate new calculated close ends with historical retry/import compatibility, focused behavioral coverage and full verification.
 2. **P10-C2 DONE (merged #414, passing CI):** align bank-export and accounting-entry/through-date defaults, preserve factual dates/custom ranges/drafts; inventory/asset/recognition/settlement usage audit.
 3. **P10-C3 DONE (merged #415, passing CI):** replace reconciliation's legacy close-run coverage dependency with bank-opening/prior-session authority; cover outstanding items, custom gaps and reopened ranges.
-4. **P10-C4 VERIFYING:** consistent partial/open/closed display, affected-range navigation, captured/busy reopen commands and post-success refresh without implicit reopening.
+4. **P10-C4 DONE (merged #416, passing CI):** consistent partial/open/closed display, affected-range navigation, captured/busy reopen commands and post-success refresh without implicit reopening.
 
 Baseline compilation passed using official Maven 3.9.9 and Temurin 17.0.17+10 under `/tmp`, temporary proxy settings and a temporary dependency cache. The initial existing-test run reported one readiness-fixture failure in AtomicPeriodCloseTest (missing reconciliation session in its snapshot); all five atomic tests passed on the subsequent focused run. No production reconciliation or snapshot code is changed to conceal that observation. The first new cross-fiscal-year review fixture needed explicit budget plans for both fiscal years; corrected before acceptance, with no weakened assertion.
 
