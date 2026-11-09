@@ -4,14 +4,16 @@ active_phase: P29
 active_slice: P29-C7
 active_status: VERIFYING
 active_branch: codex/P29-C7-resizable-panel-headers
-active_pull_request: null
-active_head: 7a10e9e29c321e60262b051f7e9d4bde3c536a1d
-next_action: "Publish the locally verified header-resize draft, inspect exact-head CI and obtain owner review/merge."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/419
+active_head: 391f5eee019020f569d522963cc063360b645bc8
+next_action: "Inspect final-head CI on draft PR 419 and obtain owner review/merge of the audited header-resize correction."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P29-C7 resizable control headers — 2026-11-08 America/Denver
+
+Publication: implementation `391f5eee019020f569d522963cc063360b645bc8`, tree `8f72fe7e47065d0ad20275cd098d36850d644753`, is published on `codex/P29-C7-resizable-panel-headers` in [draft PR #419](https://github.com/benbaron/sca-jakarta-h2/pull/419). Native fetch and connected metadata confirm identical commit/tree and PR head. This following documentation-only commit records publication. Local full/UI verification is complete as below; final-head CI and owner review/merge remain pending. C7 stays VERIFYING. No merge authorized.
 
 Owner requests a horizontal divider between Merchants' cramped top header and its table, then explicitly expands scope to all panels with the same issue. This selects an independent P29-C7 correction from main `7a10e9e29c321e60262b051f7e9d4bde3c536a1d`, clean fresh `codex/P29-C7-resizable-panel-headers`. The icon remains separately pending in #418; no dependency or merge is inferred. Read AGENTS, PLAN, UI rules/interface matrix/editor guidelines and the P29 two-business-section contract. Inspect all 29 canonical factory destinations plus nested Administration tabs, fixed header ScrollPanes, PanelViewport, company split state, Merchants and production geometry/policy tests. No accounting, service mutation, schema or record lifecycle change.
 
