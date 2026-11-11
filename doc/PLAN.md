@@ -4,14 +4,16 @@ active_phase: P29
 active_slice: P29-C10
 active_status: VERIFYING
 active_branch: codex/P29-C10-import-workflow-tests
-active_pull_request: null
-active_head: edd102af1bb843370cea1090bcb4130a74388be9
-next_action: "Publish verified C10, inspect exact-head CI and perform native owner checks before review/merge; do not advance before merge."
+active_pull_request: 422
+active_head: 835a4a2a80b80b8801991f3506eb17c43d4c4875
+next_action: "Inspect final-head CI on draft PR #422, perform the documented owner checks and review/merge C10; do not advance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P29-C10 Import workflow coverage — 2026-11-11 America/Denver
+
+Publication: implementation `835a4a2a80b80b8801991f3506eb17c43d4c4875`, tree `1d858b1480281115678d243a222030716a03818b`, is published on `codex/P29-C10-import-workflow-tests` in [draft PR #422](https://github.com/benbaron/sca-jakarta-h2/pull/422). Native fetch and connected metadata confirm identical branch commit/tree and PR head. This following documentation-only commit records publication. Local verification and coverage measurement are complete below; final-head CI and native owner review/merge remain pending. C10 stays VERIFYING; no merge authorized.
 
 Owner explicitly requests fixing the Import gaps identified in C9. #421 is merged at current main `edd102af1bb843370cea1090bcb4130a74388be9`; start clean `codex/P29-C10-import-workflow-tests`. Baseline compilation passed. Read AGENTS, PLAN, [C9 coverage inventory](P29-C9-import-close-layout.md), UI/interface/editor rules, ImportPreviewPanel, interchange task controller, existing SCLX/bank preview/commit/profile/authorization contracts and fixtures. This is a focused P29 UI behavior-test slice, not a new import model or accounting policy.
 
@@ -19,7 +21,7 @@ Target chooser selection/cancellation routing, all bank-format preview/commit/re
 
 The real mapped-CSV case reproduced a product defect: target reload fires the account selection listener and clears the selected profile before the Preview action reads it. Retain compatible active profile IDs across refresh; do not restore inactive/different-target profiles. The first 14 actual-control workflow cases passed after this scoped repair (54.5 seconds). Fixtures were corrected to bind a persisted identity to its actual company, copy the live window list before closing dialogs and include required native SCLX fields/collections; authorization and service validation remain unchanged. The expanded 96-case display/JaCoCo run passed with no failures/errors/skips (02:35), including 21 workflow and 3 lifecycle cases. Import screen coverage rose to 1,357/1,459 lines (93.0%) and 317/432 branches (73.4%). The injected H2 constraint diagnostic is expected; no uncaught FX error appeared. Final inspection added two COA error/rejected-row cases and explicitly selected visible mapping/conflict tabs. Those two COA cases passed (30.8 seconds); the final combined measurement includes them. A superseded clean verify was stopped for these additions and is not a passed gate. CI now explicitly runs the new workflow class, rendered SCLX cases and task controller on a display, in isolated JVMs.
 
-Final measurement: **98 tests, zero failures/errors/skips** (02:37), with 23 real workflow and 3 lifecycle cases. ImportPreviewPanel is **1,372/1,459 lines (94.0%) and 320/432 branches (74.1%)**, versus C9 55.3%/41.9%. Generic preview remains 94.0%/71.6%; SCLX preview 82.6%/66.8%; SCLX commit 83.5%/62.2%; task controller 98.3%/72.2%. The linked contract retains raw counters, scope, tool versions, reproduction details and residual limitations. Only the intentional H2 check-constraint diagnostic appears; no uncaught FX error. Workflow YAML and whitespace checks pass. Final `clean verify` passed **1,190 tests, zero failures/errors, 134 expected display skips**, BUILD SUCCESS (06:09, `/tmp/c10-verify-final.log`). These display cases ran separately as above. Publication, exact-head CI and native owner checks remain pending.
+Final measurement: **98 tests, zero failures/errors/skips** (02:37), with 23 real workflow and 3 lifecycle cases. ImportPreviewPanel is **1,372/1,459 lines (94.0%) and 320/432 branches (74.1%)**, versus C9 55.3%/41.9%. Generic preview remains 94.0%/71.6%; SCLX preview 82.6%/66.8%; SCLX commit 83.5%/62.2%; task controller 98.3%/72.2%. The linked contract retains raw counters, scope, tool versions, reproduction details and residual limitations. Only the intentional H2 check-constraint diagnostic appears; no uncaught FX error. Workflow YAML and whitespace checks pass. Final `clean verify` passed **1,190 tests, zero failures/errors, 134 expected display skips**, BUILD SUCCESS (06:09, `/tmp/c10-verify-final.log`). These display cases ran separately as above. Publication is recorded above; exact-head CI and native owner checks remain pending.
 
 ### P29-C9 Import naming and Period Close hierarchy — 2026-11-10 America/Denver
 
