@@ -30,7 +30,7 @@ class ReleaseOperatingGuideTest
 
         for (String label : Set.of("Journal", "Merchant Settlement Assistant", "Event Accounting",
                 "Bank Reconciliation", "Budget Editor", "Budget vs Actual", "Recognition Assistant",
-                "Asset Register", "Inventory", "Property Custody", "Import Preview",
+                "Asset Register", "Inventory", "Property Custody", "Import",
                 "Opening Conversion", "Period Close", "Report Library", "Fund Transfers",
                 "Events / Activities", "Administration"))
         {

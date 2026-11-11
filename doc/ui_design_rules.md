@@ -183,3 +183,10 @@ empty and its columns overflow; populated tables retain their native row/column
 scrolling. No fake rows, table data changes or offscreen vertical scrollbar.
 Event Accounting keeps every review status visible, with verbose read-only
 details available in an expandable section. See [C8 checks](P29-C8-overflow-wrapping.md).
+
+## P29-C9 Period Close hierarchy
+
+Review Evidence, Draft References and Recorded Reviews are peer tabs, with one
+controller and retained draft state. The Period Close top form owns both-axis
+scrolling; status/period text wraps and remains vertically reachable. Import is
+the visible name of the existing IMPORT_PREVIEW route.

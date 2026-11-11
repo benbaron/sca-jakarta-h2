@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 final class CloseReviewEvidencePane implements AppPanel
 {
     private final VBox root = new VBox(8);
+    private final Node draftReferencesRoot, recordedReviewsRoot;
     private final DatePicker start, end;
     private final Supplier<CloseReviewEvidenceService> services;
     private final Supplier<String> scope;
@@ -130,11 +131,11 @@ final class CloseReviewEvidencePane implements AppPanel
         history.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, value) -> showRetained(value));
         SplitPane draft = split("period-close-review-draft-v2", scroll, references);
         SplitPane historyPane = split("period-close-review-history-v2", history, retained);
-        WorkPaneTabs main = new WorkPaneTabs("closeReviewDetails")
-                .addPane("Draft References", draft)
-                .addPane("Recorded Reviews", historyPane);
-        VBox.setVgrow(main, javafx.scene.layout.Priority.ALWAYS);
-        root.getChildren().add(main);
+        draftReferencesRoot = draft;
+        recordedReviewsRoot = historyPane;
+        Label workflow = new Label("Preview the selected dates here. Enter references, warning reasons and your attestation in Draft References. Return here to Save Review; retained facts appear in Recorded Reviews.");
+        workflow.setWrapText(true);
+        root.getChildren().add(workflow);
         start.valueProperty().addListener((observable, oldValue, value) -> invalidate(false));
         end.valueProperty().addListener((observable, oldValue, value) -> invalidate(false));
         note.textProperty().addListener((observable, oldValue, value) -> draftChanged());
@@ -162,6 +163,16 @@ final class CloseReviewEvidencePane implements AppPanel
     @Override public Node root()
     {
         return root;
+    }
+
+    Node draftReferencesRoot()
+    {
+        return draftReferencesRoot;
+    }
+
+    Node recordedReviewsRoot()
+    {
+        return recordedReviewsRoot;
     }
     @Override public Set<AppCommand> commandCapabilities()
     {
