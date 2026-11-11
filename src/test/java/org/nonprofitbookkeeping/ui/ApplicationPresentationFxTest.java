@@ -56,6 +56,15 @@ class ApplicationPresentationFxTest
                 });
                 stage[0] = new Stage();
                 stage[0].initStyle(WindowDecorationPolicy.stageStyle(session.preferences()));
+                ApplicationIcon.install(stage[0]);
+                assertTrue(stage[0].getIcons().size() == 7);
+                for (var icon : stage[0].getIcons())
+                {
+                    assertTrue(!icon.isError() && icon.getWidth() == icon.getHeight());
+                    assertTrue(icon.getPixelReader().getColor(0, 0).getOpacity() == 0);
+                }
+                ApplicationIcon.install(stage[0]);
+                assertTrue(stage[0].getIcons().size() == 7, "Reapplying must replace rather than duplicate icons");
                 stage[0].setScene(scene);
                 stage[0].show();
                 return null;
