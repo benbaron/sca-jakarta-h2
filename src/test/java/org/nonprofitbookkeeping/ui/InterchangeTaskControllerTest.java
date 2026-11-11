@@ -11,11 +11,55 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 @Execution(ExecutionMode.SAME_THREAD)
 @ResourceLock("javafx-runtime")
 class InterchangeTaskControllerTest
 {
+    @Test
+    void busyOperationRejectsASecondWriterAndFailureAllowsAFreshRequest() throws Exception
+    {
+        AtomicReference<Runnable> queued = new AtomicReference<>();
+        AtomicInteger writes = new AtomicInteger();
+        AtomicReference<Throwable> reported = new AtomicReference<>();
+        IllegalArgumentException failure = new IllegalArgumentException("Invalid test source");
+        InterchangeTaskController controller = FxTestSupport.onFx(() ->
+        {
+            InterchangeTaskController value = new InterchangeTaskController(queued::set);
+            assertTrue(value.runPreview("invalid-preview", "Reading invalid source", () ->
+            {
+                throw failure;
+            }, ignored -> { }, reported::set, () -> { }));
+            Runnable original = queued.get();
+            assertFalse(value.runCommit("second-writer", "Writing", writes::incrementAndGet,
+                    ignored -> { }, reported::set));
+            assertSame(original, queued.get(), "Rejecting a second request must preserve the running operation");
+            return value;
+        });
+        Thread first = new Thread(queued.get(), "invalid-preview-test");
+        first.start(); first.join();
+        FxTestSupport.onFx(() ->
+        {
+            assertSame(failure, reported.get());
+            assertFalse(controller.busyProperty().get());
+            assertFalse(controller.cancelableProperty().get());
+            assertEquals(0, writes.get());
+            assertTrue(controller.runCommit("retry", "Writing retry", writes::incrementAndGet,
+                    ignored -> { }, reported::set));
+            return null;
+        });
+        Thread retry = new Thread(queued.get(), "retry-commit-test");
+        retry.start(); retry.join();
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals(1, writes.get());
+            assertFalse(controller.busyProperty().get());
+            assertEquals(1.0, controller.progressProperty().get().fraction());
+            return null;
+        });
+    }
+
     @Test
     void previewCanBeCancelledBeforeItRunsAndNeverPublishesSuccess()
     {

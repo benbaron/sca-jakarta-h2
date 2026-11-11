@@ -78,6 +78,24 @@ import java.util.function.Supplier;
  */
 public class ImportPreviewPanel implements AppPanel
 {
+    private java.util.function.BiFunction<FileChooser, javafx.stage.Window, File> fileSelection =
+            FileChooser::showOpenDialog;
+
+    /** Allows workflow tests to select files without replacing native chooser configuration. */
+    ImportPreviewPanel(java.util.function.BiFunction<FileChooser, javafx.stage.Window, File> fileSelection)
+    {
+        this();
+        this.fileSelection = Objects.requireNonNull(fileSelection, "fileSelection");
+    }
+
+    ImportPreviewPanel(ImportPreviewService previewService,
+            Function<Path, SclxImportPreview> preview,
+            java.util.function.BiFunction<FileChooser, javafx.stage.Window, File> fileSelection)
+    {
+        this(previewService, preview);
+        this.fileSelection = Objects.requireNonNull(fileSelection, "fileSelection");
+    }
+
 	private final BorderPane root = new BorderPane();
 	private final ImportPreviewService previewService;
 	private final SclxPreviewOperationFactory sclxPreviewFactory;
@@ -345,6 +363,7 @@ public class ImportPreviewPanel implements AppPanel
 		commitBankReview.setOnAction(e -> confirmAndCommitBankReview());
 		commitBankReview.setId("commitPreviewedBankReviewButton");
 		commitBankReview.setDisable(true);
+		confirmBankIdentity.setId("confirmBankReviewIdentity");
 		confirmBankIdentity.selectedProperty().addListener(
 			(observable, oldValue, newValue) -> updateBankCommitAvailability());
 		configureBankSelectors();
@@ -1123,6 +1142,8 @@ public class ImportPreviewPanel implements AppPanel
 	{
 		Long selectedId = bankAccount.getValue() == null ? null :
 			bankAccount.getValue().getId();
+		Long selectedProfileId = bankCsvProfile.getValue() == null ? null :
+			bankCsvProfile.getValue().id();
 		
 		try
 		{
@@ -1141,6 +1162,11 @@ public class ImportPreviewPanel implements AppPanel
 			
 			if (bankAccount.getValue() == null && rows.size() == 1)
 				bankAccount.setValue(rows.get(0));
+			if (bankAccount.getValue() != null &&
+				Objects.equals(selectedId, bankAccount.getValue().getId()))
+			{
+				restoreBankCsvProfile(selectedProfileId);
+			}
 		}
 		catch (RuntimeException ex)
 		{
@@ -1153,6 +1179,7 @@ public class ImportPreviewPanel implements AppPanel
 	private void reloadBankCsvProfiles()
 	{
 		CompanyBankAccount account = bankAccount.getValue();
+		Long selectedId = bankCsvProfile.getValue() == null ? null : bankCsvProfile.getValue().id();
 		bankCsvProfile.getItems().clear();
 		bankCsvProfile.setValue(null);
 		if (account == null)
@@ -1166,6 +1193,7 @@ public class ImportPreviewPanel implements AppPanel
 					.filter(value -> value.active() &&
 						value.bankAccountId() == account.getId())
 					.toList());
+			restoreBankCsvProfile(selectedId);
 		}
 		catch (RuntimeException ex)
 		{
@@ -1173,6 +1201,15 @@ public class ImportPreviewPanel implements AppPanel
 				UiErrors.safeMessage(ex));
 		}
 		
+	}
+
+	private void restoreBankCsvProfile(Long selectedId)
+	{
+		if (selectedId != null)
+		{
+			bankCsvProfile.getItems().stream().filter(value -> value.id() == selectedId)
+				.findFirst().ifPresent(bankCsvProfile::setValue);
+		}
 	}
 	
 	private static <T> TableColumn<T, String> stringColumn(String title,
@@ -2494,7 +2531,7 @@ public class ImportPreviewPanel implements AppPanel
 		FileChooser chooser = new FileChooser();
 		chooser.setTitle(title);
 		chooser.getExtensionFilters().add(filter);
-		File selected = chooser.showOpenDialog(root.getScene().getWindow());
+		File selected = fileSelection.apply(chooser, root.getScene().getWindow());
 		
 		if (selected == null)
 		{

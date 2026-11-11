@@ -190,3 +190,9 @@ Review Evidence, Draft References and Recorded Reviews are peer tabs, with one
 controller and retained draft state. The Period Close top form owns both-axis
 scrolling; status/period text wraps and remains vertically reachable. Import is
 the visible name of the existing IMPORT_PREVIEW route.
+
+Import account/profile refresh retains a compatible active profile by stable ID
+for the same selected bank target. Changing targets or deactivating the profile
+must not restore an incompatible choice. Preview and commit still use the
+existing frozen-source/profile validation authority. See [Import workflow
+regressions](P29-C10-import-workflow-coverage.md).
