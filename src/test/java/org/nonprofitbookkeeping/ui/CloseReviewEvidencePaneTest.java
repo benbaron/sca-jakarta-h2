@@ -73,7 +73,7 @@ class CloseReviewEvidencePaneTest
         FxTestSupport.onFx(() ->
         {
             addReference();
-            ((CheckBox) evidence.root().lookup("#closeReviewAttested")).setSelected(true);
+            ((CheckBox) lookup("#closeReviewAttested")).setSelected(true);
             assertEquals("Save Review", panel.commandLabel(AppCommand.SAVE_ACTIVE));
             assertTrue(panel.supportsCommand(AppCommand.SAVE_ACTIVE)); assertTrue(panel.hasUnsavedChanges());
             MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.viewer());
@@ -81,7 +81,7 @@ class CloseReviewEvidencePaneTest
             MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.manager());
             assertTrue(panel.executeCommand(AppCommand.SAVE_ACTIVE).handled());
             assertTrue(button("closeReviewSave").isDisabled());
-            assertTrue(((ScrollPane) evidence.root().lookup("#closeReviewEditorScroll")).getContent().isDisabled());
+            assertTrue(((ScrollPane) lookup("#closeReviewEditorScroll")).getContent().isDisabled());
             return null;
         });
         var result = (CloseReviewEvidenceService.Review) evidence.completion().get(60, TimeUnit.SECONDS);
@@ -92,11 +92,11 @@ class CloseReviewEvidencePaneTest
             assertTrue(button("closeReviewSave").isDisabled());
             TableView<?> history = table("closeReviewHistory"); assertEquals(1, history.getItems().size());
             assertTrue(history.getColumns().stream().allMatch(c -> c.isSortable() && c.isResizable() && c.isReorderable()));
-            ((TabPane) evidence.root().lookup("#closeReviewDetails")).getSelectionModel().select(1);
+            ((TabPane) panel.root().lookup("#periodCloseTabs")).getSelectionModel().select(4);
             evidence.root().applyCss();
-            var retained = (TextArea) evidence.root().lookup("#closeReviewRetainedDetails");
+            var retained = (TextArea) lookup("#closeReviewRetainedDetails");
             assertFalse(retained.isEditable()); assertTrue(retained.getText().contains("external/ui-receipt"));
-            assertTrue(((Label) evidence.root().lookup("#closeReviewStatus")).getText().contains("blocker(s) remain"));
+            assertTrue(((Label) lookup("#closeReviewStatus")).getText().contains("blocker(s) remain"));
             return null;
         });
         assertEquals(1, UiServiceRegistry.closeReviewEvidence().history(java.time.LocalDate.parse(result.payload().start()),
@@ -116,7 +116,7 @@ class CloseReviewEvidencePaneTest
         FxTestSupport.onFx(() ->
         {
             assertFalse(panel.supportsCommand(AppCommand.SAVE_ACTIVE)); assertTrue(table("closeReviewReferences").getItems().isEmpty());
-            assertFalse(((CheckBox) evidence.root().lookup("#closeReviewAttested")).isSelected());
+            assertFalse(((CheckBox) lookup("#closeReviewAttested")).isSelected());
             return null;
         });
     }
@@ -130,23 +130,27 @@ class CloseReviewEvidencePaneTest
         {
             addReference();
             assertFalse(panel.supportsCommand(AppCommand.SAVE_ACTIVE)); assertTrue(panel.hasUnsavedChanges());
-            ((CheckBox) evidence.root().lookup("#closeReviewAttested")).setSelected(true);
+            ((CheckBox) lookup("#closeReviewAttested")).setSelected(true);
             assertTrue(panel.supportsCommand(AppCommand.SAVE_ACTIVE));
-            ScrollPane scroll = (ScrollPane) evidence.root().lookup("#closeReviewEditorScroll");
+            ((TabPane) panel.root().lookup("#periodCloseTabs")).getSelectionModel().select(3);
+            panel.root().applyCss(); ((javafx.scene.Parent) panel.root()).layout();
+            ScrollPane scroll = (ScrollPane) lookup("#closeReviewEditorScroll");
             assertTrue(scroll.isFitToWidth());
             assertTrue(scroll.getViewportBounds().getWidth() > 0);
             assertTrue(scroll.getContent().getBoundsInLocal().getHeight() > scroll.getViewportBounds().getHeight(),
                     "The long form must remain scrollable within its bounded editor viewport");
-            var views = (TabPane) evidence.root().lookup("#closeReviewDetails");
-            assertEquals(2, views.getTabs().size());
-            var viewport = (PanelViewport) views.getTabs().get(0).getContent();
-            var main = (SplitPane) ((javafx.scene.layout.BorderPane) viewport.getContent()).getCenter();
+            var views = (TabPane) panel.root().lookup("#periodCloseTabs");
+            assertEquals(List.of("Close History", "Readiness", "Review Evidence", "Draft References", "Recorded Reviews"),
+                    views.getTabs().stream().map(Tab::getText).toList());
+            views.getSelectionModel().select(3);
+            panel.root().applyCss(); ((javafx.scene.Parent) panel.root()).layout();
+            var main = (SplitPane) evidence.draftReferencesRoot();
             main.setDividerPositions(0.3);
-            evidence.root().applyCss(); ((javafx.scene.Parent) evidence.root()).layout();
+            panel.root().applyCss(); ((javafx.scene.Parent) panel.root()).layout();
             assertEquals(0.3, main.getDividerPositions()[0], 0.03);
             var table = table("closeReviewReferences");
             table.getColumns().get(1).setPrefWidth(1400);
-            evidence.root().applyCss(); ((javafx.scene.Parent) evidence.root()).layout();
+            panel.root().applyCss(); ((javafx.scene.Parent) panel.root()).layout();
             assertTrue(table.lookupAll(".scroll-bar").stream().filter(node -> node instanceof ScrollBar)
                     .map(node -> (ScrollBar) node).anyMatch(bar -> bar.getOrientation() == javafx.geometry.Orientation.HORIZONTAL && bar.isVisible()));
             ((TabPane) panel.root().lookup("#periodCloseTabs")).getSelectionModel().select(0);
@@ -184,14 +188,21 @@ class CloseReviewEvidencePaneTest
     @SuppressWarnings("unchecked")
     private void addReference()
     {
-        ((ComboBox<CloseReviewEvidenceService.ReferenceKind>) evidence.root().lookup("#closeReviewReferenceKind")).setValue(CloseReviewEvidenceService.ReferenceKind.RECEIPT);
-        ((TextField) evidence.root().lookup("#closeReviewReference")).setText("external/ui-receipt");
+        ((ComboBox<CloseReviewEvidenceService.ReferenceKind>) lookup("#closeReviewReferenceKind")).setValue(CloseReviewEvidenceService.ReferenceKind.RECEIPT);
+        ((TextField) lookup("#closeReviewReference")).setText("external/ui-receipt");
         button("closeReviewAddReference").fire();
     }
 
-    private Button button(String id) { return (Button) evidence.root().lookup("#" + id); }
+    private javafx.scene.Node lookup(String selector)
+    {
+        return java.util.stream.Stream.of(evidence.root(), evidence.draftReferencesRoot(), evidence.recordedReviewsRoot())
+                .map(root -> root.lookup(selector)).filter(java.util.Objects::nonNull).findFirst().orElseThrow();
+    }
+
+    private Button button(String id) { return (Button) lookup("#" + id); }
     private TableView<?> table(String id)
     {
-        return CompanyTableStateBinder.findTables(evidence.root()).stream().filter(t -> id.equals(t.getId())).findFirst().orElseThrow();
+        return java.util.stream.Stream.of(evidence.root(), evidence.draftReferencesRoot(), evidence.recordedReviewsRoot())
+                .flatMap(root -> CompanyTableStateBinder.findTables(root).stream()).filter(t -> id.equals(t.getId())).findFirst().orElseThrow();
     }
 }

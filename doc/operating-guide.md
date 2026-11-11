@@ -51,7 +51,7 @@ External receipts, attachments, signatures and approvals stay in the organizatio
 
 ## SCLX selected-company interchange
 
-Choose **File -> Export Active Company to SCLX…** to write deterministic SCLX 1.3 for the active company. Import through **Import Preview** under **IMPORT & OVERSIGHT**. Review mappings, conflicts, unsupported records and required confirmations, re-preview after every choice, then **Save Previewed SCLX Import**.
+Choose **File -> Export Active Company to SCLX…** to write deterministic SCLX 1.3 for the active company. Import through **Import** under **IMPORT & OVERSIGHT**. Review mappings, conflicts, unsupported records and required confirmations, re-preview after every choice, then **Save Previewed SCLX Import**.
 
 Readers accept SCLX 1.0, 1.2 and 1.3; writers emit 1.3. SCLX is selected-company business-data interchange. It excludes credentials, UI preferences, schema internals, raw attachments and other companies. Keep a whole-database backup for complete recovery.
 

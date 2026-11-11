@@ -113,7 +113,7 @@ and outflow use configured bank-account lines.
 Use Banks or Bank accounts to maintain the selected record type. New/Save follows
 that selected view and retains drafts in the other view. The Administration bank
 account summary is read-only; create or edit its records in Banking. Import Bank
-Statement opens Import Preview. Review / Export Statements opens Bank Transactions.
+Statement opens Import. Review / Export Statements opens Bank Transactions.
 
 ## Bank Transactions
 
@@ -130,7 +130,7 @@ transaction for correction.
 ## Bank Reconciliation: setup and statement
 
 Work through Setup, Statement, Match and Review. Enter a manual statement line or
-open Import Preview for OFX/QFX, mapped CSV or normalized bank CSV. QIF is not a
+open Import for OFX/QFX, mapped CSV or normalized bank CSV. QIF is not a
 supported production import format. Select the intended configured bank account
 and statement dates before matching. New coverage continues after that bank's
 nearest earlier finalized statement, or starts at its configured opening date.
@@ -234,7 +234,7 @@ existing asset lifecycle event or reducing inventory movement that recorded the
 accounting treatment. Saved history is retained; Correct Selected records a
 replacement rather than rewriting the original event.
 
-## Import Preview and Chart of Accounts interchange
+## Import and Chart of Accounts interchange
 
 Choose SCLX, COA CSV, OFX/QFX, mapped CSV or normalized bank CSV, inspect the
 preview, resolve errors and confirm the intended target before accepting it.
@@ -246,6 +246,11 @@ MAP_CODES, supply one explicit `sourceCode=targetCode` line for every source cod
 Review the target chart and accepted/rejected rows before saving the import.
 
 ## Opening Conversion
+
+Use this during initial setup or migration after loading the opening/carryover
+records for your cutover date. Keep the function available for later reference;
+you can close its workspace tab when you are not using it. It is not a recurring
+period-close step or an import command.
 
 Review account openings, configured bank baselines, outstanding bank items,
 assets, inventory and supplemental schedules. Acceptance records an immutable
@@ -263,8 +268,13 @@ dates. Neither selection action closes or reopens a range.
 
 Preview Readiness to inspect automated findings and open their correction screens.
 These findings do not independently verify external evidence or authorize closing.
-In Review Evidence, preview the selected dates, record external references and
-factual self-attestation, and Save Review. Saved reviews cannot be edited or
+The sibling tabs **Review Evidence**, **Draft References** and **Recorded Reviews**
+share one review draft. Preview the selected dates in Review Evidence, enter
+external references, warning reasons and factual self-attestation in Draft
+References, then return to Review Evidence to Save Review (or use shared Save
+from an evidence tab). Recorded Reviews shows immutable history and retained
+details. Switching tabs retains the draft. The top controls have their own
+horizontal/vertical scrolling and wrapped status text. Saved reviews cannot be edited or
 deleted; start a new review to correct them. Blockers remain blockers.
 
 Save Closed Range requires a current matching review, zero blockers and reasons

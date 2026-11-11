@@ -47,6 +47,7 @@ class ImportPreviewPanelSclxTest
         FxTestSupport.onFx(() -> {
             ImportPreviewPanel panel = new ImportPreviewPanel(
                     new ImportPreviewService(), source -> preview());
+            assertEquals("Import", panel.title());
             new Scene((javafx.scene.Parent) panel.root(), 1000, 700);
             panel.root().applyCss();
             ((javafx.scene.Parent) panel.root()).layout();

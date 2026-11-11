@@ -71,7 +71,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Administration — Authentication | no | yes | no | Selected Authentication exposes Save Timeout, with separate Save Password. |
 | Administration — Ownership repair | no | ready repair only | no | Save Ownership Assignment retains confirmation and DATABASE_ADMIN. |
 | Reconciliation | no | selected Review / Checks subpane | no | Save Unresolved or Save Review; finalized history is read-only. |
-| Import Preview | no | valid confirmed selected format | no | Save Accepted COA Rows, Save Previewed SCLX Import, or Save Previewed Bank Review use existing commit confirmations. |
+| Import | no | valid confirmed selected format | no | Save Accepted COA Rows, Save Previewed SCLX Import, or Save Previewed Bank Review use existing commit confirmations. |
 | Opening Conversion | no | ready unchanged preview only | no | Save Conversion Acceptance records one immutable audit fact; it creates no accounting entry. BOOKKEEPING_WRITE. |
 | Period Close | no | selected Review Evidence draft | no | Save Review records snapshot-bound factual references/reasons through audit history; Save Closed Range/Reopen remain explicit independent operations. |
 | Report Library, Budget vs Actual, Depreciation Runs, Audit History, Bank Transactions, Diagnostics, Help | no | no | no | Run/review/navigation commands remain panel-local. |
@@ -101,7 +101,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Reconciliation | reconciliation workspace | current reconciliation query/workspace services | current reconciliation finalization/matching services | Matching and cleared-state mutation remain reconciliation-owned. |
 | Period Close | `PeriodCloseRunsPanel` | `PeriodCloseRangeService`, packet readiness and immutable review audit facts | guarded close/reopen; `CloseReviewEvidenceService.save` | BOOKKEEPING_WRITE guards Save Review/close/reopen; EXPORT guards preview/history. Close revalidates canonical content while holding the database write guard, requires an exact-scope matching review, zero blockers and reasons for all warnings. New CALCULATED ends must match the shared company fiscal range; CUSTOM and historical facts retain explicit dates. External documents remain self-attested. |
 | Bank Transactions | current bank-transaction workspace | canonical configured-bank split projection plus statement-review facts | explicit reviewed-row acceptance/correction routes only | No second bank ledger. |
-| Import Preview | `ImportPreviewPanel` and format-specific review surfaces | transient frozen preview state plus current target facts | format-specific atomic commit service | Preview is intentionally transient; accepted facts become H2 authority. |
+| Import | `ImportPreviewPanel` and format-specific review surfaces | transient frozen preview state plus current target facts | format-specific atomic commit service | Preview is intentionally transient; accepted facts become H2 authority. |
 | Opening Conversion | `OpeningConversionPanel` | `OpeningConversionService` over existing account openings, configured banks, fixed assets, inventory and supplemental schedules | `OpeningConversionService.saveAcceptance(...)` | Ready preview fingerprint is revalidated; one immutable `OPENING_CONVERSION_ACCEPTED` audit fact is SCLX-portable. No balancing entry or second ledger. |
 | Report Library | report library panels/services | report query/execution services | report export; CoreAccountingPacketService exports statements and operational sections from one snapshot | Accounting packet uses independent Packet start/end dates and all funds/events, requires EXPORT and a new destination; exceptions appear in the manifest and a dedicated table. No close-readiness certification. Explicit report dates may detach from shell-selected accounting period. |
 | Administration | `AdministrationPanel` | preferences/company/user/database-transfer services | owning service of selected tab | No second shell identifier or preference store. |
@@ -109,9 +109,9 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 
 ## Import and export operation matrix
 
-[Complete category masters](P27-S4D2-category-portability.md) use existing SCLX File export and Import Preview/Save. Exact master counts include unused/inactive categories; restored metadata is visible in Budget Categories and retained Budget/Journal labels. No new Save action or authority is introduced.
+[Complete category masters](P27-S4D2-category-portability.md) use existing SCLX File export and Import/Save. Exact master counts include unused/inactive categories; restored metadata is visible in Budget Categories and retained Budget/Journal labels. No new Save action or authority is introduced.
 
-SCLX [budget metadata portability](P27-S4B-budget-metadata.md) uses the existing File export and Import Preview/Save routes. Preview reports full plan/line history counts; imported lifecycle facts do not execute the Budget Editor's activation/archive commands. Full metadata retains saved fiscal dates, archived state, notes and times; older files retain the reduced compatibility contract. No new panel or Save authority is introduced.
+SCLX [budget metadata portability](P27-S4B-budget-metadata.md) uses the existing File export and Import/Save routes. Preview reports full plan/line history counts; imported lifecycle facts do not execute the Budget Editor's activation/archive commands. Full metadata retains saved fiscal dates, archived state, notes and times; older files retain the reduced compatibility contract. No new panel or Save authority is introduced.
 
 [Transfer portability](P27-S4C-transfer-portability.md) uses those same routes and BOOKKEEPING_WRITE Save. Export/Preview report exact transfer counts; Fund Transfers displays restored saved/reversal links. Restoration does not execute interactive transfer Save/Reverse or post duplicate accounting. Legacy unlinked operational facts make a target populated; they cannot be silently treated as an empty company.
 
@@ -183,7 +183,7 @@ Administration -> NMR Policies uses `NmrPolicyService` / company-owned `NmrPolic
 
 ### P25-S4E entered NMR flags
 
-Journal Save retains explicitly entered NMR flags. The current SCLX export and Import Preview Save/File routes now preserve those line facts; preview includes the source marked-line count. Existing bookkeeping permission, conflict, company, period/reconciliation and atomicity controls apply. Optional policy versions retain their separate company-administration guard. No pane, table, command or draft scope is added. See [S4E contract](P25-S4E-nmr-line-portability.md).
+Journal Save retains explicitly entered NMR flags. The current SCLX export and Import Save/File routes now preserve those line facts; preview includes the source marked-line count. Existing bookkeeping permission, conflict, company, period/reconciliation and atomicity controls apply. Optional policy versions retain their separate company-administration guard. No pane, table, command or draft scope is added. See [S4E contract](P25-S4E-nmr-line-portability.md).
 
 
 ### P25-S4F explicit NMR item detail
@@ -242,3 +242,13 @@ fields; status/descriptive labels and action captions wrap. Event Accounting's
 Journal/bank/lifecycle/scope statuses remain visible, and Closeout review facts
 expands to show the unchanged details. These are read-only observations rather
 than a close authorization or new accounting command.
+
+## P29-C9 Period Close evidence hierarchy
+
+Review Evidence, Draft References and Recorded Reviews are sibling tabs in Period
+Close, backed by one existing evidence controller. Snapshot and Save actions stay
+in Review Evidence; draft fields/references and retained history keep their
+original independent splits. Shared Save follows valid draft capability in all
+three evidence contexts, with unchanged permission, busy and stale-scope guards.
+The top controls use one local both-axis scroll pane with wrapped status/period
+text. The visible Import name retains the IMPORT_PREVIEW compatibility route.

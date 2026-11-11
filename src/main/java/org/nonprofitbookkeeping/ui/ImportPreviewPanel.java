@@ -291,7 +291,7 @@ public class ImportPreviewPanel implements AppPanel
 			normalizedBankCsvReviewService, "normalizedBankCsvReviewService");
 		root.setPadding(new Insets(8));
 		
-		Label title = new Label("Import Preview");
+		Label title = new Label("Import");
 		title.getStyleClass().add("panel-title");
 		
 		previewSclx.setOnAction(e -> chooseAndPreviewSclx());
@@ -602,7 +602,7 @@ public class ImportPreviewPanel implements AppPanel
 	@Override
 	public String title()
 	{
-		return "Import Preview";
+		return "Import";
 		
 	}
 	

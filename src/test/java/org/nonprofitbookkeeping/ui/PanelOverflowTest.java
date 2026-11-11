@@ -231,6 +231,44 @@ class PanelOverflowTest
         });
     }
 
+    @Test void periodCloseHeaderScrollsAndEvidenceViewsAreSiblingTabs()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            var panel = new PanelFactory().create(AppPanelId.PERIOD_CLOSE_RUNS);
+            show(panel.root(), 480, 560);
+            panel.root().setStyle("-fx-font-size: 18px;");
+            Label status = (Label) panel.root().lookup("#periodCloseStatus");
+            status.setText("A long period close status must wrap without losing any explanation when the workspace is narrow.");
+            layout();
+            ScrollPane header = (ScrollPane) panel.root().lookup("#periodCloseHeaderScroll");
+            assertNotNull(header);
+            assertEquals(1, ownBars(header, Orientation.HORIZONTAL).size());
+            assertTrue(status.isWrapText());
+            assertTrue(((Label) panel.root().lookup("#periodCloseActivePeriodRange")).isWrapText());
+            assertTrue(status.getHeight() >= status.prefHeight(status.getWidth()) - 1);
+            header.setHvalue(header.getHmax()); header.setVvalue(header.getVmax()); layout();
+            var clip = header.lookup(".viewport").localToScene(header.lookup(".viewport").getLayoutBounds());
+            var content = header.getContent().localToScene(header.getContent().getBoundsInLocal());
+            assertTrue(content.getMaxX() <= clip.getMaxX() + 1 && content.getMaxY() <= clip.getMaxY() + 1);
+            TabPane tabs = (TabPane) panel.root().lookup("#periodCloseTabs");
+            assertEquals(List.of("Close History", "Readiness", "Review Evidence", "Draft References", "Recorded Reviews"),
+                    tabs.getTabs().stream().map(Tab::getText).toList());
+            tabs.getSelectionModel().select(3); layout();
+            TextField reference = (TextField) panel.root().lookup("#closeReviewReference");
+            reference.setText("retained unsaved reference");
+            tabs.getSelectionModel().select(4); layout();
+            assertNotNull(panel.root().lookup("#closeReviewHistory"));
+            tabs.getSelectionModel().select(2); layout();
+            assertNotNull(panel.root().lookup("#closeReviewPreview"));
+            tabs.getSelectionModel().select(3); layout();
+            assertEquals("retained unsaved reference", reference.getText());
+            assertTrue(panel.hasUnsavedChanges());
+            snapshot("period-close-sibling-tabs");
+            return null;
+        });
+    }
+
     private void show(Node root, double width, double height)
     {
         Scene scene = new Scene((Parent) root, width, height);

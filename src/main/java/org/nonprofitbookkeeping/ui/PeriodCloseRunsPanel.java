@@ -138,12 +138,14 @@ public class PeriodCloseRunsPanel implements AppPanel
             reload();
         });
         activePeriodSummary.setId("periodCloseActivePeriodRange");
-        activePeriodSummary.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+        activePeriodSummary.setWrapText(true);
+        activePeriodSummary.setMinWidth(0);
         refreshActivePeriod();
 
         GridPane form = new GridPane();
         form.setHgap(8);
         form.setVgap(8);
+        form.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
         Label periodLabel = new Label("Accounting period");
         periodLabel.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
         form.add(periodLabel, 0, 0);
@@ -166,7 +168,17 @@ public class PeriodCloseRunsPanel implements AppPanel
 
         HBox actions = new HBox(8, useActiveMonth, close, reopen, refresh);
         actions.getStyleClass().add("panel-action-row");
-        root.setTop(new VBox(8, title, form, actions, status, new Separator()));
+        status.setWrapText(true);
+        VBox header = new VBox(8, title, form, actions, status, new Separator());
+        header.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        javafx.scene.control.ScrollPane headerScroll = new javafx.scene.control.ScrollPane(header);
+        headerScroll.setId("periodCloseHeaderScroll");
+        headerScroll.setFitToWidth(true);
+        headerScroll.setFitToHeight(true);
+        headerScroll.setMinSize(0, 0);
+        headerScroll.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        headerScroll.setVbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        root.setTop(headerScroll);
 
         configureRangeTable();
         configureHistoryTable();
@@ -189,7 +201,10 @@ public class PeriodCloseRunsPanel implements AppPanel
                 () -> activeCompanyCode() + "|" + MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
         evidence = new CloseReviewEvidencePane(startDate, endDate, UiServiceRegistry::closeReviewEvidence,
                 () -> activeCompanyCode() + "|" + MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
-        tabs = new TabPane(new Tab("Close History", split), new Tab("Readiness", readiness), new Tab("Review Evidence", evidence.root()));
+        tabs = new TabPane(new Tab("Close History", split), new Tab("Readiness", readiness),
+                new Tab("Review Evidence", evidence.root()),
+                new Tab("Draft References", evidence.draftReferencesRoot()),
+                new Tab("Recorded Reviews", evidence.recordedReviewsRoot()));
         tabs.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, value) -> capabilitiesChanged.run());
         evidence.setCommandCapabilitiesChangedListener(() -> capabilitiesChanged.run());
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
@@ -259,7 +274,7 @@ public class PeriodCloseRunsPanel implements AppPanel
 
     @Override public java.util.Set<AppCommand> commandCapabilities()
     {
-        return tabs.getSelectionModel().getSelectedIndex() == 2 ? evidence.commandCapabilities() : java.util.Set.of();
+        return tabs.getSelectionModel().getSelectedIndex() >= 2 ? evidence.commandCapabilities() : java.util.Set.of();
     }
 
     @Override public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
@@ -269,7 +284,7 @@ public class PeriodCloseRunsPanel implements AppPanel
 
     @Override public String commandLabel(AppCommand command)
     {
-        return command == AppCommand.SAVE_ACTIVE && tabs.getSelectionModel().getSelectedIndex() == 2 ? "Save Review" : AppPanel.super.commandLabel(command);
+        return command == AppCommand.SAVE_ACTIVE && tabs.getSelectionModel().getSelectedIndex() >= 2 ? "Save Review" : AppPanel.super.commandLabel(command);
     }
 
     @Override public void onSave()
