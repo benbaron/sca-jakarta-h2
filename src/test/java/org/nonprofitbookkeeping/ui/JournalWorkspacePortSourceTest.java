@@ -59,7 +59,8 @@ class JournalWorkspacePortSourceTest
         assertTrue(source.contains("installOverallEditorScroll"));
         String panes = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/WorkPaneTabs.java"));
         String viewport = Files.readString(Path.of("src/main/java/org/nonprofitbookkeeping/ui/PanelViewport.java"));
-        assertTrue(panes.contains("PanelViewport.wrap(content)"));
+        assertTrue(panes.contains("content instanceof javafx.scene.control.ScrollPane"));
+        assertTrue(panes.contains("PanelViewport.section(content)"));
         assertTrue(viewport.contains("setFitToWidth(true)"));
         assertTrue(viewport.contains("setVbarPolicy(ScrollBarPolicy.AS_NEEDED)"));
         assertTrue(viewport.contains("setHbarPolicy(ScrollBarPolicy.AS_NEEDED)"));

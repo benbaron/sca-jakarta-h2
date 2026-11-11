@@ -168,3 +168,18 @@ strips do not require a new divider. Both axes scroll when needed. Header scroll
 areas must not retain maximum-height caps that defeat expansion. The divider is
 saved by company/database and stable route/tab identity, using the existing UI
 state guard. See the [audit and checks](P29-C7-resizable-panel-headers.md).
+
+## P29-C8 scroll ownership and responsive text
+
+A tab reuses an existing form ScrollPane rather than wrapping it in a competing
+viewport. Inner sections do not inherit the whole-window minimum size. Grid
+forms retain their preferred minimum width; overflow is local and both axes
+remain available. Outside table cells, descriptive/status labels and button
+captions wrap instead of truncating. Banking action groups wrap as rows.
+
+Empty tables must retain horizontal access to their columns. The shared public
+TableViewSkin extension exposes a horizontal fallback only when the table is
+empty and its columns overflow; populated tables retain their native row/column
+scrolling. No fake rows, table data changes or offscreen vertical scrollbar.
+Event Accounting keeps every review status visible, with verbose read-only
+details available in an expandable section. See [C8 checks](P29-C8-overflow-wrapping.md).

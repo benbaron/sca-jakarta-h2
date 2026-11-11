@@ -1,17 +1,29 @@
 ---
-plan_version: 464
+plan_version: 465
 active_phase: P29
-active_slice: P29-C7
+active_slice: P29-C8
 active_status: VERIFYING
-active_branch: codex/P29-C7-resizable-panel-headers
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/419
-active_head: 391f5eee019020f569d522963cc063360b645bc8
-next_action: "Inspect final-head CI on draft PR 419 and obtain owner review/merge of the audited header-resize correction."
+active_branch: codex/P29-C8-overflow-wrapping
+active_pull_request: 420
+active_head: 0f8ef2980f61172cdd3b2e591acc0c5a87205f29
+next_action: "Inspect final-head CI on draft PR #420, perform the documented native owner checks, then review/merge C8; do not advance before merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
+### P29-C8 local overflow and wrapping — 2026-11-10 America/Denver
+
+Publication: implementation `0f8ef2980f61172cdd3b2e591acc0c5a87205f29`, tree `26a31daf62a5aa2ddf7b29a62fa6929f2d16ab5b`, is published on `codex/P29-C8-overflow-wrapping` in [draft PR #420](https://github.com/benbaron/sca-jakarta-h2/pull/420). Native fetch and connected metadata confirm identical commit/tree and PR head. This following documentation-only commit records publication. Local full/UI verification is complete as below; final-head CI and native owner review/merge remain pending. C8 stays VERIFYING. No merge authorized.
+
+Owner lists Event Accounting's closeout facts block; Merchant Settlement draft/NMR/center scrolling; linked transactions; Banking bank/account editors and top text; reconciliation saved sessions and both Match panes; then requests an audit of all other panels. This explicit P29-C8 correction uses fresh `codex/P29-C8-overflow-wrapping` from main `3701eaca` (merged #419), with a clean worktree. Prior C7 is merged; do not reuse its branch. Read AGENTS, PLAN, UI rules/interface matrix/editor guidelines and C7 header contract; inspect all 29 factory routes, WorkPaneTabs/PanelViewport, table skins/column ownership, named views and actual geometry/Save tests. Baseline compilation passed. No accounting, schema, reconciliation authority or durable-record lifecycle change.
+
+Findings before design: WorkPaneTabs unconditionally wraps existing ScrollPanes and PanelViewport.prepare wraps them again, creating competing vertical owners. Nested work panes inherit the whole-window 480×320 minimum even when a local form/table should scroll itself. Forms can compress below preferred width despite AS_NEEDED policy. The native baseline probe confirms zero visible horizontal bars with empty wide tables, versus one with the same columns and 40 rows (`/tmp/overflow-table-baseline.log`). Use a public TableViewSkin extension for the empty-placeholder case; retain the stock populated table, row scrollbar and original data/columns. No external table wrapper or fake rows. Event Accounting explicitly renders four read-only service-derived Journal/bank/lifecycle/scope facts as verbose always-visible labels; preserve their statuses/details while reducing the summary's visual bulk. [Contract and owner checks](P29-C8-overflow-wrapping.md). Implementation now reuses existing form ScrollPanes, removes the fixed whole-window minimum from inner sections, keeps intrinsic GridPane widths, wraps non-cell labels/buttons, and wraps Banking action rows. Empty columns get one horizontal fallback through public JavaFX skin APIs; native populated scrolling remains in place. Event Accounting keeps all four statuses visible and full read-only details in a collapsed-by-default section, hidden entirely when no event facts exist.
+
+Initial panel/route/startup smoke tests passed. Five new actual-control cases passed (`/tmp/overflow-acceptance.log`), covering empty/populated/cleared/hidden-column transitions, last-column reachability, the fixed native vertical bar, Settlement Draft ownership and both axes, NMR/receivables, both Banking forms, Saved Reconciliations and both Match tables, retained Attention/full facts and 13px/18px text/button geometry. Fixture corrections account for ancestor-hidden scrollbars and only demand bars after creating real overflow; no assertion is weakened to permit clipped content. The temporary native probe source was removed after retaining its baseline evidence. The broad display run executed 360 tests (09:08): all five new tests passed, but an obsolete source assertion required the duplicate viewport and an unchanged readiness-snapshot case intermittently reported a company absent from the private snapshot. The source guard now requires reuse of existing ScrollPanes. Unchanged main passed the isolated readiness/property cases (4 tests); the corrected branch then passed all 16 focused cases (01:11), including all 29 routes and 70 tables, readiness and property. One native GTK shutdown NPE in the broad run did not recur in either isolation; no accounting/recovery fix is inferred. Screenshot review exposed letter-by-letter button wrapping in a crowded row; word-aware minimum sizing and an enlarged-font regression address it. Final post-correction focused display run passed 14 tests (01:20). Complete final UI run then passed **360 tests across 138 classes, zero failures/errors/skips** (09:30), with no uncaught JavaFX/GTK errors. All 29 routes and 70 tables passed the final audit. Final styled snapshots were reviewed for independent Match bars, readable button words, Settlement Draft ownership, Banking editor overflow and compact Event facts; Attention remains visible and the complete details expand. CI now explicitly runs the new five-case PanelOverflowTest in its own display process. Workflow YAML and whitespace checks pass. Final `clean verify` passed **1,164 tests, zero failures/errors, 109 expected display skips**, BUILD SUCCESS (05:56, `/tmp/overflow-verify-final.log`); these display cases ran separately as above. Exact-head CI and native owner checks remain pending; publication is recorded above. A superseded clean verify was stopped deliberately after this final UI correction; it is not a passed gate. No financial/service change or native owner acceptance is claimed; no merge authorized.
+
 ### P29-C7 resizable control headers — 2026-11-08 America/Denver
+
+Closeout: DONE. Connected PR metadata confirms #419 merged into current main `3701eaca2fae4d3360b3412746b52655b0495a8d`; accepted head `9e2f435efe55ae5abbd3e8e394a294b681f4fa54` has successful exact-head workflow `42566041606`. The following publication record is historical. C8 starts independently from that merge.
 
 Publication: implementation `391f5eee019020f569d522963cc063360b645bc8`, tree `8f72fe7e47065d0ad20275cd098d36850d644753`, is published on `codex/P29-C7-resizable-panel-headers` in [draft PR #419](https://github.com/benbaron/sca-jakarta-h2/pull/419). Native fetch and connected metadata confirm identical commit/tree and PR head. This following documentation-only commit records publication. Local full/UI verification is complete as below; final-head CI and owner review/merge remain pending. C7 stays VERIFYING. No merge authorized.
 
