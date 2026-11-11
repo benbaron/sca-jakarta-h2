@@ -223,3 +223,12 @@ Asset Register exposes explicit acquisition route, BANK or existing debit choice
 ## P29-S2 work-pane composition
 
 [Workspace simplification](P29-S2-workspace-simplification.md) governs the Inspector-free shell, menu/submenu styling, two-section maximum and overflow access in every destination and tab. Named views retain the owning controller, service, permission, Save scope and dirty-state behavior listed above.
+
+## P29-C7 resizable control headers
+
+Action/form headers expose their own horizontal resize handle in affected
+production panels and nested Administration views. The original business body
+retains its independent split, selection, draft, Save and permission behavior.
+Each header has both-axis overflow and a company/database-scoped saved divider.
+Journal's existing header divider is retained; title/status strips remain chrome.
+See [audit and owner checks](P29-C7-resizable-panel-headers.md).

@@ -25,11 +25,25 @@ final class CompanySplitPaneStateBinder
     static void bind(SplitPane split, String stableKey, double defaultPosition,
                      CompanyUiPreferencesService service, UiSessionState session)
     {
+        bind(split, stableKey, defaultPosition, service, session, .20, .80);
+    }
+
+    static void bindHeader(SplitPane split, String stableKey, double defaultPosition)
+    {
+        bind(split, stableKey, defaultPosition, UiServiceRegistry.companyUiPreferences(),
+                MainWindow.sharedSessionState(), .08, .85);
+    }
+
+    private static void bind(SplitPane split, String stableKey, double defaultPosition,
+                             CompanyUiPreferencesService service, UiSessionState session, double minimum, double maximum)
+    {
         String company = activeCompanyCode(session);
         UiStateWriteContext context = UiStateWriteContext.capture(session, company);
         String stateKey = "ui.split." + safeKey(stableKey) + ".divider";
         Map<String, String> state = service.loadState(company, stateKey);
-        split.setDividerPositions(clamp(parseDouble(state.get(stateKey), defaultPosition)));
+        double saved = parseDouble(state.get(stateKey), defaultPosition);
+        split.setDividerPositions(Double.isFinite(saved)
+                ? Math.max(minimum, Math.min(maximum, saved)) : defaultPosition);
 
         PauseTransition delay = new PauseTransition(Duration.millis(350));
         delay.setOnFinished(event ->
@@ -68,8 +82,4 @@ final class CompanySplitPaneStateBinder
         }
     }
 
-    private static double clamp(double value)
-    {
-        return Math.max(0.20, Math.min(0.80, value));
-    }
 }

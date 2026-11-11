@@ -122,7 +122,7 @@ public final class PanelFactory
         }
         AppPanel panel = factory.get();
         CompanyTableStateBinder.applyProductionPanel(panel.root(), canonicalId);
-        PanelViewport.prepare(panel.root());
+        PanelViewport.prepare(panel.root(), "panel-" + canonicalId.name());
         return panel;
     }
 }

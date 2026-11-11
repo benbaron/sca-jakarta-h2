@@ -44,6 +44,12 @@ final class PanelViewport extends ScrollPane
     /** Apply overflow access to every logical tab, including inactive subpanes. */
     static void prepare(Node node)
     {
+        prepare(node, node.getId() == null ? node.getClass().getSimpleName() : node.getId());
+    }
+
+    static void prepare(Node node, String key)
+    {
+        ResizablePanelHeader.prepare(node, key);
         if (node instanceof TabPane tabs)
         {
             for (var tab : tabs.getTabs())
@@ -51,7 +57,7 @@ final class PanelViewport extends ScrollPane
                 Node content = tab.getContent();
                 if (content != null)
                 {
-                    prepare(content);
+                    prepare(content, key + "-tab-" + tab.getText());
                     if (!(content instanceof PanelViewport))
                     {
                         // Tab writes its effective disabled state onto its content.
@@ -72,16 +78,24 @@ final class PanelViewport extends ScrollPane
             scroll.setVbarPolicy(ScrollBarPolicy.AS_NEEDED);
             if (scroll.getContent() != null)
             {
-                prepare(scroll.getContent());
+                prepare(scroll.getContent(), key + "-content");
             }
         }
         else if (node instanceof SplitPane split)
         {
-            split.getItems().forEach(PanelViewport::prepare);
+            for (int i = 0; i < split.getItems().size(); i++)
+            {
+                prepare(split.getItems().get(i), key + "-pane-" + i);
+            }
         }
         else if (node instanceof Parent parent && !(node instanceof javafx.scene.control.Control))
         {
-            java.util.List.copyOf(parent.getChildrenUnmodifiable()).forEach(PanelViewport::prepare);
+            var children = java.util.List.copyOf(parent.getChildrenUnmodifiable());
+            for (int i = 0; i < children.size(); i++)
+            {
+                Node child = children.get(i);
+                prepare(child, key + "-" + (child.getId() == null ? "child-" + i : child.getId()));
+            }
         }
     }
 }

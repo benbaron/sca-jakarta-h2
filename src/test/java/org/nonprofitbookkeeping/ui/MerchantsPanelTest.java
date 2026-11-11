@@ -82,6 +82,152 @@ class MerchantsPanelTest
     }
 
     @Test
+    void productionHeaderCanBeDraggedWithoutLosingDraftAndRestoresItsOwnSize() throws Exception
+    {
+        double[] heights = new double[2];
+        javafx.geometry.Point2D[] handle = new javafx.geometry.Point2D[1];
+        double[] savedPosition = new double[1];
+        double[] savedBody = new double[1];
+        String[] stateKey = new String[1];
+        FxTestSupport.onFx(() ->
+        {
+            panel = (MerchantsPanel) new PanelFactory().create(AppPanelId.MERCHANTS);
+            stage = new Stage();
+            var scene = new Scene(PanelViewport.wrap(panel.root()), 900, 650);
+            scene.getStylesheets().add(getClass().getResource("/ui/styles.css").toExternalForm());
+            stage.setScene(scene); stage.show();
+            panel.root().applyCss(); ((javafx.scene.Parent) panel.root()).layout();
+            ((TextField) panel.root().lookup("#merchantsName")).setText("Retain this unsaved Merchant");
+            SplitPane outer = headerSplit(panel.root());
+            SplitPane body = (SplitPane) panel.root().lookup("#merchantsWorkspaceSplit");
+            body.setDividerPositions(.62);
+            var divider = outer.lookupAll(".split-pane-divider").stream()
+                    .filter(node -> node.getParent() == outer).findFirst().orElseThrow();
+            assertTrue(divider.isVisible());
+            assertTrue(divider.getBoundsInParent().getWidth() >= outer.getWidth() - 4,
+                    "The new resize handle must span the header horizontally");
+            heights[0] = outer.getItems().get(0).getLayoutBounds().getHeight();
+            heights[1] = body.getHeight();
+            handle[0] = divider.localToScreen(divider.getBoundsInLocal().getWidth() / 2,
+                    divider.getBoundsInLocal().getHeight() / 2);
+            stateKey[0] = "ui.split.control-header-" + outer.getId().substring("panelHeaderSplit-".length()) + ".divider";
+            new javafx.scene.robot.Robot().mouseMove(handle[0]);
+            return null;
+        });
+        Thread.sleep(60);
+        FxTestSupport.onFx(() -> { new javafx.scene.robot.Robot().mousePress(javafx.scene.input.MouseButton.PRIMARY); return null; });
+        Thread.sleep(60);
+        FxTestSupport.onFx(() -> { new javafx.scene.robot.Robot().mouseMove(handle[0].getX(), handle[0].getY() + 110); return null; });
+        Thread.sleep(60);
+        FxTestSupport.onFx(() -> { new javafx.scene.robot.Robot().mouseRelease(javafx.scene.input.MouseButton.PRIMARY); return null; });
+        await(() -> headerSplit(panel.root()).getItems().get(0).getLayoutBounds().getHeight() > heights[0] + 50);
+        FxTestSupport.onFx(() ->
+        {
+            SplitPane outer = headerSplit(panel.root());
+            assertTrue(((SplitPane) panel.root().lookup("#merchantsWorkspaceSplit")).getHeight() < heights[1] - 50);
+            assertTrue(panel.hasUnsavedChanges());
+            assertEquals("Retain this unsaved Merchant", ((TextField) panel.root().lookup("#merchantsName")).getText());
+            savedPosition[0] = outer.getDividerPositions()[0];
+            savedBody[0] = ((SplitPane) panel.root().lookup("#merchantsWorkspaceSplit")).getDividerPositions()[0];
+            snapshot("merchants-expanded");
+            return null;
+        });
+        await(() ->
+        {
+            String saved = UiServiceRegistry.companyUiPreferences().loadState("DEFAULT", stateKey[0]).get(stateKey[0]);
+            String body = UiServiceRegistry.companyUiPreferences().loadState("DEFAULT", "ui.merchants.divider.workspace").get("ui.merchants.divider.workspace");
+            return saved != null && Math.abs(Double.parseDouble(saved) - savedPosition[0]) < .02
+                    && body != null && Math.abs(Double.parseDouble(body) - savedBody[0]) < .02;
+        });
+        FxTestSupport.onFx(() ->
+        {
+            var reopened = new PanelFactory().create(AppPanelId.MERCHANTS);
+            stage.setScene(new Scene(PanelViewport.wrap(reopened.root()), 900, 650));
+            stage.getScene().getRoot().applyCss(); stage.getScene().getRoot().layout();
+            assertEquals(savedPosition[0], headerSplit(reopened.root()).getDividerPositions()[0], .03);
+            assertEquals(savedBody[0], ((SplitPane) reopened.root().lookup("#merchantsWorkspaceSplit")).getDividerPositions()[0], .03,
+                    "The existing body divider keeps its independent saved position");
+            return null;
+        });
+    }
+
+    @Test
+    void crampedHeaderExposesBothScrollAxesAndItsLastControlAtLargerText() throws Exception
+    {
+        FxTestSupport.onFx(() ->
+        {
+            var fields = new javafx.scene.layout.GridPane();
+            fields.setHgap(8); fields.setVgap(8);
+            TextField lastField = null;
+            for (int i = 0; i < 8; i++)
+            {
+                var field = new TextField("Editable header value " + i);
+                field.setMinWidth(720);
+                fields.add(new javafx.scene.control.Label("Field " + i), 0, i);
+                fields.add(field, 1, i); lastField = field;
+            }
+            Button last = new Button("Last header action"); fields.add(last, 1, 8);
+            var root = new javafx.scene.layout.BorderPane(new SplitPane(new javafx.scene.control.TableView<>(), new VBox()));
+            root.setTop(new VBox(8, new javafx.scene.control.Label("Control header"), fields));
+            PanelViewport.prepare(root, "header-overflow-regression");
+            var outer = headerSplit(root);
+            var scroll = (ScrollPane) outer.getItems().get(0);
+            stage = new Stage(); stage.setScene(new Scene(PanelViewport.wrap(root), 480, 420)); stage.show();
+            for (int font : new int[] {13, 18})
+            {
+                root.setStyle("-fx-font-size: " + font + "px;");
+                outer.setDividerPositions(.25);
+                stage.getScene().getRoot().applyCss(); stage.getScene().getRoot().layout();
+                var bars = scroll.lookupAll(".scroll-bar").stream()
+                        .filter(node -> node.getParent() == scroll)
+                        .map(javafx.scene.control.ScrollBar.class::cast).toList();
+                assertEquals(2, bars.stream().filter(Node -> Node.isVisible()).count(),
+                        "Actual header overflow must expose both scrollbars at " + font + "px");
+                scroll.setHvalue(0); scroll.setVvalue(scroll.getVmax());
+                stage.getScene().getRoot().layout();
+                var viewport = scroll.lookup(".viewport");
+                var clip = viewport.localToScene(viewport.getLayoutBounds());
+                var bounds = last.localToScene(last.getBoundsInLocal());
+                assertTrue(bounds.getMinY() >= clip.getMinY() - 1 && bounds.getMaxY() <= clip.getMaxY() + 1,
+                        "The last header action remains vertically reachable");
+                scroll.setHvalue(scroll.getHmax()); stage.getScene().getRoot().layout();
+                var right = lastField.localToScene(lastField.getBoundsInLocal());
+                assertTrue(right.getMaxX() <= clip.getMaxX() + 1 && right.getMaxX() >= clip.getMinX(),
+                        "The right end of a long header field remains reachable");
+            }
+            snapshot("header-narrow-18px");
+            int count = root.lookupAll(".resizable-control-header-split").size();
+            PanelViewport.prepare(root, "header-overflow-regression");
+            assertEquals(count, root.lookupAll(".resizable-control-header-split").size(), "Preparation must be idempotent");
+            return null;
+        });
+    }
+
+    private static SplitPane headerSplit(javafx.scene.Node root)
+    {
+        return root.lookupAll(".resizable-control-header-split").stream().map(SplitPane.class::cast)
+                .findFirst().orElseThrow();
+    }
+
+    private void snapshot(String name)
+    {
+        String output = System.getProperty("headerResizePreviewDir");
+        if (output == null) return;
+        try
+        {
+            java.nio.file.Files.createDirectories(Path.of(output));
+            var pixels = stage.getScene().snapshot(null);
+            var image = new java.awt.image.BufferedImage((int) pixels.getWidth(), (int) pixels.getHeight(), java.awt.image.BufferedImage.TYPE_INT_ARGB);
+            for (int y = 0; y < image.getHeight(); y++)
+            {
+                for (int x = 0; x < image.getWidth(); x++) image.setRGB(x, y, pixels.getPixelReader().getArgb(x, y));
+            }
+            javax.imageio.ImageIO.write(image, "png", Path.of(output).resolve(name + ".png").toFile());
+        }
+        catch (java.io.IOException ex) { throw new java.io.UncheckedIOException(ex); }
+    }
+
+    @Test
     void returningToJournalRefreshesMixedMerchantsWithoutLosingIdsOrDraft() throws Exception
     {
         final JournalWorkspaceCompliancePanel[] journal = new JournalWorkspaceCompliancePanel[1];

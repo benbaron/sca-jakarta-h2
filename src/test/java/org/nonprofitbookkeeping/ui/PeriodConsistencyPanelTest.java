@@ -113,9 +113,11 @@ class PeriodConsistencyPanelTest
                     viewport.setStyle("-fx-font-size: " + fontSize + "px;");
                     viewport.applyCss();
                     viewport.layout();
-                    ScrollBar horizontal = viewport.lookupAll(".scroll-bar").stream()
+                    var headerSplit = (javafx.scene.control.SplitPane) close.root().lookup(".resizable-control-header-split");
+                    var headerScroll = (javafx.scene.control.ScrollPane) headerSplit.getItems().get(0);
+                    ScrollBar horizontal = headerScroll.lookupAll(".scroll-bar").stream()
                             .map(ScrollBar.class::cast)
-                            .filter(bar -> bar.getParent() == viewport
+                            .filter(bar -> bar.getParent() == headerScroll
                                     && bar.getOrientation() == javafx.geometry.Orientation.HORIZONTAL)
                             .findFirst().orElseThrow();
                     assertTrue(horizontal.isVisible(), "Narrow form must expose horizontal scrolling");
@@ -123,9 +125,9 @@ class PeriodConsistencyPanelTest
                     Label range = (Label) close.root().lookup("#periodCloseActivePeriodRange");
                     assertTrue(apply.getWidth() >= apply.prefWidth(-1) - 1, "Apply text must not be shortened");
                     assertTrue(range.getWidth() >= range.prefWidth(-1) - 1, "Range text must not be shortened");
-                    viewport.setHvalue(viewport.getHmax());
+                    headerScroll.setHvalue(headerScroll.getHmax());
                     viewport.layout();
-                    var visible = viewport.lookup(".viewport");
+                    var visible = headerScroll.lookup(".viewport");
                     var clip = visible.localToScene(visible.getLayoutBounds());
                     var bounds = range.localToScene(range.getBoundsInLocal());
                     assertTrue(bounds.getMinX() >= clip.getMinX() - 1
