@@ -17,7 +17,8 @@ final class WorkPaneTabs extends TabPane
 
     WorkPaneTabs addPane(String title, Node content)
     {
-        getTabs().add(new Tab(title, PanelViewport.wrap(content)));
+        getTabs().add(new Tab(title, content instanceof javafx.scene.control.ScrollPane
+                ? content : PanelViewport.section(content)));
         return this;
     }
 }

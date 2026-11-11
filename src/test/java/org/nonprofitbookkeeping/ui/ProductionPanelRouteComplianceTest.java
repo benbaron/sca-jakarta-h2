@@ -95,6 +95,13 @@ class ProductionPanelRouteComplianceTest
                     window.layout();
                     javafx.scene.Node root = window.panelHost().activeRoot();
                     assertNotNull(root, panelId + " must create a production root.");
+                    var tables = CompanyTableStateBinder.findTables(root);
+                    for (var table : tables)
+                    {
+                        assertTrue(table.getSkin() instanceof HorizontalOverflowTableSkin<?>,
+                                panelId + " must preserve horizontal column access in active and inactive tabs");
+                    }
+                    System.out.println("TABLE_OVERFLOW_AUDIT " + panelId + " " + tables.size());
                     var headerPaths = new java.util.ArrayList<String>();
                     collectHeaderPaths(root, headerPaths);
                     System.out.println("HEADER_RESIZE_AUDIT " + panelId + " " + headerPaths);
