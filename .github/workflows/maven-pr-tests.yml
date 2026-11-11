@@ -64,6 +64,9 @@ jobs:
       - name: Run local overflow and wrapping behavior
         run: xvfb-run -a mvn -B -ntp -e -Dtest=PanelOverflowTest test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
 
+      - name: Run Import workflows and task lifecycle
+        run: xvfb-run -a mvn -B -ntp -e -DreuseForks=false -Dtest=ImportWorkflowPanelTest,ImportPreviewPanelSclxTest,InterchangeTaskControllerTest test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
+
       - name: Run production JavaFX route compliance
         run: xvfb-run -a mvn -B -ntp -e -Dtest=WorkflowPeriodDefaultsTest,PeriodConsistencyPanelTest,ReportLibraryPeriodSynchronizationIntegrationTest,JournalSupplementalAvailabilityTest,WindowsMenuStylerTest,PanelViewportFxTest,NavigationPaneInteractionTest,CloseReviewEvidencePaneTest,AccountingReadinessPaneTest,CorePacketExportActionTest,AssetAcquisitionPanelTest,RecognitionAssistantPanelTest,OpeningConversionPanelTest,MerchantSettlementAssistantPanelTest,DatabaseTransferPanelTest,DatabaseTransferMenuInstallerTest,CompanyTableStateBinderTest,ProductionPanelRouteComplianceTest,CoreEditorComplianceTest,ChartOfAccountsInterchangePanelTest,FormattedReportFxRendererTest,EventDiscoveryPanelTest,JournalFundEventTaggingTest,InventoryEventAttributionPanelTest,BudgetCategoriesPanelTest,BudgetPlanningPanelTest,CounterpartiesPanelTest,MerchantsPanelTest,FundTransfersPanelTest,JournalPaymentReferencesTest,CheckExceptionsPaneTest,PaneSaveCoverageTest,NmrPoliciesPanelTest,AppPanelCommandCapabilityTest,ProductionWorkspaceCommandRoutingTest,ThemeTextContrastFxTest,ApplicationPresentationFxTest test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
 

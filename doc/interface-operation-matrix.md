@@ -252,3 +252,9 @@ original independent splits. Shared Save follows valid draft capability in all
 three evidence contexts, with unchanged permission, busy and stale-scope guards.
 The top controls use one local both-axis scroll pane with wrapped status/period
 text. The visible Import name retains the IMPORT_PREVIEW compatibility route.
+
+Import account/profile refresh retains a compatible active profile by stable ID
+for the same selected bank target. Changing targets or deactivating the profile
+must not restore an incompatible choice. Preview and commit still use the
+existing frozen-source/profile validation authority. See [Import workflow
+regressions](P29-C10-import-workflow-coverage.md).
