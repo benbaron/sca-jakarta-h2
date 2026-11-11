@@ -138,8 +138,10 @@ public class BankingPanel implements AppPanel
         Button reviewRows = new Button("Review / Export Statements…");
         reviewRows.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(
                 AppPanelId.BANK_TRANSACTIONS, "Banking: durable review rows"));
+        status.setWrapText(true);
+        status.setId("bankingStatus");
         root.setTop(new VBox(6, title,
-                new HBox(8, newBank, saveBank, refresh, importStatement, reviewRows),
+                new javafx.scene.layout.FlowPane(8, 6, newBank, saveBank, refresh, importStatement, reviewRows),
                 status, new Separator()));
         root.setCenter(workPanes);
 

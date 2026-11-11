@@ -95,6 +95,23 @@ class ProductionPanelRouteComplianceTest
                     window.layout();
                     javafx.scene.Node root = window.panelHost().activeRoot();
                     assertNotNull(root, panelId + " must create a production root.");
+                    var tables = CompanyTableStateBinder.findTables(root);
+                    for (var table : tables)
+                    {
+                        assertTrue(table.getSkin() instanceof HorizontalOverflowTableSkin<?>,
+                                panelId + " must preserve horizontal column access in active and inactive tabs");
+                    }
+                    System.out.println("TABLE_OVERFLOW_AUDIT " + panelId + " " + tables.size());
+                    var headerPaths = new java.util.ArrayList<String>();
+                    collectHeaderPaths(root, headerPaths);
+                    System.out.println("HEADER_RESIZE_AUDIT " + panelId + " " + headerPaths);
+                    if (java.util.Set.of(AppPanelId.MERCHANTS, AppPanelId.ACTIVITIES, AppPanelId.BUDGET_CATEGORIES,
+                            AppPanelId.COUNTERPARTIES, AppPanelId.FUND_TRANSFERS, AppPanelId.OPENING_CONVERSION,
+                            AppPanelId.IMPORT_PREVIEW, AppPanelId.ASSETS_REGISTER, AppPanelId.PERIOD_CLOSE_RUNS,
+                            AppPanelId.MERCHANT_SETTLEMENT_ASSISTANT).contains(panelId))
+                    {
+                        assertFalse(headerPaths.isEmpty(), panelId + " must expose a resizable control header");
+                    }
                     assertTrue(maximumVisibleSections(root) <= 2,
                             panelId + " must have at most two major visible sections, including nested splits");
                     assertTrue(window.panelHost().getSelectionModel().getSelectedItem().getContent() instanceof PanelViewport,
@@ -187,10 +204,39 @@ class ProductionPanelRouteComplianceTest
         }
     }
 
+    private static void collectHeaderPaths(javafx.scene.Node node, java.util.List<String> result)
+    {
+        if (node instanceof javafx.scene.control.SplitPane split)
+        {
+            if (ResizablePanelHeader.isHeaderSplit(split)) result.add(String.valueOf(split.getProperties().get("sca.headerPath")));
+            split.getItems().forEach(child -> collectHeaderPaths(child, result));
+        }
+        else if (node instanceof javafx.scene.control.TabPane tabs)
+        {
+            tabs.getTabs().forEach(tab -> { if (tab.getContent() != null) collectHeaderPaths(tab.getContent(), result); });
+        }
+        else if (node instanceof javafx.scene.control.ScrollPane scroll)
+        {
+            if (scroll.getContent() != null) collectHeaderPaths(scroll.getContent(), result);
+        }
+        else if (node instanceof javafx.scene.Parent parent && !(node instanceof javafx.scene.control.Control))
+        {
+            parent.getChildrenUnmodifiable().forEach(child -> collectHeaderPaths(child, result));
+        }
+    }
+
     private static int maximumVisibleSections(javafx.scene.Node node)
     {
         if (node instanceof javafx.scene.control.SplitPane split)
         {
+            if (ResizablePanelHeader.isHeaderSplit(split))
+            {
+                assertEquals(2, split.getItems().size());
+                assertEquals(javafx.geometry.Orientation.VERTICAL, split.getOrientation());
+                assertTrue(split.getItems().get(0).lookupAll(".table-view").isEmpty(),
+                        "A control-header exception must not hide another business table");
+                return maximumVisibleSections(split.getItems().get(1));
+            }
             return split.getItems().stream().mapToInt(ProductionPanelRouteComplianceTest::maximumVisibleSections).sum();
         }
         if (node instanceof javafx.scene.control.TabPane tabs)

@@ -60,6 +60,8 @@ public final class EventAccountingPanel implements AppPanel
     private final Label bankInflows = new Label("—");
     private final Label bankOutflows = new Label("—");
     private final VBox reviewFacts = new VBox(4);
+    private final FlowPane reviewStatuses = new FlowPane(12, 4);
+    private final javafx.scene.control.TitledPane reviewDetails = new javafx.scene.control.TitledPane("Closeout review facts", reviewFacts);
     private final Button openJournal = new Button("Open Selected in Journal");
     private boolean applyingDefaultDates;
     private boolean dateScopeDetached;
@@ -188,14 +190,12 @@ public final class EventAccountingPanel implements AppPanel
 
         bankTable.setTooltip(new javafx.scene.control.Tooltip("These bank rows share an event transaction; they are not event allocations."));
 
-        Label factsTitle = new Label("Closeout review facts");
-        factsTitle.getStyleClass().add("section-title");
-        VBox content = new VBox(8,
-                controls,
-                new Separator(),
-                summary,
-                factsTitle,
-                reviewFacts);
+        reviewStatuses.setId("eventAccountingReviewStatuses");
+        reviewDetails.setId("eventAccountingReviewDetails");
+        reviewDetails.setExpanded(false);
+        reviewDetails.setVisible(false);
+        reviewDetails.managedProperty().bind(reviewDetails.visibleProperty());
+        VBox content = new VBox(8, controls, new Separator(), summary, reviewStatuses, reviewDetails);
         content.setPadding(new Insets(6, 0, 6, 0));
 
         ScrollPane scroll = new ScrollPane(content);
@@ -428,11 +428,16 @@ public final class EventAccountingPanel implements AppPanel
         updateJournalActionState();
     }
 
-    private void renderReviewFacts(List<ReviewFact> facts)
+    void renderReviewFacts(List<ReviewFact> facts)
     {
         reviewFacts.getChildren().clear();
+        reviewStatuses.getChildren().clear();
+        reviewDetails.setVisible(!facts.isEmpty());
         for (ReviewFact fact : facts)
         {
+            Label summary = new Label(fact.label() + ": " + fact.status());
+            summary.setWrapText(true);
+            reviewStatuses.getChildren().add(summary);
             Label label = new Label(fact.label() + ": " + fact.status() + " — " + fact.detail());
             label.setWrapText(true);
             reviewFacts.getChildren().add(label);
@@ -452,6 +457,8 @@ public final class EventAccountingPanel implements AppPanel
         linkedTable.getItems().clear();
         bankTable.getItems().clear();
         reviewFacts.getChildren().clear();
+        reviewStatuses.getChildren().clear();
+        reviewDetails.setVisible(false);
         openJournal.setDisable(true);
         status.setText(message);
     }

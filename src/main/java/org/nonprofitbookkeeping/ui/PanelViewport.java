@@ -10,20 +10,20 @@ import javafx.scene.layout.BorderPane;
 /** Keeps an entire work pane reachable when the viewport is smaller than its controls. */
 final class PanelViewport extends ScrollPane
 {
-    private PanelViewport(Node content)
+    private PanelViewport(Node content, boolean wholePanel)
     {
         BorderPane surface = new BorderPane(content)
         {
             @Override
             protected double computeMinWidth(double height)
             {
-                return Math.max(480, super.computeMinWidth(height));
+                return Math.max(wholePanel ? 480 : 0, super.computeMinWidth(height));
             }
 
             @Override
             protected double computeMinHeight(double width)
             {
-                return Math.max(320, super.computeMinHeight(width));
+                return Math.max(wholePanel ? 320 : 0, super.computeMinHeight(width));
             }
         };
         setContent(surface);
@@ -38,12 +38,24 @@ final class PanelViewport extends ScrollPane
 
     static PanelViewport wrap(Node content)
     {
-        return new PanelViewport(content);
+        return new PanelViewport(content, true);
+    }
+
+    static PanelViewport section(Node content)
+    {
+        return new PanelViewport(content, false);
     }
 
     /** Apply overflow access to every logical tab, including inactive subpanes. */
     static void prepare(Node node)
     {
+        prepare(node, node.getId() == null ? node.getClass().getSimpleName() : node.getId());
+    }
+
+    static void prepare(Node node, String key)
+    {
+        PanelTextLayout.prepare(node);
+        ResizablePanelHeader.prepare(node, key);
         if (node instanceof TabPane tabs)
         {
             for (var tab : tabs.getTabs())
@@ -51,8 +63,8 @@ final class PanelViewport extends ScrollPane
                 Node content = tab.getContent();
                 if (content != null)
                 {
-                    prepare(content);
-                    if (!(content instanceof PanelViewport))
+                    prepare(content, key + "-tab-" + tab.getText());
+                    if (!(content instanceof ScrollPane))
                     {
                         // Tab writes its effective disabled state onto its content.
                         // Transfer that ownership to the new viewport so the old
@@ -61,7 +73,7 @@ final class PanelViewport extends ScrollPane
                         {
                             content.setDisable(false);
                         }
-                        tab.setContent(wrap(content));
+                        tab.setContent(section(content));
                     }
                 }
             }
@@ -72,16 +84,28 @@ final class PanelViewport extends ScrollPane
             scroll.setVbarPolicy(ScrollBarPolicy.AS_NEEDED);
             if (scroll.getContent() != null)
             {
-                prepare(scroll.getContent());
+                prepare(scroll.getContent(), key + "-content");
             }
         }
         else if (node instanceof SplitPane split)
         {
-            split.getItems().forEach(PanelViewport::prepare);
+            for (int i = 0; i < split.getItems().size(); i++)
+            {
+                prepare(split.getItems().get(i), key + "-pane-" + i);
+            }
+        }
+        else if (node instanceof javafx.scene.control.TableView<?> table)
+        {
+            HorizontalOverflowTableSkin.install(table);
         }
         else if (node instanceof Parent parent && !(node instanceof javafx.scene.control.Control))
         {
-            java.util.List.copyOf(parent.getChildrenUnmodifiable()).forEach(PanelViewport::prepare);
+            var children = java.util.List.copyOf(parent.getChildrenUnmodifiable());
+            for (int i = 0; i < children.size(); i++)
+            {
+                Node child = children.get(i);
+                prepare(child, key + "-" + (child.getId() == null ? "child-" + i : child.getId()));
+            }
         }
     }
 }

@@ -4,7 +4,7 @@ This document records cross-cutting UI display and interaction rules for the pro
 
 ## Work panes and overflow access
 
-P29-S2 replaces the three-column shell with left navigation and the work area. The right Inspector and its controls/shortcut are removed. Every work pane shows at most two major sections, including nested subdivisions. Extra functions use named work panes sharing the same controller and draft. Labels and local command/tool bars are chrome, not additional independent sections.
+P29-S2 replaces the three-column shell with left navigation and the work area. The right Inspector and its controls/shortcut are removed. Every work pane shows at most two major sections, including nested subdivisions. Extra functions use named work panes sharing the same controller and draft. Labels and local command/tool bars are chrome, not additional independent sections. Resizable action/form headers remain chrome; adding a divider above the existing business body does not add a third business/data section.
 
 Every destination and logical tab has horizontal and vertical overflow access when its content exceeds the available size. Forms retain scrolling and tables retain independent horizontal/vertical scrolling; reducing the window must not make controls unreachable. Do not disable a needed scrollbar axis. The earlier obligation to add nested resize bars around every Journal subsection is superseded by the two-section limit. See [P29-S2](P29-S2-workspace-simplification.md) for the complete route review and user checks.
 
@@ -157,12 +157,29 @@ loads and refresh current range/history/coverage after success. Invalidate old
 readiness/review observations; never silently save a review or clear another
 company/database draft. Dashboard reloads when shown again.
 
-## P29-C6 native application identity
+## P29-C7 independently resizable control headers
 
-Use the original bundled open-ledger artwork for the application icon. Install
-the full resolution set through JavaFX Stage.getIcons before showing the primary
-window; where supported, set the process icon with Taskbar ICON_IMAGE for native
-Dock/taskbar branding. The OS controls placement. Do not add an in-app activity
-bar or system-tray feature to emulate native application identity. Icon branding
-remains consistent before/after sign-in and across themes/decorations. See the
-[icon contract and native checks](P29-C6-application-icon.md).
+Production control headers above a business workspace expose a real horizontal
+drag handle (a vertical SplitPane), including nested Administration views. Fixed
+scrollable VBox headers and actionable BorderPane headers use the shared viewport
+preparation rule. Preserve the existing body splits and draft-owning controller;
+retain Journal's existing header split without duplication. Pure title/status
+strips do not require a new divider. Both axes scroll when needed. Header scroll
+areas must not retain maximum-height caps that defeat expansion. The divider is
+saved by company/database and stable route/tab identity, using the existing UI
+state guard. See the [audit and checks](P29-C7-resizable-panel-headers.md).
+
+## P29-C8 scroll ownership and responsive text
+
+A tab reuses an existing form ScrollPane rather than wrapping it in a competing
+viewport. Inner sections do not inherit the whole-window minimum size. Grid
+forms retain their preferred minimum width; overflow is local and both axes
+remain available. Outside table cells, descriptive/status labels and button
+captions wrap instead of truncating. Banking action groups wrap as rows.
+
+Empty tables must retain horizontal access to their columns. The shared public
+TableViewSkin extension exposes a horizontal fallback only when the table is
+empty and its columns overflow; populated tables retain their native row/column
+scrolling. No fake rows, table data changes or offscreen vertical scrollbar.
+Event Accounting keeps every review status visible, with verbose read-only
+details available in an expandable section. See [C8 checks](P29-C8-overflow-wrapping.md).

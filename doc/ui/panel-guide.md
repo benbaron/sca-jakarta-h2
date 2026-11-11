@@ -388,3 +388,15 @@ Help displays the currently installed shortcuts and links to this guide and
 project documentation. Copy/Paste use the standard shortcuts of the focused
 text control. Hover hints supplement field labels; validation and current status
 stay visible without hovering.
+
+## Reading closeout facts and scrolling narrow panes
+
+Event Accounting shows current Journal linkage, bank clearing, activity lifecycle
+and scope statuses. **Closeout review facts** expands their full read-only details;
+an Attention status stays visible while details are collapsed. These facts do not
+close an event or authorize an accounting-period close.
+
+Narrow tables expose their own horizontal bar, including empty tables. Settlement
+Draft and the Banking editors use one local form scroll owner with horizontal
+access to fields. Enlarge a pane or scroll to reach the last column/field; labels
+and action captions wrap where space is limited.
