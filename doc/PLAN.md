@@ -1,17 +1,33 @@
 ---
-plan_version: 467
+plan_version: 469
 active_phase: P29
-active_slice: P29-C10
-active_status: VERIFYING
-active_branch: codex/P29-C10-import-workflow-tests
-active_pull_request: 422
-active_head: 835a4a2a80b80b8801991f3506eb17c43d4c4875
-next_action: "Inspect final-head CI on draft PR #422, perform the documented owner checks and review/merge C10; do not advance before merge."
+active_slice: P29-C11
+active_status: BLOCKED
+active_branch: codex/P29-C11-journal-save-feedback
+active_pull_request: 423
+active_head: 6f9039d9e954e524099aa0f7a9aeb801b912e3a4
+next_action: "C11 is blocked by reproduced H2 online-backup corruption. Select an independent recovery integrity correction from current main, starting with doc/P29-C11-ci-recovery-blocker.md and its standalone probe; do not merge #423 or weaken the readiness test."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
+### P29-C11 Journal Save completion feedback — 2026-11-11 America/Denver
+
+Investigation published: `6f9039d9e954e524099aa0f7a9aeb801b912e3a4`, tree `c36421bd7ec9915dc03343d5cc63d680c858728b`; native FETCH_HEAD and PR #423 match. The following documentation-only handoff records that publication. The PR description prominently records the failed CI and independent recovery prerequisite.
+
+**Current status: BLOCKED.** Final-head CI run `43132731784` passed clean headless verification, then failed the repeated `mvn test` with 1,197 tests / zero failures / one error / 141 skips. The underlying exception is H2 2.5.252 `MVStoreException: Chunk 8 not found`, while opening a freshly extracted native backup before migration inspection. A standalone H2-only online backup/CLOB experiment reproduces the same open-time missing-chunk/LobStorageMap failure; CHECKPOINT SYNC also fails. The retained probe additionally detects silent loss: five committed source rows restore as four. Ten existing focused tests and thirty extra executions of the exact readiness method pass, demonstrating why those passes do not prove repair. This is a substantial independent recovery integrity prerequisite, so apply AGENTS scope fence §3.3.6 and stop C11 implementation. [Evidence, repeat results and next recovery work](P29-C11-ci-recovery-blocker.md). The earlier local passes below remain historical evidence, not a successful current CI gate. Journal code is retained on the open draft branch; no production repair, dependency change, test retry or merge is claimed.
+
+Historical publication record (superseded by the blocked status above): implementation `61a141ca86bdc427930ec6503fad44ef708774f0`, tree `823cf96ebc11d6a05e6f060b57dbc8e3dff66a78`, is published on `codex/P29-C11-journal-save-feedback` in [draft PR #423](https://github.com/benbaron/sca-jakarta-h2/pull/423). Native fetch and connected metadata confirm identical branch commit/tree and PR head. This following documentation-only commit records publication. Local verification is complete below; final-head CI and native owner review/merge remain pending. C11 stays VERIFYING; no merge authorized.
+
+Owner reports a balanced new Journal entry remains at Saving new journal entry in the footer, with a screenshot of the Entry tab and receivable accounts. #422 is merged at current main `f5384cbfc66e3c4500584bf8c8e698f255ac01ee`; start clean `codex/P29-C11-journal-save-feedback`. Baseline compile passed (14.1 seconds). Read AGENTS/PLAN, UI/interface/editor rules, production shell/command/PanelHost contracts, Journal delegate/compliance panel, UiAsync, TransactionEntryService and create-request/idempotency tests. No user database is available; distinguish persistence from stale feedback with real H2 reproduction rather than assuming a backend hang.
+
+Inspection: AppPanel.executeCommand returns a single immediate message. ProductionWorkspaceWindow copies it into the footer, but later Journal success/failure updates only its local status label in the Journal tab. That label is out of view on Entry; failure reasons can remain invisible while the editor is enabled again. Test toolbar Save through the real shell for actual commit and service-level supplemental rejection, retaining the draft for retry. Add a scoped asynchronous result channel, forwarded through the existing Journal compliance panel and PanelHost, so late results from inactive/removed panels cannot overwrite another workspace. Preserve the canonical service, request UUID/idempotency, rollback, closed-period and permission protections; no timeout that permits another concurrent write and no schema change. [Contract, reproduction and owner checks](P29-C11-journal-save-feedback.md).
+
+The pre-fix real ACCOUNTANT regression fails in both independently verified H2 outcomes: committed valid create and rejected receivable with no extra transaction, while the footer remains Saving. Fixtures reuse initialized authentication instead of duplicating a reserved user; no authority assertion is weakened. Implementation publishes Journal pending/terminal messages through an optional AppPanel result listener, wrapper and active-instance-scoped PanelHost. Entry displays service failures; background refresh cannot replace the footer result. A known committed save with presentation failure reports its saved ID and reload instruction. Source request IDs and finance services are unchanged. Outer tab changes clear old message/tooltips without cancelling writes. First broad display/service run passed **41 tests, zero failures/errors/skips** (03:06), including real create/update/rejected retry/local Save/presentation failure, payment/supplemental roles, closed-period state, all routes and all seven request-receipt cases. Final scope-clearing and production Save/routing display run passed **23 tests, zero failures/errors/skips** (01:54), including all six real-shell cases and component owner filtering. No uncaught FX/SQL errors appeared in the final display run. Final `clean verify` passed **1,197 tests, zero failures/errors, 141 expected display skips**, BUILD SUCCESS (06:07, `/tmp/c11-verify.log`). Display cases ran separately as above. Workflow YAML/whitespace and final scope checks pass. Publication is recorded above; exact-head CI and native owner checks remain pending. CI selects both new display classes. No native owner acceptance claimed.
+
 ### P29-C10 Import workflow coverage — 2026-11-11 America/Denver
+
+Merged code: #422 is included in current main `f5384cbfc66e3c4500584bf8c8e698f255ac01ee`. Its accepted-head workflow `43099170205` was cancelled, so no GitHub success is inferred from the merge; local recorded gates passed. C11 is the owner-directed independent correction from that merge, and its descendant checks retain the Import workflow CI step. The following publication record is historical.
 
 Publication: implementation `835a4a2a80b80b8801991f3506eb17c43d4c4875`, tree `1d858b1480281115678d243a222030716a03818b`, is published on `codex/P29-C10-import-workflow-tests` in [draft PR #422](https://github.com/benbaron/sca-jakarta-h2/pull/422). Native fetch and connected metadata confirm identical branch commit/tree and PR head. This following documentation-only commit records publication. Local verification and coverage measurement are complete below; final-head CI and native owner review/merge remain pending. C10 stays VERIFYING; no merge authorized.
 

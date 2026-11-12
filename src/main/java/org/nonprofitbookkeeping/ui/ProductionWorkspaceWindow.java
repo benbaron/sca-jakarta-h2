@@ -113,6 +113,12 @@ public class ProductionWorkspaceWindow extends BorderPane
         setCenter(buildWorkspace());
         setBottom(buildStatusBar());
         panelHost.setCommandCapabilitiesChangedListener(this::refreshGlobalCommandState);
+        panelHost.setCommandResultListener(this::presentCommandResult);
+        panelHost.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, newTab) ->
+        {
+            commandStatusLabel.setText("");
+            commandStatusLabel.setTooltip(null);
+        });
         MainWindow.sharedSessionState().onAuthenticationChanged(ignored -> refreshGlobalCommandState());
 
         updateActiveDatabaseLabel();

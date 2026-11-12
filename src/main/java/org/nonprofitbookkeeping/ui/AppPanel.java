@@ -119,6 +119,12 @@ public interface AppPanel
         // Stable-capability panels require no listener.
     }
 
+    /** Publishes asynchronous command feedback on the JavaFX thread; synchronous panels need no listener. */
+    default void setCommandResultListener(java.util.function.Consumer<RunCommandResult> listener)
+    {
+        // Asynchronous command owners opt in to completion feedback.
+    }
+
     default Optional<JournalSelection> activeJournalSelection()
     {
         return Optional.empty();

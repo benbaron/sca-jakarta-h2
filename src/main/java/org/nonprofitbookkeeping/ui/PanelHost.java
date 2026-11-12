@@ -19,6 +19,7 @@ public class PanelHost extends TabPane
     private final Map<AppPanelId, Tab> tabs = new EnumMap<>(AppPanelId.class);
     private AppPanelId activeId;
     private Runnable commandCapabilitiesChangedListener = () -> { };
+    private java.util.function.Consumer<AppPanel.RunCommandResult> commandResultListener = ignored -> { };
 
     public PanelHost()
     {
@@ -239,6 +240,11 @@ public class PanelHost extends TabPane
         commandCapabilitiesChangedListener.run();
     }
 
+    public void setCommandResultListener(java.util.function.Consumer<AppPanel.RunCommandResult> listener)
+    {
+        commandResultListener = Objects.requireNonNull(listener, "listener");
+    }
+
     public AppPanel.RunCommandResult executeActive(AppCommand command)
     {
         AppPanel panel = getActive();
@@ -298,6 +304,13 @@ public class PanelHost extends TabPane
         tab.setUserData(id);
         tab.setClosable(!WorkspaceLayoutPolicy.isPermanentTab(id));
         panel.setCommandCapabilitiesChangedListener(this::notifyCommandCapabilitiesChanged);
+        panel.setCommandResultListener(result ->
+        {
+            if (activeId == id && panels.get(id) == panel)
+            {
+                commandResultListener.accept(result);
+            }
+        });
         tab.setOnClosed(event ->
         {
             tabs.remove(id);
