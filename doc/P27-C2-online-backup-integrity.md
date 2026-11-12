@@ -138,8 +138,13 @@ Windows visual acceptance.
 - Repeated full `test`: **1,199 tests, zero failures/errors, 141 expected display
   skips**, BUILD SUCCESS, exit 0, 06:06 (`/tmp/p27-c2-repeat-tests.log`).
 - Final display gate: **145 tests across 44 classes, zero failures/errors/skips**,
-  BUILD SUCCESS / exit 0 (`/tmp/p27-c2-display.log`). It includes the exact
+  BUILD SUCCESS / exit 0, 08:47 (`/tmp/p27-c2-display.log`). It includes the exact
   production route selector plus Import, Journal feedback, close and overflow
   gates, each class in an isolated JVM on Xvfb. No native Windows visual result
   is inferred.
 - Exact-head GitHub checks and owner review/merge remain pending.
+
+Publication: [draft PR #424](https://github.com/benbaron/sca-jakarta-h2/pull/424),
+implementation `1b2c5e489e338045f4a5fd381577daafc9c672b0`, tree
+`3d7140ed4d15c832024ebd1eacd8fbbc6cb3909c`. Native branch and connected PR
+match; final-head CI and owner verification remain required. PLAN owns handoff.
