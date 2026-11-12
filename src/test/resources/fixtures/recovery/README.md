@@ -1,5 +1,10 @@
 # Old-engine native recovery fixtures
 
+The standalone `H2OnlineBackupProbe.java` is a separate synthetic diagnostic for
+the [C11 CI storage blocker](../../../../../doc/P29-C11-ci-recovery-blocker.md).
+It does not generate or replace the frozen old-engine archives below. Run it
+explicitly with the current H2 jar; timing-dependent stress is not a JUnit gate.
+
 All data is synthetic. No uploaded database, real person, production credential or referenced external document is included. The password credential belongs to the synthetic `recovery-only-user`; its source password is explicit in the seed fixture.
 
 - `h2-2.2.224-v92.zip` is an offline native H2 backup after all source connections closed.

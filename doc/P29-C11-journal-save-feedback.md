@@ -1,5 +1,7 @@
 # P29-C11 Journal Save completion feedback
 
+Current status: blocked by the [independent H2 online-backup CI failure](P29-C11-ci-recovery-blocker.md). The local verification below predates that failure; it does not establish a passing final-head GitHub gate.
+
 The reported Entry view shows balanced totals and a footer stuck at Saving new
 journal entry. The footer previously copied only the immediate synchronous result
 from AppPanel.executeCommand. Journal saves run in UiAsync; their later success
