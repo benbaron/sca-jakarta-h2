@@ -18,12 +18,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * JdbcReconciliationRunRepositoryTest component.
  */
-public class JdbcReconciliationRunRepositoryTest
+public class JdbcReconciliationRunRepositoryTest extends RepositoryIntegrationSupport
 {
     @Test
     public void appendAndFindById_roundTripsRecord()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcReconciliationRunRepository repo = new JdbcReconciliationRunRepository(ds);
 
         ReconciliationRunRecord record = new ReconciliationRunRecord(
@@ -47,7 +47,7 @@ public class JdbcReconciliationRunRepositoryTest
     @Test
     public void findByGroupAndDateRange_filtersByGroupAndDate()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcReconciliationRunRepository repo = new JdbcReconciliationRunRepository(ds);
 
         repo.append(new ReconciliationRunRecord(UUID.randomUUID(), "BARONY-DRAGON", LocalDate.of(2026, 3, 15), BankingDataFormat.OFX, 2, WorkflowRunStatus.COMPLETED, "March"));
@@ -67,7 +67,7 @@ public class JdbcReconciliationRunRepositoryTest
     @Test
     public void schema_rejectsUnsupportedBankFormatAndStatusTokens()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
 
         assertThrows(IllegalStateException.class, () -> insertInvalid(ds, "CSV", "COMPLETED"));
         assertThrows(IllegalStateException.class, () -> insertInvalid(ds, "OFX", "DONE"));

@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class SupplementalOpenItemLifecycleMigrationTest
+class SupplementalOpenItemLifecycleMigrationTest extends MigrationTestConnections
 {
     @Test
     void migrationPreservesLegacySupplementalRowsAndRequiresLifecycleTriple() throws Exception
@@ -53,20 +53,20 @@ class SupplementalOpenItemLifecycleMigrationTest
         }
     }
 
-    private static void migrateTo(String url, String target)
+    private void migrateTo(String url, String target)
     {
         Flyway.configure()
-                .dataSource(url, "sa", "")
+                .dataSource(migrationDataSource(url))
                 .locations("classpath:db/migration")
                 .target(target)
                 .load()
                 .migrate();
     }
 
-    private static void migrate(String url)
+    private void migrate(String url)
     {
         Flyway.configure()
-                .dataSource(url, "sa", "")
+                .dataSource(migrationDataSource(url))
                 .locations("classpath:db/migration")
                 .load()
                 .migrate();

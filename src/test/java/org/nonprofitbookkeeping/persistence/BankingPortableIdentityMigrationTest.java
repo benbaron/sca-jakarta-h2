@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class BankingPortableIdentityMigrationTest
+public class BankingPortableIdentityMigrationTest extends MigrationTestConnections
 {
     private static final List<String> TABLES = List.of(
             "bank",
@@ -167,20 +167,20 @@ public class BankingPortableIdentityMigrationTest
         }
     }
 
-    private static void migrateTo(String url, String target)
+    private void migrateTo(String url, String target)
     {
         Flyway.configure()
-                .dataSource(url, "sa", "")
+                .dataSource(migrationDataSource(url))
                 .locations("classpath:db/migration")
                 .target(target)
                 .load()
                 .migrate();
     }
 
-    private static void migrate(String url)
+    private void migrate(String url)
     {
         Flyway.configure()
-                .dataSource(url, "sa", "")
+                .dataSource(migrationDataSource(url))
                 .locations("classpath:db/migration")
                 .load()
                 .migrate();

@@ -18,12 +18,12 @@ import static org.nonprofitbookkeeping.testutil.TestAmountAssertions.assertAmoun
 /**
  * JdbcOpenItemSnapshotRepositoryTest component.
  */
-public class JdbcOpenItemSnapshotRepositoryTest
+public class JdbcOpenItemSnapshotRepositoryTest extends RepositoryIntegrationSupport
 {
     @Test
     public void createAndFindById_roundTripsSnapshot()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
 
         OpenItemSnapshotRecord snapshot = new OpenItemSnapshotRecord(
@@ -49,7 +49,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
     @Test
     public void create_rejectsInvalidStateTokenForKind()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> repository.create(new OpenItemSnapshotRecord(
@@ -70,7 +70,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
     @Test
     public void transition_updatesSnapshotState_andQueryByGroupKindWorks()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
 
         UUID id = UUID.randomUUID();
@@ -103,7 +103,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
     @Test
     public void transition_rejectsPolicyDisallowedTransition_andDoesNotRecordHistory()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
 
         UUID id = UUID.randomUUID();
@@ -134,7 +134,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
     @Test
     public void transition_rejectsInvalidStateTokenForKind()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
 
         UUID id = UUID.randomUUID();
@@ -160,7 +160,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
     @Test
     public void transition_rejectsUnexpectedState_andDoesNotRecordChange()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
 
         UUID id = UUID.randomUUID();
@@ -191,7 +191,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
     @Test
     public void transition_rejectsUnexpectedVersion_andDoesNotRecordChange()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
 
         UUID id = UUID.randomUUID();
@@ -223,7 +223,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
     @Test
     public void transition_withOpenAmountUpdate_persistsNewAmount()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
 
         UUID id = UUID.randomUUID();
@@ -251,7 +251,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
     @Test
     public void findByGroupKindAndItemRef_returnsSnapshotWhenPresent()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
 
         UUID id = UUID.randomUUID();
@@ -276,7 +276,7 @@ public class JdbcOpenItemSnapshotRepositoryTest
     @Test
     public void findById_rejectsUnsupportedPersistedItemKind()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcOpenItemSnapshotRepository repository = new JdbcOpenItemSnapshotRepository(ds);
         UUID id = UUID.randomUUID();
 

@@ -27,7 +27,8 @@ P28-S1 acceptance is merged in main `c1ba17743133d91b747c36ab74f40a6755ee0a45`, 
 
 - Back up the active database before upgrading.
 - Launch the new application against a copy first. Flyway upgrades the schema nondestructively through V92; never edit applied migrations or Flyway history.
-- Current storage uses H2 2.5.252 with Flyway 13.12.0. The native recovery gate covers genuine older H2 2.2.224/Flyway 10.17 images and current populated backup/restart behavior.
+- Current storage selects H2 2.4.240 with Flyway 13.12.0 to correct the reproduced 2.5.252 online-backup integrity defect. [P27-C2](P27-C2-online-backup-integrity.md) requires genuine 2.2.224 and 2.5.252 image compatibility, every-field recovery comparisons, evolving CLOB snapshots and restart/write guards. Retain the original backup and verify a disposable copy before switching; existing damaged archives are not reconstructed.
+- File connections use MAX_COMPACT_TIME=0 to avoid partial compaction during normal close; validated restores still receive explicit full compaction. Files can remain larger between full compactions.
 - After migration, verify company/chart selection, counts, Journal history, reconciliation, Period Close, assets, inventory and one report before switching production use.
 - Keep the pre-upgrade backup until the migrated copy and an application-created post-upgrade backup both validate.
 

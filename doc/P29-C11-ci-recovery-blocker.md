@@ -1,9 +1,12 @@
 # C11 CI blocker: H2 online backup integrity
 
-C11 remains on draft [PR #423](https://github.com/benbaron/sca-jakarta-h2/pull/423),
-head `3040b6d49d0ed9931b067aaa0813a5fb9fbb1a44`, based on current main
-`f5384cbfc66e3c4500584bf8c8e698f255ac01ee`. No production code changed in this
-investigation. [PLAN](PLAN.md) records the blocked status.
+Historical investigation below: #423 is now merged at
+`ec4d358f4568dbf6ee689fe3356f0ad0a7817400`. Its final accepted head
+`4257f255f1470a280434915bd246c93e38b7a20d` subsequently passed workflow
+`43160850963`. That intermittent pass does not repair the standalone reproduction.
+[P27-C2](P27-C2-online-backup-integrity.md) now owns the independent correction.
+No production code changed during this original investigation. [PLAN](PLAN.md)
+records the current selected work.
 
 ## Actual CI failure
 

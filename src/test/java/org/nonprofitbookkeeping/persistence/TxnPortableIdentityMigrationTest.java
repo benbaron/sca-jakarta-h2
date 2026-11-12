@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class TxnPortableIdentityMigrationTest
+public class TxnPortableIdentityMigrationTest extends MigrationTestConnections
 {
     @Test
     public void backfillsExistingRowsAndDefaultsNewTransactions() throws Exception
@@ -51,20 +51,20 @@ public class TxnPortableIdentityMigrationTest
         }
     }
 
-    private static void migrateTo(String url, String target)
+    private void migrateTo(String url, String target)
     {
         Flyway.configure()
-                .dataSource(url, "sa", "")
+                .dataSource(migrationDataSource(url))
                 .locations("classpath:db/migration")
                 .target(target)
                 .load()
                 .migrate();
     }
 
-    private static void migrate(String url)
+    private void migrate(String url)
     {
         Flyway.configure()
-                .dataSource(url, "sa", "")
+                .dataSource(migrationDataSource(url))
                 .locations("classpath:db/migration")
                 .load()
                 .migrate();

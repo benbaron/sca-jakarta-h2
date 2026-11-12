@@ -13,12 +13,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * JdbcApprovalAuditRepositoryTest component.
  */
-public class JdbcApprovalAuditRepositoryTest
+public class JdbcApprovalAuditRepositoryTest extends RepositoryIntegrationSupport
 {
     @Test
     public void appendAndFindById_roundTripsRecord()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcApprovalAuditRepository repository = new JdbcApprovalAuditRepository(ds);
 
         UUID id = UUID.randomUUID();
@@ -41,7 +41,7 @@ public class JdbcApprovalAuditRepositoryTest
     @Test
     public void listByGroup_returnsNewestFirstAndScopesByGroup()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcApprovalAuditRepository repository = new JdbcApprovalAuditRepository(ds);
 
         repository.append(new ApprovalAuditRecord(

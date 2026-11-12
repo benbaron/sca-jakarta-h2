@@ -9,14 +9,16 @@ class H2OnlineBackupProbe
     public static void main(String[] args) throws Exception
     {
         boolean checkpoint = args.length == 1 && args[0].equals("checkpoint");
-        if (args.length > 1 || (args.length == 1 && !checkpoint))
+        boolean safeClose = args.length == 1 && args[0].equals("safe-close");
+        if (args.length > 1 || (args.length == 1 && !checkpoint && !safeClose))
         {
-            throw new IllegalArgumentException("Optional argument: checkpoint");
+            throw new IllegalArgumentException("Optional argument: checkpoint or safe-close");
         }
         Path directory = Files.createTempDirectory("h2-online-backup-probe-");
         System.out.println("Synthetic diagnostic files: " + directory);
+        String closeSetting = safeClose ? ";MAX_COMPACT_TIME=0" : "";
         String url = "jdbc:h2:file:" + directory.resolve("source")
-                + ";RETENTION_TIME=0;WRITE_DELAY=1";
+                + ";RETENTION_TIME=0;WRITE_DELAY=1" + closeSetting;
         long[] lengths = new long[5];
         long expectedLength = 0;
         try (var source = DriverManager.getConnection(url, "sa", "");
@@ -48,7 +50,7 @@ class H2OnlineBackupProbe
                 }
                 statement.execute("BACKUP TO '" + backup.toString().replace("'", "''") + "'");
                 Restore.execute(backup.toString(), copy.toString(), null);
-                try (var restored = DriverManager.getConnection("jdbc:h2:file:" + copy.resolve("source"), "sa", "");
+                try (var restored = DriverManager.getConnection("jdbc:h2:file:" + copy.resolve("source") + closeSetting, "sa", "");
                         var query = restored.createStatement();
                         var result = query.executeQuery("SELECT COUNT(*), SUM(LENGTH(content)) FROM example"))
                 {
@@ -60,6 +62,30 @@ class H2OnlineBackupProbe
                                 + ": expected rows=" + Math.min(generation + 1, lengths.length)
                                 + ", length=" + expectedLength + "; actual rows=" + result.getLong(1)
                                 + ", length=" + result.getLong(2));
+                    }
+                }
+                if (safeClose)
+                {
+                    try (var restored = DriverManager.getConnection("jdbc:h2:file:" + copy.resolve("source") + closeSetting, "sa", "");
+                            var compact = restored.createStatement())
+                    {
+                        compact.execute("SHUTDOWN COMPACT");
+                    }
+                    try (var restored = DriverManager.getConnection("jdbc:h2:file:" + copy.resolve("source") + closeSetting, "sa", "");
+                            var query = restored.createStatement();
+                            var result = query.executeQuery("SELECT COUNT(*), SUM(LENGTH(content)) FROM example"))
+                    {
+                        result.next();
+                        if (result.getLong(1) != Math.min(generation + 1, lengths.length)
+                                || result.getLong(2) != expectedLength)
+                        {
+                            throw new IllegalStateException("Compact/restart content differs at generation " + generation);
+                        }
+                    }
+                    Path trace = copy.resolve("source.trace.db");
+                    if (Files.exists(trace))
+                    {
+                        throw new IllegalStateException("Unexpected storage trace: " + Files.readString(trace));
                     }
                 }
                 Files.delete(copy.resolve("source.mv.db"));

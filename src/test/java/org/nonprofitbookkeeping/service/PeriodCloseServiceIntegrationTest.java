@@ -15,12 +15,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 /**
  * PeriodCloseServiceIntegrationTest component.
  */
-public class PeriodCloseServiceIntegrationTest
+public class PeriodCloseServiceIntegrationTest extends RepositoryIntegrationSupport
 {
     @Test
     public void recordCompletedClose_persistsRunInRepository()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcPeriodCloseRunRepository repo = new JdbcPeriodCloseRunRepository(ds);
         PeriodCloseService service = new PeriodCloseService(repo);
 

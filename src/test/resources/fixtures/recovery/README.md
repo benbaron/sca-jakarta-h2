@@ -4,6 +4,38 @@ The standalone `H2OnlineBackupProbe.java` is a separate synthetic diagnostic for
 the [C11 CI storage blocker](../../../../../doc/P29-C11-ci-recovery-blocker.md).
 It does not generate or replace the frozen old-engine archives below. Run it
 explicitly with the current H2 jar; timing-dependent stress is not a JUnit gate.
+For the corrected runtime, use `java -ea -cp <h2-2.4.240.jar> H2OnlineBackupProbe.java safe-close`:
+this applies MAX_COMPACT_TIME=0 and additionally verifies explicit full compaction,
+restart contents and absence of a storage trace for every copy. The bounded
+production-backup JUnit regression separately retains every CLOB character.
+
+## Previous-runtime compatibility image
+
+`h2-2.5.252-v92.zip` is an additional offline native backup, created with actual
+H2 **2.5.252** / Flyway **13.12.0** and `NativeRecoveryFixture.populate` from
+merged seed `ec4d358f4568dbf6ee689fe3356f0ad0a7817400`. Its SHA-256 is
+`985d8e86f7d51a943c6013c81e658009d46942c9faa15cbfa6d4785dbcf14470`.
+The accompanying JSON records all 66 public tables' original columns, row counts
+and complete sorted-row digests, plus the guard inventory. It was generated
+before changing the dependency for [P27-C2](../../../../../doc/P27-C2-online-backup-integrity.md).
+It verifies normal in-place opening as well as validated restore under the
+selected runtime; it is not a claim that every arbitrary newer-engine database
+can be downgraded safely. Only synthetic fixture data is included.
+
+To reproduce in a disposable checkout of that seed with its original runtime,
+build the test/runtime classpath, then run the two supplied source helpers:
+
+```text
+java -cp <2.5.252-seed-test-classpath> Generate252Backup.java <absent-db-base> <absent-hot.zip> <absent-offline.zip>
+java -cp <2.5.252-seed-test-classpath> Generate252Manifest.java <db-base> <offline.zip> <manifest.json> ec4d358f4568dbf6ee689fe3356f0ad0a7817400
+```
+
+The helpers require engine 2.5.252; retain Flyway 13.12.0 too. The online archive
+is only a generation diagnostic and is not the frozen compatibility image.
+Generated UUIDs/times change bytes; never regenerate this archive or its oracle
+during ordinary tests. Do not alter the original 2.2.224 fixtures below.
+
+## Original 2.2.224 images
 
 All data is synthetic. No uploaded database, real person, production credential or referenced external document is included. The password credential belongs to the synthetic `recovery-only-user`; its source password is explicit in the seed fixture.
 

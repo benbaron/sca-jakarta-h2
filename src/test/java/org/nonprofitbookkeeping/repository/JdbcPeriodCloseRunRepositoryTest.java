@@ -17,12 +17,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * JdbcPeriodCloseRunRepositoryTest component.
  */
-public class JdbcPeriodCloseRunRepositoryTest
+public class JdbcPeriodCloseRunRepositoryTest extends RepositoryIntegrationSupport
 {
     @Test
     public void appendAndFindById_roundTripsRecord()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcPeriodCloseRunRepository repo = new JdbcPeriodCloseRunRepository(ds);
 
         PeriodCloseRunRecord record = new PeriodCloseRunRecord(
@@ -45,7 +45,7 @@ public class JdbcPeriodCloseRunRepositoryTest
     @Test
     public void findByGroupAndDateRange_filtersAndSortsByCloseDate()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcPeriodCloseRunRepository repo = new JdbcPeriodCloseRunRepository(ds);
 
         repo.append(new PeriodCloseRunRecord(UUID.randomUUID(), "BARONY-DRAGON", LocalDate.of(2026, 2, 28), WorkflowRunStatus.COMPLETED, null, "Feb"));
@@ -66,7 +66,7 @@ public class JdbcPeriodCloseRunRepositoryTest
     @Test
     public void schema_rejectsUnsupportedPeriodCloseStatusToken()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
 
         assertThrows(IllegalStateException.class, () -> insertInvalid(ds, "DONE"));
     }

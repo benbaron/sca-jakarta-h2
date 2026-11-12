@@ -14,12 +14,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * ApprovalAuditServiceIntegrationTest component.
  */
-public class ApprovalAuditServiceIntegrationTest
+public class ApprovalAuditServiceIntegrationTest extends RepositoryIntegrationSupport
 {
     @Test
     public void recordDecision_persistsAndIsQueryable()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         ApprovalAuditService service = new ApprovalAuditService(new JdbcApprovalAuditRepository(ds));
 
         UUID id = service.recordDecision(
@@ -37,7 +37,7 @@ public class ApprovalAuditServiceIntegrationTest
     @Test
     public void recordDecision_validatesRequiredFields()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         ApprovalAuditService service = new ApprovalAuditService(new JdbcApprovalAuditRepository(ds));
 
         assertThrows(IllegalArgumentException.class,

@@ -17,12 +17,12 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * JdbcJournalTransactionRepositoryTest component.
  */
-public class JdbcJournalTransactionRepositoryTest
+public class JdbcJournalTransactionRepositoryTest extends RepositoryIntegrationSupport
 {
     @Test
     public void appendAndFindById_roundTripsTransaction()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcJournalTransactionRepository repository = new JdbcJournalTransactionRepository(ds);
 
         JournalTransaction transaction = JournalTransaction.create(
@@ -47,7 +47,7 @@ public class JdbcJournalTransactionRepositoryTest
     @Test
     public void findByGroupAndDateRange_filtersByGroupAndDate()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcJournalTransactionRepository repository = new JdbcJournalTransactionRepository(ds);
 
         repository.append(JournalTransaction.create(

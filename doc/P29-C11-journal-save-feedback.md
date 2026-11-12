@@ -1,6 +1,6 @@
 # P29-C11 Journal Save completion feedback
 
-Current status: blocked by the [independent H2 online-backup CI failure](P29-C11-ci-recovery-blocker.md). The local verification below predates that failure; it does not establish a passing final-head GitHub gate.
+Merged in #423; accepted head `4257f255` passed workflow `43160850963`. The independently reproduced [H2 online-backup defect](P29-C11-ci-recovery-blocker.md) remains owned by [P27-C2](P27-C2-online-backup-integrity.md); the later CI pass does not prove that defect repaired.
 
 The reported Entry view shows balanced totals and a footer stuck at Saving new
 journal entry. The footer previously copied only the immediate synchronous result
