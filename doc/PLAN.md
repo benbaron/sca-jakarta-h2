@@ -5,13 +5,15 @@ active_slice: P29-C11
 active_status: BLOCKED
 active_branch: codex/P29-C11-journal-save-feedback
 active_pull_request: 423
-active_head: 3040b6d49d0ed9931b067aaa0813a5fb9fbb1a44
+active_head: 6f9039d9e954e524099aa0f7a9aeb801b912e3a4
 next_action: "C11 is blocked by reproduced H2 online-backup corruption. Select an independent recovery integrity correction from current main, starting with doc/P29-C11-ci-recovery-blocker.md and its standalone probe; do not merge #423 or weaken the readiness test."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P29-C11 Journal Save completion feedback — 2026-11-11 America/Denver
+
+Investigation published: `6f9039d9e954e524099aa0f7a9aeb801b912e3a4`, tree `c36421bd7ec9915dc03343d5cc63d680c858728b`; native FETCH_HEAD and PR #423 match. The following documentation-only handoff records that publication. The PR description prominently records the failed CI and independent recovery prerequisite.
 
 **Current status: BLOCKED.** Final-head CI run `43132731784` passed clean headless verification, then failed the repeated `mvn test` with 1,197 tests / zero failures / one error / 141 skips. The underlying exception is H2 2.5.252 `MVStoreException: Chunk 8 not found`, while opening a freshly extracted native backup before migration inspection. A standalone H2-only online backup/CLOB experiment reproduces the same open-time missing-chunk/LobStorageMap failure; CHECKPOINT SYNC also fails. The retained probe additionally detects silent loss: five committed source rows restore as four. Ten existing focused tests and thirty extra executions of the exact readiness method pass, demonstrating why those passes do not prove repair. This is a substantial independent recovery integrity prerequisite, so apply AGENTS scope fence §3.3.6 and stop C11 implementation. [Evidence, repeat results and next recovery work](P29-C11-ci-recovery-blocker.md). The earlier local passes below remain historical evidence, not a successful current CI gate. Journal code is retained on the open draft branch; no production repair, dependency change, test retry or merge is claimed.
 
