@@ -1,18 +1,20 @@
 package org.nonprofitbookkeeping.service;
 
+import org.nonprofitbookkeeping.persistence.MigrationTestConnections;
+
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import java.sql.*;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
-class PaymentReferenceMigrationTest
+class PaymentReferenceMigrationTest extends MigrationTestConnections
 {
     @Test
     void upgradeAndUntrackedRecoveryPreserveExistingLinesAndReferences() throws Exception
     {
         String url = "jdbc:h2:mem:payments_" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE";
-        Flyway.configure().dataSource(url, "sa", "").target("78").load().migrate();
+        Flyway.configure().dataSource(migrationDataSource(url)).target("78").load().migrate();
         try (var connection = DriverManager.getConnection(url, "sa", ""); var sql = connection.createStatement())
         {
             sql.execute("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (1, 'Test', '1', 'ACTIVE')");
@@ -20,7 +22,7 @@ class PaymentReferenceMigrationTest
             sql.execute("INSERT INTO fund (id, code, name, fund_type) VALUES (1,'GENERAL','General','UNRESTRICTED')");
             sql.execute("INSERT INTO txn (id, txn_date, memo) VALUES (1,DATE '2026-01-01','Check 000999 narrative')");
             sql.execute("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (1,1,1,1,-10)");
-            Flyway.configure().dataSource(url, "sa", "").load().migrate();
+            Flyway.configure().dataSource(migrationDataSource(url)).load().migrate();
             try (var rows = sql.executeQuery("SELECT amount_signed, payment_method FROM txn_split WHERE id=1"))
             {
                 assertTrue(rows.next()); assertEquals("-10.0000", rows.getBigDecimal(1).toPlainString()); assertNull(rows.getString(2));

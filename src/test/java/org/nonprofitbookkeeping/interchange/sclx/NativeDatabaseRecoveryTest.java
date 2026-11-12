@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.interchange.sclx;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.nonprofitbookkeeping.persistence.*;
 import org.nonprofitbookkeeping.service.*;
@@ -22,6 +23,92 @@ import static org.nonprofitbookkeeping.service.DatabaseSnapshotTestSupport.rows;
 class NativeDatabaseRecoveryTest
 {
     @TempDir Path directory;
+
+    @AfterEach
+    void noConcealedNativeStorageFailures() throws Exception
+    {
+        try (var paths = Files.walk(directory))
+        {
+            for (Path trace : paths.filter(path -> path.toString().endsWith(".trace.db")).toList())
+            {
+                assertFalse(Files.readString(trace).contains("MVStoreException"), "Native storage failure recorded in " + trace);
+            }
+        }
+    }
+
+    @Test
+    void previousRuntimeFileOpensInPlaceAndRestoresEveryOriginalField() throws Exception
+    {
+        JsonNode manifest;
+        try (var stream = getClass().getResourceAsStream("/fixtures/recovery/h2-2.5.252-v92.json"))
+        {
+            assertNotNull(stream);
+            manifest = new ObjectMapper().readTree(stream);
+        }
+        assertEquals("2.5.252", manifest.path("sourceH2").asText());
+        assertEquals("13.12.0", manifest.path("sourceFlyway").asText());
+        Path archive = directory.resolve("previous-runtime.zip");
+        try (var stream = getClass().getResourceAsStream("/fixtures/recovery/h2-2.5.252-v92.zip"))
+        {
+            assertNotNull(stream);
+            Files.copy(stream, archive);
+        }
+        String originalHash = sha256(Files.readAllBytes(archive));
+        assertEquals(manifest.path("backupSha256").asText(), originalHash);
+        Path directDirectory = directory.resolve("direct");
+        org.h2.tools.Restore.execute(archive.toString(), directDirectory.toString(), "direct-ledger");
+        Path direct = directDirectory.resolve("direct-ledger");
+        for (int opening = 0; opening < 2; opening++)
+        {
+            try (Jpa jpa = new Jpa(direct))
+            {
+                assertLegacy(manifest, direct);
+            }
+        }
+        var transfer = new DatabaseTransferService(() -> direct, ignored -> fail("Restore must not switch the source"));
+        Path restored = directory.resolve("restored-ledger");
+        var result = transfer.restoreDatabaseCopy(archive, restored);
+        assertEquals(2, result.counts().companies());
+        assertEquals(33, result.counts().transactions());
+        assertEquals(73, result.counts().transactionSplits());
+        for (int opening = 0; opening < 2; opening++)
+        {
+            try (Jpa jpa = new Jpa(restored))
+            {
+                assertLegacy(manifest, restored);
+                try (var em = jpa.em())
+                {
+                    assertEquals(1, em.createQuery("select a from Account a where a.code = '1000' and a.chart.company.code = :company")
+                            .setParameter("company", COMPANY).getResultList().size());
+                }
+            }
+        }
+        long enteredId;
+        try (Jpa jpa = new Jpa(restored); var em = jpa.em())
+        {
+            em.getTransaction().begin();
+            assertThrows(ClosedPeriodRangeException.class,
+                    () -> PeriodCloseRangeService.requireOpen(em, COMPANY, CLOSED_START, "Previous-runtime period protection"));
+            em.getTransaction().rollback();
+            long bank = account(em, "1000"), income = account(em, "4000");
+            long fund = em.createQuery("select f.id from Fund f where f.company.code='DEFAULT' and f.code='GENERAL'", Long.class)
+                    .getSingleResult();
+            long highest = em.createQuery("select max(t.id) from Txn t", Long.class).getSingleResult();
+            var entered = new TransactionEntryService(jpa).enter(new TransactionCommand(LocalDate.of(2027, 2, 1), null,
+                    "Previous-runtime retained identity allocation", null, List.of(
+                    FundTransferTestFixture.line(bank, fund, "1", "0"), FundTransferTestFixture.line(income, fund, "0", "1"))));
+            enteredId = entered.id();
+            assertTrue(enteredId > highest);
+        }
+        try (Jpa jpa = new Jpa(restored); var em = jpa.em())
+        {
+            assertEquals(1L, em.createQuery("select count(t) from Txn t where t.id=:id", Long.class)
+                    .setParameter("id", enteredId).getSingleResult());
+            assertEquals(34L, em.createQuery("select count(t) from Txn t", Long.class).getSingleResult());
+        }
+        assertLegacy(manifest, direct);
+        assertEquals(originalHash, sha256(Files.readAllBytes(archive)), "Never rewrite the previous runtime archive");
+    }
 
     @Test
     void repeatedOnlineBackupsRetainEveryCurrentRowAndTriggerAcrossValidationCloseAndRestart() throws Exception

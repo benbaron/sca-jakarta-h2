@@ -26,12 +26,12 @@ import static org.nonprofitbookkeeping.testutil.TestAmountAssertions.assertAmoun
 /**
  * JournalPostingServiceIntegrationTest component.
  */
-public class JournalPostingServiceIntegrationTest
+public class JournalPostingServiceIntegrationTest extends RepositoryIntegrationSupport
 {
     @Test
     public void post_derivesReceivableOpenSnapshot_thenSettlesWithTransition()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JournalPostingService service = new JournalPostingService(
                 new JdbcJournalTransactionRepository(ds),
                 new JdbcOpenItemSnapshotRepository(ds));
@@ -74,7 +74,7 @@ public class JournalPostingServiceIntegrationTest
     @Test
     public void post_derivesPrepaidOpenSnapshot_thenFullyRecognizesWithTransition()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JournalPostingService service = new JournalPostingService(
                 new JdbcJournalTransactionRepository(ds),
                 new JdbcOpenItemSnapshotRepository(ds));
@@ -116,7 +116,7 @@ public class JournalPostingServiceIntegrationTest
     @Test
     public void post_supportsReceivablePartialThenFullSettlement()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JournalPostingService service = new JournalPostingService(
                 new JdbcJournalTransactionRepository(ds),
                 new JdbcOpenItemSnapshotRepository(ds));
@@ -163,7 +163,7 @@ public class JournalPostingServiceIntegrationTest
     @Test
     public void post_supportsPrepaidPartialThenFullRecognition()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JournalPostingService service = new JournalPostingService(
                 new JdbcJournalTransactionRepository(ds),
                 new JdbcOpenItemSnapshotRepository(ds));
@@ -210,7 +210,7 @@ public class JournalPostingServiceIntegrationTest
     @Test
     public void post_ignoresNonMappedAccountsForReceivableAndPrepaidDerivation()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JournalPostingService service = new JournalPostingService(
                 new JdbcJournalTransactionRepository(ds),
                 new JdbcOpenItemSnapshotRepository(ds));

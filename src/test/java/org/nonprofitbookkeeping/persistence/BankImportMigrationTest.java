@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.persistence;
 
 import org.junit.jupiter.api.Test;
+import org.flywaydb.core.Flyway;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -11,13 +12,13 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class BankImportMigrationTest
+public class BankImportMigrationTest extends MigrationTestConnections
 {
     @Test
     public void createsImportBatchStatementLineAndIssueTablesWithConstraints() throws Exception
     {
         String jdbcUrl = jdbcUrl("bank-import-model");
-        DatabaseMigrationService.migrateJdbcUrl(jdbcUrl);
+        Flyway.configure().dataSource(migrationDataSource(jdbcUrl)).locations("classpath:db/migration").load().migrate();
 
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
                 Statement statement = connection.createStatement())

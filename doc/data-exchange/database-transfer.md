@@ -28,6 +28,12 @@ It MUST NOT record a database password.
 
 ## 3. Consistency and exclusive access
 
+[P27-C2](../P27-C2-online-backup-integrity.md) selects H2 2.4.240/Flyway 13.12.0
+after reproducing online backup image loss with 2.5.252. File-mode connections
+use MAX_COMPACT_TIME=0 to avoid partial normal-close compaction failures. Restore
+validation retains explicit full SHUTDOWN COMPACT, complete-content/restart gates
+and genuine 2.2.224/2.5.252 file compatibility. Native backup semantics remain.
+
 Backup coordinates with the existing `DatabaseSessionController` and persistence composition. It MUST obtain exclusive application-level backup authority so no application writer can commit during the consistency boundary. The operation may use H2's supported online backup behavior, but the application still blocks company/session switching and conflicting recovery operations until completion.
 
 Restore, repair, or overwrite operations require exclusive access with all EntityManagers, pools, and other database connections to the target closed. The operation MUST fail visibly when exclusive access cannot be proven.

@@ -1,0 +1,341 @@
+{
+  "backupKind" : "Offline native backup after all source connections closed",
+  "backupSha256" : "985d8e86f7d51a943c6013c81e658009d46942c9faa15cbfa6d4785dbcf14470",
+  "schemaVersion" : 92,
+  "seedCommit" : "ec4d358f4568dbf6ee689fe3356f0ad0a7817400",
+  "sourceFlyway" : "13.12.0",
+  "sourceH2" : "2.5.252",
+  "tables" : {
+    "account" : {
+      "rows" : 17,
+      "sha256" : "081dac32bb12f31f6e504ed89ed228f6bc5e691977ce5340079dfc07f5e4ede8",
+      "columns" : [ "id", "chart_id", "code", "name", "account_type", "subtype", "opening_balance", "normal_balance", "parent_id", "is_posting", "is_active", "effective_from", "effective_to", "description", "account_function" ]
+    },
+    "account_alias" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "account_id", "alias_text", "source", "is_active" ]
+    },
+    "account_report_section" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "account_id", "report_section_id", "sort_order", "sign_policy" ]
+    },
+    "account_schedule_requirement" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "account_id", "schedule_kind_id", "is_required", "notes" ]
+    },
+    "account_subtype_schedule_default" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "subtype", "schedule_kind_id" ]
+    },
+    "accounting_period" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "fiscal_year", "period_number", "start_date", "end_date", "status", "closed_at", "closed_by", "created_at", "updated_at", "company_id" ]
+    },
+    "accounting_write_guard" : {
+      "rows" : 1,
+      "sha256" : "ed9818ba88c776f9c50fa93f14e75d7183c17d89b85ffa2c56edb21864cebf14",
+      "columns" : [ "id" ]
+    },
+    "activity" : {
+      "rows" : 2,
+      "sha256" : "095679a88b924200d155231c5af70e92b3062478a58d021a15715a7fa1330c8a",
+      "columns" : [ "id", "code", "name", "is_active", "company_id" ]
+    },
+    "app_role" : {
+      "rows" : 4,
+      "sha256" : "c74c8ac89bf5dc3d03796e9dc70207a4c91fef6b0bf535262c6438a66befa045",
+      "columns" : [ "id", "code", "name", "description", "is_active", "created_at", "updated_at", "reserved_security_code" ]
+    },
+    "app_user" : {
+      "rows" : 5,
+      "sha256" : "c1d8a1eee81ae977f0fa8743fd6f12554ea549daa74b4bd8a5df5bec518757f2",
+      "columns" : [ "id", "username", "display_name", "email", "is_active", "created_at", "updated_at", "reserved_security_code" ]
+    },
+    "app_user_credential" : {
+      "rows" : 1,
+      "sha256" : "d868cec16309334a69b58e3ae6a7792a162f6a06e0932fe09c620f19834ce88a",
+      "columns" : [ "id", "user_id", "algorithm", "iteration_count", "salt_base64", "hash_base64", "credential_version", "created_at", "updated_at" ]
+    },
+    "approval_audit_record" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "group_code", "workflow_type", "workflow_run_id", "decision", "actor", "rationale", "created_at" ]
+    },
+    "audit_event" : {
+      "rows" : 53,
+      "sha256" : "b8da52cb12766cd2602c904ce98281adecd40a954f842e24832f1030f21ced3d",
+      "columns" : [ "id", "occurred_at", "actor", "action_type", "entity_type", "entity_id", "summary", "before_value", "after_value", "reason", "company_id", "portable_id" ]
+    },
+    "bank" : {
+      "rows" : 1,
+      "sha256" : "c788590388bfc7909953626b37c5ba326283a9217ed8fff0908a6429d833f67c",
+      "columns" : [ "id", "company_id", "name", "routing_number", "address", "website", "contact_name", "contact_phone", "contact_email", "notes", "is_active", "created_at", "updated_at", "portable_id" ]
+    },
+    "bank_csv_mapping_profile" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "portable_id", "company_id", "bank_account_id", "profile_name", "profile_version", "delimiter", "source_encoding", "amount_mode", "fixed_currency", "fixed_account_id", "mapping_json", "is_active", "created_at", "updated_at" ]
+    },
+    "bank_import_batch" : {
+      "rows" : 1,
+      "sha256" : "e334030146acf1018e89514b7afc4420ecf09017edf1dc2bdae1e0477597f4b6",
+      "columns" : [ "id", "company_id", "bank_account_id", "source_name", "source_path", "source_hash", "source_format", "status", "imported_at", "completed_at", "imported_by_user_id", "total_line_count", "accepted_line_count", "rejected_line_count", "issue_count", "notes", "created_at", "updated_at", "portable_id", "source_variant", "source_version", "source_encoding", "source_institution_id", "source_bank_id", "source_account_id", "source_account_type", "currency", "statement_start_date", "statement_end_date", "ledger_balance", "available_balance", "account_match_status", "account_identity_confirmed", "source_external_id" ]
+    },
+    "bank_reconciliation_match" : {
+      "rows" : 1,
+      "sha256" : "51ac5ac8bd31a0016499e25ac3a8817b5fac4777565898f2455a2ee6d81a5ae7",
+      "columns" : [ "id", "session_id", "statement_line_id", "txn_split_id", "match_status", "resolution_note", "created_at", "updated_at", "portable_id" ]
+    },
+    "bank_reconciliation_session" : {
+      "rows" : 3,
+      "sha256" : "0adf4415a9e183ceafa0107079020dedaa5a8bb1828155d09dd0625b4dfef7b7",
+      "columns" : [ "id", "company_id", "bank_account_id", "statement_start_date", "statement_end_date", "statement_ending_balance", "mismatch_policy", "status", "notes", "beginning_balance", "book_balance_all", "book_balance_cleared", "difference_amount", "created_at", "updated_at", "portable_id" ]
+    },
+    "bank_statement_line" : {
+      "rows" : 1,
+      "sha256" : "b5bce646e61a01a217b00990bfc1b6d0a81de401e39272608fd15ed334619d5b",
+      "columns" : [ "id", "batch_id", "company_id", "bank_account_id", "source_row_number", "source_transaction_id", "deterministic_fingerprint", "statement_account_identifier", "transaction_date", "posted_date", "amount", "transaction_type", "name", "memo", "check_number", "reference", "status", "disposition_note", "accepted_txn_id", "matched_txn_id", "created_at", "updated_at", "portable_id", "currency", "correction_action", "corrected_source_transaction_id", "source_external_id", "source_payee_id" ]
+    },
+    "budget_category" : {
+      "rows" : 2,
+      "sha256" : "b338be874a67f474598456d04dc9d71022cbd8911869e93431d17e2f7ad64c34",
+      "columns" : [ "id", "code", "name", "is_active", "effective_from", "effective_to", "description", "created_at", "updated_at", "company_id", "portable_id" ]
+    },
+    "budget_category_alias" : {
+      "rows" : 1,
+      "sha256" : "df522f083fbecb3eaa36af7ae05debf58f3e1e9c5d8ad78948dc9acdd4d79f51",
+      "columns" : [ "id", "budget_category_id", "alias", "source_system" ]
+    },
+    "budget_line" : {
+      "rows" : 4,
+      "sha256" : "0f4b56e7171ea1761f7842e5fa237439dd34485a3feeb744fef159b18ca3e71c",
+      "columns" : [ "id", "budget_plan_id", "budget_category_id", "fund_id", "period_month", "fund_scope", "period_scope", "amount", "notes", "created_at", "updated_at", "activity_id", "activity_scope" ]
+    },
+    "budget_plan" : {
+      "rows" : 4,
+      "sha256" : "0b7d3b62cc50cd5f5c00c3504512693397bffb184916e6c26e0a30c39d65ca78",
+      "columns" : [ "id", "name", "fiscal_year", "version_code", "status", "period_start", "period_end", "activated_at", "archived_at", "notes", "created_at", "updated_at", "company_id" ]
+    },
+    "chart_of_accounts" : {
+      "rows" : 2,
+      "sha256" : "af374ba52a0a16e50263c58c36482131e939501676140191b05aca9388242938",
+      "columns" : [ "id", "name", "version", "status", "created_at", "updated_at", "company_id" ]
+    },
+    "company" : {
+      "rows" : 2,
+      "sha256" : "4adaaa6e818aeaa003b196f368039f00a2d30069bfa73220986c323efcabf909",
+      "columns" : [ "id", "code", "display_name", "legal_name", "branch_type", "parent_organization", "is_active", "fiscal_year_start_month", "fiscal_year_start_day", "default_currency", "active_chart_of_accounts_id", "created_at", "updated_at", "ein" ]
+    },
+    "company_bank_account" : {
+      "rows" : 1,
+      "sha256" : "26dbc1350914358e9227f53ae411b0f1096667f9db885a60bc5968ca1e362284",
+      "columns" : [ "id", "company_id", "name", "institution_name", "account_type", "last_four", "opening_balance", "is_active", "notes", "created_at", "updated_at", "bank_id", "account_id", "masked_account_number", "nickname", "opening_date", "statement_import_format", "ofx_bank_id", "ofx_account_id", "portable_id" ]
+    },
+    "company_ownership_issue" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "entity_type", "entity_id", "issue_code", "candidate_company_count", "details", "detected_at", "resolved_at" ]
+    },
+    "company_tax_profile" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "company_id", "ein", "tax_jurisdiction", "filing_name", "filing_address", "notes", "created_at", "updated_at" ]
+    },
+    "company_ui_preference" : {
+      "rows" : 1,
+      "sha256" : "b1678712ec067d761431c596acd2f7d4547bd8c24c03df665ac5feb8085a7af4",
+      "columns" : [ "company_code", "currency_symbol", "money_print_format", "date_display_format", "updated_at" ]
+    },
+    "company_ui_state" : {
+      "rows" : 1,
+      "sha256" : "8d152b7c9f2cc3ece9b6bacc073f0c69e0f5b0cc04f9719bce83c88b2a0c2d57",
+      "columns" : [ "company_code", "state_key", "state_value", "updated_at" ]
+    },
+    "counterparty" : {
+      "rows" : 2,
+      "sha256" : "21970c3d5d18fd144b1aacb397faf670a484bda7c312eb559cb616f709223b2f",
+      "columns" : [ "id", "display_name", "kind", "email", "phone", "notes", "is_active", "company_id", "portable_id" ]
+    },
+    "fixed_asset" : {
+      "rows" : 1,
+      "sha256" : "5b84642acabeb2ce7b57ca006918f3eb91f8b9f7b46e550804f5a8797fbaa951",
+      "columns" : [ "id", "company_id", "asset_account_id", "accumulated_depreciation_account_id", "depreciation_expense_account_id", "fund_id", "name", "acquisition_date", "acquisition_cost", "salvage_value", "useful_life_months", "depreciation_method", "opening_accumulated_depreciation", "status", "notes", "created_at", "updated_at", "portable_id", "acquisition_source", "acquisition_split_id" ]
+    },
+    "fixed_asset_depreciation_run" : {
+      "rows" : 1,
+      "sha256" : "c80e81555790bdba5be65ad339e6ab8981c17e64a62a60af60f7a8f2ac66eb55",
+      "columns" : [ "id", "fixed_asset_id", "run_date", "depreciation_amount", "transaction_id", "notes", "created_at", "portable_id" ]
+    },
+    "fixed_asset_lifecycle_event" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "portable_id", "fixed_asset_id", "event_type", "event_date", "acquisition_cost", "accumulated_depreciation", "accumulated_impairment_before", "carrying_amount_before", "proceeds", "impairment_amount", "gain_amount", "loss_amount", "proceeds_account_id", "gain_account_id", "loss_account_id", "transaction_id", "reversal_transaction_id", "asset_status_before", "asset_status_after", "notes", "created_at", "reversed_at" ]
+    },
+    "flyway_schema_history" : {
+      "rows" : 57,
+      "sha256" : "144cd6d98aa8befdd030403af9cc41e623154716b9830263fe58f799ad22d8e0",
+      "columns" : [ "installed_rank", "version", "description", "type", "script", "checksum", "installed_by", "installed_on", "execution_time", "success" ]
+    },
+    "fund" : {
+      "rows" : 4,
+      "sha256" : "6274c6a52d84645407a1909bafc4de54bc6f4b9e186e01637d4ba0786d2aa265",
+      "columns" : [ "id", "code", "name", "fund_type", "parent_id", "is_active", "effective_from", "effective_to", "restriction_text", "created_at", "updated_at", "company_id" ]
+    },
+    "fund_alias" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "fund_id", "alias_text", "source", "is_active" ]
+    },
+    "fund_transfer" : {
+      "rows" : 2,
+      "sha256" : "3927f5b4af1e701759b9afb24db34c3a85fa34fe9aeb575b12cb6647719bd8d4",
+      "columns" : [ "id", "transfer_date", "from_fund_id", "to_fund_id", "amount", "memo", "status", "posted_txn_id", "created_at", "updated_at", "request_id", "request_hash", "portable_id" ]
+    },
+    "import_issue" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "batch_id", "statement_line_id", "source_row_number", "severity", "code", "message", "created_at", "portable_id" ]
+    },
+    "interchange_identity" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "company_id", "format_code", "source_system", "entity_type", "external_id", "normalized_content_hash", "local_entity_id", "created_at", "updated_at" ]
+    },
+    "inventory_item" : {
+      "rows" : 2,
+      "sha256" : "d2ad5b03fd27e9d72685af8aedf4487e2863d48a13c8127e9aa69285e51c2ab6",
+      "columns" : [ "id", "company_id", "inventory_account_id", "fund_id", "name", "item_type", "quantity", "unit_name", "unit_value", "acquisition_date", "custodian", "storage_location", "item_condition", "status", "notes", "created_at", "updated_at", "portable_id", "financial_treatment", "carrying_value", "valuation_method" ]
+    },
+    "inventory_movement" : {
+      "rows" : 5,
+      "sha256" : "d1d0ebf5a40fac17a6642b9837f650a4b916171c05af7c115536ffac02396f7f",
+      "columns" : [ "id", "inventory_item_id", "movement_date", "movement_type", "quantity_change", "resulting_quantity", "unit_value", "transaction_id", "notes", "created_at", "portable_id", "value_change", "resulting_carrying_value" ]
+    },
+    "journal_posting_line" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "transaction_id", "line_order", "account_code", "fund_code", "entry_side", "amount" ]
+    },
+    "journal_transaction" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "group_code", "posted_on", "memo", "bank_timing", "budget_timing", "reversed_transaction_id", "created_at" ]
+    },
+    "merchant" : {
+      "rows" : 1,
+      "sha256" : "7d668863ffac859e8f306728064d93ddc1f7bb710999a5811facdec753b54de2",
+      "columns" : [ "id", "name", "notes", "is_active", "company_id", "portable_id" ]
+    },
+    "nmr_policy_version" : {
+      "rows" : 1,
+      "sha256" : "7710ef7919adbe70953aef3e53f3e7e44551e59fb1add35799f1f456bd5d9582",
+      "columns" : [ "id", "portable_id", "company_id", "request_hash", "saved_at", "saved_by", "policy_code", "category", "valid_from", "valid_to", "rate", "currency", "date_basis", "rounding_rule", "eligibility", "exemptions", "recipient", "reporting", "merchant_path", "source_reference", "authority", "source_date" ]
+    },
+    "open_item_snapshot" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "group_code", "item_kind", "item_ref", "state", "original_amount", "open_amount", "last_transaction_id", "last_updated_on", "created_at", "version" ]
+    },
+    "open_item_transition" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "snapshot_id", "transition_on", "from_state", "to_state", "trigger_transaction_id", "notes" ]
+    },
+    "period_close_event" : {
+      "rows" : 3,
+      "sha256" : "9050fa41862bf15632596e508a6b7f8d5f27a1f313f87bb46996137afd54cec3",
+      "columns" : [ "id", "close_range_id", "company_code", "event_type", "actor", "reason", "event_at", "company_id" ]
+    },
+    "period_close_range" : {
+      "rows" : 2,
+      "sha256" : "cf730b8f46f03c9445d9f91483c5c959872e9e15b6c68a875c7a0310edb8ed97",
+      "columns" : [ "id", "company_code", "start_date", "end_date", "range_kind", "status", "closed_at", "closed_by", "close_reason", "reopened_at", "reopened_by", "reopen_reason", "created_at", "updated_at", "company_id" ]
+    },
+    "period_close_run" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "group_code", "close_date", "status", "produced_transaction_id", "notes", "created_at" ]
+    },
+    "period_reopen_event" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "accounting_period_id", "reopened_at", "reopened_by", "reason", "reopen_scope", "prior_status" ]
+    },
+    "property_custody_event" : {
+      "rows" : 2,
+      "sha256" : "5f739c6702c766d92323d4c66fdaeea7bd05a5c7726280f005fe479147b0a7fe",
+      "columns" : [ "id", "portable_id", "company_id", "fixed_asset_id", "inventory_item_id", "event_type", "event_date", "quantity", "guardian_name", "guardian_email", "guardian_phone", "location", "item_condition", "confirmation_status", "confirmation_due_date", "confirmation_date", "expected_return_date", "removal_reason", "external_authorization_reference", "notes", "actor", "correction_of_event_id", "fixed_asset_lifecycle_event_id", "inventory_movement_id", "accounting_treatment", "created_at" ]
+    },
+    "reconciliation_run" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "group_code", "statement_ending_on", "bank_format", "imported_transaction_count", "status", "notes", "created_at" ]
+    },
+    "report_section" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "name", "report_type", "sort_order" ]
+    },
+    "schedule_item" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "kind", "status", "counterparty_id", "description", "reference", "amount", "due_date", "start_date", "end_date", "created_at", "updated_at" ]
+    },
+    "schedule_kind" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "code", "name" ]
+    },
+    "schedule_link" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "schedule_item_id", "origin_split_id", "clearing_split_id" ]
+    },
+    "security_configuration" : {
+      "rows" : 1,
+      "sha256" : "638f69e8cd902d1525d6a17622f34130c150ccc1f98e61e5e182f8e7b7ace5ed",
+      "columns" : [ "id", "bootstrap_initialized", "inactivity_timeout_minutes", "admin_recovery_pending", "admin_recovery_at", "created_at", "updated_at" ]
+    },
+    "security_event" : {
+      "rows" : 2,
+      "sha256" : "d576a53d5245073679533a2986e5c329f9044093be392b644873ded13af9a55f",
+      "columns" : [ "id", "user_id", "company_id", "occurred_at", "action_type", "subject_username", "summary", "details" ]
+    },
+    "txn" : {
+      "rows" : 33,
+      "sha256" : "4dd0af5ac498488b25aeffc08f960e67b892168ff4a788882b05115e237176de",
+      "columns" : [ "id", "txn_date", "payee_id", "memo", "bank_account_id", "created_at", "updated_at", "status", "reversal_of_txn_id", "replacement_for_txn_id", "correction_note", "company_id", "portable_id" ]
+    },
+    "txn_reconciliation_protection" : {
+      "rows" : 0,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "columns" : [ "id", "txn_id", "reconciliation_run_id", "protected_at", "protected_by", "notes" ]
+    },
+    "txn_split" : {
+      "rows" : 73,
+      "sha256" : "79d0ac3dcd472ed85ccb4e2c9f9d226b50a5117c71c8745a0401eb418e4201c2",
+      "columns" : [ "id", "txn_id", "account_id", "fund_id", "activity_id", "merchant_id", "nmr_flag", "notes", "amount_signed", "budget_category_id", "bank_cleared", "bank_cleared_on", "matched_bank_statement_line_id", "payment_method", "payment_reference", "payment_issued_on", "payment_delivered_on", "payment_check_key", "payment_evidence_reference", "payment_reviewed_on", "payment_review_note", "expense_function" ]
+    },
+    "txn_supplemental_line" : {
+      "rows" : 19,
+      "sha256" : "5318dc647de7a4768f390a6f15415e5475d355a21fbcfebd581afa4c04bd326c",
+      "columns" : [ "id", "txn_id", "line_order", "kind", "entry_ref", "counterparty", "description", "reference", "amount", "due_date", "start_date", "end_date", "notes", "created_at", "updated_at", "item_id", "txn_split_id", "item_effect", "nmr_recipient_id", "nmr_movement", "nmr_evidence_reference", "merchant_role", "merchant_withheld_unconfirmed", "merchant_evidence_reference" ]
+    },
+    "txn_supplemental_merchant_component" : {
+      "rows" : 3,
+      "sha256" : "280ee65227405f035915c18f419b53b2ef47dbff1405293bebdfcc374eed4491",
+      "columns" : [ "supplemental_line_id", "txn_split_id", "component" ]
+    },
+    "user_company_role" : {
+      "rows" : 5,
+      "sha256" : "877a3e43dc933b7c4efb6da1cb3cda4c3587b42096021085bca06871c67b419c",
+      "columns" : [ "id", "user_id", "company_id", "role_id", "is_active", "created_at", "start_date", "end_date", "revoked_at", "end_reason", "updated_at", "required_security_assignment" ]
+    }
+  },
+  "triggers" : [ "accounting_guard_account:DELETE:account:STATEMENT:BEFORE", "accounting_guard_account:INSERT:account:STATEMENT:BEFORE", "accounting_guard_account:UPDATE:account:STATEMENT:BEFORE", "accounting_guard_account_alias:DELETE:account_alias:STATEMENT:BEFORE", "accounting_guard_account_alias:INSERT:account_alias:STATEMENT:BEFORE", "accounting_guard_account_alias:UPDATE:account_alias:STATEMENT:BEFORE", "accounting_guard_account_report_section:DELETE:account_report_section:STATEMENT:BEFORE", "accounting_guard_account_report_section:INSERT:account_report_section:STATEMENT:BEFORE", "accounting_guard_account_report_section:UPDATE:account_report_section:STATEMENT:BEFORE", "accounting_guard_account_schedule_requirement:DELETE:account_schedule_requirement:STATEMENT:BEFORE", "accounting_guard_account_schedule_requirement:INSERT:account_schedule_requirement:STATEMENT:BEFORE", "accounting_guard_account_schedule_requirement:UPDATE:account_schedule_requirement:STATEMENT:BEFORE", "accounting_guard_account_subtype_schedule_default:DELETE:account_subtype_schedule_default:STATEMENT:BEFORE", "accounting_guard_account_subtype_schedule_default:INSERT:account_subtype_schedule_default:STATEMENT:BEFORE", "accounting_guard_account_subtype_schedule_default:UPDATE:account_subtype_schedule_default:STATEMENT:BEFORE", "accounting_guard_accounting_period:DELETE:accounting_period:STATEMENT:BEFORE", "accounting_guard_accounting_period:INSERT:accounting_period:STATEMENT:BEFORE", "accounting_guard_accounting_period:UPDATE:accounting_period:STATEMENT:BEFORE", "accounting_guard_activity:DELETE:activity:STATEMENT:BEFORE", "accounting_guard_activity:INSERT:activity:STATEMENT:BEFORE", "accounting_guard_activity:UPDATE:activity:STATEMENT:BEFORE", "accounting_guard_app_role:DELETE:app_role:STATEMENT:BEFORE", "accounting_guard_app_role:INSERT:app_role:STATEMENT:BEFORE", "accounting_guard_app_role:UPDATE:app_role:STATEMENT:BEFORE", "accounting_guard_app_user:DELETE:app_user:STATEMENT:BEFORE", "accounting_guard_app_user:INSERT:app_user:STATEMENT:BEFORE", "accounting_guard_app_user:UPDATE:app_user:STATEMENT:BEFORE", "accounting_guard_app_user_credential:DELETE:app_user_credential:STATEMENT:BEFORE", "accounting_guard_app_user_credential:INSERT:app_user_credential:STATEMENT:BEFORE", "accounting_guard_app_user_credential:UPDATE:app_user_credential:STATEMENT:BEFORE", "accounting_guard_approval_audit_record:DELETE:approval_audit_record:STATEMENT:BEFORE", "accounting_guard_approval_audit_record:INSERT:approval_audit_record:STATEMENT:BEFORE", "accounting_guard_approval_audit_record:UPDATE:approval_audit_record:STATEMENT:BEFORE", "accounting_guard_audit_event:DELETE:audit_event:STATEMENT:BEFORE", "accounting_guard_audit_event:INSERT:audit_event:STATEMENT:BEFORE", "accounting_guard_audit_event:UPDATE:audit_event:STATEMENT:BEFORE", "accounting_guard_bank:DELETE:bank:STATEMENT:BEFORE", "accounting_guard_bank:INSERT:bank:STATEMENT:BEFORE", "accounting_guard_bank:UPDATE:bank:STATEMENT:BEFORE", "accounting_guard_bank_csv_mapping_profile:DELETE:bank_csv_mapping_profile:STATEMENT:BEFORE", "accounting_guard_bank_csv_mapping_profile:INSERT:bank_csv_mapping_profile:STATEMENT:BEFORE", "accounting_guard_bank_csv_mapping_profile:UPDATE:bank_csv_mapping_profile:STATEMENT:BEFORE", "accounting_guard_bank_import_batch:DELETE:bank_import_batch:STATEMENT:BEFORE", "accounting_guard_bank_import_batch:INSERT:bank_import_batch:STATEMENT:BEFORE", "accounting_guard_bank_import_batch:UPDATE:bank_import_batch:STATEMENT:BEFORE", "accounting_guard_bank_reconciliation_match:DELETE:bank_reconciliation_match:STATEMENT:BEFORE", "accounting_guard_bank_reconciliation_match:INSERT:bank_reconciliation_match:STATEMENT:BEFORE", "accounting_guard_bank_reconciliation_match:UPDATE:bank_reconciliation_match:STATEMENT:BEFORE", "accounting_guard_bank_reconciliation_session:DELETE:bank_reconciliation_session:STATEMENT:BEFORE", "accounting_guard_bank_reconciliation_session:INSERT:bank_reconciliation_session:STATEMENT:BEFORE", "accounting_guard_bank_reconciliation_session:UPDATE:bank_reconciliation_session:STATEMENT:BEFORE", "accounting_guard_bank_statement_line:DELETE:bank_statement_line:STATEMENT:BEFORE", "accounting_guard_bank_statement_line:INSERT:bank_statement_line:STATEMENT:BEFORE", "accounting_guard_bank_statement_line:UPDATE:bank_statement_line:STATEMENT:BEFORE", "accounting_guard_budget_category:DELETE:budget_category:STATEMENT:BEFORE", "accounting_guard_budget_category:INSERT:budget_category:STATEMENT:BEFORE", "accounting_guard_budget_category:UPDATE:budget_category:STATEMENT:BEFORE", "accounting_guard_budget_category_alias:DELETE:budget_category_alias:STATEMENT:BEFORE", "accounting_guard_budget_category_alias:INSERT:budget_category_alias:STATEMENT:BEFORE", "accounting_guard_budget_category_alias:UPDATE:budget_category_alias:STATEMENT:BEFORE", "accounting_guard_budget_line:DELETE:budget_line:STATEMENT:BEFORE", "accounting_guard_budget_line:INSERT:budget_line:STATEMENT:BEFORE", "accounting_guard_budget_line:UPDATE:budget_line:STATEMENT:BEFORE", "accounting_guard_budget_plan:DELETE:budget_plan:STATEMENT:BEFORE", "accounting_guard_budget_plan:INSERT:budget_plan:STATEMENT:BEFORE", "accounting_guard_budget_plan:UPDATE:budget_plan:STATEMENT:BEFORE", "accounting_guard_chart_of_accounts:DELETE:chart_of_accounts:STATEMENT:BEFORE", "accounting_guard_chart_of_accounts:INSERT:chart_of_accounts:STATEMENT:BEFORE", "accounting_guard_chart_of_accounts:UPDATE:chart_of_accounts:STATEMENT:BEFORE", "accounting_guard_company:DELETE:company:STATEMENT:BEFORE", "accounting_guard_company:INSERT:company:STATEMENT:BEFORE", "accounting_guard_company:UPDATE:company:STATEMENT:BEFORE", "accounting_guard_company_bank_account:DELETE:company_bank_account:STATEMENT:BEFORE", "accounting_guard_company_bank_account:INSERT:company_bank_account:STATEMENT:BEFORE", "accounting_guard_company_bank_account:UPDATE:company_bank_account:STATEMENT:BEFORE", "accounting_guard_company_ownership_issue:DELETE:company_ownership_issue:STATEMENT:BEFORE", "accounting_guard_company_ownership_issue:INSERT:company_ownership_issue:STATEMENT:BEFORE", "accounting_guard_company_ownership_issue:UPDATE:company_ownership_issue:STATEMENT:BEFORE", "accounting_guard_company_tax_profile:DELETE:company_tax_profile:STATEMENT:BEFORE", "accounting_guard_company_tax_profile:INSERT:company_tax_profile:STATEMENT:BEFORE", "accounting_guard_company_tax_profile:UPDATE:company_tax_profile:STATEMENT:BEFORE", "accounting_guard_company_ui_preference:DELETE:company_ui_preference:STATEMENT:BEFORE", "accounting_guard_company_ui_preference:INSERT:company_ui_preference:STATEMENT:BEFORE", "accounting_guard_company_ui_preference:UPDATE:company_ui_preference:STATEMENT:BEFORE", "accounting_guard_company_ui_state:DELETE:company_ui_state:STATEMENT:BEFORE", "accounting_guard_company_ui_state:INSERT:company_ui_state:STATEMENT:BEFORE", "accounting_guard_company_ui_state:UPDATE:company_ui_state:STATEMENT:BEFORE", "accounting_guard_counterparty:DELETE:counterparty:STATEMENT:BEFORE", "accounting_guard_counterparty:INSERT:counterparty:STATEMENT:BEFORE", "accounting_guard_counterparty:UPDATE:counterparty:STATEMENT:BEFORE", "accounting_guard_fixed_asset:DELETE:fixed_asset:STATEMENT:BEFORE", "accounting_guard_fixed_asset:INSERT:fixed_asset:STATEMENT:BEFORE", "accounting_guard_fixed_asset:UPDATE:fixed_asset:STATEMENT:BEFORE", "accounting_guard_fixed_asset_depreciation_run:DELETE:fixed_asset_depreciation_run:STATEMENT:BEFORE", "accounting_guard_fixed_asset_depreciation_run:INSERT:fixed_asset_depreciation_run:STATEMENT:BEFORE", "accounting_guard_fixed_asset_depreciation_run:UPDATE:fixed_asset_depreciation_run:STATEMENT:BEFORE", "accounting_guard_fixed_asset_lifecycle_event:DELETE:fixed_asset_lifecycle_event:STATEMENT:BEFORE", "accounting_guard_fixed_asset_lifecycle_event:INSERT:fixed_asset_lifecycle_event:STATEMENT:BEFORE", "accounting_guard_fixed_asset_lifecycle_event:UPDATE:fixed_asset_lifecycle_event:STATEMENT:BEFORE", "accounting_guard_fund:DELETE:fund:STATEMENT:BEFORE", "accounting_guard_fund:INSERT:fund:STATEMENT:BEFORE", "accounting_guard_fund:UPDATE:fund:STATEMENT:BEFORE", "accounting_guard_fund_alias:DELETE:fund_alias:STATEMENT:BEFORE", "accounting_guard_fund_alias:INSERT:fund_alias:STATEMENT:BEFORE", "accounting_guard_fund_alias:UPDATE:fund_alias:STATEMENT:BEFORE", "accounting_guard_fund_transfer:DELETE:fund_transfer:STATEMENT:BEFORE", "accounting_guard_fund_transfer:INSERT:fund_transfer:STATEMENT:BEFORE", "accounting_guard_fund_transfer:UPDATE:fund_transfer:STATEMENT:BEFORE", "accounting_guard_import_issue:DELETE:import_issue:STATEMENT:BEFORE", "accounting_guard_import_issue:INSERT:import_issue:STATEMENT:BEFORE", "accounting_guard_import_issue:UPDATE:import_issue:STATEMENT:BEFORE", "accounting_guard_interchange_identity:DELETE:interchange_identity:STATEMENT:BEFORE", "accounting_guard_interchange_identity:INSERT:interchange_identity:STATEMENT:BEFORE", "accounting_guard_interchange_identity:UPDATE:interchange_identity:STATEMENT:BEFORE", "accounting_guard_inventory_item:DELETE:inventory_item:STATEMENT:BEFORE", "accounting_guard_inventory_item:INSERT:inventory_item:STATEMENT:BEFORE", "accounting_guard_inventory_item:UPDATE:inventory_item:STATEMENT:BEFORE", "accounting_guard_inventory_movement:DELETE:inventory_movement:STATEMENT:BEFORE", "accounting_guard_inventory_movement:INSERT:inventory_movement:STATEMENT:BEFORE", "accounting_guard_inventory_movement:UPDATE:inventory_movement:STATEMENT:BEFORE", "accounting_guard_journal_posting_line:DELETE:journal_posting_line:STATEMENT:BEFORE", "accounting_guard_journal_posting_line:INSERT:journal_posting_line:STATEMENT:BEFORE", "accounting_guard_journal_posting_line:UPDATE:journal_posting_line:STATEMENT:BEFORE", "accounting_guard_journal_transaction:DELETE:journal_transaction:STATEMENT:BEFORE", "accounting_guard_journal_transaction:INSERT:journal_transaction:STATEMENT:BEFORE", "accounting_guard_journal_transaction:UPDATE:journal_transaction:STATEMENT:BEFORE", "accounting_guard_merchant:DELETE:merchant:STATEMENT:BEFORE", "accounting_guard_merchant:INSERT:merchant:STATEMENT:BEFORE", "accounting_guard_merchant:UPDATE:merchant:STATEMENT:BEFORE", "accounting_guard_nmr_policy_version:DELETE:nmr_policy_version:STATEMENT:BEFORE", "accounting_guard_nmr_policy_version:INSERT:nmr_policy_version:STATEMENT:BEFORE", "accounting_guard_nmr_policy_version:UPDATE:nmr_policy_version:STATEMENT:BEFORE", "accounting_guard_open_item_snapshot:DELETE:open_item_snapshot:STATEMENT:BEFORE", "accounting_guard_open_item_snapshot:INSERT:open_item_snapshot:STATEMENT:BEFORE", "accounting_guard_open_item_snapshot:UPDATE:open_item_snapshot:STATEMENT:BEFORE", "accounting_guard_open_item_transition:DELETE:open_item_transition:STATEMENT:BEFORE", "accounting_guard_open_item_transition:INSERT:open_item_transition:STATEMENT:BEFORE", "accounting_guard_open_item_transition:UPDATE:open_item_transition:STATEMENT:BEFORE", "accounting_guard_period_close_event:DELETE:period_close_event:STATEMENT:BEFORE", "accounting_guard_period_close_event:INSERT:period_close_event:STATEMENT:BEFORE", "accounting_guard_period_close_event:UPDATE:period_close_event:STATEMENT:BEFORE", "accounting_guard_period_close_range:DELETE:period_close_range:STATEMENT:BEFORE", "accounting_guard_period_close_range:INSERT:period_close_range:STATEMENT:BEFORE", "accounting_guard_period_close_range:UPDATE:period_close_range:STATEMENT:BEFORE", "accounting_guard_period_close_run:DELETE:period_close_run:STATEMENT:BEFORE", "accounting_guard_period_close_run:INSERT:period_close_run:STATEMENT:BEFORE", "accounting_guard_period_close_run:UPDATE:period_close_run:STATEMENT:BEFORE", "accounting_guard_period_reopen_event:DELETE:period_reopen_event:STATEMENT:BEFORE", "accounting_guard_period_reopen_event:INSERT:period_reopen_event:STATEMENT:BEFORE", "accounting_guard_period_reopen_event:UPDATE:period_reopen_event:STATEMENT:BEFORE", "accounting_guard_property_custody_event:DELETE:property_custody_event:STATEMENT:BEFORE", "accounting_guard_property_custody_event:INSERT:property_custody_event:STATEMENT:BEFORE", "accounting_guard_property_custody_event:UPDATE:property_custody_event:STATEMENT:BEFORE", "accounting_guard_reconciliation_run:DELETE:reconciliation_run:STATEMENT:BEFORE", "accounting_guard_reconciliation_run:INSERT:reconciliation_run:STATEMENT:BEFORE", "accounting_guard_reconciliation_run:UPDATE:reconciliation_run:STATEMENT:BEFORE", "accounting_guard_report_section:DELETE:report_section:STATEMENT:BEFORE", "accounting_guard_report_section:INSERT:report_section:STATEMENT:BEFORE", "accounting_guard_report_section:UPDATE:report_section:STATEMENT:BEFORE", "accounting_guard_schedule_item:DELETE:schedule_item:STATEMENT:BEFORE", "accounting_guard_schedule_item:INSERT:schedule_item:STATEMENT:BEFORE", "accounting_guard_schedule_item:UPDATE:schedule_item:STATEMENT:BEFORE", "accounting_guard_schedule_kind:DELETE:schedule_kind:STATEMENT:BEFORE", "accounting_guard_schedule_kind:INSERT:schedule_kind:STATEMENT:BEFORE", "accounting_guard_schedule_kind:UPDATE:schedule_kind:STATEMENT:BEFORE", "accounting_guard_schedule_link:DELETE:schedule_link:STATEMENT:BEFORE", "accounting_guard_schedule_link:INSERT:schedule_link:STATEMENT:BEFORE", "accounting_guard_schedule_link:UPDATE:schedule_link:STATEMENT:BEFORE", "accounting_guard_security_configuration:DELETE:security_configuration:STATEMENT:BEFORE", "accounting_guard_security_configuration:INSERT:security_configuration:STATEMENT:BEFORE", "accounting_guard_security_configuration:UPDATE:security_configuration:STATEMENT:BEFORE", "accounting_guard_txn:DELETE:txn:STATEMENT:BEFORE", "accounting_guard_txn:INSERT:txn:STATEMENT:BEFORE", "accounting_guard_txn:UPDATE:txn:STATEMENT:BEFORE", "accounting_guard_txn_reconciliation_protection:DELETE:txn_reconciliation_protection:STATEMENT:BEFORE", "accounting_guard_txn_reconciliation_protection:INSERT:txn_reconciliation_protection:STATEMENT:BEFORE", "accounting_guard_txn_reconciliation_protection:UPDATE:txn_reconciliation_protection:STATEMENT:BEFORE", "accounting_guard_txn_split:DELETE:txn_split:STATEMENT:BEFORE", "accounting_guard_txn_split:INSERT:txn_split:STATEMENT:BEFORE", "accounting_guard_txn_split:UPDATE:txn_split:STATEMENT:BEFORE", "accounting_guard_txn_supplemental_line:DELETE:txn_supplemental_line:STATEMENT:BEFORE", "accounting_guard_txn_supplemental_line:INSERT:txn_supplemental_line:STATEMENT:BEFORE", "accounting_guard_txn_supplemental_line:UPDATE:txn_supplemental_line:STATEMENT:BEFORE", "accounting_guard_txn_supplemental_merchant_component:DELETE:txn_supplemental_merchant_component:STATEMENT:BEFORE", "accounting_guard_txn_supplemental_merchant_component:INSERT:txn_supplemental_merchant_component:STATEMENT:BEFORE", "accounting_guard_txn_supplemental_merchant_component:UPDATE:txn_supplemental_merchant_component:STATEMENT:BEFORE", "accounting_guard_user_company_role:DELETE:user_company_role:STATEMENT:BEFORE", "accounting_guard_user_company_role:INSERT:user_company_role:STATEMENT:BEFORE", "accounting_guard_user_company_role:UPDATE:user_company_role:STATEMENT:BEFORE" ]
+}

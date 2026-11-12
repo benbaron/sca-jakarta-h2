@@ -15,12 +15,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * ReconciliationServiceIntegrationTest component.
  */
-public class ReconciliationServiceIntegrationTest
+public class ReconciliationServiceIntegrationTest extends RepositoryIntegrationSupport
 {
     @Test
     public void recordCompletedRun_persistsRunInRepository()
     {
-        DataSource ds = RepositoryIntegrationSupport.migratedDataSource();
+        DataSource ds = migratedDataSource();
         JdbcReconciliationRunRepository repo = new JdbcReconciliationRunRepository(ds);
         ReconciliationService service = new ReconciliationService(repo);
 

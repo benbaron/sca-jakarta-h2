@@ -1,5 +1,11 @@
 # P27-S4D3R — Recovery integrity prerequisite
 
+The historical 2.5.252 engine selection below is superseded by
+[P27-C2](P27-C2-online-backup-integrity.md), which reproduces a remaining native
+online-backup defect and selects 2.4.240 with explicit previous-runtime file
+compatibility gates. The native-copy/finalization and complete-field invariants
+remain in force; earlier successful runs do not establish absence of this defect.
+
 [PLAN](PLAN.md) owns status. The S4D3 combined gate exposed an independent storage-engine prerequisite; S4D3 is blocked and its unmerged fidelity fixes/fixtures are preserved on `codex/P27-S4D3-integrated-portability`. Work here starts from current main after #398, without replaying those production fixes.
 
 ## Reproduced failure

@@ -1,5 +1,7 @@
 package org.nonprofitbookkeeping.service;
 
+import org.nonprofitbookkeeping.persistence.MigrationTestConnections;
+
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.nonprofitbookkeeping.persistence.DatabaseMigrationService;
@@ -10,14 +12,14 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class NmrPolicyMigrationTest
+class NmrPolicyMigrationTest extends MigrationTestConnections
 {
     @Test
     void upgradeAndUntrackedRecoveryPreserveLegacyFactsAndSeedNoPolicy() throws Exception
     {
         String url = "jdbc:h2:mem:nmr_upgrade_" + UUID.randomUUID()
                 + ";DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE";
-        Flyway.configure().dataSource(url, "sa", "").target("80").load().migrate();
+        Flyway.configure().dataSource(migrationDataSource(url)).target("80").load().migrate();
         try (var connection = DriverManager.getConnection(url, "sa", ""); var sql = connection.createStatement())
         {
             sql.execute("INSERT INTO chart_of_accounts (id, name, version, status) VALUES (1, 'Legacy chart', '1', 'ACTIVE')");
@@ -25,7 +27,7 @@ class NmrPolicyMigrationTest
             sql.execute("INSERT INTO fund (id, code, name, fund_type) VALUES (1,'GENERAL','General','UNRESTRICTED')");
             sql.execute("INSERT INTO txn (id, txn_date, memo) VALUES (1,DATE '2026-01-01','Preserve existing fact')");
             sql.execute("INSERT INTO txn_split (id, txn_id, account_id, fund_id, amount_signed) VALUES (1,1,1,1,12.3456)");
-            Flyway.configure().dataSource(url, "sa", "").load().migrate();
+            Flyway.configure().dataSource(migrationDataSource(url)).load().migrate();
             try (var rows = sql.executeQuery("SELECT count(*) FROM nmr_policy_version"))
             {
                 assertTrue(rows.next());
@@ -46,7 +48,7 @@ class NmrPolicyMigrationTest
             assertThrows(SQLException.class, () -> sql.execute("UPDATE nmr_policy_version SET valid_to=DATE '2025-12-31'"));
             assertThrows(SQLException.class, () -> sql.execute("UPDATE nmr_policy_version SET company_id=99999"));
             assertThrows(SQLException.class, () -> sql.execute("UPDATE nmr_policy_version SET source_reference=' '"));
-            Flyway.configure().dataSource(url, "sa", "").load().migrate();
+            Flyway.configure().dataSource(migrationDataSource(url)).load().migrate();
             sql.execute("DELETE FROM flyway_schema_history");
             DatabaseMigrationService.migrateJdbcUrl(url);
             try (var rows = sql.executeQuery("SELECT rate, source_reference FROM nmr_policy_version"))

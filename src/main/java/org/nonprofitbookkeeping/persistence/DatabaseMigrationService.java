@@ -91,6 +91,8 @@ public final class DatabaseMigrationService
                 + ";MODE=PostgreSQL"
                 + ";DATABASE_TO_LOWER=TRUE"
                 + ";DEFAULT_NULL_ORDERING=HIGH"
+                // Avoid H2 2.4.240's partial close-compaction failure; validated restores still use SHUTDOWN COMPACT.
+                + ";MAX_COMPACT_TIME=0"
                 + ";INIT=CREATE SCHEMA IF NOT EXISTS PUBLIC\\;SET SCHEMA PUBLIC";
     }
 

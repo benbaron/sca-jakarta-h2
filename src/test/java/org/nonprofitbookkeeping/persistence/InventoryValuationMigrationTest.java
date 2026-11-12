@@ -13,7 +13,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class InventoryValuationMigrationTest
+class InventoryValuationMigrationTest extends MigrationTestConnections
 {
     @Test
     void v89BackfillsLegacyFixedValueAndSurvivesRestart() throws Exception
@@ -58,9 +58,9 @@ class InventoryValuationMigrationTest
         }
     }
 
-    private static void migrate(String url, String target)
+    private void migrate(String url, String target)
     {
-        var configuration = Flyway.configure().dataSource(url, "sa", "")
+        var configuration = Flyway.configure().dataSource(migrationDataSource(url))
                 .locations("classpath:db/migration");
         if (target != null) configuration.target(target);
         configuration.load().migrate();

@@ -6,7 +6,7 @@ import java.sql.*;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
-class ExpenseFunctionMigrationTest
+class ExpenseFunctionMigrationTest extends MigrationTestConnections
 {
     @Test
     void v84HistoryKeepsIdentityAmountsAndUnknownPurposeWhileNewCodesAreConstrained() throws Exception
@@ -60,9 +60,9 @@ class ExpenseFunctionMigrationTest
         }
     }
 
-    private static void migrate(String url, String target)
+    private void migrate(String url, String target)
     {
-        var config = Flyway.configure().dataSource(url, "sa", "").locations("classpath:db/migration");
+        var config = Flyway.configure().dataSource(migrationDataSource(url)).locations("classpath:db/migration");
         if (target != null)
         {
             config.target(target);
