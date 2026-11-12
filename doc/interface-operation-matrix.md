@@ -258,3 +258,9 @@ for the same selected bank target. Changing targets or deactivating the profile
 must not restore an incompatible choice. Preview and commit still use the
 existing frozen-source/profile validation authority. See [Import workflow
 regressions](P29-C10-import-workflow-coverage.md).
+
+Journal Save publishes asynchronous completion through AppPanel/PanelHost to the
+footer, while immediate command results remain compatible. Results from inactive
+or replaced panel instances are ignored, and workspace changes clear prior footer
+text without cancelling writes. Entry retains rejected drafts and displays the
+service reason. See [C11 checks](P29-C11-journal-save-feedback.md).

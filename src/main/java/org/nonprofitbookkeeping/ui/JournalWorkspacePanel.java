@@ -135,6 +135,7 @@ public final class JournalWorkspacePanel implements AppPanel
     private boolean dirty;
     private boolean loading;
     private boolean saveInProgress;
+    private java.util.function.Consumer<RunCommandResult> commandResults = ignored -> { };
     private UUID createRequestId;
     private long editorGeneration;
     private Runnable capabilitiesChanged = () -> {};
@@ -371,6 +372,7 @@ public final class JournalWorkspacePanel implements AppPanel
                 balanceStatus);
         totals.setAlignment(Pos.CENTER_LEFT);
         validationMessage.setWrapText(true);
+        validationMessage.setId("journalEntryValidation");
 
         VBox content = new VBox(8, editorMode, form, totals, validationMessage);
         content.setPadding(new Insets(6));
@@ -1143,7 +1145,7 @@ public final class JournalWorkspacePanel implements AppPanel
         catch (IllegalArgumentException ex)
         {
             validationMessage.setText(ex.getMessage());
-            status.setText("Save blocked: " + ex.getMessage());
+            publishSaveResult(false, "Save blocked: " + ex.getMessage());
             return;
         }
 
@@ -1152,7 +1154,7 @@ public final class JournalWorkspacePanel implements AppPanel
         {
             String message = String.join(" ", result.errors());
             validationMessage.setText(message);
-            status.setText("Save blocked: " + message);
+            publishSaveResult(false, "Save blocked: " + message);
             return;
         }
 
@@ -1162,7 +1164,7 @@ public final class JournalWorkspacePanel implements AppPanel
         UUID requestId = createRequestId;
         ++editorGeneration;
         setSaveInProgress(true);
-        status.setText(targetId == null ? "Saving new journal entry..." : "Updating transaction #" + targetId + "...");
+        publishSaveResult(true, targetId == null ? "Saving new journal entry..." : "Updating transaction #" + targetId + "...");
         UiAsync.run("journal-workspace-save",
                 () -> targetId == null ? service.enter(command, requestId) : service.update(targetId, command),
                 view -> {
@@ -1171,9 +1173,16 @@ public final class JournalWorkspacePanel implements AppPanel
                         applyTransactionView(view);
                         requestedTransactionId = view.id();
                         reloadJournal();
-                        status.setText((targetId == null ? "Saved new transaction #" : "Updated transaction #")
+                        publishSaveResult(true, (targetId == null ? "Saved new transaction #" : "Updated transaction #")
                                 + view.id() + " with " + view.lines().size() + " accounting line(s) and "
                                 + view.supplementalLines().size() + " supplemental detail row(s).");
+                    }
+                    catch (RuntimeException ex)
+                    {
+                        String message = "Saved transaction #" + view.id() + ", but the editor could not refresh: "
+                                + UiErrors.safeMessage(ex) + ". Reload the saved transaction from Journal.";
+                        validationMessage.setText(message);
+                        publishSaveResult(true, message);
                     }
                     finally
                     {
@@ -1181,10 +1190,30 @@ public final class JournalWorkspacePanel implements AppPanel
                     }
                 },
                 ex -> {
-                    setSaveInProgress(false);
-                    status.setText("Save failed: " + UiErrors.safeMessage(ex));
-                    PeriodCloseNavigation.showFailure(closedRangeLink, ex, operationDatabase);
+                    try
+                    {
+                        String message = "Save failed: " + UiErrors.safeMessage(ex);
+                        validationMessage.setText(message);
+                        publishSaveResult(false, message);
+                        PeriodCloseNavigation.showFailure(closedRangeLink, ex, operationDatabase);
+                    }
+                    finally
+                    {
+                        setSaveInProgress(false);
+                    }
                 });
+    }
+
+    private void publishSaveResult(boolean handled, String message)
+    {
+        status.setText(message);
+        commandResults.accept(new RunCommandResult(handled, message));
+    }
+
+    @Override
+    public void setCommandResultListener(java.util.function.Consumer<RunCommandResult> listener)
+    {
+        commandResults = Objects.requireNonNull(listener, "listener");
     }
 
     private void setSaveInProgress(boolean saving)

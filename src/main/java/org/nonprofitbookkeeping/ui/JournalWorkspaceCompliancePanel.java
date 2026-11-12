@@ -100,6 +100,12 @@ public final class JournalWorkspaceCompliancePanel implements AppPanel
     }
 
     @Override
+    public void setCommandResultListener(java.util.function.Consumer<RunCommandResult> listener)
+    {
+        delegate.setCommandResultListener(listener);
+    }
+
+    @Override
     public String saveUnavailableReason()
     {
         return delegate.saveUnavailableReason();

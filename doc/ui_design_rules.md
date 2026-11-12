@@ -196,3 +196,9 @@ for the same selected bank target. Changing targets or deactivating the profile
 must not restore an incompatible choice. Preview and commit still use the
 existing frozen-source/profile validation authority. See [Import workflow
 regressions](P29-C10-import-workflow-coverage.md).
+
+Journal command feedback distinguishes an in-flight Save from its terminal
+saved/updated/blocked/failed outcome. Entry shows validation failures without
+requiring navigation to a hidden Journal header. Background list refresh must
+not overwrite completed command feedback. Footer text/tooltips belong to the
+current workspace; late results from an obsolete owner cannot replace them.

@@ -168,3 +168,12 @@ Save Entry and File/toolbar Save share the same guarded async operation. While i
 Entry Lines adds a remembered sortable/resizable/reorderable **Expense function** column. The choice starts Unclassified and explicitly offers AR — Events, OA — Administration and FR — Fundraising, with an expense-only explanation. Account/Fund/Event/Budget choices never supply a default. Shared Save Entry/File Save persists it with the transaction; function-only cell commits protect drafts, copies/reload preserve codes and busy/permission/protected-date controls remain authoritative. Bank/nonexpense codes reject visibly. A classified reversal retains source purposes and cannot be rewritten; reverse it and enter/edit the replacement.
 
 Editable Debit/Credit cells and reload retain canonical four-decimal precision, independently of two-decimal company display; a function-only Save cannot round an accepted amount. Laptop/larger-text horizontal reach and existing independent table/editor scrolling/dividers remain required. Report Library **Functional Expenses** offers date range, Fund and Event (including inactive historical Events), Run/Export and owning-transaction drill-through. Full totals and gross Unclassified diagnostics precede detail truncation. See [S5B owner checks and evidence](../P25-S5B-functional-expenses.md).
+
+## Journal Save feedback
+
+Save remains asynchronous through the canonical service. Its pending and terminal
+result reaches the active workspace footer; failures also appear on Entry without
+discarding the draft/request identity. Refreshing the journal list must not hide
+the saved/failed command result. A known committed transaction with a display
+refresh error reports its ID and asks for reload, rather than reporting a false
+rollback. See [Save feedback checks](../P29-C11-journal-save-feedback.md).
