@@ -1,17 +1,19 @@
 ---
-plan_version: 477
+plan_version: 478
 active_phase: P27
 active_slice: P27-C4
 active_status: VERIFYING
 active_branch: codex/P27-C4-banking-export-diagnostics
-active_pull_request: null
-active_head: 80f0321f8943e8c982e3190a64280ab9e4679212
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/426
+active_head: ba1cb270c9567b7f51df95dcc31886fadcef2e09
 next_action: "Finish full clean/display verification, publish the reviewed diagnostic correction and inspect exact-head CI. Retry export on the updated build to obtain the actual offending bank record details."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C4 banking export diagnosis — 2026-11-12 America/Denver
+
+Publication: implementation `ba1cb270c9567b7f51df95dcc31886fadcef2e09`, tree `336fe930d0e337ab400b4e874a0930547382685e`, is published in [draft PR #426](https://github.com/benbaron/sca-jakarta-h2/pull/426). Native fetch and connected metadata match; base remains main `80f0321f`. Publication uses a clean detached temporary worktree while full verification owns generated target files in the build worktree. This following documentation-only commit records the handoff. C4 stays VERIFYING pending full/display verification, exact-final-head CI and owner review of the newly readable bank-record diagnosis. Existing bank configuration is not assumed corrected; no merge authorized.
 
 Owner requests a detail subwindow identifying the faulty entry. Implemented: resizable failure dialog with wrapped, selectable, scrollable full text; labelled Record, Ledger account, Referenced chart and Selected chart lines, with stable record/chart IDs where persisted. Journal errors retain transaction ID/date; bank errors identify the configured bank-account ID/name and Banking-specific review path. Guards retain same IDs/ownership conditions; foreign chart labels remain suppressed. New real-H2 cases prove wrong-chart bank configuration fails without database/file replacement and inactive selected-chart ledger accounts export. Real shown-dialog geometry/copy-selection regression executes at 760 and 430 pixels. Original diagnostic regression fails and original UI assertion is wrapped as a CompletionException (one failure/one error); no compile/bootstrap defect. The first restricted display rerun skipped four UI cases and is not accepted. Repeated with actual display access, 12 tests pass with zero failures/errors/skips; after record-detail additions, final focused gate passes **19 tests, zero failures/errors/skips** (`/tmp/p27-c4-final-focused.log`). Full clean verify and final display checks are running; no data remapping or Banking write-policy changes. CI explicitly adds the new rendered-dialog test to its feedback stage.
 
