@@ -1,12 +1,12 @@
 ---
-plan_version: 471
+plan_version: 472
 active_phase: P27
 active_slice: P27-C3
 active_status: VERIFYING
 active_branch: codex/P27-C3-sclx-chart-consistency
-active_pull_request: null
-active_head: b259df7ae18ead5f3481af9fbd8bf4770b3ac55e
-next_action: "Publish the reviewed, locally verified correction as a draft PR and inspect exact-final-head GitHub checks; native acceptance remains deferred."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/425
+active_head: 7da14cfb4e8120cdbed175a14cbc527027d045ce
+next_action: "Inspect exact-final-head CI for draft PR #425; correct any failures and record actual evidence. Review/merge and focused owner check remain pending; native acceptance stays deferred."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -14,6 +14,8 @@ next_action: "Publish the reviewed, locally verified correction as a draft PR an
 ### P27-C3 Journal/SCLX chart consistency — 2026-11-12 America/Denver
 
 Governing contract and focused user testing: [P27-C3 Journal/SCLX chart consistency](P27-C3-sclx-chart-consistency.md).
+
+Publication: implementation `7da14cfb4e8120cdbed175a14cbc527027d045ce`, tree `7ccfa8c1972cd2ebe194be2e25aa43be87069d97`, is published in [draft PR #425](https://github.com/benbaron/sca-jakarta-h2/pull/425). Native fetch and connected PR metadata match; base remains current main `b259df7a`. This following documentation-only handoff records publication. Product/test bytes are those of the passing local gates below. C3 stays VERIFYING pending exact-final-head GitHub checks, focused owner check, review and merge. No merge authorized.
 
 Both original H2 regressions failed before the fix (two assertion failures, no test errors). Implementation now filters new Journal choices to the selected chart, validates stale header/line accounts inside the canonical locked create service, preserves request replay and historical APIs, and compares SCLX chart/company identity by persisted IDs. Expanded focused gate passes **28 tests, zero failures/errors/skips** (54.3 seconds; `/tmp/p27-c3-expanded.log`), including six new real-H2 regressions, preserved export destination/database on failure, and explicit correction of a prior wrong account selection. Viewer denial coverage includes the new Journal entry boundary. No migrations or data rewrites. Final `clean verify` passes **1,206 tests, zero failures/errors, 141 expected display skips** (09:43; `/tmp/p27-c3-final-clean.log`). Displayed Journal Save/feedback and SCLX coordinator gate passes **13 tests, zero failures/errors/skips** (01:22; `/tmp/p27-c3-final-display.log`, `DISPLAY=:97`, isolated forks). Final review and publication/CI remain pending. Native owner acceptance remains deferred.
 
