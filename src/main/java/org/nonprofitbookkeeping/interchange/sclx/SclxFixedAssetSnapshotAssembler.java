@@ -135,11 +135,7 @@ final class SclxFixedAssetSnapshotAssembler
             ChartOfAccounts activeChart,
             String field)
     {
-        Objects.requireNonNull(account, field);
-        if (account.getChart() != activeChart)
-        {
-            throw new IllegalArgumentException(field + " is outside the selected company's active chart");
-        }
+        SclxChartScope.requireAccount(account, activeChart, field, "The fixed-asset snapshot");
     }
 
     private static String accountId(String companyCode, Account account)

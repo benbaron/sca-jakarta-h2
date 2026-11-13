@@ -35,7 +35,7 @@ The lower editor uses the same surface for New and Edit modes.
 
 ### New mode
 
-New mode creates a transaction only when **Save Entry** successfully calls `TransactionEntryService.enter(...)`. Prefill from active period or drill-through context is only an editor convenience and is not authoritative.
+New mode creates a transaction only when **Save Entry** successfully calls `TransactionEntryService.enterJournalDraft(...)`, which uses the canonical locked/idempotent create path. Account choices belong to the company's selected Chart of Accounts; header and line accounts are revalidated under the company lock before writing. A stale selection is rejected with a refresh/review explanation. Prefill from active period or drill-through context is only an editor convenience and is not authoritative. Existing historical account references remain visible when loading an entry; correction and import/generated entry APIs retain their company-ownership rules. See [P27-C3](../P27-C3-sclx-chart-consistency.md).
 
 ### Edit mode
 

@@ -45,6 +45,7 @@ The existing **Administration → Company Admin** editor gains a **Chart of Acco
 - Chart of Accounts JSON `MERGE_BY_CODE` continues to target the company's active chart.
 - SCLX existing-company import continues to preserve/use the target company's current chart; a new/unpopulated target may establish its first chart through the governed SCLX path.
 - Reports and historical transactions retain their existing stable account/chart references; changing the current pointer is not a historical data migration.
+- P27-C3 new interactive Journal drafts use the selected chart, with atomic stale-selection validation. Historical correction/import/generated entry ownership rules remain unchanged; see [Journal/SCLX consistency](P27-C3-sclx-chart-consistency.md).
 - Company switching continues to rebuild company-bound workspaces. Re-selecting an already-open chart-sensitive workspace invokes its normal `onPanelShown()` refresh and re-queries current H2 authority.
 
 ## Schema decision

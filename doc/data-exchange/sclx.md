@@ -1,5 +1,7 @@
 # SCLX company-data interchange contract
 
+P27-C3 clarifies selected-chart identity: guards compare persisted chart/company IDs across Hibernate proxy boundaries. New Journal choices use that same selected chart. Genuine different-chart references remain blocking errors with record/chart context; codes are never silently remapped and history is not rewritten. See [Journal/SCLX chart consistency](../P27-C3-sclx-chart-consistency.md).
+
 ## 1. Purpose and authority
 
 This document governs SCLX import and export for the SCA Bookkeeping Program. SCLX is a portable, company-level business-data format. It is not a database backup, a Chart of Accounts-only document, or a bank-statement format.

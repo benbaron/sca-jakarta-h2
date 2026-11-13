@@ -38,6 +38,11 @@ public class SampleCompanyServiceTest
             ChartOfAccounts chart = activeSampleChart(jpa);
             assertEquals(SampleCompanyService.SAMPLE_CHART_NAME, chart.getName());
             assertEquals(ChartStatus.ACTIVE, chart.getStatus());
+            try (EntityManager em = jpa.em())
+            {
+                assertEquals(chart.getId(), em.createQuery("from Company c where c.code='DEFAULT'",
+                        org.nonprofitbookkeeping.model.Company.class).getSingleResult().getActiveChartOfAccounts().getId());
+            }
 
             TransactionLineEditorModel.ReferenceData references = new TransactionReferenceDataService(jpa).loadActiveReferenceData();
             assertFalse(references.accounts().isEmpty());
@@ -48,6 +53,33 @@ public class SampleCompanyServiceTest
             assertFalse(references.counterparties().isEmpty());
             assertTrue(references.accounts().stream().anyMatch(option -> option.code().equals("1000")));
             assertTrue(references.funds().stream().anyMatch(option -> option.code().equals("UNREST")));
+        }
+    }
+
+    @Test
+    void refreshPreservesExistingSelectionAndDoesNotChooseAmongMultipleOwnedCharts(@TempDir Path tempDir)
+    {
+        try (Jpa jpa = new Jpa(tempDir.resolve("sample-existing-chart")))
+        {
+            var fixture = FundTransferTestFixture.seed(jpa);
+            var service = new SampleCompanyService(jpa);
+            service.createOrRefresh();
+            try (EntityManager em = jpa.em())
+            {
+                var company = em.createQuery("from Company c where c.code='DEFAULT'",
+                        org.nonprofitbookkeeping.model.Company.class).getSingleResult();
+                assertEquals(em.find(org.nonprofitbookkeeping.model.Account.class, fixture.bank()).getChart().getId(),
+                        company.getActiveChartOfAccounts().getId());
+                em.getTransaction().begin();
+                company.setActiveChartOfAccounts(null);
+                em.getTransaction().commit();
+            }
+            service.createOrRefresh();
+            try (EntityManager em = jpa.em())
+            {
+                org.junit.jupiter.api.Assertions.assertNull(em.createQuery("from Company c where c.code='DEFAULT'",
+                        org.nonprofitbookkeeping.model.Company.class).getSingleResult().getActiveChartOfAccounts());
+            }
         }
     }
 

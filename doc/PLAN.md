@@ -1,15 +1,29 @@
 ---
-plan_version: 470
+plan_version: 471
 active_phase: P27
-active_slice: P27-C2
+active_slice: P27-C3
 active_status: VERIFYING
-active_branch: codex/P27-C2-online-backup-integrity
-active_pull_request: 424
-active_head: 1b2c5e489e338045f4a5fd381577daafc9c672b0
-next_action: "Finish P27-C2 clean/repeat/display validation, publish the focused draft, verify matching remote head/tree and exact-head CI, then owner recovery/Journal checks; no merge authorized."
+active_branch: codex/P27-C3-sclx-chart-consistency
+active_pull_request: null
+active_head: b259df7ae18ead5f3481af9fbd8bf4770b3ac55e
+next_action: "Publish the reviewed, locally verified correction as a draft PR and inspect exact-final-head GitHub checks; native acceptance remains deferred."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C3 Journal/SCLX chart consistency — 2026-11-12 America/Denver
+
+Governing contract and focused user testing: [P27-C3 Journal/SCLX chart consistency](P27-C3-sclx-chart-consistency.md).
+
+Both original H2 regressions failed before the fix (two assertion failures, no test errors). Implementation now filters new Journal choices to the selected chart, validates stale header/line accounts inside the canonical locked create service, preserves request replay and historical APIs, and compares SCLX chart/company identity by persisted IDs. Expanded focused gate passes **28 tests, zero failures/errors/skips** (54.3 seconds; `/tmp/p27-c3-expanded.log`), including six new real-H2 regressions, preserved export destination/database on failure, and explicit correction of a prior wrong account selection. Viewer denial coverage includes the new Journal entry boundary. No migrations or data rewrites. Final `clean verify` passes **1,206 tests, zero failures/errors, 141 expected display skips** (09:43; `/tmp/p27-c3-final-clean.log`). Displayed Journal Save/feedback and SCLX coordinator gate passes **13 tests, zero failures/errors/skips** (01:22; `/tmp/p27-c3-final-display.log`, `DISPLAY=:97`, isolated forks). Final review and publication/CI remain pending. Native owner acceptance remains deferred.
+
+The first full gate exposed an obsolete source-route expectation and a direct sample initialization prerequisite: sample accounts were created without selecting their chart. The route check now requires `enterJournalDraft` and prohibits its old UI bypass; all other service-boundary checks remain. Explicit sample initialization now selects its sole owned chart only when no selection exists, under the company lock. A new H2 regression preserves existing selections and multiple-chart ambiguity; no arbitrary Journal fallback is introduced. Initial full gate completed with **1,205 tests / two failures / zero errors / 141 display skips** (09:34). Final focused gate passes **24 tests, zero failures/errors/skips** (54.5 seconds; `/tmp/p27-c3-final-focused.log`), covering both adjustments plus the six chart regressions, request receipts and authorization. The final full gate passes as recorded above; the displayed gate also passes as recorded above. The initial failing run is not acceptance.
+
+Owner reports new Journal accepts account 1000 from its dropdown, but Export Active Company to SCLX rejects that account as outside the selected active chart; no chart import/switch occurred between those actions. This explicitly names a new corrective topic. #424 is merged at current main `b259df7a` and passed exact-head CI `43168464362`. Prior native acceptance remains deferred; the local blocker-audit branch preserves its separate documentation. Start fresh `codex/P27-C3-sclx-chart-consistency` from current main.
+
+Inspection finds Journal TransactionReferenceDataService selects active posting accounts across all company-owned charts; SCLX queries only the selected chart but includes all company transactions. Account codes are chart-local, so identically labelled 1000 choices can reference different stable IDs. Export also compares chart objects by Java reference identity. Baseline compile passes (21.7 seconds); 16 existing snapshot/entry tests pass (53.8 seconds). Required reading: AGENTS/PLAN, P19-S1 chart assignment, SCLX scope/identity/import contracts, canonical entry/correction and three UI rules. Required inspection: TransactionReferenceDataService, Journal save/loaded-option retention, TransactionEntryService locked create/idempotency, CompanyOwnershipService, SCLX snapshot query/assemblers, chart assignment and actual Journal/SCLX tests.
+
+Bounded correction: new interactive Journal choices follow the selected chart and revalidate that selection inside the existing atomic/idempotent create service. Historical import/generated/correction APIs retain company-owned stable references; no blanket historical reclassification or account-code remapping. SCLX chart checks compare persisted IDs, retaining different-chart/cross-company rejection, and report the affected record/chart when the existing single-chart format cannot represent it. Existing wrongly selected new entries require explicit canonical review/correction; no user database is available and no stored history is silently rewritten. The SCLX format is not broadened to merge duplicate codes or multiple charts. Reproduce both choice-scope and proxy-identity defects before implementation; preserve role/period/reconciliation/idempotency guards.
 
 ### P27-C2 native online backup integrity — 2026-11-12 UTC
 
