@@ -27,25 +27,34 @@ final class SclxChartScope
 
     static void requireAccount(Account account, ChartOfAccounts selected, String field, String context)
     {
+        requireAccount(account, selected, field, context,
+                "Review the entry's account selection in Journal or the chart assignment in Company Admin.");
+    }
+
+    static void requireAccount(Account account, ChartOfAccounts selected, String field, String context, String guidance)
+    {
         Objects.requireNonNull(account, field);
         if (sameChart(account.getChart(), selected))
         {
             return;
         }
-        String message = field + " is outside the selected company's active chart: " + account.getCode();
+        String message = field + " is outside the selected company's active chart: " + account.getCode()
+                + ".\nRecord: " + context;
         if (account.getChart() != null && selected != null
                 && sameCompany(account.getChart().getCompany(), selected.getCompany()))
         {
-            message += ". " + context + " uses " + account.getName() + " from " + describe(account.getChart())
-                    + "; the selected chart is " + describe(selected)
-                    + ". Review the entry's account selection in Journal or the chart assignment in Company Admin. "
-                    + "SCLX exports one selected chart; existing history was not changed.";
+            message += "\nLedger account: " + account.getCode() + " — " + account.getName()
+                    + (account.getId() == null ? "" : " (ID " + account.getId() + ")")
+                    + "\nReferenced chart: " + describe(account.getChart())
+                    + "\nSelected chart: " + describe(selected);
         }
+        message += "\n" + guidance + "\nSCLX exports one selected chart; existing history was not changed.";
         throw new IllegalArgumentException(message);
     }
 
     private static String describe(ChartOfAccounts chart)
     {
-        return "chart '" + chart.getName() + "' (version " + chart.getVersion() + ")";
+        return "chart '" + chart.getName() + "' (version " + chart.getVersion()
+                + (chart.getId() == null ? "" : ", ID " + chart.getId()) + ")";
     }
 }

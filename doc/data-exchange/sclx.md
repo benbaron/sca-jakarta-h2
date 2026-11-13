@@ -1,5 +1,7 @@
 # SCLX company-data interchange contract
 
+P27-C4 makes export-failure details fully wrapped, selectable and scrollable in a resizable dialog. Bank-ledger chart failures identify the configured bank account and direct review to Banking / Bank accounts and Company Admin. No bank link or history is automatically changed; see [banking export diagnosis](../P27-C4-banking-export-diagnostics.md).
+
 P27-C3 clarifies selected-chart identity: guards compare persisted chart/company IDs across Hibernate proxy boundaries. New Journal choices use that same selected chart. Genuine different-chart references remain blocking errors with record/chart context; codes are never silently remapped and history is not rewritten. See [Journal/SCLX chart consistency](../P27-C3-sclx-chart-consistency.md).
 
 ## 1. Purpose and authority

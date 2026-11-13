@@ -420,7 +420,14 @@ final class JavaFxSclxExportDialogs implements SclxExportDialogs
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("SCLX Export Failed");
         alert.setHeaderText("The active company was not exported.");
-        alert.setContentText(message);
+        TextArea details = new TextArea(message);
+        details.setId("sclxExportFailureDetails");
+        details.setEditable(false);
+        details.setWrapText(true);
+        details.setPrefColumnCount(72);
+        details.setPrefRowCount(10);
+        alert.getDialogPane().setContent(details);
+        alert.setResizable(true);
         initOwner(alert, owner);
         alert.showAndWait();
     }
