@@ -118,6 +118,7 @@ public class TransactionEntryService
     {
         return enterAfterLockedValidation(command, requestId, "enter Journal draft", (em, company) ->
         {
+            em.refresh(company);
             var chart = company.getActiveChartOfAccounts();
             if (chart == null)
             {

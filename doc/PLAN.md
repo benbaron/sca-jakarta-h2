@@ -1,17 +1,19 @@
 ---
-plan_version: 472
+plan_version: 473
 active_phase: P27
 active_slice: P27-C3
 active_status: VERIFYING
 active_branch: codex/P27-C3-sclx-chart-consistency
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/425
-active_head: 7da14cfb4e8120cdbed175a14cbc527027d045ce
-next_action: "Inspect exact-final-head CI for draft PR #425; correct any failures and record actual evidence. Review/merge and focused owner check remain pending; native acceptance stays deferred."
+active_head: e4298a52c3a83f7574cd02aa4b500dc760517b76
+next_action: "Complete full/display verification and inspect exact-head CI after the stale-company refresh follow-up in draft PR #425. Review/merge and focused owner check remain pending; native acceptance stays deferred."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C3 Journal/SCLX chart consistency — 2026-11-12 America/Denver
+
+Final-review follow-up: a deterministic real-H2 cached-company regression fails before refresh (one assertion failure, no errors): locking alone retains the chart pointer loaded before a competing assignment. Journal now refreshes the company under its existing canonical lock before checking chart scope; sample initialization refreshes while acquiring its lock as well. The follow-up focused gate passes **25 tests, zero failures/errors/skips** (01:09; `/tmp/p27-c3-refresh-focused.log`), including seven chart regressions. Prior 1,206/13 full/display results below predate these two production-line changes and are superseded for final acceptance. New full/display gates are running sequentially (`/tmp/p27-c3-refresh-clean.log`, `/tmp/p27-c3-refresh-display.log`); publish the reviewed follow-up to the existing draft and inspect CI on its new exact head. Do not accept prior-head CI as final.
 
 Governing contract and focused user testing: [P27-C3 Journal/SCLX chart consistency](P27-C3-sclx-chart-consistency.md).
 

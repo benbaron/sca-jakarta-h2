@@ -40,6 +40,56 @@ class JournalSclxChartConsistencyTest
     }
 
     @Test
+    void journalSaveRefreshesAChartAssignmentChangedAfterCompanyWasLoaded() throws Exception
+    {
+        Path source = directory.resolve("cached-company");
+        try (Jpa jpa = new Jpa(source))
+        {
+            var fixture = FundTransferTestFixture.seed(jpa);
+            long outside = otherChartAccount(jpa);
+            Long companyId, chartId;
+            try (var em = jpa.em())
+            {
+                companyId = em.createQuery("from Company c where c.code='DEFAULT'", Company.class).getSingleResult().getId();
+                chartId = em.find(Account.class, outside).getChart().getId();
+            }
+            // Deterministically retain the company state read before a competing assignment commits.
+            try (var cachedJpa = new Jpa(source)
+            {
+                private jakarta.persistence.EntityManager retained;
+
+                void prime()
+                {
+                    retained = super.em();
+                    retained.find(Company.class, companyId).getActiveChartOfAccounts().getId();
+                }
+
+                @Override public jakarta.persistence.EntityManager em()
+                {
+                    if (retained == null) { return super.em(); }
+                    var result = retained;
+                    retained = null;
+                    return result;
+                }
+
+                @Override public void close()
+                {
+                    if (retained != null) { retained.close(); }
+                    super.close();
+                }
+            })
+            {
+                cachedJpa.prime();
+                new CompanyAdminService(jpa).assignActiveChart(companyId, chartId);
+                var before = rows(source);
+                assertThrows(IllegalArgumentException.class, () -> new TransactionEntryService(cachedJpa)
+                        .enterJournalDraft(command(fixture, fixture.bank()), UUID.randomUUID()));
+                assertEquals(before, rows(source));
+            }
+        }
+    }
+
+    @Test
     void staleAccountAndHeaderSelectionsRejectBeforeAnyWrite() throws Exception
     {
         Path source = directory.resolve("stale");

@@ -56,7 +56,7 @@ public class SampleCompanyService
             try
             {
                 Company company = new CompanyOwnershipService(jpa).requireCompany(em, "DEFAULT");
-                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
+                em.refresh(company, LockModeType.PESSIMISTIC_WRITE);
                 ChartOfAccounts chart = findOrCreateChart(em, company);
                 if (company.getActiveChartOfAccounts() == null
                         && em.createQuery("select count(c) from ChartOfAccounts c where c.company = :company", Long.class)
