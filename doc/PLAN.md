@@ -1,17 +1,23 @@
 ---
-plan_version: 473
+plan_version: 475
 active_phase: P27
 active_slice: P27-C3
 active_status: VERIFYING
 active_branch: codex/P27-C3-sclx-chart-consistency
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/425
-active_head: e4298a52c3a83f7574cd02aa4b500dc760517b76
-next_action: "Complete full/display verification and inspect exact-head CI after the stale-company refresh follow-up in draft PR #425. Review/merge and focused owner check remain pending; native acceptance stays deferred."
+active_head: 0e53bacd5f6c78619c34f52a332d84e59e78582c
+next_action: "Publish the bounded CI timeout correction and inspect exact-new-head Linux/Windows checks for PR #425; preserve every test. Focused owner check/review/merge remain pending; native acceptance stays deferred."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C3 Journal/SCLX chart consistency — 2026-11-12 America/Denver
+
+CI prerequisite correction: run `43347106678` on product head `0e53bacd` was cancelled, not accepted. Raw approved workflow/jobs metadata confirms Linux start `01:44:33Z`, finish `02:04:48Z` (20:15), with clean verify **07:01**, repeat **06:56**, all earlier UI stages successful and final route interrupted after 01:11. The workflow currently caps the whole Linux job at 20 minutes. Native CLI API access is forbidden and decoded-log transport closes; raw connected metadata supplies the actual timing and step outcomes. Preserve every command/assertion and increase only the Linux job timeout to **30 minutes** to accommodate the measured combined suite. Windows budget is unchanged. This one-line configuration repair directly unblocks C3 verification; no product, test, dependency or migration bytes change after the passing 1,207/13 local gates. New exact-head CI is required; neither cancelled nor prior-head checks count as success.
+
+Pre-CI-budget publication/verification receipt: PR #425 head `0e53bacd5f6c78619c34f52a332d84e59e78582c`, tree `c9fc874e0f5bf1eaec7ab526421f8c755b156ada`, matches native fetch and connected metadata. Product/test follow-up is published as a normal fast-forward. Final focused gate: **25 tests, zero failures/errors/skips** (01:09). Final `clean verify`: **1,207 tests, zero failures/errors, 141 expected headless display skips** (10:10; `/tmp/p27-c3-refresh-clean.log`). Final displayed Journal Save/feedback/SCLX coordinator gate: **13 tests, zero failures/errors/skips** (01:28; `/tmp/p27-c3-refresh-display.log`, DISPLAY :97, isolated forks). Exact-head [CI run 43347106678](https://github.com/benbaron/sca-jakarta-h2/actions/runs/43347106678): Windows job `131629099019` passed; Linux job `131629099393` passed clean/repeat verification, Period Close, overflow, Import and Journal Save, then was cancelled during the final production route step at the 20-minute ceiling. C3 remains VERIFYING pending final CI, focused owner check/review/merge; no merge authorized.
+
+Owner clarifies this was a new entry and asks about inactive accounts. The reference query already required `active=true` and `posting=true` before C3. New clears line/account selections, but reuses loaded reference choices; deactivation after that load can leave stale choices until refresh. A loaded line also retains its assigned option. Inactive status is distinct from the selected-chart pointer: SCLX deliberately includes inactive accounts within the selected chart, so inactivity alone does not explain the reported chart-scope error. No user database was inspected and account 1000 has not been confirmed inactive. The follow-up question about its actual Active flag is optional; current chart/identity fixes do not claim to resolve stale activity-state choices.
 
 Final-review follow-up: a deterministic real-H2 cached-company regression fails before refresh (one assertion failure, no errors): locking alone retains the chart pointer loaded before a competing assignment. Journal now refreshes the company under its existing canonical lock before checking chart scope; sample initialization refreshes while acquiring its lock as well. The follow-up focused gate passes **25 tests, zero failures/errors/skips** (01:09; `/tmp/p27-c3-refresh-focused.log`), including seven chart regressions. Prior 1,206/13 full/display results below predate these two production-line changes and are superseded for final acceptance. New full/display gates are running sequentially (`/tmp/p27-c3-refresh-clean.log`, `/tmp/p27-c3-refresh-display.log`); publish the reviewed follow-up to the existing draft and inspect CI on its new exact head. Do not accept prior-head CI as final.
 

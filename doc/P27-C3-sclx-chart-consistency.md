@@ -25,3 +25,5 @@ The initial two H2 regressions failed against the original implementation: the o
 On the updated build, create an entry using account 1000 offered by Journal, save it and export the active company without changing charts. The newly saved entry should export. If older data still blocks export, the message should identify the affected record and charts for review. Verify ordinary Save completion/error feedback. This focused check does not reopen the separately deferred native acceptance checklist.
 
 Actual test totals and publication/CI evidence are recorded in [PLAN.md](PLAN.md).
+
+The combined Linux CI job requires more than its former 20-minute budget: a measured run completed both full test passes and the focused UI stages, then hit the ceiling during the final production route check. Its timeout is now 30 minutes; every validation command and assertion remains. Windows configuration is unchanged.
