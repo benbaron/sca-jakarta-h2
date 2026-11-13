@@ -1,15 +1,26 @@
 ---
-plan_version: 475
+plan_version: 478
 active_phase: P27
-active_slice: P27-C3
+active_slice: P27-C4
 active_status: VERIFYING
-active_branch: codex/P27-C3-sclx-chart-consistency
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/425
-active_head: 0e53bacd5f6c78619c34f52a332d84e59e78582c
-next_action: "Publish the bounded CI timeout correction and inspect exact-new-head Linux/Windows checks for PR #425; preserve every test. Focused owner check/review/merge remain pending; native acceptance stays deferred."
+active_branch: codex/P27-C4-banking-export-diagnostics
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/426
+active_head: ba1cb270c9567b7f51df95dcc31886fadcef2e09
+next_action: "Finish full clean/display verification, publish the reviewed diagnostic correction and inspect exact-head CI. Retry export on the updated build to obtain the actual offending bank record details."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C4 banking export diagnosis — 2026-11-12 America/Denver
+
+Publication: implementation `ba1cb270c9567b7f51df95dcc31886fadcef2e09`, tree `336fe930d0e337ab400b4e874a0930547382685e`, is published in [draft PR #426](https://github.com/benbaron/sca-jakarta-h2/pull/426). Native fetch and connected metadata match; base remains main `80f0321f`. Publication uses a clean detached temporary worktree while full verification owns generated target files in the build worktree. This following documentation-only commit records the handoff. C4 stays VERIFYING pending full/display verification, exact-final-head CI and owner review of the newly readable bank-record diagnosis. Existing bank configuration is not assumed corrected; no merge authorized.
+
+Owner requests a detail subwindow identifying the faulty entry. Implemented: resizable failure dialog with wrapped, selectable, scrollable full text; labelled Record, Ledger account, Referenced chart and Selected chart lines, with stable record/chart IDs where persisted. Journal errors retain transaction ID/date; bank errors identify the configured bank-account ID/name and Banking-specific review path. Guards retain same IDs/ownership conditions; foreign chart labels remain suppressed. New real-H2 cases prove wrong-chart bank configuration fails without database/file replacement and inactive selected-chart ledger accounts export. Real shown-dialog geometry/copy-selection regression executes at 760 and 430 pixels. Original diagnostic regression fails and original UI assertion is wrapped as a CompletionException (one failure/one error); no compile/bootstrap defect. The first restricted display rerun skipped four UI cases and is not accepted. Repeated with actual display access, 12 tests pass with zero failures/errors/skips; after record-detail additions, final focused gate passes **19 tests, zero failures/errors/skips** (`/tmp/p27-c4-final-focused.log`). Full clean verify and final display checks are running; no data remapping or Banking write-policy changes. CI explicitly adds the new rendered-dialog test to its feedback stage.
+
+Owner reports another export failure after #425 merged. Current main is `80f0321f`; connected metadata confirms #425 merged at that commit with accepted head `9ec94c43` and successful CI `43350081982`. Preserve the prior local-only receipt on its branch; start fresh `codex/P27-C4-banking-export-diagnostics`. The screenshot contains "bank account ledger account is outside the selected company’s activ...", confirming the chart guard and a clipped error dialog. It does not identify the actual bank/chart names. [C4 contract](P27-C4-banking-export-diagnostics.md) governs readable, copyable failure details and bank-specific review guidance. No silent relinking, chart switching, omitted records or weakened ownership guards.
+
+Required reading: AGENTS/PLAN, C3 selected-chart contract, SCLX banking/single-chart contract, banking lifecycle/configured-account edit and the three UI rules. Required inspection: SclxBankingSnapshotQuery/Assembler, shared chart guard, BankConfigurationService, BankingPanel/AccountLookupService, real JavaFX export dialogs and snapshot/feedback tests. Baseline compile passes (19.9 seconds); 10 existing banking/chart tests pass (01:02). Inspection finds Banking choices span company-owned charts including inactive accounts; existing API permits owned historical references. Scope is diagnosis, not an unreviewed reassignment policy. Candidate C5: selected-chart policy for new Banking links and safe treatment of established reconciliation/history, requiring separate design/evidence before implementation. Broad native acceptance stays deferred.
+
 
 ### P27-C3 Journal/SCLX chart consistency — 2026-11-12 America/Denver
 
