@@ -63,10 +63,7 @@ final class SclxInventorySnapshotAssembler
             throw new IllegalArgumentException("inventory item is outside the selected company");
         }
         Account account = Objects.requireNonNull(item.getInventoryAccount(), "inventory account");
-        if (account.getChart() != activeChart)
-        {
-            throw new IllegalArgumentException("inventory account is outside the selected company's active chart");
-        }
+        SclxChartScope.requireAccount(account, activeChart, "inventory account", "The inventory snapshot");
         Fund fund = Objects.requireNonNull(item.getFund(), "inventory fund");
         if (fund.getCompany() != company)
         {

@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.service;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.nonprofitbookkeeping.model.Account;
 import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
@@ -55,7 +56,15 @@ public class SampleCompanyService
             try
             {
                 Company company = new CompanyOwnershipService(jpa).requireCompany(em, "DEFAULT");
+                em.refresh(company, LockModeType.PESSIMISTIC_WRITE);
                 ChartOfAccounts chart = findOrCreateChart(em, company);
+                if (company.getActiveChartOfAccounts() == null
+                        && em.createQuery("select count(c) from ChartOfAccounts c where c.company = :company", Long.class)
+                                .setParameter("company", company).getSingleResult() == 1L)
+                {
+                    company.setActiveChartOfAccounts(chart);
+                    company.touchUpdatedAt();
+                }
                 seedAccounts(em, chart);
                 seedFunds(em, company);
                 seedBudgetCategories(em, company);

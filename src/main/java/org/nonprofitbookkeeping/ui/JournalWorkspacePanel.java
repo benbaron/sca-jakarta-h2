@@ -1166,7 +1166,7 @@ public final class JournalWorkspacePanel implements AppPanel
         setSaveInProgress(true);
         publishSaveResult(true, targetId == null ? "Saving new journal entry..." : "Updating transaction #" + targetId + "...");
         UiAsync.run("journal-workspace-save",
-                () -> targetId == null ? service.enter(command, requestId) : service.update(targetId, command),
+                () -> targetId == null ? service.enterJournalDraft(command, requestId) : service.update(targetId, command),
                 view -> {
                     try
                     {

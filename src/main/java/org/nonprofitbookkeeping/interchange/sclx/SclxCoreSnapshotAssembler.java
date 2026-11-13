@@ -288,7 +288,7 @@ public final class SclxCoreSnapshotAssembler
 
         ChartOfAccounts activeChart = Objects.requireNonNull(
                 company.getActiveChartOfAccounts(), "selected company has no active chart of accounts");
-        if (activeChart.getCompany() != company)
+        if (!SclxChartScope.sameCompany(activeChart.getCompany(), company))
         {
             throw new IllegalArgumentException("active chart does not belong to the selected company");
         }
@@ -636,9 +636,9 @@ public final class SclxCoreSnapshotAssembler
         {
             throw new IllegalArgumentException("fixed asset does not belong to the selected company");
         }
-        if (asset.getAssetAccount().getChart() != activeChart
-                || asset.getAccumulatedDepreciationAccount().getChart() != activeChart
-                || asset.getDepreciationExpenseAccount().getChart() != activeChart)
+        if (!SclxChartScope.sameChart(asset.getAssetAccount().getChart(), activeChart)
+                || !SclxChartScope.sameChart(asset.getAccumulatedDepreciationAccount().getChart(), activeChart)
+                || !SclxChartScope.sameChart(asset.getDepreciationExpenseAccount().getChart(), activeChart))
         {
             throw new IllegalArgumentException("fixed asset account does not belong to the selected active chart");
         }
@@ -924,12 +924,7 @@ public final class SclxCoreSnapshotAssembler
 
     private static void requireAccountOwnership(Account account, ChartOfAccounts activeChart)
     {
-        Objects.requireNonNull(account, "account");
-        if (account.getChart() != activeChart)
-        {
-            throw new IllegalArgumentException("account is outside the selected company's active chart: "
-                    + account.getCode());
-        }
+        SclxChartScope.requireAccount(account, activeChart, "account", "The company snapshot");
     }
 
     private static void requireFundOwnership(Fund fund, Company company)
@@ -1051,7 +1046,8 @@ public final class SclxCoreSnapshotAssembler
             throw new IllegalArgumentException("transaction line references a transaction outside the exported snapshot");
         }
         requireTransactionOwnership(line.getTxn(), company, includedTransactions, includedCounterparties);
-        requireAccountOwnership(line.getAccount(), activeChart);
+        SclxChartScope.requireAccount(line.getAccount(), activeChart, "account",
+                "Journal transaction #" + line.getTxn().getId() + " dated " + line.getTxn().getTxnDate());
         requireFundOwnership(line.getFund(), company);
         if (line.getBudgetCategory() != null && line.getBudgetCategory().getCompany() != company)
         {

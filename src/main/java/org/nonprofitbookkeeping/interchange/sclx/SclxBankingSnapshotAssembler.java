@@ -290,10 +290,10 @@ final class SclxBankingSnapshotAssembler
             }
         }
         Account ledgerAccount = account.getAccount();
-        if (ledgerAccount != null && ledgerAccount.getChart() != activeChart)
+        if (ledgerAccount != null)
         {
-            throw new IllegalArgumentException(
-                    "bank account ledger account is outside the selected active chart");
+            SclxChartScope.requireAccount(ledgerAccount, activeChart, "bank account ledger account",
+                    "Configured bank account '" + account.getName() + "'");
         }
     }
 

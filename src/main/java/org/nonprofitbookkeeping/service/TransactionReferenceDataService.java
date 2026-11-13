@@ -37,8 +37,9 @@ public class TransactionReferenceDataService
         {
             Company company = new CompanyOwnershipService(jpa).requireCompany(em, companyCodeSupplier.get());
             return new TransactionLineEditorModel.ReferenceData(
-                    em.createQuery("from Account a where a.chart.company = :company and a.active = true and a.posting = true order by a.code", Account.class)
-                            .setParameter("company", company).getResultList().stream()
+                    em.createQuery("from Account a where a.chart.company = :company and a.chart = :chart and a.active = true and a.posting = true order by a.code", Account.class)
+                            .setParameter("company", company)
+                            .setParameter("chart", company.getActiveChartOfAccounts()).getResultList().stream()
                             .map(a -> TransactionLineEditorModel.option(a.getId(), a.getCode(), a.getName())).toList(),
                     em.createQuery("from Fund f where f.company = :company and f.active = true order by f.code", Fund.class)
                             .setParameter("company", company).getResultList().stream()

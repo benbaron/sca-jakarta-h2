@@ -113,6 +113,40 @@ public class TransactionEntryService
         return saveNew(command, null, actor, requestId);
     }
 
+    /** Create an interactive Journal draft using the selected chart, rechecked under the canonical company lock. */
+    public TransactionView enterJournalDraft(TransactionCommand command, UUID requestId)
+    {
+        return enterAfterLockedValidation(command, requestId, "enter Journal draft", (em, company) ->
+        {
+            em.refresh(company);
+            var chart = company.getActiveChartOfAccounts();
+            if (chart == null)
+            {
+                throw new IllegalArgumentException("Select a Chart of Accounts in Company Admin before saving a new Journal entry.");
+            }
+            ownership().ensureOwnedBy(em, company, chart, "Selected Chart of Accounts");
+            if (command.bankAccountId() != null)
+            {
+                requireJournalChartAccount(em, company, chart.getId(), command.bankAccountId());
+            }
+            for (var line : command.lines())
+            {
+                requireJournalChartAccount(em, company, chart.getId(), line.accountId());
+            }
+        });
+    }
+
+    private void requireJournalChartAccount(EntityManager em, Company company, Long chartId, Long accountId)
+    {
+        Account account = required(em, Account.class, accountId, "Account");
+        ownership().ensureOwnedBy(em, company, account, "Account");
+        if (!Objects.equals(chartId, account.getChart().getId()))
+        {
+            throw new IllegalArgumentException("Account " + account.getCode() + " — " + account.getName()
+                    + " is not in the company's selected Chart of Accounts. Refresh Journal account choices and review the entry before saving.");
+        }
+    }
+
     @FunctionalInterface
     interface LockedCreateValidation
     {

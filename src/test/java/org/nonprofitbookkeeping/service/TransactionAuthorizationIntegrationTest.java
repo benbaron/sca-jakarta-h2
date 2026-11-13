@@ -53,6 +53,8 @@ class TransactionAuthorizationIntegrationTest
             assertThrows(AuthorizationException.class,
                     () -> entry.enter(command("Denied new", new BigDecimal("25.00"))));
             assertThrows(AuthorizationException.class,
+                    () -> entry.enterJournalDraft(command("Denied Journal draft", new BigDecimal("25.00")), UUID.randomUUID()));
+            assertThrows(AuthorizationException.class,
                     () -> entry.update(original.id(), command("Denied update", new BigDecimal("100.00"))));
             assertThrows(AuthorizationException.class,
                     () -> correction.directEdit(
@@ -67,7 +69,7 @@ class TransactionAuthorizationIntegrationTest
             assertEquals(auditCountBefore, auditCount(jpa));
             assertEquals("Original", transactionMemo(jpa, original.id()));
             assertEquals("ENTERED", transactionStatus(jpa, original.id()));
-            assertEquals(5L, authorizationDenialCount(jpa));
+            assertEquals(6L, authorizationDenialCount(jpa));
         }
     }
 
