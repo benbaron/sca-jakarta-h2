@@ -1,7 +1,5 @@
 # P27-C2 native online backup integrity
 
-P27-C5 supersedes the SQL BACKUP invocation below after the committed-row regression reproduced again on Temurin 17. H2 2.4.240/MAX_COMPACT_TIME=0 and the original compatibility/trace oracles remain; the native writer now runs inside the engine's drained file-operation boundary. Earlier passing probes are historical evidence, not proof that SQL BACKUP is safe.
-
 Selected independently after owner-merged #423, from main
 `ec4d358f4568dbf6ee689fe3356f0ad0a7817400`. [PLAN](PLAN.md) owns current status.
 This corrects the [C11 storage blocker](P29-C11-ci-recovery-blocker.md), not the

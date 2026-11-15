@@ -75,9 +75,9 @@ public final class DatabaseTransferService
         try
         {
             try (Connection connection = DriverManager.getConnection(DatabaseMigrationService.jdbcUrlFor(source), "sa", "");
-                    var output = Files.newOutputStream(temporary))
+                    Statement statement = connection.createStatement())
             {
-                H2NativeSnapshot.write(connection, output);
+                statement.execute("BACKUP TO '" + sqlLiteral(temporary) + "'");
             }
 
             long bytes = Files.size(temporary);
@@ -90,11 +90,6 @@ public final class DatabaseTransferService
         {
             deleteQuietly(temporary);
             throw new IllegalStateException("Database backup failed: " + ex.getMessage(), ex);
-        }
-        catch (RuntimeException ex)
-        {
-            deleteQuietly(temporary);
-            throw ex;
         }
     }
 
@@ -282,6 +277,11 @@ public final class DatabaseTransferService
         {
             throw new IllegalStateException("Could not create directory: " + path.getParent(), ex);
         }
+    }
+
+    private static String sqlLiteral(Path path)
+    {
+        return path.toAbsolutePath().normalize().toString().replace("'", "''");
     }
 
     private static String sha256(Path path) throws IOException
