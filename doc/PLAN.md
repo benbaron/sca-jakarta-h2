@@ -4,15 +4,17 @@ active_phase: P19
 active_slice: P19-C1
 active_status: VERIFYING
 active_branch: codex/P19-C1-chart-selection-location
-active_pull_request: null
-active_head: 9864fd92
-next_action: "Move chart viewing/activation to Chart of Accounts, remove Company Admin controls, verify owned-chart filtering, permissions, dirty-state protection and preserved history; run focused/display/full/CI gates."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/429
+active_head: d6a793d7bb4ec1fc95630e63d892bebfe150dc4f
+next_action: "Finish full clean verification and exact-final-head CI for draft PR #429, then owner review/merge. Named chart browsing and activation are implemented; no later slice advancement before merge."
 
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P19-C1 chart selection location — owner-directed correction
+
+Publication: [draft PR #429](https://github.com/benbaron/sca-jakarta-h2/pull/429), branch `codex/P19-C1-chart-selection-location`, reviewed implementation `d6a793d7bb4ec1fc95630e63d892bebfe150dc4f`, tree `8b85f5c62caf3d4c8b94a8995d113534cd19f922`. This follow-up changes only the plan handoff. Full Java-17 clean verification and exact-final-head CI are pending; native focused/display logs are `/tmp/p19-c1-focused-corrected.log` (21 tests, 01:40) and `/tmp/p19-c1-final-display.log` (11 tests, 01:08), zero failures/errors/skips. No known product failure remains; prior failed test/infrastructure runs are retained and superseded by corrected executed gates. Status remains VERIFYING until merged.
 
 Current main `9864fd92` contains merged C5/#427 and C4/#426 (confirmed ancestry); their stale front matter is superseded. Owner directs named chart selection and Make Active Chart to Chart of Accounts rather than Company Admin. This corrective slice reuses CompanyAdminService authority; no migration, chart reassignment, history movement, Banking policy change or permission bypass. Chart browsing displays one owned chart at a time; account maintenance remains restricted to the active chart. Remove the old activation UI. Preserve dirty edits on cancelled selection/activation. Required reading: P19-S1 contract/user testing, interface-operation-matrix, ui_design_rules, ui/editor-guidelines. Inspect CompanyAdminPanel, ChartOfAccountsPanel, AccountLookupService, AccountAdminService, CompanyAdminService and existing assignment/form/permission tests. Baseline compile passes (23.3s); three focused baseline tests pass (46.1s). First display attempts skipped due to an exited display/stale lock and are not acceptance. Real display run exposed the old static command assumption and a new test toolkit-shutdown hang; stopped only that owned stalled fork, corrected test lifecycle and skinned hierarchy, and wired capabilities through the JSON wrapper. Guarded focused gate passes 21 tests, zero failures/errors/skips (01:40); final display gate passes 11 tests, zero failures/errors/skips, including four new browsing/activation/cancellation/430px geometry tests (`/tmp/p19-c1-final-display.log`). Chart-specific capabilities propagate through the JSON decorator. Full clean verification and exact published-head CI remain required. Governing contract: [P19-C1](P19-C1-chart-selection-location.md). Full verification and exact-head CI remain required; no merge performed.
 
