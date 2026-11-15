@@ -1,12 +1,12 @@
 ---
-plan_version: 475
+plan_version: 483
 active_phase: P27
-active_slice: P27-C3
+active_slice: P27-C5
 active_status: VERIFYING
-active_branch: codex/P27-C3-sclx-chart-consistency
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/425
-active_head: 0e53bacd5f6c78619c34f52a332d84e59e78582c
-next_action: "Finish Java-17 full clean/repeat/display gates, publish the reviewed native snapshot repair and inspect exact-head CI; C4 remains dependent on this correction merging."
+active_branch: codex/P27-C5-native-backup-integrity
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/427
+active_head: 2a27753c49c96e6dcca666ef61c3dd78faf51e8c
+next_action: "Finish guarded Java-17 clean/repeat/display gates and exact-final-head CI for PR #427. C4 remains dependent on this correction merging, followed by rebase and full revalidation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
