@@ -52,7 +52,7 @@ public class AccountLookupService
             Company company = new CompanyOwnershipService(jpa).requireCompany(em, companyCodeSupplier.get());
             String activeClause = activeOnly ? "and a.active = true " : "";
             return em.createQuery(
-                            "select a from Account a left join fetch a.parent "
+                            "select a from Account a join fetch a.chart left join fetch a.parent "
                                     + "where a.chart.company = :company "
                                     + activeClause
                                     + "and a.posting = true order by a.code",

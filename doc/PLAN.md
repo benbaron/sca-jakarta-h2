@@ -1,16 +1,20 @@
 ---
-plan_version: 485
-active_phase: P19
-active_slice: P19-C1
+plan_version: 487
+active_phase: P27
+active_slice: P27-C6
 active_status: VERIFYING
-active_branch: codex/P19-C1-chart-selection-location
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/429
-active_head: d6a793d7bb4ec1fc95630e63d892bebfe150dc4f
-next_action: "Finish full clean verification and exact-final-head CI for draft PR #429, then owner review/merge. Named chart browsing and activation are implemented; no later slice advancement before merge."
+active_branch: codex/P27-C6-banking-chart-labels
+active_pull_request: null
+active_head: 01f811dd
+next_action: "Expose account/chart identity in Banking choices, selected detail and configured list; verify detached chart loading, duplicate codes, ownership and displayed accessibility, then full clean verification and exact-head CI."
 
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C6 Banking account chart identity — owner-directed correction
+
+Current main `01f811dd` includes merged P19-C1/#429. Owner requests the chart information missing from Banking's account selector and an Active Yes/No column in the Configured bank accounts list. This is a presentation correction adjacent to P27-C4: display chart name/version/ID and account ID beside existing code/name, and show complete selected details at narrow width. Fetch chart metadata before detached UI rendering; keep existing company-owned account choices, inactive/history handling, mutation authorization and stable-ID save semantics. Never relink, activate a chart or rewrite history automatically. Required reading: P27-C4 contract, P19-C1 contract, interface-operation-matrix, ui_design_rules and ui/editor-guidelines; inspect BankingPanel, AccountLookupService, BankConfigurationService and existing banking tests. Baseline compile passes (27.7s); 12 baseline tests pass (01:03). Initial backend-focused gate passes 15 tests with one expected headless UI skip; the executed 18-test displayed banking authorization/SCLX gate passes without skips. Final display/table-state gate passes 10 tests, zero failures/errors/skips (01:04), including actual popup chart labels, detached/foreign-link handling, selected detail wrapping, configured Active Yes/No and preserved stored links. Existing table identity/column keys are preserved; new chart/active columns participate in standard table state. Full clean verification and exact-head CI remain pending. [C6 contract](P27-C6-banking-chart-labels.md) contains manual notes. No schema/dependency change or later-slice implementation.
 
 ### P19-C1 chart selection location — owner-directed correction
 

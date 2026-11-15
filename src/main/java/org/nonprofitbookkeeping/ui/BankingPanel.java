@@ -12,6 +12,8 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
@@ -53,6 +55,7 @@ public class BankingPanel implements AppPanel
     private final TableView<CompanyBankAccount> bankAccounts = new TableView<>();
     private final ComboBox<Bank> bankSelector = new ComboBox<>();
     private final ComboBox<Account> existingAccountSelector = new ComboBox<>();
+    private final Label selectedLedgerDetails = new Label();
     private final ComboBox<BankingDataFormat> importFormat = new ComboBox<>();
     private final ToggleGroup accountMode = new ToggleGroup();
     private final RadioButton useExistingAccount = new RadioButton("Select existing qualifying Chart of Accounts bank account");
@@ -255,6 +258,12 @@ public class BankingPanel implements AppPanel
         form.add(new Label("Bank"), 0, row); form.add(bankSelector, 1, row++);
         form.add(useExistingAccount, 0, row, 2, 1); row++;
         form.add(new Label("Existing account"), 0, row); form.add(existingAccountSelector, 1, row++);
+        selectedLedgerDetails.setId("bankingSelectedLedgerDetails");
+        selectedLedgerDetails.setWrapText(true);
+        selectedLedgerDetails.setMinWidth(0);
+        selectedLedgerDetails.setMaxWidth(Double.MAX_VALUE);
+        selectedLedgerDetails.prefWidthProperty().bind(existingAccountSelector.widthProperty());
+        form.add(selectedLedgerDetails, 1, row++);
         form.add(createAccount, 0, row, 2, 1); row++;
         form.add(new Label("New account code"), 0, row); form.add(accountCode, 1, row++);
         form.add(new Label("New account name"), 0, row); form.add(accountName, 1, row++);
@@ -313,17 +322,23 @@ public class BankingPanel implements AppPanel
         TableColumn<CompanyBankAccount, String> bank = new TableColumn<>("Bank");
         bank.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getBank() == null ? "" : v.getValue().getBank().getName()));
         TableColumn<CompanyBankAccount, String> account = new TableColumn<>("Chart account");
-        account.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getAccount() == null ? "" : v.getValue().getAccount().getCode() + " " + v.getValue().getAccount().getName()));
+        account.setCellValueFactory(v -> new SimpleStringProperty(BankLedgerAccountLabels.accountIdentity(v.getValue().getAccount())));
+        TableColumn<CompanyBankAccount, String> chart = new TableColumn<>("Chart of Accounts");
+        chart.setCellValueFactory(v -> new SimpleStringProperty(BankLedgerAccountLabels.configuredChart(v.getValue())));
         TableColumn<CompanyBankAccount, String> nick = new TableColumn<>("Nickname");
         nick.setCellValueFactory(v -> new SimpleStringProperty(nullToBlank(v.getValue().getNickname())));
         TableColumn<CompanyBankAccount, String> format = new TableColumn<>("Format");
         format.setCellValueFactory(v -> new SimpleStringProperty(String.valueOf(v.getValue().getStatementImportFormat())));
+        TableColumn<CompanyBankAccount, String> active = new TableColumn<>("Active");
+        active.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().isActive() ? "Yes" : "No"));
         bankAccounts.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        bankAccounts.getColumns().addAll(bank, account, nick, format);
+        bankAccounts.getColumns().addAll(bank, account, chart, nick, format, active);
         configureColumn(bank, "bank", 180);
         configureColumn(account, "account", 240);
+        configureColumn(chart, "chart", 300);
         configureColumn(nick, "nickname", 180);
         configureColumn(format, "format", 100);
+        configureColumn(active, "active", 80);
         bankAccounts.getSelectionModel().selectedItemProperty().addListener((obs, oldRow, newRow) -> {
             if (suppressBankAccountSelection || newRow == null)
             {
@@ -347,11 +362,32 @@ public class BankingPanel implements AppPanel
             @Override public String toString(Bank bank) { return bank == null ? "" : bank.getName(); }
             @Override public Bank fromString(String string) { return null; }
         });
+        existingAccountSelector.setId("bankingExistingLedgerAccount");
+        existingAccountSelector.setPrefWidth(320);
+        existingAccountSelector.setMaxWidth(Double.MAX_VALUE);
         existingAccountSelector.setConverter(new javafx.util.StringConverter<>()
         {
-            @Override public String toString(Account account) { return account == null ? "" : account.getCode() + " — " + account.getName(); }
+            @Override public String toString(Account account) { return BankLedgerAccountLabels.choice(account); }
             @Override public Account fromString(String string) { return null; }
         });
+        existingAccountSelector.setCellFactory(list -> new ListCell<>()
+        {
+            {
+                setWrapText(true);
+                prefWidthProperty().bind(existingAccountSelector.widthProperty().subtract(24));
+            }
+
+            @Override
+            protected void updateItem(Account account, boolean empty)
+            {
+                super.updateItem(account, empty);
+                String text = empty ? "" : BankLedgerAccountLabels.choice(account);
+                setText(text);
+                setTooltip(text.isEmpty() ? null : new Tooltip(text));
+            }
+        });
+        existingAccountSelector.valueProperty().addListener((observable, prior, account) ->
+                selectedLedgerDetails.setText(BankLedgerAccountLabels.choice(account)));
         importFormat.getItems().setAll(BankingDataFormat.values());
         importFormat.setValue(BankingDataFormat.OFX);
         accountActive.setSelected(true);

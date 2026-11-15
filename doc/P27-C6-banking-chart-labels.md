@@ -1,0 +1,11 @@
+# P27-C6 — Banking chart identity
+
+Banking's Existing account selector and configured account list must distinguish identical account codes/names from different owned charts. Show chart name/version/ID and account ID. The configured list has a separate Chart of Accounts column beside Chart account. A selected-account detail label wraps within the form; popup choices wrap and retain full-text tooltips. Preserve table horizontal overflow. Load chart metadata before closing JPA sessions. Suppress chart names for invalid foreign-company configured links; account lookup remains company scoped. This extends the existing production query/UI path rather than importing donor persistence or introducing another model.
+
+Do not change which accounts qualify, permissions, selected ledger IDs, active chart, bank configuration or accounting history. Labels explain the actual existing link; they do not fix it automatically. Empty/null linkage remains readable.
+
+Manual check with a disposable company: two owned charts each contain 1000 / Operating Checking. Confirm the dropdown, popup and configured account row distinguish charts by name/version/IDs. Select each and read the full wrapping detail at normal and narrow widths. Cancel/refresh without Save and confirm the persisted link does not change. As an authorized manager/admin, explicitly update the existing configured record only when the intended ledger account is established; historical transactions are not moved. Existing new-link/reconciliation policy and global disabled-button explanation work remain separate scope. Automated results and exact publication evidence belong in PLAN.
+
+Owner additionally requests an Active column in the **Configured bank accounts** list. Show Yes/No from CompanyBankAccount.active; this is separate from the linked ledger account active flag. Keep the stable column key `active`, standard sorting/resizing/reordering and existing per-company table state.
+
+Focused evidence: baseline 12 tests passed; displayed authorization/SCLX gate 18 tests passed; final popup/column/table-state gate 10 tests passed, zero failures/errors/skips (01:04). User account/chart identities and underlying links are not changed by selecting or rendering choices. Full verification and exact-head CI are pending.
