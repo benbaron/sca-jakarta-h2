@@ -293,7 +293,10 @@ final class SclxBankingSnapshotAssembler
         if (ledgerAccount != null)
         {
             SclxChartScope.requireAccount(ledgerAccount, activeChart, "bank account ledger account",
-                    "Configured bank account '" + account.getName() + "'");
+                    "Configured bank account" + (account.getId() == null ? "" : " #" + account.getId())
+                            + " '" + account.getName() + "'",
+                    "Review this configured account's ledger link in Banking / Bank accounts "
+                            + "and the selected chart in Company Admin.");
         }
     }
 
