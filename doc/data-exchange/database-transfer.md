@@ -10,7 +10,7 @@ The active database remains authoritative until a restored copy has been migrate
 
 ## 2. Supported backup mechanism
 
-A consistent backup MUST use an H2-supported database facility through a live connection, principally `BACKUP TO` for a binary H2 backup compatible with the governed H2 version. Copying an open `.mv.db` file is prohibited.
+A consistent backup MUST use the governed H2 native archive facility through a live embedded connection. [P27-C5](../P27-C5-native-backup-integrity.md) uses H2's own `FileStore.backup` inside `MVStore.executeFilestoreOperation`, after committing and draining pending physical writes. SQL `BACKUP TO` alone is not accepted: its copy boundary reproduced loss of a committed row on the governed runtime. Independent copying of an open `.mv.db` file, archive/header repair and SQL reconstruction remain prohibited. The engine-generated ZIP and isolated restore format are unchanged.
 
 A future text recovery mode may use H2 `SCRIPT TO` and `RUNSCRIPT FROM`, but it is a distinct explicitly labeled recovery option and MUST satisfy the same validation and path protections. Generic ZIP creation is not a substitute for H2 backup semantics.
 
@@ -34,7 +34,7 @@ use MAX_COMPACT_TIME=0 to avoid partial normal-close compaction failures. Restor
 validation retains explicit full SHUTDOWN COMPACT, complete-content/restart gates
 and genuine 2.2.224/2.5.252 file compatibility. Native backup semantics remain.
 
-Backup coordinates with the existing `DatabaseSessionController` and persistence composition. It MUST obtain exclusive application-level backup authority so no application writer can commit during the consistency boundary. The operation may use H2's supported online backup behavior, but the application still blocks company/session switching and conflicting recovery operations until completion.
+Backup coordinates with the existing `DatabaseSessionController` and persistence composition. Exclusive transfer authority blocks conflicting backup/recovery operations. The native storage boundary drains queued physical writes and excludes further physical mutation while the archive is copied. Existing JDBC sessions and transactions stay open: concurrent transactions may commit in memory, with physical persistence waiting when necessary. A snapshot must contain all previously committed data and complete transactions, never mixed generations. This deliberately reflects the actual online-operation model rather than claiming an application-wide writer freeze that the existing transfer lock does not implement. No live transaction is forcibly closed or rolled back to create an archive.
 
 Restore, repair, or overwrite operations require exclusive access with all EntityManagers, pools, and other database connections to the target closed. The operation MUST fail visibly when exclusive access cannot be proven.
 
