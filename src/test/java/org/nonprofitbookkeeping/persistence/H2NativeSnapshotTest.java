@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -52,6 +53,33 @@ class H2NativeSnapshotTest
         try (Connection reopened = connect(source))
         {
             assertSnapshot(reopened, 1, 1);
+        }
+        assertNoStorageErrors(source);
+    }
+
+    @Test
+    void nonAdministratorCannotCreateNativeArchive() throws Exception
+    {
+        Path source = directory.resolve("permissions");
+        try (Connection admin = connect(source))
+        {
+            seed(admin);
+            try (var statement = admin.createStatement())
+            {
+                statement.execute("CREATE USER snapshot_reader PASSWORD 'synthetic-test-only'");
+                statement.execute("GRANT SELECT ON payload TO snapshot_reader");
+            }
+            try (Connection reader = DriverManager.getConnection("jdbc:h2:file:" + source + ";IFEXISTS=TRUE",
+                    "snapshot_reader", "synthetic-test-only"))
+            {
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                var failure = assertThrows(org.h2.message.DbException.class, () -> H2NativeSnapshot.write(reader, output));
+                assertEquals(org.h2.api.ErrorCode.ADMIN_RIGHTS_REQUIRED, failure.getErrorCode());
+                assertEquals(0, output.size());
+                assertFalse(reader.isClosed());
+                assertSnapshot(reader, 0, 0);
+            }
+            assertSnapshot(admin, 0, 0);
         }
         assertNoStorageErrors(source);
     }

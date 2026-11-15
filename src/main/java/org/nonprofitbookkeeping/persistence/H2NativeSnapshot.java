@@ -24,6 +24,7 @@ final class H2NativeSnapshot
         {
             throw new SQLException("Native database backup requires an embedded H2 session.");
         }
+        session.getUser().checkAdmin();
         MVStore store = session.getDatabase().getStore().getMvStore();
         if (!store.isPersistent())
         {

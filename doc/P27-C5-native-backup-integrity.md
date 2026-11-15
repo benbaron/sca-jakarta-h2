@@ -14,6 +14,8 @@ Temurin 17.0.17 reproduces the original test at generation 3 / opening 0 on its 
 
 Verify an embedded-H2 adapter that commits pending store changes, then uses public `MVStore.executeFilestoreOperation` to drain serialization and buffer-save work and retain the storage lock while H2's own `FileStore.backup` writes the ZIP. Unlike recursive SQL BACKUP, the callback performs no SQL or new store flush. It uses exactly the engine's native archive writer, with no data/header rewriting or engine dependency change. JDBC transactions stay open; physical writes may wait while the native snapshot is copied. Capture archive-output IOExceptions inside the callback and rethrow afterward, because letting application output failures escape the callback would invoke MVStore's panic handler against the live database. Connection ownership and existing atomic publication/restore validation remain unchanged.
 
+The adapter explicitly retains SQL BACKUP's H2 administrator-rights check before archive creation. Application authorization remains in its existing facade. A non-admin regression requires denial before any output bytes, while preserving that connection and the source data. Final review added this guard before acceptance; the first candidate's passing full run is superseded by the guarded implementation and new regression.
+
 Earlier broad scratch probes were interrupted by an unbounded synthetic stress writer exhausting the temporary volume. They are not acceptance evidence. Only that oversized synthetic database was removed after preserving logs/header; subsequent workloads are bounded.
 
 ## User-visible behavior and owner check
