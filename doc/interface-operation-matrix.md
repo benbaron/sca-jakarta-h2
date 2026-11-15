@@ -57,7 +57,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Asset Register | yes | yes | no | Stable asset identity and governed lifecycle operations. |
 | Inventory | yes | item editor only | no | Stable item identity and governed movement/lifecycle operations. |
 | Property Custody | yes | custody event draft | no | Save Custody Event appends assignment/confirmation/loan/return/transfer/removal history; Correct Selected appends a replacement. |
-| Chart of Accounts | yes | yes | no | Stable account ID editing; code is mutable business data. |
+| Chart of Accounts | yes | yes | no | Owned-chart viewing and Make Active Chart; stable account ID editing in the active chart; code is mutable business data. |
 | Funds | yes | yes | no | Stable fund ID editing with protected delete/deactivation rules; Fund Transfers navigation preserves the Fund draft. |
 | Fund Transfers | yes | yes | no | Same-company internal allocations, retained history, dated reversal and Journal drill-through. Linked transfers cannot be edited/deleted; reverse then enter a corrected transfer. |
 | Events / Activities | yes | yes | no | New Event, name/code search and Edit over stable Activity IDs; referenced/interchange-linked history deactivates rather than deletes. |

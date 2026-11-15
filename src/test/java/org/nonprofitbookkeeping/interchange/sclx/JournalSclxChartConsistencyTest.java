@@ -157,7 +157,7 @@ class JournalSclxChartConsistencyTest
             assertTrue(new TransactionReferenceDataService(jpa).loadActiveReferenceData().accounts().isEmpty());
             var failure = assertThrows(IllegalArgumentException.class,
                     () -> new TransactionEntryService(jpa).enterJournalDraft(command(fixture, fixture.bank()), UUID.randomUUID()));
-            assertTrue(failure.getMessage().contains("Company Admin"));
+            assertTrue(failure.getMessage().contains("Chart of Accounts page"));
             assertEquals(before, rows(source));
         }
     }

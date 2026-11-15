@@ -90,10 +90,15 @@ class AppPanelCommandCapabilityTest
         expected.put(AppPanelId.DIAGNOSTICS, Set.of());
         expected.put(AppPanelId.HELP, Set.of());
 
-        PanelHost host = FxTestSupport.onFx(PanelHost::new);
+        PanelHost host = FxTestSupport.onFx(() ->
+        {
+            PanelHost created = new PanelHost();
+            new javafx.scene.Scene(created, 900, 700);
+            return created;
+        });
         for (var entry : expected.entrySet())
         {
-            FxTestSupport.onFx(() -> { host.show(entry.getKey()); return null; });
+            FxTestSupport.onFx(() -> { host.show(entry.getKey()); host.applyCss(); host.layout(); return null; });
             if (entry.getKey() == AppPanelId.ASSETS_REGISTER)
             {
                 // This editor disables shared commands while its initial asynchronous load is in flight.
@@ -103,7 +108,28 @@ class AppPanelCommandCapabilityTest
                     Thread.sleep(30);
                 }
             }
-            FxTestSupport.onFx(() -> { assertEquals(entry.getValue(), host.activeCommandCapabilities(), entry.getKey().name()); return null; });
+            if (entry.getKey() == AppPanelId.CHART_OF_ACCOUNTS)
+            {
+                long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(10);
+                while (System.nanoTime() < deadline && FxTestSupport.onFx(() ->
+                        host.activeRoot().lookup("#chartOfAccountsSelection").isDisabled()))
+                {
+                    Thread.sleep(30);
+                }
+                FxTestSupport.onFx(() ->
+                {
+                    var selector = (javafx.scene.control.ComboBox<?>) host.activeRoot().lookup("#chartOfAccountsSelection");
+                    assertFalse(selector.isDisabled(), "Chart loading must complete");
+                    var chart = (org.nonprofitbookkeeping.service.CompanyChartView) selector.getValue();
+                    assertEquals(chart != null && chart.activeForCompany() ? editorCommands() : Set.of(),
+                            host.activeCommandCapabilities(), "Only the active chart is editable");
+                    return null;
+                });
+            }
+            else
+            {
+                FxTestSupport.onFx(() -> { assertEquals(entry.getValue(), host.activeCommandCapabilities(), entry.getKey().name()); return null; });
+            }
         }
     }
 

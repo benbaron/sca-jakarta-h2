@@ -28,7 +28,7 @@ final class SclxChartScope
     static void requireAccount(Account account, ChartOfAccounts selected, String field, String context)
     {
         requireAccount(account, selected, field, context,
-                "Review the entry's account selection in Journal or the chart assignment in Company Admin.");
+                "Review the entry's account selection in Journal or the chart assignment on the Chart of Accounts page.");
     }
 
     static void requireAccount(Account account, ChartOfAccounts selected, String field, String context, String guidance)
