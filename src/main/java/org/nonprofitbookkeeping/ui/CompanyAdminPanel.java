@@ -28,9 +28,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import javafx.util.StringConverter;
-import org.nonprofitbookkeeping.model.ChartStatus;
 import org.nonprofitbookkeeping.report.ReportDefinition;
-import org.nonprofitbookkeeping.service.CompanyChartView;
 import org.nonprofitbookkeeping.service.CompanyCommand;
 import org.nonprofitbookkeeping.service.CompanyReportingDefaults;
 import org.nonprofitbookkeeping.service.CompanyView;
@@ -42,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** H2-authoritative company profile, informational EIN, chart assignment, reporting defaults, and lifecycle editor. */
+/** H2-authoritative company profile, informational EIN, reporting defaults, and lifecycle editor. */
 public class CompanyAdminPanel implements AppPanel
 {
     private static final String STATE_PREFIX = "companyAdmin.";
@@ -63,9 +61,6 @@ public class CompanyAdminPanel implements AppPanel
     private final TextField defaultCurrency = new TextField();
     private final CheckBox active = new CheckBox("Active");
     private final Button selectActive = new Button("Select Active");
-    private final ComboBox<CompanyChartView> chartAssignment = new ComboBox<>();
-    private final Button makeActiveChart = new Button("Make Active Chart");
-    private final Label chartStatus = new Label("Select a persisted company to review its charts.");
     private final ComboBox<ReportDefinition> defaultReport = new ComboBox<>();
     private final ComboBox<FinancialReportExportFormat> defaultReportExportFormat = new ComboBox<>();
     private final Label reportingDefaultsStatus = new Label(
@@ -120,7 +115,6 @@ public class CompanyAdminPanel implements AppPanel
         save.setOnAction(event -> saveCompany());
         UiPermissionGate.gate(add, ApplicationPermission.COMPANY_ADMIN, "Create a company");
         UiPermissionGate.gate(save, ApplicationPermission.COMPANY_ADMIN, "Save company administration changes");
-        UiPermissionGate.gate(makeActiveChart, ApplicationPermission.COMPANY_ADMIN, "Change the active Chart of Accounts");
         defaultReport.setTooltip(new javafx.scene.control.Tooltip("Applies when a new Report Library opens; current report filters stay as selected."));
         UiPermissionGate.gate(defaultReport, ApplicationPermission.COMPANY_ADMIN, "Change company reporting defaults");
         UiPermissionGate.gate(defaultReportExportFormat, ApplicationPermission.COMPANY_ADMIN, "Change company reporting defaults");
@@ -189,23 +183,6 @@ public class CompanyAdminPanel implements AppPanel
         Label lifecycle = new Label("Companies cannot be deleted; clear Active and Save to deactivate.");
         lifecycle.setWrapText(true);
 
-        chartAssignment.setId("companyChartAssignment");
-        chartAssignment.setPromptText("Select an owned Chart of Accounts");
-        chartAssignment.setMaxWidth(Double.MAX_VALUE);
-        chartAssignment.valueProperty().addListener((obs, oldValue, newValue) -> updateChartActionState());
-        makeActiveChart.setId("makeActiveCompanyChart");
-        makeActiveChart.setDisable(true);
-        makeActiveChart.setOnAction(event -> assignActiveChart());
-        chartStatus.setWrapText(true);
-        chartAssignment.setTooltip(new javafx.scene.control.Tooltip("Select the chart for new accounts and imports; existing records keep their chart."));
-        VBox chartEditor = new VBox(
-                6,
-                new Label("Chart of Accounts assignment"),
-                chartAssignment,
-                makeActiveChart,
-                chartStatus);
-        chartEditor.setPadding(new Insets(8));
-
         GridPane reportingGrid = new GridPane();
         reportingGrid.setHgap(10);
         reportingGrid.setVgap(8);
@@ -234,7 +211,6 @@ public class CompanyAdminPanel implements AppPanel
                 new Label("Company profile"),
                 form,
                 lifecycle,
-                chartEditor,
                 reportingEditor);
         editor.setPadding(new Insets(8));
         return editor;
@@ -336,7 +312,6 @@ public class CompanyAdminPanel implements AppPanel
         {
             dirty = true;
             selectActive.setDisable(true);
-            makeActiveChart.setDisable(true);
             defaultReport.setDisable(true);
             defaultReportExportFormat.setDisable(true);
             reportingDefaultsStatus.setText(
@@ -366,7 +341,6 @@ public class CompanyAdminPanel implements AppPanel
             status.setText(company.code().equalsIgnoreCase(currentCompanyCode())
                     ? "Editing the current workspace company."
                     : "Editing company " + company.code() + ".");
-            loadCompanyCharts(company);
             loadCompanyReportingDefaults(company);
         }
         finally
@@ -396,10 +370,6 @@ public class CompanyAdminPanel implements AppPanel
             active.setSelected(true);
             editMode.setText("New company");
             selectActive.setDisable(true);
-            chartAssignment.getItems().clear();
-            chartAssignment.getSelectionModel().clearSelection();
-            makeActiveChart.setDisable(true);
-            chartStatus.setText("Save the company before assigning a Chart of Accounts.");
             CompanyReportingDefaults defaults = CompanyReportingDefaults.defaults();
             defaultReport.getSelectionModel().select(defaults.defaultReport());
             defaultReportExportFormat.getSelectionModel().select(defaults.defaultExportFormat());
@@ -461,31 +431,6 @@ public class CompanyAdminPanel implements AppPanel
         }
     }
 
-    private void loadCompanyCharts(CompanyView company)
-    {
-        try
-        {
-            List<CompanyChartView> charts = companyController.listCompanyCharts(company.id());
-            chartAssignment.setItems(FXCollections.observableArrayList(charts));
-            CompanyChartView current = charts.stream()
-                    .filter(CompanyChartView::activeForCompany)
-                    .findFirst()
-                    .orElse(null);
-            chartAssignment.getSelectionModel().select(current);
-            chartStatus.setText(current == null
-                    ? "No active Chart of Accounts is selected for " + company.code()
-                            + ". Create/import a company-owned DRAFT chart, then select it here."
-                    : "Current chart: " + current.name() + " — " + current.version() + ".");
-            updateChartActionState();
-        }
-        catch (RuntimeException ex)
-        {
-            chartAssignment.getItems().clear();
-            chartAssignment.getSelectionModel().clearSelection();
-            makeActiveChart.setDisable(true);
-            chartStatus.setText("Could not load company charts: " + UiErrors.safeMessage(ex));
-        }
-    }
 
     private void loadCompanyReportingDefaults(CompanyView company)
     {
@@ -547,62 +492,6 @@ public class CompanyAdminPanel implements AppPanel
             reportingDefaultsStatus.setText(
                     "Could not save reporting defaults: " + UiErrors.safeMessage(ex));
         }
-    }
-
-    private void updateChartActionState()
-    {
-        CompanyChartView selected = chartAssignment.getValue();
-        makeActiveChart.setDisable(
-                dirty
-                        || editingCompanyId == null
-                        || selected == null
-                        || selected.activeForCompany()
-                        || selected.status() == ChartStatus.RETIRED);
-    }
-
-    private void assignActiveChart()
-    {
-        CompanyView company = companies.getSelectionModel().getSelectedItem();
-        CompanyChartView selected = chartAssignment.getValue();
-        if (dirty)
-        {
-            status.setText("Save or discard company profile edits before changing its active chart.");
-            return;
-        }
-        if (company == null || editingCompanyId == null || selected == null)
-        {
-            status.setText("Select a persisted company and one of its eligible charts first.");
-            return;
-        }
-        if (!confirmChartAssignment(company, selected))
-        {
-            status.setText("Chart assignment cancelled; no data changed.");
-            return;
-        }
-        try
-        {
-            CompanyChartView assigned = companyController.assignActiveChart(company.id(), selected.id());
-            loadCompanyCharts(company);
-            status.setText("Selected active Chart of Accounts " + assigned.name() + " — "
-                    + assigned.version() + " for " + company.code()
-                    + ". Existing charts, accounts, transactions, and history were not moved or deleted.");
-        }
-        catch (RuntimeException ex)
-        {
-            status.setText("Could not change active Chart of Accounts: " + UiErrors.safeMessage(ex));
-        }
-    }
-
-    private boolean confirmChartAssignment(CompanyView company, CompanyChartView chart)
-    {
-        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmation.setTitle("Change active Chart of Accounts");
-        confirmation.setHeaderText("Make " + chart.name() + " — " + chart.version()
-                + " the active chart for " + company.code() + "?");
-        confirmation.setContentText(
-                "This changes which chart new account maintenance and chart-targeted imports use. "
-                        + "Existing charts, accounts, transactions, and historical references are not moved, deleted, or auto-retired.");
-        return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
     }
 
     private void reload(Long reselectId)

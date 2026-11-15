@@ -4,7 +4,6 @@ import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.service.AuthenticatedUserSession;
 import org.nonprofitbookkeeping.service.AuthenticationService;
 import org.nonprofitbookkeeping.service.CompanyAdminService;
-import org.nonprofitbookkeeping.service.CompanyChartView;
 import org.nonprofitbookkeeping.service.CompanyCommand;
 import org.nonprofitbookkeeping.service.CompanyView;
 
@@ -147,16 +146,6 @@ final class CompanySessionController
     List<CompanyView> listActiveCompanies()
     {
         return service().listActiveCompanyViews();
-    }
-
-    List<CompanyChartView> listCompanyCharts(long companyId)
-    {
-        return service().listCompanyCharts(companyId);
-    }
-
-    CompanyChartView assignActiveChart(long companyId, long chartId)
-    {
-        return service().assignActiveChart(companyId, chartId);
     }
 
     private CompanyAdminService service()

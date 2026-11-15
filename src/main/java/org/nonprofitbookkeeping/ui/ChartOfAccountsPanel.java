@@ -19,7 +19,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.nonprofitbookkeeping.model.Account;
@@ -28,6 +28,9 @@ import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
 import org.nonprofitbookkeeping.model.NormalBalance;
 import org.nonprofitbookkeeping.service.AccountCommand;
+import org.nonprofitbookkeeping.service.CompanyChartView;
+import org.nonprofitbookkeeping.model.ChartStatus;
+import java.util.function.Predicate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +55,22 @@ public class ChartOfAccountsPanel implements AppPanel
     private final TextField parentCodeField = new TextField();
     private final CheckBox activeField = new CheckBox("Active");
     private Button refresh;
+    private final Button add = new Button("+ Add");
+    private final Button save = new Button("Save");
+    private final ComboBox<CompanyChartView> chartSelection = new ComboBox<>();
+    private final Button makeActiveChart = new Button("Make Active Chart");
+    private final Label chartStatus = new Label();
+    private final ChartActions chartActions;
+    private final Predicate<CompanyChartView> confirmActivation;
+    private List<Account> companyAccounts = List.of();
+    private Long companyId;
+    private boolean changingCharts;
+    private boolean loadingCharts = true;
+    private Node accountEditor;
+    private Runnable capabilitiesChanged = () -> {};
+    private final javafx.beans.value.ChangeListener<Boolean> permissionChanged =
+            (observable, prior, denied) -> updateChartState();
+    private java.util.function.BooleanSupplier discardConfirmation;
     private final FormDirtyTracker dirtyState;
     private Long editingAccountId;
     private boolean suppressSelection;
@@ -59,6 +78,27 @@ public class ChartOfAccountsPanel implements AppPanel
 
     public ChartOfAccountsPanel()
     {
+        this(new ChartActions()
+        {
+            @Override public ChartData load()
+            {
+                String code = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
+                var company = UiServiceRegistry.companyAdmin().requireActiveCompany(code);
+                return new ChartData(company.id(), UiServiceRegistry.companyAdmin().listCompanyCharts(company.id()),
+                        UiServiceRegistry.accountLookup().listPostingAccountsIncludingInactive());
+            }
+
+            @Override public void activate(long companyId, long chartId)
+            {
+                UiServiceRegistry.companyAdmin().assignActiveChart(companyId, chartId);
+            }
+        }, ChartOfAccountsPanel::confirmChartActivation);
+    }
+
+    ChartOfAccountsPanel(ChartActions chartActions, Predicate<CompanyChartView> confirmActivation)
+    {
+        this.chartActions = Objects.requireNonNull(chartActions);
+        this.confirmActivation = Objects.requireNonNull(confirmActivation);
         root.setPadding(new Insets(8));
 
         Label title = new Label("Chart of Accounts");
@@ -66,10 +106,8 @@ public class ChartOfAccountsPanel implements AppPanel
         Label lifecycle = new Label("Accounts cannot be deleted; clear Active and Save to retire them.");
         lifecycle.setWrapText(true);
 
-        Button add = new Button("+ Add");
         add.setOnAction(e -> onNew());
 
-        Button save = new Button("Save");
         save.setOnAction(e -> saveForm());
         UiPermissionGate.gate(add, ApplicationPermission.BOOKKEEPING_WRITE, "Create an account");
         UiPermissionGate.gate(save, ApplicationPermission.BOOKKEEPING_WRITE, "Save an account");
@@ -77,9 +115,24 @@ public class ChartOfAccountsPanel implements AppPanel
         refresh = new Button("Refresh");
         refresh.setOnAction(e -> reloadWithDiscardProtection());
 
-        HBox actions = new HBox(8, add, save, refresh);
+        FlowPane actions = new FlowPane(8, 6, add, save, refresh);
+        chartSelection.setId("chartOfAccountsSelection");
+        chartSelection.setPromptText("Select a Chart of Accounts");
+        chartSelection.setMaxWidth(Double.MAX_VALUE);
+        chartSelection.setMinWidth(0);
+        chartSelection.valueProperty().addListener((obs, prior, selected) -> selectChart(prior, selected));
+        makeActiveChart.setId("makeActiveChart");
+        makeActiveChart.setOnAction(event -> activateChart());
+        UiPermissionGate.gate(makeActiveChart, ApplicationPermission.COMPANY_ADMIN, "Change the active Chart of Accounts");
+        UiPermissionGate.deniedProperty(ApplicationPermission.COMPANY_ADMIN).addListener(
+                new javafx.beans.value.WeakChangeListener<>(permissionChanged));
+        chartStatus.setWrapText(true);
+        status.setWrapText(true);
+        VBox chartActionsBar = new VBox(6, new Label("View chart"), chartSelection,
+                new FlowPane(8, 6, makeActiveChart));
         Node editorForm = buildEditorForm();
-        VBox header = new VBox(6, title, lifecycle, actions, status, new Separator());
+        accountEditor = editorForm;
+        VBox header = new VBox(6, title, chartActionsBar, chartStatus, lifecycle, actions, status, new Separator());
 
         root.setTop(header);
         dirtyState = new FormDirtyTracker(this::formSnapshot);
@@ -143,6 +196,7 @@ public class ChartOfAccountsPanel implements AppPanel
         root.setCenter(split);
 
         clearFormForNew();
+        updateChartState();
         reload(null);
     }
 
@@ -162,12 +216,17 @@ public class ChartOfAccountsPanel implements AppPanel
     @Override
     public java.util.Set<AppCommand> commandCapabilities()
     {
-        return AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE);
+        return canEditChart() ? AppPanel.capabilities(AppCommand.NEW_ACTIVE, AppCommand.SAVE_ACTIVE) : java.util.Set.of();
     }
 
     @Override
     public void onNew()
     {
+        if (!canEditChart())
+        {
+            status.setText("View the active chart before creating accounts.");
+            return;
+        }
         if (!dirtyState.isDirty() || confirmDiscard())
         {
             clearFormForNew();
@@ -262,6 +321,11 @@ public class ChartOfAccountsPanel implements AppPanel
 
     private void saveForm()
     {
+        if (!canEditChart())
+        {
+            status.setText("View the active chart before saving accounts.");
+            return;
+        }
         try
         {
             AccountCommand command = new AccountCommand(
@@ -389,33 +453,158 @@ public class ChartOfAccountsPanel implements AppPanel
 
     private void reload(Long reselectId)
     {
-        refresh.setDisable(true);
+        Long selectedId = chartSelection.getValue() == null ? null : chartSelection.getValue().id();
+        loadingCharts = true;
+        updateChartState();
         String incomingContext = DrillThroughCoordinator.consumeContext(AppPanelId.CHART_OF_ACCOUNTS);
         if (!incomingContext.isBlank())
         {
             pendingDrillContext = incomingContext;
         }
         status.setText(formatStatus("Loading accounts..."));
-
-        UiAsync.run("coa-load",
-            () -> UiServiceRegistry.accountLookup().listPostingAccountsIncludingInactive(),
-            rows -> {
-                table.getItems().setAll(rows);
-                if (reselectId != null)
-                {
-                    rows.stream()
-                            .filter(row -> Objects.equals(row.getId(), reselectId))
-                            .findFirst()
-                            .ifPresent(table.getSelectionModel()::select);
-                }
-                status.setText(formatStatus("Loaded " + rows.size() + " posting account(s) (active + inactive)."));
-                refresh.setDisable(false);
-            },
-            ex -> {
-                status.setText(formatStatus("Failed to load accounts: " + UiErrors.safeMessage(ex)));
-                refresh.setDisable(false);
-            });
+        UiAsync.run("coa-load", chartActions::load, data ->
+        {
+            companyId = data.companyId();
+            companyAccounts = List.copyOf(data.accounts());
+            changingCharts = true;
+            chartSelection.getItems().setAll(data.charts());
+            CompanyChartView selected = data.charts().stream().filter(chart -> Objects.equals(chart.id(), selectedId))
+                    .findFirst().orElseGet(() -> data.charts().stream().filter(CompanyChartView::activeForCompany)
+                            .findFirst().orElse(null));
+            chartSelection.setValue(selected);
+            changingCharts = false;
+            loadingCharts = false;
+            showChartAccounts();
+            if (reselectId != null)
+            {
+                table.getItems().stream().filter(row -> Objects.equals(row.getId(), reselectId))
+                        .findFirst().ifPresent(table.getSelectionModel()::select);
+            }
+        }, ex ->
+        {
+            loadingCharts = false;
+            companyId = null;
+            companyAccounts = List.of();
+            changingCharts = true;
+            chartSelection.getItems().clear();
+            chartSelection.setValue(null);
+            changingCharts = false;
+            table.getItems().clear();
+            updateChartState();
+            status.setText(formatStatus("Failed to load accounts: " + UiErrors.safeMessage(ex)));
+        });
     }
+
+    private boolean canEditChart()
+    {
+        return !loadingCharts && chartSelection.getValue() != null && chartSelection.getValue().activeForCompany();
+    }
+
+    private void updateChartState()
+    {
+        CompanyChartView selected = chartSelection.getValue();
+        chartSelection.setDisable(loadingCharts);
+        accountEditor.setDisable(!canEditChart());
+        refresh.setDisable(loadingCharts);
+        add.setDisable(!canEditChart());
+        save.setDisable(!canEditChart());
+        makeActiveChart.setDisable(loadingCharts || companyId == null || selected == null
+                || selected.activeForCompany() || selected.status() == ChartStatus.RETIRED);
+        String state = selected == null ? "No chart selected."
+                : selected.activeForCompany() ? "Viewing the active chart."
+                : "Viewing another chart (read-only). Making it active does not move existing history.";
+        if (!UiPermissionGate.allows(ApplicationPermission.COMPANY_ADMIN))
+        {
+            state += " Making a chart active requires a MANAGER or ADMIN role for this company.";
+        }
+        else if (selected != null && selected.status() == ChartStatus.RETIRED)
+        {
+            state += " Retired charts cannot be made active.";
+        }
+        CompanyChartView current = chartSelection.getItems().stream().filter(CompanyChartView::activeForCompany)
+                .findFirst().orElse(null);
+        chartStatus.setText((current == null ? "No active chart. "
+                : "Active chart: " + current.name() + " — " + current.version() + ". ") + state);
+        capabilitiesChanged.run();
+    }
+
+    private void selectChart(CompanyChartView prior, CompanyChartView selected)
+    {
+        if (changingCharts)
+        {
+            return;
+        }
+        if (dirtyState.isDirty() && !confirmDiscard())
+        {
+            changingCharts = true;
+            chartSelection.setValue(prior);
+            changingCharts = false;
+            return;
+        }
+        clearFormForNew();
+        showChartAccounts();
+    }
+
+    private void showChartAccounts()
+    {
+        CompanyChartView selected = chartSelection.getValue();
+        table.getItems().setAll(companyAccounts.stream()
+                .filter(account -> selected != null && account.getChart() != null
+                        && Objects.equals(account.getChart().getId(), selected.id())).toList());
+        updateChartState();
+        status.setText(formatStatus("Loaded " + table.getItems().size() + " posting account(s) (active + inactive)."));
+    }
+
+    private void activateChart()
+    {
+        CompanyChartView selected = chartSelection.getValue();
+        if (loadingCharts || companyId == null || selected == null || selected.activeForCompany()
+                || selected.status() == ChartStatus.RETIRED || !UiPermissionGate.allows(ApplicationPermission.COMPANY_ADMIN))
+        {
+            return;
+        }
+        if (dirtyState.isDirty())
+        {
+            status.setText("Save or discard account edits before changing the active chart.");
+            return;
+        }
+        if (!confirmActivation.test(selected))
+        {
+            status.setText("Chart assignment cancelled; no data changed.");
+            return;
+        }
+        long targetCompanyId = companyId;
+        loadingCharts = true;
+        updateChartState();
+        UiAsync.run("coa-activate", () ->
+        {
+            chartActions.activate(targetCompanyId, selected.id());
+            return selected;
+        }, assigned -> reload(null), ex ->
+        {
+            loadingCharts = false;
+            updateChartState();
+            status.setText("Could not change active Chart of Accounts: " + UiErrors.safeMessage(ex));
+        });
+    }
+
+    private static boolean confirmChartActivation(CompanyChartView chart)
+    {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Change active Chart of Accounts");
+        confirmation.setHeaderText("Make " + chart.name() + " — " + chart.version() + " the active chart?");
+        confirmation.setContentText("This changes the chart used for new account maintenance and chart-targeted imports. "
+                + "Existing charts, accounts, transactions, and historical references are not moved, deleted, or auto-retired.");
+        return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
+    }
+
+    interface ChartActions
+    {
+        ChartData load();
+        void activate(long companyId, long chartId);
+    }
+
+    record ChartData(Long companyId, List<CompanyChartView> charts, List<Account> accounts) {}
 
     private FormState formSnapshot()
     {
@@ -433,11 +622,42 @@ public class ChartOfAccountsPanel implements AppPanel
 
     private boolean confirmDiscard()
     {
+        if (discardConfirmation != null)
+        {
+            return discardConfirmation.getAsBoolean();
+        }
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
         confirmation.setTitle("Discard account edits");
         confirmation.setHeaderText("Discard unsaved Chart of Accounts changes?");
         confirmation.setContentText("Choose Cancel to remain in the current editor.");
         return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
+    }
+
+    void setDiscardConfirmationForTests(java.util.function.BooleanSupplier confirmation)
+    {
+        discardConfirmation = confirmation;
+    }
+
+    @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        capabilitiesChanged = Objects.requireNonNull(listener);
+    }
+
+    @Override
+    public void onPanelShown()
+    {
+        if (!loadingCharts && !dirtyState.isDirty())
+        {
+            clearFormForNew();
+            reload(null);
+        }
+    }
+
+    @Override
+    public String saveUnavailableReason()
+    {
+        return "View the company's active chart before editing accounts; other charts are read-only.";
     }
 
     @Override

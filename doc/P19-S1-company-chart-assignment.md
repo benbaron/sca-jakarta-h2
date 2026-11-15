@@ -30,6 +30,10 @@ This permits multiple owned charts to remain `ACTIVE` while one explicit company
 
 ## UI behavior
 
+P19-C1 owner direction supersedes the original placement below: named chart viewing and activation now belong to **Chart of Accounts**, not Company Admin. See [P19-C1](P19-C1-chart-selection-location.md). The service rules above remain authoritative.
+
+### Original placement (historical)
+
 The existing **Administration → Company Admin** editor gains a **Chart of Accounts assignment** section. There is no new shell destination.
 
 - Selecting a persisted company loads only that company's charts.

@@ -1,5 +1,7 @@
 # P19-S1 — Company Chart of Accounts assignment owner verification
 
+P19-C1 moves this operation to **Chart of Accounts**. Follow the current [P19-C1 checks](P19-C1-chart-selection-location.md); the Company Admin steps below describe the historical placement.
+
 ## User-visible changes
 
 Company Admin now contains a **Chart of Accounts assignment** section for each persisted company.

@@ -122,7 +122,7 @@ public class TransactionEntryService
             var chart = company.getActiveChartOfAccounts();
             if (chart == null)
             {
-                throw new IllegalArgumentException("Select a Chart of Accounts in Company Admin before saving a new Journal entry.");
+                throw new IllegalArgumentException("Select a Chart of Accounts on the Chart of Accounts page before saving a new Journal entry.");
             }
             ownership().ensureOwnedBy(em, company, chart, "Selected Chart of Accounts");
             if (command.bankAccountId() != null)

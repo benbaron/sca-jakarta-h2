@@ -549,6 +549,18 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     }
 
     @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        delegate.setCommandCapabilitiesChangedListener(listener);
+    }
+
+    @Override
+    public String saveUnavailableReason()
+    {
+        return delegate.saveUnavailableReason();
+    }
+
+    @Override
     public RunCommandResult executeCommand(AppCommand command)
     {
         return delegate.executeCommand(command);

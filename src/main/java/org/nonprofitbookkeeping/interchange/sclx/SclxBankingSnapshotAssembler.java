@@ -296,7 +296,7 @@ final class SclxBankingSnapshotAssembler
                     "Configured bank account" + (account.getId() == null ? "" : " #" + account.getId())
                             + " '" + account.getName() + "'",
                     "Review this configured account's ledger link in Banking / Bank accounts "
-                            + "and the selected chart in Company Admin.");
+                            + "and the selected chart on the Chart of Accounts page.");
         }
     }
 
