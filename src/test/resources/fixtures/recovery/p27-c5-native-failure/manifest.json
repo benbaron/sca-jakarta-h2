@@ -1,0 +1,26 @@
+{
+  "synthetic": true,
+  "source_commit": "80f0321f8943e8c982e3190a64280ab9e4679212",
+  "engine": "H2 2.4.240",
+  "java": "Temurin 17.0.17+10",
+  "test": "OnlineBackupIntegrityTest.evolvingOnlineBackupsRetainEveryCommittedClobAcrossRepeatedOpens",
+  "generation": 3,
+  "opening": 0,
+  "expected_ids": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "restored_ids": [
+    0,
+    1,
+    2
+  ],
+  "source_mv_db_sha256": "dc7e291ef3c1fd48ddb25035b72c47e0e2d5056686ab676ee807a1d2f60b2360",
+  "archives": {
+    "stale-archive.zip": "0cb517e53abbc84671cffcc2bcebfa6b78f0fd90640dd95fa2f81db2308cf38b",
+    "committed-source.zip": "7278378e94207e6c09e61f76c64143e30cd388c6d8e2120b62be8e19e3a62de1"
+  },
+  "scope": "Minimal storage probe, not an application-schema recovery image. committed-source.zip packages the unchanged closed source bytes; stale-archive.zip is the untouched failing native BACKUP output. Never reconstruct the missing row from these diagnostic fixtures."
+}
