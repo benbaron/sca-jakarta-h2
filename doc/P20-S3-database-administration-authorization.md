@@ -18,7 +18,7 @@ There is no schema or migration change.
 
 ## Whole-database transfer authority
 
-`DatabaseTransferService` remains the persistence/file implementation for H2 `BACKUP TO`, restore-to-new-copy validation, and delegated database switching. Authorization policy is not moved into the persistence package.
+`DatabaseTransferService` remains the persistence/file implementation for H2 native archives, restore-to-new-copy validation, and delegated database switching. P27-C5 governs the native file-store snapshot boundary. Authorization policy is not moved into the persistence package.
 
 `DatabaseAdministrationService` is the authoritative post-login service boundary. Before delegating it requires `DATABASE_ADMIN` for:
 

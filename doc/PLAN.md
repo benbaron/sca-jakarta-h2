@@ -1,15 +1,29 @@
 ---
-plan_version: 475
+plan_version: 483
 active_phase: P27
-active_slice: P27-C3
+active_slice: P27-C5
 active_status: VERIFYING
-active_branch: codex/P27-C3-sclx-chart-consistency
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/425
-active_head: 0e53bacd5f6c78619c34f52a332d84e59e78582c
-next_action: "Publish the bounded CI timeout correction and inspect exact-new-head Linux/Windows checks for PR #425; preserve every test. Focused owner check/review/merge remain pending; native acceptance stays deferred."
+active_branch: codex/P27-C5-native-backup-integrity
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/427
+active_head: 2a27753c49c96e6dcca666ef61c3dd78faf51e8c
+next_action: "Finish guarded Java-17 clean/repeat/display gates and exact-final-head CI for PR #427. C4 remains dependent on this correction merging, followed by rebase and full revalidation."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C5 native backup integrity correction — 2026-11-14 America/Denver
+
+Final-review guard: the native adapter now explicitly retains SQL BACKUP’s engine administrator-rights check. A new non-admin regression first failed with one assertion failure (archive was created); it now verifies ADMIN_RIGHTS_REQUIRED before output bytes, with source/connection preserved. The guarded focused Java-17 gate passes **22 tests, zero failures/errors/skips** (02:14; `/tmp/p27-c5-final-focused.log`). Earlier clean verification completed **1,209 / zero failures/errors / 141 expected headless skips** (09:46; `/tmp/p27-c5-clean.log`), but predates this guard and is superseded. Its runner was paused, allowed to finish Maven and restore generated files, then stopped before repeat; no database process was interrupted. Final clean/repeat/display gates now run sequentially on the guarded code (`/tmp/p27-c5-guarded-{clean,repeat,display}.log`). Publish the reviewed guard follow-up and accept only its exact new-head CI, not prior-head checks.
+
+Publication: implementation `93e1a8cd199710393d869dd6f1d3582c711c7e85`, tree `2ff8476a6219b3fe45f781bbdcef0cd4084bd437`, is published in [draft PR #427](https://github.com/benbaron/sca-jakarta-h2/pull/427). Native fetch and connected metadata match; base remains current main `80f0321f`. Publication uses a clean temporary worktree while the build worktree owns generated target files. This following documentation-only commit records the handoff. Full Java-17 clean/repeat/display gates and exact-final-head CI are required before acceptance; C5 stays VERIFYING. C4 remains dependent on this correction merging, then must be rebased and fully reverified. No merge performed.
+
+Reproduced unchanged test on Temurin 17.0.17+10, first run, generation 3 / opening 0. Frozen native source/archive/manifest are under `src/test/resources/fixtures/recovery/p27-c5-native-failure/`; stale ZIP SHA-256 `0cb517e53abbc84671cffcc2bcebfa6b78f0fd90640dd95fa2f81db2308cf38b`, original closed-source raw SHA-256 `dc7e291ef3c1fd48ddb25035b72c47e0e2d5056686ab676ee807a1d2f60b2360`. Both Java 17 and 21 reopen that archive with three rows; source has four. Fifty baseline Java-21 test runs pass, so that runtime alone is not an adequate gate. Implemented H2NativeSnapshot using public native file-store archive creation inside the drained storage boundary, with no SQL recursion, reflection, dependency/schema change, archive rewriting, or user-transaction closure. Output IOExceptions are returned outside the engine callback to avoid source panic; partial publication cleanup is retained for unchecked failures too. New tests cover 24 concurrent atomic generation updates and failed output followed by genuine source writes/reopen.
+
+Candidate passes **50 complete unchanged regressions on Java 17 (3,200 snapshots)** (`/tmp/p27-c5-candidate-java17.log`). Final focused recovery/legacy/readiness gate passes **21 tests, zero failures/errors/skips** on Java 17 (01:48; `/tmp/p27-c5-recovery-focused.log`), including complete original 2.2.224/2.5.252 fixture oracles and compact/restart/trace checks. An earlier unbounded scratch writer filled /tmp; only its synthetic database was removed after preserving logs/header, and those interrupted probes are not acceptance evidence. Workloads are now bounded; retained OnlineBackupIntegrityProbe invokes the unchanged test and stops/preserves on first failure. Full clean verify, repeated full test and displayed transfer/recovery/readiness gates are running sequentially with `/workspace/.cloud-setup/maven17.sh`; exact-head publication/CI remains. Manual focused check is in the C5 contract; broad native acceptance remains deferred.
+
+
+Owner explicitly requests repair of the C4 integrity blocker. Current main remains `80f0321f`; preserve C4 work and its local blocker receipt. Start fresh `codex/P27-C5-native-backup-integrity`. Required reading/inspection is listed in the C4 blocker and [C5 contract](P27-C5-native-backup-integrity.md). Baseline compile passes (19.0 seconds); eight existing integrity/transfer/readiness tests pass (01:05), which does not invalidate the preserved CI failure. Investigate exact H2 2.4.240 source and retain failing native artifacts; no retries, oracle weakening, data reconstruction, applied migration edits or unrelated UI work.
+
 
 ### P27-C3 Journal/SCLX chart consistency — 2026-11-12 America/Denver
 
