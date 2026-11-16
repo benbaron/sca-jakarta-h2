@@ -56,7 +56,8 @@ public class BankConfigurationService
                             select cba
                             from CompanyBankAccount cba
                             left join fetch cba.bank
-                            left join fetch cba.account
+                            left join fetch cba.account a
+                            left join fetch a.chart
                             where cba.company = :company
                             order by cba.name
                             """, CompanyBankAccount.class)

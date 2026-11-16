@@ -68,3 +68,9 @@ java -ea -cp <probe-classes>:<test/runtime-classpath> org.nonprofitbookkeeping.p
 ```
 
 The original `H2OnlineBackupProbe.java` continues to exercise SQL BACKUP independently for upstream diagnosis; it does not exercise C5's production adapter. Passing long probes supplements the deterministic failure evidence and full gates; it does not establish that an intermittent defect is absent.
+
+## P27-C7 concurrent LOB metadata failure
+
+`p27-c7-lob-failure/snapshot-14.zip` is the untouched synthetic native archive retained from the third bounded concurrency diagnostic after CI 43776948380 failed. Its manifest records the original SHA-256/runtime. This is not a V92 application image: company/txn tables are minimal test scaffolding and payload has three synthetic CLOB rows. Read-only MVStore inspection finds temporary LOB 95 without its lobRef entry. Connection close must continue to reject it with the original assertion, even with the new coordination patch; the negative fixture runs in a child JVM so an invalid engine instance cannot leak into later tests. Do not reconstruct or replace it with an export. Existing legacy complete-field fixtures/oracles remain unchanged.
+
+`NativeLobConcurrencyProbe.java` runs the unchanged 24-generation concurrency test in a bounded batch (default 50, maximum 1,000), stops/preserves on first failure, and cleans successful diagnostic directories only. Compile with the same test/runtime classpath as OnlineBackupIntegrityProbe, then run `java -ea -cp "$probe_dir:target/test-classes:target/classes:$test_cp" org.nonprofitbookkeeping.persistence.NativeLobConcurrencyProbe 50 /tmp/native-lob-probe`. Do not use the Java source launcher or place the H2 dependency before application classes; the explicitly bundled patch must be active.

@@ -175,6 +175,15 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>vendor/h2</directory>
+        <targetPath>META-INF/vendor/h2</targetPath>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -218,6 +227,8 @@
             <version>${javafx.maven.plugin.version}</version>
             <configuration>
               <mainClass>org.nonprofitbookkeeping.ui.FxMain</mainClass>
+              <!-- Keep the explicitly bundled H2 LOB patch in the same class loader as its dependency. -->
+              <runtimePathOption>CLASSPATH</runtimePathOption>
             </configuration>
           </plugin>
         </plugins>

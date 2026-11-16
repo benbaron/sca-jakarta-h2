@@ -1,0 +1,390 @@
+--- h2-2.4.240/org/h2/mvstore/db/LobStorageMap.java
++++ sca-patched/org/h2/mvstore/db/LobStorageMap.java
+@@ -4,0 +5,3 @@
++ */
++/* SCA patch: coordinate complete LOB map mutations with native snapshot capture.
++ * Upstream: H2 2.4.240. See doc/P27-C7-h2-lob-coordination.md and vendor/h2/README.md.
+@@ -91,0 +95,5 @@
++    /** Identifies the bundled SCA native-snapshot coordination patch. */
++    public int getSnapshotCoordinationVersion() {
++        return 1;
++    }
++
+@@ -173,25 +181,27 @@
+-        MVStore.TxCounter txCounter = mvStore.registerVersionUsage();
+-        try {
+-            if (maxLength != -1
+-                    && maxLength <= database.getMaxLengthInplaceLob()) {
+-                byte[] small = new byte[(int) maxLength];
+-                int len = IOUtils.readFully(in, small, (int) maxLength);
+-                if (len > maxLength) {
+-                    throw new IllegalStateException(
+-                            "len > blobLength, " + len + " > " + maxLength);
+-                }
+-                if (len < small.length) {
+-                    small = Arrays.copyOf(small, len);
+-                }
+-                return ValueBlob.createSmall(small);
+-            }
+-            if (maxLength != -1) {
+-                in = new RangeInputStream(in, 0L, maxLength);
+-            }
+-            return createBlob(in);
+-        } catch (IllegalStateException e) {
+-            throw DbException.get(ErrorCode.OBJECT_CLOSED, e);
+-        } catch (IOException e) {
+-            throw DbException.convertIOException(e, null);
+-        } finally {
+-            mvStore.deregisterVersionUsage(txCounter);
++        synchronized (database.getLobSyncObject()) {
++            MVStore.TxCounter txCounter = mvStore.registerVersionUsage();
++            try {
++                if (maxLength != -1
++                        && maxLength <= database.getMaxLengthInplaceLob()) {
++                    byte[] small = new byte[(int) maxLength];
++                    int len = IOUtils.readFully(in, small, (int) maxLength);
++                    if (len > maxLength) {
++                        throw new IllegalStateException(
++                                "len > blobLength, " + len + " > " + maxLength);
++                    }
++                    if (len < small.length) {
++                        small = Arrays.copyOf(small, len);
++                    }
++                    return ValueBlob.createSmall(small);
++                }
++                if (maxLength != -1) {
++                    in = new RangeInputStream(in, 0L, maxLength);
++                }
++                return createBlob(in);
++            } catch (IllegalStateException e) {
++                throw DbException.get(ErrorCode.OBJECT_CLOSED, e);
++            } catch (IOException e) {
++                throw DbException.convertIOException(e, null);
++            } finally {
++                mvStore.deregisterVersionUsage(txCounter);
++            }
+@@ -203,33 +213,35 @@
+-        MVStore.TxCounter txCounter = mvStore.registerVersionUsage();
+-        try {
+-            // we multiple by 3 here to get the worst-case size in bytes
+-            if (maxLength != -1
+-                    && maxLength * 3 <= database.getMaxLengthInplaceLob()) {
+-                char[] small = new char[(int) maxLength];
+-                int len = IOUtils.readFully(reader, small, (int) maxLength);
+-                if (len > maxLength) {
+-                    throw new IllegalStateException(
+-                            "len > blobLength, " + len + " > " + maxLength);
+-                }
+-                byte[] utf8 = new String(small, 0, len)
+-                        .getBytes(StandardCharsets.UTF_8);
+-                if (utf8.length > database.getMaxLengthInplaceLob()) {
+-                    throw new IllegalStateException(
+-                            "len > maxinplace, " + utf8.length + " > "
+-                                    + database.getMaxLengthInplaceLob());
+-                }
+-                return ValueClob.createSmall(utf8, len);
+-            }
+-            if (maxLength < 0) {
+-                maxLength = Long.MAX_VALUE;
+-            }
+-            CountingReaderInputStream in = new CountingReaderInputStream(reader, maxLength);
+-            ValueBlob blob = createBlob(in);
+-            LobData lobData = blob.getLobData();
+-            return new ValueClob(lobData, blob.octetLength(), in.getLength());
+-        } catch (IllegalStateException e) {
+-            throw DbException.get(ErrorCode.OBJECT_CLOSED, e);
+-        } catch (IOException e) {
+-            throw DbException.convertIOException(e, null);
+-        } finally {
+-            mvStore.deregisterVersionUsage(txCounter);
++        synchronized (database.getLobSyncObject()) {
++            MVStore.TxCounter txCounter = mvStore.registerVersionUsage();
++            try {
++                // we multiple by 3 here to get the worst-case size in bytes
++                if (maxLength != -1
++                        && maxLength * 3 <= database.getMaxLengthInplaceLob()) {
++                    char[] small = new char[(int) maxLength];
++                    int len = IOUtils.readFully(reader, small, (int) maxLength);
++                    if (len > maxLength) {
++                        throw new IllegalStateException(
++                                "len > blobLength, " + len + " > " + maxLength);
++                    }
++                    byte[] utf8 = new String(small, 0, len)
++                            .getBytes(StandardCharsets.UTF_8);
++                    if (utf8.length > database.getMaxLengthInplaceLob()) {
++                        throw new IllegalStateException(
++                                "len > maxinplace, " + utf8.length + " > "
++                                        + database.getMaxLengthInplaceLob());
++                    }
++                    return ValueClob.createSmall(utf8, len);
++                }
++                if (maxLength < 0) {
++                    maxLength = Long.MAX_VALUE;
++                }
++                CountingReaderInputStream in = new CountingReaderInputStream(reader, maxLength);
++                ValueBlob blob = createBlob(in);
++                LobData lobData = blob.getLobData();
++                return new ValueClob(lobData, blob.octetLength(), in.getLength());
++            } catch (IllegalStateException e) {
++                throw DbException.get(ErrorCode.OBJECT_CLOSED, e);
++            } catch (IOException e) {
++                throw DbException.convertIOException(e, null);
++            } finally {
++                mvStore.deregisterVersionUsage(txCounter);
++            }
+@@ -249,3 +261,5 @@
+-        tempLobMap.put(lobId, streamStoreId);
+-        BlobReference key = new BlobReference(streamStoreId, lobId);
+-        refMap.put(key, ValueNull.INSTANCE);
++        mvStore.executeAtomicMapUpdate(() -> {
++            tempLobMap.put(lobId, streamStoreId);
++            BlobReference key = new BlobReference(streamStoreId, lobId);
++            refMap.put(key, ValueNull.INSTANCE);
++        });
+@@ -270,35 +284,39 @@
+-        MVStore.TxCounter txCounter = mvStore.registerVersionUsage();
+-        try {
+-            final LobDataDatabase lobData = (LobDataDatabase) old.getLobData();
+-            final int type = old.getValueType();
+-            final long oldLobId = lobData.getLobId();
+-            long octetLength = old.octetLength();
+-            // get source lob
+-            final byte[] streamStoreId;
+-            if (isTemporaryLob(lobData.getTableId())) {
+-                streamStoreId = tempLobMap.get(oldLobId);
+-            } else {
+-                BlobMeta value = lobMap.get(oldLobId);
+-                streamStoreId = value.streamStoreId;
+-            }
+-            // create destination lob
+-            final long newLobId = generateLobId();
+-            if (isTemporaryLob(tableId)) {
+-                tempLobMap.put(newLobId, streamStoreId);
+-            } else {
+-                BlobMeta value = new BlobMeta(streamStoreId, tableId,
+-                        type == Value.CLOB ? old.charLength() : octetLength, 0);
+-                lobMap.put(newLobId, value);
+-            }
+-            BlobReference refMapKey = new BlobReference(streamStoreId, newLobId);
+-            refMap.put(refMapKey, ValueNull.INSTANCE);
+-            LobDataDatabase newLobData = new LobDataDatabase(database, tableId, newLobId);
+-            ValueLob lob = type == Value.BLOB ? new ValueBlob(newLobData, octetLength)
+-                    : new ValueClob(newLobData, octetLength, old.charLength());
+-            if (TRACE) {
+-                trace("copy " + lobData.getTableId() + "/" + lobData.getLobId() +
+-                        " > " + tableId + "/" + newLobId);
+-            }
+-            return lob;
+-        } finally {
+-            mvStore.deregisterVersionUsage(txCounter);
++        synchronized (database.getLobSyncObject()) {
++            return mvStore.executeAtomicMapUpdate(() -> {
++                MVStore.TxCounter txCounter = mvStore.registerVersionUsage();
++                try {
++                    final LobDataDatabase lobData = (LobDataDatabase) old.getLobData();
++                    final int type = old.getValueType();
++                    final long oldLobId = lobData.getLobId();
++                    long octetLength = old.octetLength();
++                    // get source lob
++                    final byte[] streamStoreId;
++                    if (isTemporaryLob(lobData.getTableId())) {
++                        streamStoreId = tempLobMap.get(oldLobId);
++                    } else {
++                        BlobMeta value = lobMap.get(oldLobId);
++                        streamStoreId = value.streamStoreId;
++                    }
++                    // create destination lob
++                    final long newLobId = generateLobId();
++                    if (isTemporaryLob(tableId)) {
++                        tempLobMap.put(newLobId, streamStoreId);
++                    } else {
++                        BlobMeta value = new BlobMeta(streamStoreId, tableId,
++                                type == Value.CLOB ? old.charLength() : octetLength, 0);
++                        lobMap.put(newLobId, value);
++                    }
++                    BlobReference refMapKey = new BlobReference(streamStoreId, newLobId);
++                    refMap.put(refMapKey, ValueNull.INSTANCE);
++                    LobDataDatabase newLobData = new LobDataDatabase(database, tableId, newLobId);
++                    ValueLob lob = type == Value.BLOB ? new ValueBlob(newLobData, octetLength)
++                            : new ValueClob(newLobData, octetLength, old.charLength());
++                    if (TRACE) {
++                        trace("copy " + lobData.getTableId() + "/" + lobData.getLobId() +
++                                " > " + tableId + "/" + newLobId);
++                    }
++                    return lob;
++                } finally {
++                    mvStore.deregisterVersionUsage(txCounter);
++                }
++            });
+@@ -379,29 +397,31 @@
+-        if (mvStore.isClosed()) {
+-            return;
+-        }
+-        MVStore.TxCounter txCounter = mvStore.registerVersionUsage();
+-        try {
+-            if (isTemporaryLob(tableId)) {
+-                final Iterator<Long> iter = tempLobMap.keyIterator(0L);
+-                while (iter.hasNext()) {
+-                    long lobId = iter.next();
+-                    doRemoveLob(tableId, lobId);
+-                }
+-                tempLobMap.clear();
+-            } else {
+-                final ArrayList<Long> list = new ArrayList<>();
+-                // This might not be very efficient, but should only happen
+-                // on DROP TABLE.
+-                // To speed it up, we would need yet another map.
+-                for (Entry<Long, BlobMeta> e : lobMap.entrySet()) {
+-                    BlobMeta value = e.getValue();
+-                    if (value.tableId == tableId) {
+-                        list.add(e.getKey());
+-                    }
+-                }
+-                for (long lobId : list) {
+-                    doRemoveLob(tableId, lobId);
+-                }
+-            }
+-        } finally {
+-            mvStore.deregisterVersionUsage(txCounter);
++        synchronized (database.getLobSyncObject()) {
++            if (mvStore.isClosed()) {
++                return;
++            }
++            MVStore.TxCounter txCounter = mvStore.registerVersionUsage();
++            try {
++                if (isTemporaryLob(tableId)) {
++                    final Iterator<Long> iter = tempLobMap.keyIterator(0L);
++                    while (iter.hasNext()) {
++                        long lobId = iter.next();
++                        doRemoveLob(tableId, lobId);
++                    }
++                    tempLobMap.clear();
++                } else {
++                    final ArrayList<Long> list = new ArrayList<>();
++                    // This might not be very efficient, but should only happen
++                    // on DROP TABLE.
++                    // To speed it up, we would need yet another map.
++                    for (Entry<Long, BlobMeta> e : lobMap.entrySet()) {
++                        BlobMeta value = e.getValue();
++                        if (value.tableId == tableId) {
++                            list.add(e.getKey());
++                        }
++                    }
++                    for (long lobId : list) {
++                        doRemoveLob(tableId, lobId);
++                    }
++                }
++            } finally {
++                mvStore.deregisterVersionUsage(txCounter);
++            }
+@@ -440,13 +460,15 @@
+-        MVStore.TxCounter txCounter = mvStore.registerVersionUsage();
+-        try {
+-            LobRemovalInfo lobRemovalInfo;
+-            while ((lobRemovalInfo = pendingLobRemovals.poll()) != null
+-                    && lobRemovalInfo.version < oldestVersionToKeep) {
+-                doRemoveLob(lobRemovalInfo.mapId, lobRemovalInfo.lobId);
+-            }
+-            if (lobRemovalInfo != null) {
+-                pendingLobRemovals.offer(lobRemovalInfo);
+-            }
+-        } finally {
+-            // we can not call deregisterVersionUsage() due to a possible infinite recursion
+-            mvStore.decrementVersionUsageCounter(txCounter);
++        synchronized (database.getLobSyncObject()) {
++            MVStore.TxCounter txCounter = mvStore.registerVersionUsage();
++            try {
++                LobRemovalInfo lobRemovalInfo;
++                while ((lobRemovalInfo = pendingLobRemovals.poll()) != null
++                        && lobRemovalInfo.version < oldestVersionToKeep) {
++                    doRemoveLob(lobRemovalInfo.mapId, lobRemovalInfo.lobId);
++                }
++                if (lobRemovalInfo != null) {
++                    pendingLobRemovals.offer(lobRemovalInfo);
++                }
++            } finally {
++                // we can not call deregisterVersionUsage() due to a possible infinite recursion
++                mvStore.decrementVersionUsageCounter(txCounter);
++            }
+@@ -457,28 +479,36 @@
+-        if (TRACE) {
+-            trace("remove " + tableId + "/" + lobId);
+-        }
+-        byte[] streamStoreId;
+-        if (isTemporaryLob(tableId)) {
+-            streamStoreId = tempLobMap.remove(lobId);
+-            if (streamStoreId == null) {
+-                // already removed
+-                return;
+-            }
+-        } else {
+-            BlobMeta value = lobMap.remove(lobId);
+-            if (value == null) {
+-                // already removed
+-                return;
+-            }
+-            streamStoreId = value.streamStoreId;
+-        }
+-        BlobReference key = new BlobReference(streamStoreId, lobId);
+-        Value existing = refMap.remove(key);
+-        assert existing != null;
+-        // check if there are more entries for this streamStoreId
+-        key = new BlobReference(streamStoreId, 0L);
+-        BlobReference value = refMap.ceilingKey(key);
+-        boolean hasMoreEntries = false;
+-        if (value != null) {
+-            byte[] s2 = value.streamStoreId;
+-            if (Arrays.equals(streamStoreId, s2)) {
++        mvStore.executeAtomicMapUpdate(() -> {
++            if (TRACE) {
++                trace("remove " + tableId + "/" + lobId);
++            }
++            byte[] streamStoreId;
++            if (isTemporaryLob(tableId)) {
++                streamStoreId = tempLobMap.remove(lobId);
++                if (streamStoreId == null) {
++                    // already removed
++                    return;
++                }
++            } else {
++                BlobMeta value = lobMap.remove(lobId);
++                if (value == null) {
++                    // already removed
++                    return;
++                }
++                streamStoreId = value.streamStoreId;
++            }
++            BlobReference key = new BlobReference(streamStoreId, lobId);
++            Value existing = refMap.remove(key);
++            assert existing != null;
++            // check if there are more entries for this streamStoreId
++            key = new BlobReference(streamStoreId, 0L);
++            BlobReference value = refMap.ceilingKey(key);
++            boolean hasMoreEntries = false;
++            if (value != null) {
++                byte[] s2 = value.streamStoreId;
++                if (Arrays.equals(streamStoreId, s2)) {
++                    if (TRACE) {
++                        trace("  stream still needed in lob " + value.lobId);
++                    }
++                    hasMoreEntries = true;
++                }
++            }
++            if (!hasMoreEntries) {
+@@ -486,11 +516,5 @@
+-                    trace("  stream still needed in lob " + value.lobId);
+-                }
+-                hasMoreEntries = true;
+-            }
+-        }
+-        if (!hasMoreEntries) {
+-            if (TRACE) {
+-                trace("  remove stream " + StringUtils.convertBytesToHex(streamStoreId));
+-            }
+-            streamStore.remove(streamStoreId);
+-        }
++                    trace("  remove stream " + StringUtils.convertBytesToHex(streamStoreId));
++                }
++                streamStore.remove(streamStoreId);
++            }
++        });
