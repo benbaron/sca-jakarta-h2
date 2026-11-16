@@ -1,16 +1,24 @@
 ---
-plan_version: 488
+plan_version: 490
 active_phase: P27
-active_slice: P27-C6
-active_status: BLOCKED
+active_slice: P27-C7
+active_status: VERIFYING
 active_branch: codex/P27-C6-banking-chart-labels
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/430
-active_head: 91579c0dd8c01f3831a63cdf7b9828f66854632b
-next_action: "Repair the reproduced native-snapshot LOB close failure in a separate P27-C7 correction from current main, preserving evidence/oracles. Then rebase and fully revalidate #430. This local-only blocker receipt intentionally remains ahead of the published UI head; do not merge #430 as verified."
+active_head: 2d9564aa3803bea6422c71ec138052f9b803ad1d
+next_action: "Finish combined clean/repeat/display verification, packaged-driver and classpath launch checks, publish the normal merge to #430 and inspect exact-head CI. C6 UI and C7 storage repairs are both included; no merge to main performed."
 
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C7 native LOB snapshot repair — owner authorized
+
+Owner explicitly requests repair and update of PR #430. Start from current main `01f811dd` on `codex/P27-C7-native-lob-integrity`; preserve C6 branch/PR and local blocker receipt. This owner direction authorizes integrating the independent correction into existing #430 by normal merge after review, superseding the earlier requirement to merge a separate prerequisite PR first. No unrelated slices. Required reading/inspection: [C7 evidence/contract](P27-C7-native-snapshot-lob-blocker.md), C5/C2 native contracts, DatabaseTransferService/H2NativeSnapshot, unchanged concurrency/64-generation/recovery tests and exact H2 sources. Baseline compile passes (32.6s); four existing snapshot tests pass (37.0s), which does not invalidate frozen failure. Native read-only map inspection of copies of snapshots 0–14 confirms archive 14 has temp LOB 95 without its lobRef entry; originals remain untouched. Investigate engine-level coherent boundaries including concurrent temporary LOB creation. No assertions, close checks or complete-value oracles may be weakened. Selected boundary is the explicit attributed H2 LOB patch described in [C7 coordination](P27-C7-h2-lob-coordination.md); the application namespace rule has a deliberate third-party source exception for these two H2 implementation classes. The newer-engine-only diagnostic fails immediately with Chunk 7 not found and is rejected. Baseline barrier probe using original adapter/engine fails with Snapshot must wait for complete parameter-LOB operation; candidate 7 tests pass, and expanded 20-test recovery gate passes (02:30), including preserved-invalid-image rejection. Final version/classpath/legacy gate and longer native probes remain.
+
+### Combined C6/C7 verification handoff
+
+Owner-authorized repair commit `2d9564aa3803bea6422c71ec138052f9b803ad1d` is being normally merged into the existing C6/#430 branch, preserving all Banking chart labels and Active Yes/No columns. Only PLAN/C7 handoff documents conflicted; resolved around the explicit integrated-PR direction. The following C6 blocker history is preserved as evidence, superseded by this selected C7 VERIFYING state. Local core/recovery gate 27 tests passes (02:35), and both 50-run native batches pass; combined full/repeat/display/packaging/CI gates remain mandatory. No test retries, assertion weakening, data reconstruction or user-database mutation.
 
 ### P27-C6 Banking account chart identity — owner-directed correction
 
@@ -23,6 +31,7 @@ C6 is BLOCKED; PR #430 stays draft/open, unmerged, and its description records t
 Publication: [draft PR #430](https://github.com/benbaron/sca-jakarta-h2/pull/430), branch `codex/P27-C6-banking-chart-labels`, reviewed product/test commit `751f1ab1283b8cf852ac488a506b868d8b3524f9`, tree `d544912e19bffdf2fba1e2128b0ddcde749c4c35`. This follow-up changes only PLAN. Final local logs: `/tmp/p27-c6-display.log` (18 tests, 01:50), `/tmp/p27-c6-final-display.log` (10 tests, 01:04), zero failures/errors/skips. Full clean verify and exact-final-head CI remain pending. No known failing gate remains; status stays VERIFYING until merged.
 
 Current main `01f811dd` includes merged P19-C1/#429. Owner requests the chart information missing from Banking's account selector and an Active Yes/No column in the Configured bank accounts list. This is a presentation correction adjacent to P27-C4: display chart name/version/ID and account ID beside existing code/name, and show complete selected details at narrow width. Fetch chart metadata before detached UI rendering; keep existing company-owned account choices, inactive/history handling, mutation authorization and stable-ID save semantics. Never relink, activate a chart or rewrite history automatically. Required reading: P27-C4 contract, P19-C1 contract, interface-operation-matrix, ui_design_rules and ui/editor-guidelines; inspect BankingPanel, AccountLookupService, BankConfigurationService and existing banking tests. Baseline compile passes (27.7s); 12 baseline tests pass (01:03). Initial backend-focused gate passes 15 tests with one expected headless UI skip; the executed 18-test displayed banking authorization/SCLX gate passes without skips. Final display/table-state gate passes 10 tests, zero failures/errors/skips (01:04), including actual popup chart labels, detached/foreign-link handling, selected detail wrapping, configured Active Yes/No and preserved stored links. Existing table identity/column keys are preserved; new chart/active columns participate in standard table state. Full clean verification and exact-head CI remain pending. [C6 contract](P27-C6-banking-chart-labels.md) contains manual notes. No schema/dependency change or later-slice implementation.
+
 
 ### P19-C1 chart selection location — owner-directed correction
 
@@ -2700,3 +2709,9 @@ Focused accounting regressions passed **25 tests, zero failures/errors and six e
 Published `codex/P26-S6B-merchant-settlement` and opened draft [PR #386](https://github.com/benbaron/sca-jakarta-h2/pull/386) against current `main`. The PR records the accounting boundary, scenario-level unit coverage, local clean/actual-JavaFX evidence and disposable-company review steps. This publication-ledger successor follows verified head `c1b24222e054062869ea247f5fec574fe296eb95`; confirm the resulting remote head and tree after pushing it, then inspect exact-head CI. No GitHub CI success or owner desktop result is claimed at this checkpoint.
 
 Final published head `fb7f78131a8ce935dd832f3168112dff3c14234c` and its fetched remote ref match exactly; both resolve tree `aca8c8b3e029ab563ddd51491e7c2a24fab5cb9f`. Exact-head [Maven PR Tests run 40132078817](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40132078817), job `120985945930`, completed successfully: clean headless verification, repeated tests and production JavaFX route compliance all passed; failed-test publication was correctly skipped. The PR description records this evidence. This final PLAN evidence remains local so the green published head is not replaced only by a documentation update. P26-S6B remains VERIFYING pending owner review/acceptance and merge; no human desktop result is inferred.
+
+### P27-C7 checkpoint refinement evidence
+
+The first backup-only LOB monitor is rejected: 50 concurrency runs pass but the first original 64-generation run fails on copy close, generation 3 (`/tmp/p27-c7-original-50.log`; native evidence `/workspace/p27-c7-original-50/run-16972419623038673674`). Original archive graph is coherent (17 temp / 4 permanent / 21 refs); copy lifecycle persists 17 dangling temp records with only 4 refs. Source closes coherently. Revised paired-map groups use MVStore's existing checkpoint lock and suppress reentrant auto-checkpoint until the group completes; streaming data allocation stays incremental. Revised focused gate 9 tests passes, and **50 unchanged concurrency tests / 1,200 snapshots** plus **50 unchanged original 64-generation tests / 3,200 snapshots** both finish with exit 0. Logs/source/class hashes are retained under `/workspace/p27-c7-evidence`. No original assertions or test bodies changed. Vendor namespace exception includes exactly LobStorageMap and MVStore, with attributed upstream hashes, reviewable patches and embedded MPL license. Final focused/combined full/packaging/UI/CI gates remain.
+
+Final C7 focused recovery gate: **27 tests, zero failures/errors/skips (02:35)**, `/tmp/p27-c7-atomic-recovery.log`. Both longer native batches pass with unchanged original test bodies: 50 concurrency / 1,200 snapshots and 50 original 64-generation / 3,200 snapshots. Next integrate by normal merge into #430 and validate the combined source, packaged driver/classpath and UI before accepting new exact-head CI.

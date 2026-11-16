@@ -23,3 +23,5 @@ Earlier broad scratch probes were interrupted by an unbounded synthetic stress w
 Backup still creates the same native ZIP and Restore still validates an isolated new database copy before optional switching. H2/Flyway versions, schema, permissions, source data and existing archives are unchanged. Existing stale archives are not reconstructed by this correction. Physical persistence can wait during the native copy; current transactions are not closed or rolled back.
 
 On a disposable database copy, create and save entries, back up while the application remains open, restore to a different path, and check the newest entries plus historical data after restart. Keep the original database and prior application available. This focused recovery check does not reopen the separately deferred native acceptance list. Actual focused/full/repeated/CI results are recorded in PLAN.
+
+P27-C7 extends this physical boundary with complete LOB-operation coordination; the store lock alone does not freeze separate LOB metadata-map changes. See [C7](P27-C7-h2-lob-coordination.md) for the explicit bundled H2 patch, runtime/classpath guards and unchanged native format.
