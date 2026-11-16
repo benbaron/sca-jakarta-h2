@@ -1,11 +1,11 @@
 ---
-plan_version: 490
+plan_version: 491
 active_phase: P27
 active_slice: P27-C7
 active_status: VERIFYING
 active_branch: codex/P27-C6-banking-chart-labels
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/430
-active_head: 2d9564aa3803bea6422c71ec138052f9b803ad1d
+active_head: 3fd924407abdae42fb6ff1187e15712f6e9b3f9c
 next_action: "Finish combined clean/repeat/display verification, packaged-driver and classpath launch checks, publish the normal merge to #430 and inspect exact-head CI. C6 UI and C7 storage repairs are both included; no merge to main performed."
 
 ---
@@ -17,6 +17,8 @@ next_action: "Finish combined clean/repeat/display verification, packaged-driver
 Owner explicitly requests repair and update of PR #430. Start from current main `01f811dd` on `codex/P27-C7-native-lob-integrity`; preserve C6 branch/PR and local blocker receipt. This owner direction authorizes integrating the independent correction into existing #430 by normal merge after review, superseding the earlier requirement to merge a separate prerequisite PR first. No unrelated slices. Required reading/inspection: [C7 evidence/contract](P27-C7-native-snapshot-lob-blocker.md), C5/C2 native contracts, DatabaseTransferService/H2NativeSnapshot, unchanged concurrency/64-generation/recovery tests and exact H2 sources. Baseline compile passes (32.6s); four existing snapshot tests pass (37.0s), which does not invalidate frozen failure. Native read-only map inspection of copies of snapshots 0–14 confirms archive 14 has temp LOB 95 without its lobRef entry; originals remain untouched. Investigate engine-level coherent boundaries including concurrent temporary LOB creation. No assertions, close checks or complete-value oracles may be weakened. Selected boundary is the explicit attributed H2 LOB patch described in [C7 coordination](P27-C7-h2-lob-coordination.md); the application namespace rule has a deliberate third-party source exception for these two H2 implementation classes. The newer-engine-only diagnostic fails immediately with Chunk 7 not found and is rejected. Baseline barrier probe using original adapter/engine fails with Snapshot must wait for complete parameter-LOB operation; candidate 7 tests pass, and expanded 20-test recovery gate passes (02:30), including preserved-invalid-image rejection. Final version/classpath/legacy gate and longer native probes remain.
 
 ### Combined C6/C7 verification handoff
+
+Published normal merge: `3fd924407abdae42fb6ff1187e15712f6e9b3f9c`, tree `ae309031eaece6e0c3da5519ea1196c2b2335919`, in [PR #430](https://github.com/benbaron/sca-jakarta-h2/pull/430), retaining original UI commits and the blocker receipt. This following commit changes only PLAN. Combined Java-17 clean/repeat/display, packaged-classpath/license verification and actual launcher startup are pending; accept only exact-final-head CI. Do not merge as verified until those gates pass.
 
 Owner-authorized repair commit `2d9564aa3803bea6422c71ec138052f9b803ad1d` is being normally merged into the existing C6/#430 branch, preserving all Banking chart labels and Active Yes/No columns. Only PLAN/C7 handoff documents conflicted; resolved around the explicit integrated-PR direction. The following C6 blocker history is preserved as evidence, superseded by this selected C7 VERIFYING state. Local core/recovery gate 27 tests passes (02:35), and both 50-run native batches pass; combined full/repeat/display/packaging/CI gates remain mandatory. No test retries, assertion weakening, data reconstruction or user-database mutation.
 
