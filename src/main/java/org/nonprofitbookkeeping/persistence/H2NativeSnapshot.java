@@ -30,7 +30,32 @@ final class H2NativeSnapshot
         {
             throw new SQLException("Native database backup requires file-mode H2 storage.");
         }
-        store.commit();
+        String engineVersion = connection.getMetaData().getDatabaseProductVersion();
+        if (!(engineVersion.equals("2.4.240") || engineVersion.startsWith("2.4.240 ")))
+        {
+            throw new SQLException("Bundled LOB snapshot coordination requires H2 2.4.240; found " + engineVersion);
+        }
+        try
+        {
+            if (((org.h2.mvstore.db.LobStorageMap) session.getDatabase().getLobStorage()).getSnapshotCoordinationVersion() != 1
+                    || store.getAtomicMapUpdateVersion() != 1)
+            {
+                throw new SQLException("Bundled H2 LOB snapshot coordination is unavailable.");
+            }
+        }
+        catch (LinkageError ex)
+        {
+            throw new SQLException("Bundled H2 LOB snapshot coordination is unavailable; check the application classpath.", ex);
+        }
+        synchronized (session.getDatabase().getLobSyncObject())
+        {
+            store.commit();
+            writeStore(store, output);
+        }
+    }
+
+    private static void writeStore(MVStore store, OutputStream output) throws IOException
+    {
         try (ZipOutputStream archive = new ZipOutputStream(output))
         {
             IOException[] failure = new IOException[1];

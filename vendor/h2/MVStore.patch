@@ -1,0 +1,56 @@
+--- h2-2.4.240/org/h2/mvstore/MVStore.java
++++ sca-patched/org/h2/mvstore/MVStore.java
+@@ -4,0 +5,3 @@
++ */
++/* SCA patch: prevent physical checkpoints inside atomic LOB metadata updates.
++ * Upstream H2 2.4.240; see vendor/h2/README.md and doc/P27-C7-h2-lob-coordination.md.
+@@ -32,0 +36 @@
++import java.util.function.Supplier;
+@@ -163,0 +168,3 @@
++    // Accessed only by the thread holding storeLock. Reentrant auto-commit must wait for a complete map group.
++    private int atomicMapUpdateDepth;
++
+@@ -894,0 +902,38 @@
++    /** Identifies the bundled SCA atomic-map checkpoint coordination patch. */
++    public int getAtomicMapUpdateVersion() {
++        return 1;
++    }
++
++    /**
++     * Execute one complete multi-map metadata update under the checkpoint lock.
++     * Nested auto-commit is deferred until the outermost successful update completes.
++     * Application exceptions propagate without invoking the live store's panic handler.
++     */
++    public <T> T executeAtomicMapUpdate(Supplier<T> operation) {
++        storeLock.lock();
++        atomicMapUpdateDepth++;
++        boolean success = false;
++        try {
++            T result = operation.get();
++            success = true;
++            return result;
++        } finally {
++            atomicMapUpdateDepth--;
++            try {
++                if (success && atomicMapUpdateDepth == 0 && saveNeeded) {
++                    commit();
++                }
++            } finally {
++                storeLock.unlock();
++            }
++        }
++    }
++
++    /** Void form of the atomic metadata-update boundary. */
++    public void executeAtomicMapUpdate(Runnable operation) {
++        executeAtomicMapUpdate(() -> {
++            operation.run();
++            return null;
++        });
++    }
++
+@@ -913 +958 @@
+-        return !storeLock.isHeldByCurrentThread() || !storeOperationInProgress.get();
++        return !storeLock.isHeldByCurrentThread() || atomicMapUpdateDepth == 0 && !storeOperationInProgress.get();
+@@ -1382,0 +1428 @@
++                (!storeLock.isHeldByCurrentThread() || atomicMapUpdateDepth == 0) &&

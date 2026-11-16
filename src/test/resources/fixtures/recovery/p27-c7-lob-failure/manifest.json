@@ -1,0 +1,9 @@
+{
+  "provenance": "Unmodified synthetic concurrent-test native archive retained from the first failed diagnostic run (run 3); not an application V92 image.",
+  "engine": "H2 2.4.240",
+  "runtime": "Temurin 17.0.17+10 with assertions enabled",
+  "ci_run": 43776948380,
+  "source_manifest": "/workspace/p27-c6-blocker-reproduction/manifest.json",
+  "sha256": "87b544575570c44099597cc73750a5fd4d8e2a09dbdaddaa4daca14c2ad9c8e5",
+  "observed": "tempLobMap contains LOB 95 without a lobRef record; SELECT full CLOBs succeeds, connection close raises LobStorageMap.doRemoveLob AssertionError; never repair this fixture."
+}

@@ -1,16 +1,20 @@
 ---
-plan_version: 485
-active_phase: P19
-active_slice: P19-C1
+plan_version: 489
+active_phase: P27
+active_slice: P27-C7
 active_status: VERIFYING
-active_branch: codex/P19-C1-chart-selection-location
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/429
-active_head: d6a793d7bb4ec1fc95630e63d892bebfe150dc4f
-next_action: "Finish full clean verification and exact-final-head CI for draft PR #429, then owner review/merge. Named chart browsing and activation are implemented; no later slice advancement before merge."
+active_branch: codex/P27-C7-native-lob-integrity
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/430
+active_head: 01f811dd
+next_action: "Repair the reproduced native LOB snapshot inconsistency on this fresh main-based branch, then integrate by normal merge into the existing #430 branch and fully verify the combined PR."
 
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C7 native LOB snapshot repair — owner authorized
+
+Owner explicitly requests repair and update of PR #430. Start from current main `01f811dd` on `codex/P27-C7-native-lob-integrity`; preserve C6 branch/PR and local blocker receipt. This owner direction authorizes integrating the independent correction into existing #430 by normal merge after review, superseding the earlier requirement to merge a separate prerequisite PR first. No unrelated slices. Required reading/inspection: [C7 evidence/contract](P27-C7-native-snapshot-lob-blocker.md), C5/C2 native contracts, DatabaseTransferService/H2NativeSnapshot, unchanged concurrency/64-generation/recovery tests and exact H2 sources. Baseline compile passes (32.6s); four existing snapshot tests pass (37.0s), which does not invalidate frozen failure. Native read-only map inspection of copies of snapshots 0–14 confirms archive 14 has temp LOB 95 without its lobRef entry; originals remain untouched. Investigate engine-level coherent boundaries including concurrent temporary LOB creation. No assertions, close checks or complete-value oracles may be weakened. Selected boundary is the explicit attributed H2 LOB patch described in [C7 coordination](P27-C7-h2-lob-coordination.md); the application namespace rule has a deliberate third-party source exception for these two H2 implementation classes. The newer-engine-only diagnostic fails immediately with Chunk 7 not found and is rejected. Baseline barrier probe using original adapter/engine fails with Snapshot must wait for complete parameter-LOB operation; candidate 7 tests pass, and expanded 20-test recovery gate passes (02:30), including preserved-invalid-image rejection. Final version/classpath/legacy gate and longer native probes remain.
 
 ### P19-C1 chart selection location — owner-directed correction
 
@@ -2688,3 +2692,9 @@ Focused accounting regressions passed **25 tests, zero failures/errors and six e
 Published `codex/P26-S6B-merchant-settlement` and opened draft [PR #386](https://github.com/benbaron/sca-jakarta-h2/pull/386) against current `main`. The PR records the accounting boundary, scenario-level unit coverage, local clean/actual-JavaFX evidence and disposable-company review steps. This publication-ledger successor follows verified head `c1b24222e054062869ea247f5fec574fe296eb95`; confirm the resulting remote head and tree after pushing it, then inspect exact-head CI. No GitHub CI success or owner desktop result is claimed at this checkpoint.
 
 Final published head `fb7f78131a8ce935dd832f3168112dff3c14234c` and its fetched remote ref match exactly; both resolve tree `aca8c8b3e029ab563ddd51491e7c2a24fab5cb9f`. Exact-head [Maven PR Tests run 40132078817](https://github.com/benbaron/sca-jakarta-h2/actions/runs/40132078817), job `120985945930`, completed successfully: clean headless verification, repeated tests and production JavaFX route compliance all passed; failed-test publication was correctly skipped. The PR description records this evidence. This final PLAN evidence remains local so the green published head is not replaced only by a documentation update. P26-S6B remains VERIFYING pending owner review/acceptance and merge; no human desktop result is inferred.
+
+### P27-C7 checkpoint refinement evidence
+
+The first backup-only LOB monitor is rejected: 50 concurrency runs pass but the first original 64-generation run fails on copy close, generation 3 (`/tmp/p27-c7-original-50.log`; native evidence `/workspace/p27-c7-original-50/run-16972419623038673674`). Original archive graph is coherent (17 temp / 4 permanent / 21 refs); copy lifecycle persists 17 dangling temp records with only 4 refs. Source closes coherently. Revised paired-map groups use MVStore's existing checkpoint lock and suppress reentrant auto-checkpoint until the group completes; streaming data allocation stays incremental. Revised focused gate 9 tests passes, and **50 unchanged concurrency tests / 1,200 snapshots** plus **50 unchanged original 64-generation tests / 3,200 snapshots** both finish with exit 0. Logs/source/class hashes are retained under `/workspace/p27-c7-evidence`. No original assertions or test bodies changed. Vendor namespace exception includes exactly LobStorageMap and MVStore, with attributed upstream hashes, reviewable patches and embedded MPL license. Final focused/combined full/packaging/UI/CI gates remain.
+
+Final C7 focused recovery gate: **27 tests, zero failures/errors/skips (02:35)**, `/tmp/p27-c7-atomic-recovery.log`. Both longer native batches pass with unchanged original test bodies: 50 concurrency / 1,200 snapshots and 50 original 64-generation / 3,200 snapshots. Next integrate by normal merge into #430 and validate the combined source, packaged driver/classpath and UI before accepting new exact-head CI.
