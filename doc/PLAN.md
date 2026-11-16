@@ -1,18 +1,24 @@
 ---
-plan_version: 487
+plan_version: 488
 active_phase: P27
 active_slice: P27-C6
-active_status: VERIFYING
+active_status: BLOCKED
 active_branch: codex/P27-C6-banking-chart-labels
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/430
-active_head: 751f1ab1283b8cf852ac488a506b868d8b3524f9
-next_action: "Finish Java-17 clean verification and exact-final-head CI for draft PR #430; then owner review/merge. No later-slice advancement before merge."
+active_head: 91579c0dd8c01f3831a63cdf7b9828f66854632b
+next_action: "Repair the reproduced native-snapshot LOB close failure in a separate P27-C7 correction from current main, preserving evidence/oracles. Then rebase and fully revalidate #430. This local-only blocker receipt intentionally remains ahead of the published UI head; do not merge #430 as verified."
 
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C6 Banking account chart identity — owner-directed correction
+
+Final blocker receipt (local-only documentation): published head `91579c0dd8c01f3831a63cdf7b9828f66854632b`, tree `bbb771bf99af3d0d749b66372f573d4500b1bb85`, matches native readback/PR metadata; product/test commit `751f1ab1`. Local Java-17 clean verify **1,220 / zero failures/errors / 147 expected headless skips, BUILD SUCCESS (13:47), exit 0** (`/tmp/p27-c6-clean.log`). Final displayed gate **10 / zero failures/errors/skips (01:04)**; previous authorization/SCLX displayed gate 18 passes. Actual component/popup visually inspected using labelled synthetic data (`/tmp/p27-c6-{banking,popup}.png`); no user database was used.
+
+[Exact-head CI 43776948380](https://github.com/benbaron/sca-jakarta-h2/actions/runs/43776948380): Windows job `133005329680` passes; Linux job `133005329859` passes clean verification but repeated suite errors **1,220 / zero assertion failures / one error / 147 skips** in unchanged `H2NativeSnapshotTest.concurrentAtomicUpdatesProduceWholeSnapshotsContainingPriorCommits:134`. Closing a restored copy raises SQLException GeneralError caused by AssertionError in H2 LobStorageMap.doRemoveLob:477. Later display stages are skipped. Artifact `14186414310` is preserved at `/workspace/attachments/15f7fee7-739a-47ff-9ab3-06254bcb0be7/p27-c6-failed-tests.zip`. Native snapshot implementation/test are unchanged from main; this is not a Banking-label regression. A bounded standalone diagnostic with Java-17 `-ea` reproduces the identical failure on run 3 and stops; native evidence (33 files, 7.4MB) is retained at `/workspace/p27-c6-blocker-reproduction/concurrent-13022097421510865960`, with manifest/hashes, CI reports, probe source and log in the parent. Latest archive is snapshot-14.zip. Successful diagnostic directories alone were cleaned. No failed native files were reopened/reconstructed, assertions weakened or CI retried.
+
+C6 is BLOCKED; PR #430 stays draft/open, unmerged, and its description records the failure. Per AGENTS scope fence §3.3.6, substantial independent prerequisites require marking the selected slice blocked and stopping. Candidate [P27-C7 native LOB correction](P27-C7-native-snapshot-lob-blocker.md) must repair storage integrity on a fresh current-main branch before C6 rebase/full/CI revalidation. Earlier pending/success statements below are historical and do not supersede the failed CI. This local-only blocker receipt changes no published implementation bytes; all requested UI/Active-column changes are already published. Broad native acceptance remains deferred.
 
 Publication: [draft PR #430](https://github.com/benbaron/sca-jakarta-h2/pull/430), branch `codex/P27-C6-banking-chart-labels`, reviewed product/test commit `751f1ab1283b8cf852ac488a506b868d8b3524f9`, tree `d544912e19bffdf2fba1e2128b0ddcde749c4c35`. This follow-up changes only PLAN. Final local logs: `/tmp/p27-c6-display.log` (18 tests, 01:50), `/tmp/p27-c6-final-display.log` (10 tests, 01:04), zero failures/errors/skips. Full clean verify and exact-final-head CI remain pending. No known failing gate remains; status stays VERIFYING until merged.
 
