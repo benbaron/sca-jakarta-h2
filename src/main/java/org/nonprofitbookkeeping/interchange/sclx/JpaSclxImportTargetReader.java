@@ -170,30 +170,31 @@ final class JpaSclxImportTargetReader implements SclxImportTargetReader
             EntityManager em, Company company)
     {
         ChartOfAccounts chart = company.getActiveChartOfAccounts();
-        if (chart == null)
-        {
-            return Map.of();
-        }
         List<Account> values = em.createQuery("""
                 select a from Account a
-                where a.chart = :chart
-                order by a.code
+                where a.chart.company = :company
+                order by a.chart.portableId, a.code
                 """, Account.class)
-                .setParameter("chart", chart)
+                .setParameter("company", company)
                 .getResultList();
         Map<String, SclxImportTargetSnapshot.TargetAccount> result = new LinkedHashMap<>();
+        SclxJsonSerializer serializer = new SclxJsonSerializer();
         for (Account account : values)
         {
             String code = account.getCode();
-            result.put(code, new SclxImportTargetSnapshot.TargetAccount(
-                    SclxPortableIdentity.account(company.getCode(), code),
+            var fact = new SclxImportTargetSnapshot.TargetAccount(
+                    SclxPortableIdentity.account(company.getCode(), account),
                     code,
                     AccountClassification.portableType(account),
                     account.getSubtype() == null ? null : account.getSubtype().name(),
                     account.getNormalBalance().name(),
                     account.isPosting(),
                     account.isActive(),
-                    String.valueOf(account.getId())));
+                    String.valueOf(account.getId()),
+                    serializer.accounts(List.of(
+                            SclxCoreSnapshotAssembler.mapAccount(company.getCode(), company.getDefaultCurrency(), account))).get(0));
+            result.put(fact.portableId(), fact);
+            if (SclxChartScope.sameChart(account.getChart(), chart)) result.put(code, fact);
         }
         return result;
     }

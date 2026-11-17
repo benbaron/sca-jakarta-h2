@@ -4,7 +4,8 @@ package org.nonprofitbookkeeping.interchange.sclx;
 public enum SclxExportSection
 {
     COMPANY(Support.INCLUDED, "organization", "Selected company identity and fiscal settings"),
-    CHART_OF_ACCOUNTS(Support.INCLUDED, "chartOfAccounts", "Active company chart and accounts"),
+    CHART_OF_ACCOUNTS(Support.INCLUDED, "chartOfAccounts", "All company-owned chart accounts, including inactive accounts"),
+    CHARTS(Support.EXTENSION, true, "extensions.scaJakartaH2.charts", "All company charts, statuses, selection and account membership"),
     FUNDS(Support.INCLUDED, "funds", "Company funds and hierarchy"),
     BUDGETS(Support.INCLUDED, "budgets", "Budget categories, plans, and lines"),
     ACTIVITIES(Support.EXTENSION, true, "extensions.scaJakartaH2.activities", "Company activities"),

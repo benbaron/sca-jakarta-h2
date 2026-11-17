@@ -16,6 +16,15 @@ public class ChartOfAccounts
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "portable_id", nullable = false, unique = true, updatable = false)
+    private java.util.UUID portableId;
+
+    @PrePersist
+    private void assignPortableId()
+    {
+        if (portableId == null) portableId = java.util.UUID.randomUUID();
+    }
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private Company company;
@@ -35,6 +44,9 @@ public class ChartOfAccounts
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
+
+    public java.util.UUID getPortableId() { return portableId; }
+    public void setPortableId(java.util.UUID value) { this.portableId = value; }
 
     public Long getId() { return id; }
     public Company getCompany() { return company; }

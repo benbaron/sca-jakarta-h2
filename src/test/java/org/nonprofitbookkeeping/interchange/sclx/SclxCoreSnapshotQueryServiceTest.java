@@ -25,6 +25,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SclxCoreSnapshotQueryServiceTest
 {
@@ -32,7 +33,7 @@ class SclxCoreSnapshotQueryServiceTest
     Path tempDir;
 
     @Test
-    void loadsOnlySelectedCompanyActiveChartAndCompanyFunds()
+    void loadsAllSelectedCompanyChartsAndCompanyFunds()
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("selected-company-snapshot")))
         {
@@ -42,7 +43,7 @@ class SclxCoreSnapshotQueryServiceTest
                     .query(Instant.parse("2026-07-26T21:45:00Z"));
 
             assertEquals("ALPHA", document.organization().code());
-            assertEquals(List.of("1010", "6100", "6200"),
+            assertEquals(List.of("1010", "6100", "6200", "9998"),
                     document.chartOfAccounts().stream()
                             .map(SclxExportDocument.Account::code)
                             .toList());
@@ -73,7 +74,7 @@ class SclxCoreSnapshotQueryServiceTest
     }
 
     @Test
-    void rejectsSelectedCompanyWithoutActiveChart()
+    void exportsCompanyWithoutSelectedChart()
     {
         try (Jpa jpa = new Jpa(tempDir.resolve("missing-active-chart")))
         {
@@ -85,7 +86,7 @@ class SclxCoreSnapshotQueryServiceTest
             }
 
             SclxCoreSnapshotQueryService service = new SclxCoreSnapshotQueryService(jpa, () -> "NOCHART");
-            assertThrows(NullPointerException.class, () -> service.query(Instant.EPOCH));
+            assertTrue(service.query(Instant.EPOCH).chartOfAccounts().isEmpty());
         }
     }
 

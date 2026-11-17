@@ -43,7 +43,7 @@ public final class SclxImportPreviewService
 {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Set<String> RECOGNIZED_EXTENSION_KEYS = Set.of(
-            "activeChartName", "activeChartVersion", "activities", "counterparties",
+            "activeChartName", "activeChartVersion", "charts", "activities", "counterparties",
             "supplementalDetails", "fundTransfers", "transactionBudgets", "budgetMetadata", "budgetCategories", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "fixedAssets", "inventory", "propertyCustody",
             "periodClose", "auditHistory", "nmrPolicies");
@@ -541,6 +541,9 @@ public final class SclxImportPreviewService
             addEntity(organization, "organizationId", "ORGANIZATION", "organizations",
                     "$.organization", counts, entities, messages);
         }
+        addArray(root.path("extensions").path("scaJakartaH2").path(SclxCharts.KEY).get("charts"),
+                "chartId", SclxCharts.TYPE, "charts", "$.extensions.scaJakartaH2.charts.charts",
+                counts, entities, messages);
         addArray(root.get("chartOfAccounts"), "accountId", "ACCOUNT", "accounts",
                 "$.chartOfAccounts", counts, entities, messages);
         addArray(root.get("funds"), "fundId", "FUND", "funds",
@@ -655,6 +658,19 @@ public final class SclxImportPreviewService
                                 + entity.externalId() + ".", true));
             }
             SclxImportTargetSnapshot.IdentityFact local = target.identities().get(key);
+            if ("ACCOUNT".equals(entity.entityType()))
+            {
+                var retainedIdentity = local;
+                var account = retainedIdentity == null ? target.accountsByCode().get(entity.externalId())
+                        : target.accountsByCode().values().stream()
+                            .filter(a -> a.localEntityId().equals(retainedIdentity.localEntityId())).findFirst().orElse(null);
+                if (account != null && account.content() != null && SclxCharts.qualifiedAccount(entity.externalId()))
+                {
+                    String actualHash = SclxCharts.accountHash(account.content(), entity.externalId());
+                    if (local == null || !actualHash.equals(entity.normalizedHash()))
+                        local = new SclxImportTargetSnapshot.IdentityFact(actualHash, account.localEntityId());
+                }
+            }
             InterchangeIdentityMatch match;
             String localId = null;
             String conflictDetail = null;
@@ -665,7 +681,7 @@ public final class SclxImportPreviewService
                 match = category.match(); localId = category.localId(); conflictDetail = category.detail();
                 nativePortableId = category.nativeId();
             }
-            else if (local == null || SclxNmrPolicies.TYPE.equals(entity.entityType()))
+            else if (local == null || SclxNmrPolicies.TYPE.equals(entity.entityType()) || SclxCharts.TYPE.equals(entity.entityType()))
             {
                 match = InterchangeIdentityMatch.NEW;
                 SclxImportTargetSnapshot.NativePortableKey nativeKey =
@@ -677,6 +693,11 @@ public final class SclxImportPreviewService
                 {
                     messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_NMR_POLICY_IDENTITY_CHANGED",
                             entity.path(), "The saved policy identity no longer resolves to its retained target version.", true));
+                }
+                if (SclxCharts.TYPE.equals(entity.entityType()) && local != null && nativeFact == null)
+                {
+                    messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_CHART_IDENTITY_STALE", entity.path(),
+                            "The imported chart identity no longer resolves to its retained chart.", true));
                 }
                 if (nativeFact != null && !nativeFact.ownedBy(target.companyCode()))
                 {
@@ -709,7 +730,7 @@ public final class SclxImportPreviewService
                     if (incomingFingerprint != null
                             && incomingFingerprint.equals(nativeFact.contentFingerprint()))
                     {
-                        if (SclxNmrPolicies.TYPE.equals(entity.entityType()) && local != null)
+                        if ((SclxNmrPolicies.TYPE.equals(entity.entityType()) || SclxCharts.TYPE.equals(entity.entityType())) && local != null)
                         {
                             if (local.normalizedContentHash().equals(entity.normalizedHash()))
                             {
@@ -912,8 +933,10 @@ public final class SclxImportPreviewService
                 String sourceCode = text(source, "code");
                 if (sourceId == null || sourceCode == null) continue;
                 boolean used = usedAccounts.contains(sourceId);
-                SclxImportMappingRequirement requirement = accountMapping(
-                        source, sourceId, sourceCode, used, target,
+                SclxImportMappingRequirement requirement = root.path("extensions").path("scaJakartaH2").has(SclxCharts.KEY)
+                        ? chartAccountMapping(sourceId, sourceCode, used, target,
+                            selectedTargets.get(new MappingKey(SclxImportMappingRequirement.Kind.ACCOUNT, sourceId)))
+                        : accountMapping(source, sourceId, sourceCode, used, target,
                         selectedTargets.get(new MappingKey(
                                 SclxImportMappingRequirement.Kind.ACCOUNT, sourceId)));
                 requirements.add(requirement);
@@ -978,6 +1001,32 @@ public final class SclxImportPreviewService
                 .sorted(Comparator.comparing(SclxImportMappingRequirement::kind)
                         .thenComparing(SclxImportMappingRequirement::sourceCode))
                 .toList());
+    }
+
+    private static SclxImportMappingRequirement chartAccountMapping(
+            String sourceId, String code, boolean used, SclxImportTargetSnapshot target, String selection)
+    {
+        if (selection != null && !selection.equals(sourceId))
+        {
+            return new SclxImportMappingRequirement(SclxImportMappingRequirement.Kind.ACCOUNT,
+                    sourceId, code, null, null, used, SclxImportMappingRequirement.Resolution.UNRESOLVED,
+                    "Chart-aware accounts cannot be mapped across charts by code.", true);
+        }
+        var identity = target.identities().get(new SclxImportTargetSnapshot.ExternalIdentityKey("ACCOUNT", sourceId));
+        var local = identity == null ? target.accountsByCode().get(sourceId)
+                : target.accountsByCode().values().stream().filter(a -> a.localEntityId().equals(identity.localEntityId()))
+                    .findFirst().orElse(null);
+        if (identity != null && local == null)
+        {
+            return new SclxImportMappingRequirement(SclxImportMappingRequirement.Kind.ACCOUNT,
+                    sourceId, code, null, null, used, SclxImportMappingRequirement.Resolution.UNRESOLVED,
+                    "The imported account identity no longer resolves to a retained account.", true);
+        }
+        return new SclxImportMappingRequirement(SclxImportMappingRequirement.Kind.ACCOUNT,
+                sourceId, code, local == null ? sourceId : local.portableId(),
+                local == null ? sourceId : local.portableId(), used,
+                local == null ? SclxImportMappingRequirement.Resolution.CREATE : SclxImportMappingRequirement.Resolution.AS_IS,
+                local == null ? "Create this account in its source chart." : "Reuse this account within its retained chart.", false);
     }
 
     private static SclxImportMappingRequirement accountMapping(
@@ -1136,7 +1185,9 @@ public final class SclxImportPreviewService
             boolean used,
             SclxImportTargetSnapshot target)
     {
-        return target.accountsByCode().values().stream()
+        return target.accountsByCode().entrySet().stream()
+                .filter(entry -> entry.getKey().equals(entry.getValue().code()))
+                .map(Map.Entry::getValue)
                 .filter(value -> compatibleAccount(source, used, value))
                 .map(SclxImportTargetSnapshot.TargetAccount::code)
                 .sorted()
@@ -1579,7 +1630,7 @@ public final class SclxImportPreviewService
                 .replace('-', '_').replace(' ', '_').replace('/', '_');
     }
 
-    private static String hash(JsonNode node)
+    static String hash(JsonNode node)
     {
         try
         {

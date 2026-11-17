@@ -48,6 +48,7 @@ public final class SclxCoreSnapshotAssembler
 
     private static final Comparator<TxnSplit> TRANSACTION_LINE_ORDER = Comparator
             .comparing((TxnSplit split) -> split.getAccount().getCode())
+            .thenComparing(split -> Objects.toString(split.getAccount().getChart().getPortableId(), ""))
             .thenComparing(split -> split.getFund().getCode())
             .thenComparing(split -> split.getActivity() == null ? "" : split.getActivity().getCode())
             .thenComparing(split -> split.getMerchant() == null ? "" : split.getMerchant().getPortableId().toString())
@@ -286,8 +287,13 @@ public final class SclxCoreSnapshotAssembler
         Objects.requireNonNull(auditEvents, "auditEvents");
         Objects.requireNonNull(exportedAt, "exportedAt");
 
-        ChartOfAccounts activeChart = Objects.requireNonNull(
-                company.getActiveChartOfAccounts(), "selected company has no active chart of accounts");
+        ChartOfAccounts activeChart = company.getActiveChartOfAccounts();
+        if (activeChart == null)
+        {
+            activeChart = new ChartOfAccounts();
+            activeChart.setCompany(company);
+        }
+        final ChartOfAccounts scope = activeChart;
         if (!SclxChartScope.sameCompany(activeChart.getCompany(), company))
         {
             throw new IllegalArgumentException("active chart does not belong to the selected company");
@@ -301,7 +307,7 @@ public final class SclxCoreSnapshotAssembler
                 company.getFiscalYearStartDay());
 
         List<SclxExportDocument.Account> exportedAccounts = accounts.stream()
-                .peek(account -> requireAccountOwnership(account, activeChart))
+                .peek(account -> requireAccountOwnership(account, scope))
                 .sorted(Comparator.comparing(Account::getCode))
                 .map(account -> mapAccount(companyCode, currency, account))
                 .toList();
@@ -404,7 +410,7 @@ public final class SclxCoreSnapshotAssembler
                             transactionLines.stream()
                                     .filter(line -> line.getTxn() == transaction)
                                     .peek(line -> requireTransactionLineOwnership(
-                                            line, company, activeChart, includedTransactions, includedCounterparties, includedMerchants))
+                                            line, company, scope, includedTransactions, includedCounterparties, includedMerchants))
                                     .sorted(orderedTransactions.contains(transaction) ? Comparator.comparing(TxnSplit::getId) : TRANSACTION_LINE_ORDER)
                                     .toList(),
                             exportedLineIds);
@@ -414,7 +420,7 @@ public final class SclxCoreSnapshotAssembler
                 .toList();
         for (TxnSplit line : transactionLines)
         {
-            requireTransactionLineOwnership(line, company, activeChart, includedTransactions, includedCounterparties, includedMerchants);
+            requireTransactionLineOwnership(line, company, scope, includedTransactions, includedCounterparties, includedMerchants);
         }
         for (TxnSupplementalLine detail : supplementalDetails)
         {
@@ -483,8 +489,11 @@ public final class SclxCoreSnapshotAssembler
                 exportedTransactionIds);
 
         Map<String, Object> extensionValues = new LinkedHashMap<>();
-        extensionValues.put("activeChartName", activeChart.getName());
-        extensionValues.put("activeChartVersion", activeChart.getVersion());
+        if (company.getActiveChartOfAccounts() != null)
+        {
+            extensionValues.put("activeChartName", activeChart.getName());
+            extensionValues.put("activeChartVersion", activeChart.getVersion());
+        }
         if (!budgetPlans.isEmpty())
         {
             extensionValues.put(SclxBudgetMetadata.KEY, SclxBudgetMetadata.export(companyCode, budgetPlans, budgetLines));
@@ -597,9 +606,9 @@ public final class SclxCoreSnapshotAssembler
                         "fixed asset openingAccumulatedDepreciation"),
                 Objects.requireNonNull(asset.getStatus(), "fixed asset status").name(),
                 asset.getNotes(),
-                SclxPortableIdentity.account(companyCode, asset.getAssetAccount().getCode()),
-                SclxPortableIdentity.account(companyCode, asset.getAccumulatedDepreciationAccount().getCode()),
-                SclxPortableIdentity.account(companyCode, asset.getDepreciationExpenseAccount().getCode()),
+                SclxPortableIdentity.account(companyCode, asset.getAssetAccount()),
+                SclxPortableIdentity.account(companyCode, asset.getAccumulatedDepreciationAccount()),
+                SclxPortableIdentity.account(companyCode, asset.getDepreciationExpenseAccount()),
                 SclxPortableIdentity.fund(companyCode, asset.getFund().getCode()),
                 Objects.requireNonNull(asset.getCreatedAt(), "fixed asset createdAt"),
                 Objects.requireNonNull(asset.getUpdatedAt(), "fixed asset updatedAt"));
@@ -636,11 +645,11 @@ public final class SclxCoreSnapshotAssembler
         {
             throw new IllegalArgumentException("fixed asset does not belong to the selected company");
         }
-        if (!SclxChartScope.sameChart(asset.getAssetAccount().getChart(), activeChart)
-                || !SclxChartScope.sameChart(asset.getAccumulatedDepreciationAccount().getChart(), activeChart)
-                || !SclxChartScope.sameChart(asset.getDepreciationExpenseAccount().getChart(), activeChart))
+        if (!SclxChartScope.sameCompany(asset.getAssetAccount().getChart().getCompany(), company)
+                || !SclxChartScope.sameCompany(asset.getAccumulatedDepreciationAccount().getChart().getCompany(), company)
+                || !SclxChartScope.sameCompany(asset.getDepreciationExpenseAccount().getChart().getCompany(), company))
         {
-            throw new IllegalArgumentException("fixed asset account does not belong to the selected active chart");
+            throw new IllegalArgumentException("fixed asset account does not belong to the selected company");
         }
         if (asset.getFund().getCompany() != company)
         {
@@ -668,13 +677,13 @@ public final class SclxCoreSnapshotAssembler
         }
     }
 
-    private static SclxExportDocument.Account mapAccount(
+    static SclxExportDocument.Account mapAccount(
             String companyCode, String currency, Account account)
     {
-        String accountId = SclxPortableIdentity.account(companyCode, account.getCode());
+        String accountId = SclxPortableIdentity.account(companyCode, account);
         String parentId = account.getParent() == null
                 ? null
-                : SclxPortableIdentity.account(companyCode, account.getParent().getCode());
+                : SclxPortableIdentity.account(companyCode, account.getParent());
         return new SclxExportDocument.Account(
                 accountId,
                 account.getCode(),
@@ -836,7 +845,7 @@ public final class SclxCoreSnapshotAssembler
 
         return new SclxExportDocument.TransactionLine(
                 SclxPortableIdentity.transactionLine(transactionId, ordinal),
-                SclxPortableIdentity.account(companyCode, line.getAccount().getCode()),
+                SclxPortableIdentity.account(companyCode, line.getAccount()),
                 SclxPortableIdentity.fund(companyCode, line.getFund().getCode()),
                 line.getActivity() == null
                         ? null

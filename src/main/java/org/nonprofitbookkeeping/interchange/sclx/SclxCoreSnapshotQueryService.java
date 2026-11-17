@@ -67,15 +67,15 @@ public class SclxCoreSnapshotQueryService
         {
             Company company = new CompanyOwnershipService(jpa)
                     .requireCompany(em, companyCodeSupplier.get());
-            ChartOfAccounts activeChart = Objects.requireNonNull(
-                    company.getActiveChartOfAccounts(),
-                    "selected company has no active chart of accounts");
+            List<ChartOfAccounts> charts = em.createQuery(
+                    "from ChartOfAccounts c where c.company = :company order by c.portableId", ChartOfAccounts.class)
+                    .setParameter("company", company).getResultList();
 
             List<Account> accounts = em.createQuery(
                             "select a from Account a left join fetch a.parent "
-                                    + "where a.chart = :chart order by a.code",
+                                    + "where a.chart.company = :company order by a.chart.portableId, a.code",
                             Account.class)
-                    .setParameter("chart", activeChart)
+                    .setParameter("company", company)
                     .getResultList();
             List<Fund> funds = em.createQuery(
                             "select f from Fund f left join fetch f.parent "
@@ -239,6 +239,7 @@ public class SclxCoreSnapshotQueryService
                     order by f.portableId
                     """, org.nonprofitbookkeeping.model.FundTransfer.class).setParameter("company", company).getResultList();
             extensions.put(SclxFundTransfers.KEY, SclxFundTransfers.export(company.getCode(), transfers));
+            extensions.put(SclxCharts.KEY, SclxCharts.export(company, charts, accounts));
             return SclxExportDocument.version13(document.exportedAt(), document.organization(),
                     document.chartOfAccounts(), document.funds(), document.budgets(), document.transactions(),
                     new SclxExportDocument.Extensions(document.extensions().version(), extensions));
