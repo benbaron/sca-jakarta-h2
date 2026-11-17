@@ -1,18 +1,20 @@
 ---
-plan_version: 496
+plan_version: 497
 active_phase: P27
 active_slice: P27-C8
 active_status: VERIFYING
 active_branch: codex/P27-C8-sclx-all-charts
-active_pull_request: null
-active_head: 0a8334b613c833929f1cfa990a2191342a71ff19
-next_action: "Implement and verify all company-owned charts in SCLX export/import, chart-qualified account identities and legacy readers; then publish for review."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/431
+active_head: cac433df8353a69746555da2a44ae08dd1869d40
+next_action: "Finish final clean verification and displayed Import/export gates; inspect exact-published-head GitHub checks for draft #431, correct failures and record actual results. No merge authorized or performed."
 
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C8 all-chart company interchange — owner request
+
+Publication: implementation `cac433df8353a69746555da2a44ae08dd1869d40`, tree `25209b228f4082f80aa2ef437d20ecf9a692ab2c`, is published by normal branch creation in [draft PR #431](https://github.com/benbaron/sca-jakarta-h2/pull/431). Connected metadata matches the local implementation head; base/current main remains `0a8334b6`. This following commit changes only PLAN to record publication. Accept only final published head CI. Final full/display checks remain pending; no merge or DONE claim.
 
 Latest verification: graph/migration/legacy native recovery gate **12 tests, zero failures/errors/skips (01:36)**; focused SCLX/lifecycle gate **229 / zero failures/errors / five expected headless skips (03:52)**. First full clean gate was stopped after three frozen-V92 oracle failures caused by V93’s added column/history row. The oracle now permits exactly that named UUID column and exactly one successful V93 history row, validates UUID uniqueness, and still hashes every original field/row and checks original triggers/table inventory; frozen archives are untouched. Retained logs `/tmp/p27-c8-{first-clean,recovery-first,final-focused,recovery}.log`. Final full gate `/tmp/p27-c8-final-clean.log` is running; display and exact-published-head CI remain pending. Product/test bytes are ready for draft publication; no main merge or DONE claim.
 
