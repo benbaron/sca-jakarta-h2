@@ -739,7 +739,7 @@ public final class SclxImportPreviewService
                             else
                             {
                                 match = InterchangeIdentityMatch.CONFLICT;
-                                conflictDetail = "Saved policy content matches the target, but this SCLX source identity "
+                                conflictDetail = "Saved " + entity.entityType() + " content matches the target, but this SCLX source identity "
                                         + "previously carried different history. Keep target to retain it explicitly.";
                             }
                         }

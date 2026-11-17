@@ -138,8 +138,14 @@ final class SclxCharts
                 fail("Duplicate chart identity");
             }
             ChartStatus status;
-            try { status = ChartStatus.valueOf(text(row, "status", 20)); }
-            catch (IllegalArgumentException ex) { throw new IllegalStateException("Unsupported chart status", ex); }
+            try
+            {
+                status = ChartStatus.valueOf(text(row, "status", 20));
+            }
+            catch (IllegalArgumentException ex)
+            {
+                throw new IllegalStateException("Unsupported chart status", ex);
+            }
             if (!row.path("selected").isBoolean())
             {
                 fail("Chart selected must be boolean");
