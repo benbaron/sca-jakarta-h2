@@ -18,7 +18,7 @@ class SclxBankingChartScopeTest
     @TempDir Path directory;
 
     @Test
-    void differentChartBankLinkIdentifiesBankingContextAndPreservesDatabaseAndDestination() throws Exception
+    void differentOwnedChartBankLinkExportsWithDistinctIdentityAndPreservesDatabase() throws Exception
     {
         Path source = directory.resolve("bank-chart");
         try (Jpa jpa = new Jpa(source))
@@ -29,18 +29,15 @@ class SclxBankingChartScopeTest
             Path destination = directory.resolve("prior.sclx");
             Files.writeString(destination, "Existing export remains intact");
             var export = new SclxFileExportService(new SclxCoreSnapshotQueryService(jpa), () -> source);
-            var failure = assertThrows(IllegalArgumentException.class, () -> export.export(
-                    new SclxExportRequest(destination, Instant.parse("2026-11-01T00:00:00Z"), true)));
-            assertTrue(failure.getMessage().contains("Historical checking"));
-            assertTrue(failure.getMessage().contains("Record: Configured bank account #" + configuredId));
-            assertTrue(failure.getMessage().contains("\nLedger account: 1000"));
-            assertTrue(failure.getMessage().contains("\nReferenced chart:"));
-            assertTrue(failure.getMessage().contains("\nSelected chart:"));
-            assertTrue(failure.getMessage().contains("Legacy bank chart"));
-            assertTrue(failure.getMessage().contains("Transfer test chart"));
-            assertTrue(failure.getMessage().contains("Banking / Bank accounts"), failure.getMessage());
+            new SclxFileExportService(new SclxCoreSnapshotQueryService(jpa), () -> source)
+                    .export(new SclxExportRequest(destination, Instant.parse("2026-11-01T00:00:00Z"), true));
+            var root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(destination.toFile());
+            var data = SclxCharts.parse(root);
+            assertEquals(2, data.charts().size());
+            assertTrue(Files.readString(destination).contains("Legacy bank chart"));
+            assertEquals(2L, java.util.stream.StreamSupport.stream(root.path("chartOfAccounts").spliterator(), false)
+                    .filter(account -> account.path("code").asText().equals("1000")).count());
             assertEquals(before, rows(source));
-            assertEquals("Existing export remains intact", Files.readString(destination));
         }
     }
 

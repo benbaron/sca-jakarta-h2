@@ -142,7 +142,7 @@ final class SclxFixedAssetSnapshotAssembler
     {
         return SclxPortableIdentity.account(
                 companyCode,
-                Objects.requireNonNull(account, "account").getCode());
+                Objects.requireNonNull(account, "account"));
     }
 
     private static String fundId(String companyCode, Fund fund)

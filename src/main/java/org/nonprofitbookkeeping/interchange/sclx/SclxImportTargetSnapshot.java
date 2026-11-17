@@ -97,8 +97,15 @@ record SclxImportTargetSnapshot(
             String increaseSide,
             boolean posting,
             boolean active,
-            String localEntityId)
+            String localEntityId,
+            com.fasterxml.jackson.databind.JsonNode content)
     {
+        TargetAccount(String portableId, String code, String type, String subtype, String increaseSide,
+                boolean posting, boolean active, String localEntityId)
+        {
+            this(portableId, code, type, subtype, increaseSide, posting, active, localEntityId, null);
+        }
+
         TargetAccount
         {
             portableId = requireText(portableId, "portableId");

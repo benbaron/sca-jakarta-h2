@@ -27,3 +27,5 @@ On the updated build, create an entry using account 1000 offered by Journal, sav
 Actual test totals and publication/CI evidence are recorded in [PLAN.md](PLAN.md).
 
 The combined Linux CI job requires more than its former 20-minute budget: a measured run completed both full test passes and the focused UI stages, then hit the ceiling during the final production route check. Its timeout is now 30 minutes; every validation command and assertion remains. Windows configuration is unchanged.
+
+P27-C8 supersedes this document’s single-chart SCLX export restriction and corresponding historical error expectations. Export now includes all company-owned charts using the documented charts extension, without correcting or moving historical accounts. New Journal selection/stale-save guards remain unchanged. See [C8](P27-C8-sclx-all-charts.md).

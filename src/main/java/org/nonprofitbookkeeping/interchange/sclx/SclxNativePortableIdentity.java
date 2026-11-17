@@ -128,6 +128,7 @@ final class SclxNativePortableIdentity
     {
         return switch (entityType)
         {
+            case "CHART" -> hash(text(value, "name"), text(value, "chartVersion"), text(value, "status"));
             case "BUDGET_CATEGORY" -> SclxBudgetCategories.fingerprint(SclxBudgetCategories.parseEntry(value).value());
             case "NMR_POLICY_VERSION" -> org.nonprofitbookkeeping.service.NmrPolicyService.importFingerprint(
                     SclxNmrPolicies.parseEntry(value).value());
@@ -178,6 +179,7 @@ final class SclxNativePortableIdentity
     {
         return switch (entityType)
         {
+            case "CHART" -> hash(string(row[3]), string(row[4]), string(row[5]));
             case "COUNTERPARTY" -> counterpartyFingerprint(
                     string(row[3]), string(row[4]), nullableString(row[5]),
                     nullableString(row[6]), nullableString(row[7]), booleanValue(row[8]));
@@ -238,6 +240,7 @@ final class SclxNativePortableIdentity
     private static Map<String, TableSpec> tables()
     {
         Map<String, TableSpec> values = new LinkedHashMap<>();
+        values.put(SclxCharts.TYPE, direct("chart_of_accounts", "e.portable_id", ", e.name, e.version, e.status"));
         values.put(SclxBudgetCategories.TYPE, direct("budget_category", "e.portable_id", ""));
         values.put("COUNTERPARTY", direct("counterparty", "e.portable_id",
                 ", e.display_name, e.kind, e.email, e.phone, cast(e.notes as varchar), e.is_active"));

@@ -303,15 +303,38 @@ class NativeDatabaseRecoveryTest
                 try (var statement = connection.createStatement(); var rs = statement.executeQuery("select * from \"" + table.replace("\"", "\"\"") + "\""))
                 {
                     for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) columns.add(rs.getMetaData().getColumnName(i));
-                    assertEquals(jsonStrings(expected.path("columns")), columns, table + " original columns");
+                    var originalColumns = jsonStrings(expected.path("columns"));
+                    var migratedColumns = new ArrayList<>(originalColumns);
+                    if (table.equals("chart_of_accounts")) migratedColumns.add("portable_id");
+                    assertEquals(migratedColumns, columns, table + " original columns plus explicitly governed V93 addition");
+                    java.util.Set<String> chartUuids = new java.util.HashSet<>();
+                    int newMigrationRows = 0;
                     while (rs.next())
                     {
+                        if (table.equals("flyway_schema_history") && "93".equals(rs.getString("version")))
+                        {
+                            assertEquals("V93__chart_portable_identity.sql", rs.getString("script"));
+                            assertTrue(rs.getBoolean("success"));
+                            newMigrationRows++;
+                            continue;
+                        }
                         var row = new StringBuilder();
-                        for (int i = 1; i <= columns.size(); i++)
+                        for (int i = 1; i <= originalColumns.size(); i++)
                         {
                             String value = rs.getString(i); row.append(value == null ? "N;" : value.length() + ":" + value + ";");
                         }
+                        if (table.equals("chart_of_accounts"))
+                        {
+                            String uuid = rs.getString("portable_id");
+                            assertNotNull(uuid, "V93 supplies a UUID to every retained chart");
+                            assertEquals(uuid, java.util.UUID.fromString(uuid).toString());
+                            assertTrue(chartUuids.add(uuid), "V93 chart UUIDs remain unique");
+                        }
                         encoded.add(row.toString());
+                    }
+                    if (table.equals("flyway_schema_history"))
+                    {
+                        assertEquals(1, newMigrationRows, "Exactly the governed V93 migration was appended");
                     }
                 }
                 Collections.sort(encoded);

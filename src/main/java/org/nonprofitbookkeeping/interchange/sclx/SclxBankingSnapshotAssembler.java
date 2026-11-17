@@ -70,7 +70,7 @@ final class SclxBankingSnapshotAssembler
                             account.getBank() == null ? null : SclxPortableIdentity.bank(
                                     companyCode, account.getBank().getPortableId().toString()),
                             account.getAccount() == null ? null : SclxPortableIdentity.account(
-                                    companyCode, account.getAccount().getCode()),
+                                    companyCode, account.getAccount()),
                             account.getName(),
                             account.getNickname(),
                             account.getInstitutionName(),

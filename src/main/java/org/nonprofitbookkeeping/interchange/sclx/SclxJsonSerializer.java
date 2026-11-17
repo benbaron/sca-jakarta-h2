@@ -65,6 +65,7 @@ public final class SclxJsonSerializer
         SclxBudgetImportData.parseDocument(root);
         SclxBudgetCategories.parse(root);
         SclxFundTransfers.parse(root);
+        SclxCharts.parse(root);
         SclxPaymentReferences.parse(root);
         SclxNmrItemMetadata.validate(root);
         SclxMerchantSettlementMetadata.validate(root);
@@ -99,7 +100,7 @@ public final class SclxJsonSerializer
         return node;
     }
 
-    private ArrayNode accounts(List<SclxExportDocument.Account> accounts)
+    ArrayNode accounts(List<SclxExportDocument.Account> accounts)
     {
         ArrayNode array = mapper.createArrayNode();
         accounts.stream()

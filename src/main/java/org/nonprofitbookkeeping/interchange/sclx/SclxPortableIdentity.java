@@ -32,6 +32,14 @@ public final class SclxPortableIdentity
         return identity("account", companyCode, accountCode);
     }
 
+    /** Chart-qualified account identity; transient legacy fixture graphs retain their old identity. */
+    public static String account(String companyCode, org.nonprofitbookkeeping.model.Account account)
+    {
+        var chart = Objects.requireNonNull(account.getChart(), "account chart");
+        return chart.getPortableId() == null ? account(companyCode, account.getCode())
+                : identity("chart-account", chart.getPortableId().toString(), account.getCode());
+    }
+
     public static String fund(String companyCode, String fundCode)
     {
         return identity("fund", companyCode, fundCode);

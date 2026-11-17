@@ -37,6 +37,8 @@ public final class SclxStructureValidator
         Set<String> budgetIds = identities(budgets, "budgetId", "$.budgets", errors);
         identities(transactions, "transactionId", "$.transactions", errors);
 
+        try { SclxCharts.parse(root); }
+        catch (IllegalStateException ex) { errors.add("$.extensions.scaJakartaH2.charts: " + ex.getMessage()); }
         validateFunds(funds, fundIds, errors);
         long lineCount = validateTransactions(transactions, accountIds, fundIds, budgetIds, errors);
         validateBudgets(budgets, accountIds, fundIds, errors);

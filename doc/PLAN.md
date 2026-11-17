@@ -1,16 +1,28 @@
 ---
-plan_version: 491
+plan_version: 497
 active_phase: P27
-active_slice: P27-C7
+active_slice: P27-C8
 active_status: VERIFYING
-active_branch: codex/P27-C6-banking-chart-labels
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/430
-active_head: 3fd924407abdae42fb6ff1187e15712f6e9b3f9c
-next_action: "Finish combined clean/repeat/display verification, packaged-driver and classpath launch checks, publish the normal merge to #430 and inspect exact-head CI. C6 UI and C7 storage repairs are both included; no merge to main performed."
+active_branch: codex/P27-C8-sclx-all-charts
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/431
+active_head: cac433df8353a69746555da2a44ae08dd1869d40
+next_action: "Finish final clean verification and displayed Import/export gates; inspect exact-published-head GitHub checks for draft #431, correct failures and record actual results. No merge authorized or performed."
 
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C8 all-chart company interchange — owner request
+
+Publication: implementation `cac433df8353a69746555da2a44ae08dd1869d40`, tree `25209b228f4082f80aa2ef437d20ecf9a692ab2c`, is published by normal branch creation in [draft PR #431](https://github.com/benbaron/sca-jakarta-h2/pull/431). Connected metadata matches the local implementation head; base/current main remains `0a8334b6`. This following commit changes only PLAN to record publication. Accept only final published head CI. Final full/display checks remain pending; no merge or DONE claim.
+
+Latest verification: graph/migration/legacy native recovery gate **12 tests, zero failures/errors/skips (01:36)**; focused SCLX/lifecycle gate **229 / zero failures/errors / five expected headless skips (03:52)**. First full clean gate was stopped after three frozen-V92 oracle failures caused by V93’s added column/history row. The oracle now permits exactly that named UUID column and exactly one successful V93 history row, validates UUID uniqueness, and still hashes every original field/row and checks original triggers/table inventory; frozen archives are untouched. Retained logs `/tmp/p27-c8-{first-clean,recovery-first,final-focused,recovery}.log`. Final full gate `/tmp/p27-c8-final-clean.log` is running; display and exact-published-head CI remain pending. Product/test bytes are ready for draft publication; no main merge or DONE claim.
+
+Select fresh current-main branch after confirmed #430 merge. Owner requests every company-owned chart, including DRAFT/ACTIVE/RETIRED and unused charts, rather than only selected/referenced charts. Required reading: AGENTS, SCLX contract/identity/conflict rules, C3/C4 chart guards, P19 chart assignment, core/banking/asset/inventory export and preview/atomic commit. Required inspection: all affected snapshot assemblers/query, portable identities, target reader, import mapping, version/structure validators and focused round-trip/ownership tests. [C8 contract](P27-C8-sclx-all-charts.md) deliberately supersedes the single-chart scope. Existing format cannot express chart ownership or duplicate chart-local account codes; the external 1.3 specification permits application extensions but defines no named-chart model. Initial 1.4 proposal withdrawn after owner asks about the standard; do not invent an official version. Design the named chart graph as an explicit application extension, preserving legacy single-chart files. No chart/account remapping by code across charts. No user data repair or journal rule change. Baseline compile passes (22.3 seconds); existing core query/import/banking baseline tests pass (01:21). The charts-v1 extension, V93 stable chart UUID migration, all-chart snapshot/ownership, explicit import membership and chart/account conflict handling are implemented. Focused SCLX/lifecycle/migration gate passes **229 tests, zero failures/errors, five headless display skips (03:52)**; earlier four single-chart expectation failures are superseded by explicit new-scope tests. New graph coverage includes duplicate codes, inactive history/bank links, unused charts, null selection, foreign chart ownership, atomic rollback, target conflicts/Keep target, different target company code and retry/restart. Final clean/repeat/display and exact-head CI remain. No user database touched. Uncommitted duplicate CHARTS declaration was my local second insertion; git log/blame show no intervening commit or checkout, no evidence of another session. Duplicate removed.
+
+C8 verification follow-up: initial full clean was stopped after three legacy recovery assertions rejected the added chart portable_id column. No retained-value or integrity error was reported. The frozen oracle now requires exactly its original schema plus this one V93 addition, validates UUIDs, and still hashes every original field/row and checks all triggers. Frozen archives are unchanged. Rerun native recovery/new graph/migration tests, then final clean and exact-head CI. Git log/blame confirms the duplicate CHARTS declarations were uncommitted task edits; the redundant declaration was removed. No evidence of a separate session was established.
+
+
 
 ### P27-C7 native LOB snapshot repair — owner authorized
 

@@ -92,7 +92,7 @@ final class SclxInventorySnapshotAssembler
 
     private static String accountId(String companyCode, Account account)
     {
-        return SclxPortableIdentity.account(companyCode, Objects.requireNonNull(account, "account").getCode());
+        return SclxPortableIdentity.account(companyCode, Objects.requireNonNull(account, "account"));
     }
 
     private static String fundId(String companyCode, Fund fund)

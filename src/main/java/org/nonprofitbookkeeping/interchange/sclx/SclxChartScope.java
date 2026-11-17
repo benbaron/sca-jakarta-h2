@@ -34,27 +34,13 @@ final class SclxChartScope
     static void requireAccount(Account account, ChartOfAccounts selected, String field, String context, String guidance)
     {
         Objects.requireNonNull(account, field);
-        if (sameChart(account.getChart(), selected))
-        {
-            return;
-        }
-        String message = field + " is outside the selected company's active chart: " + account.getCode()
-                + ".\nRecord: " + context;
         if (account.getChart() != null && selected != null
                 && sameCompany(account.getChart().getCompany(), selected.getCompany()))
         {
-            message += "\nLedger account: " + account.getCode() + " — " + account.getName()
-                    + (account.getId() == null ? "" : " (ID " + account.getId() + ")")
-                    + "\nReferenced chart: " + describe(account.getChart())
-                    + "\nSelected chart: " + describe(selected);
+            return;
         }
-        message += "\n" + guidance + "\nSCLX exports one selected chart; existing history was not changed.";
-        throw new IllegalArgumentException(message);
-    }
-
-    private static String describe(ChartOfAccounts chart)
-    {
-        return "chart '" + chart.getName() + "' (version " + chart.getVersion()
-                + (chart.getId() == null ? "" : ", ID " + chart.getId()) + ")";
+        throw new IllegalArgumentException(field + " is outside the selected company: " + account.getCode()
+                + ".\nRecord: " + context + "\n" + guidance
+                + "\nSCLX includes all company-owned charts; foreign-company references cannot be exported.");
     }
 }

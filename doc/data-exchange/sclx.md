@@ -1,5 +1,7 @@
 # SCLX company-data interchange contract
 
+P27-C8 supersedes the earlier single-selected-chart export restriction: active-company export includes **all company-owned charts and accounts**, including DRAFT, RETIRED, unused charts and inactive accounts. SCLX stays 1.3; named chart/status/selection and complete membership are carried in the documented application `charts` version-1 extension. UUID-qualified account identities keep equal codes in different charts distinct. Legacy files without the extension retain single-chart import mapping. Foreign ownership still blocks export. See [C8 wire contract and owner checks](../P27-C8-sclx-all-charts.md). Historical single-chart restrictions below describe prior files/behavior, not current all-chart export.
+
 P27-C4 makes export-failure details fully wrapped, selectable and scrollable in a resizable dialog. Bank-ledger chart failures identify the configured bank account and direct review to Banking / Bank accounts and Company Admin. No bank link or history is automatically changed; see [banking export diagnosis](../P27-C4-banking-export-diagnostics.md).
 
 P27-C3 clarifies selected-chart identity: guards compare persisted chart/company IDs across Hibernate proxy boundaries. New Journal choices use that same selected chart. Genuine different-chart references remain blocking errors with record/chart context; codes are never silently remapped and history is not rewritten. See [Journal/SCLX chart consistency](../P27-C3-sclx-chart-consistency.md).
@@ -32,7 +34,7 @@ SCLX export represents exactly one selected active company. Export MUST fail bef
 The intended supported business scope is:
 
 - company/organization identity and fiscal settings;
-- the selected company's chart and accounts;
+- every chart and account owned by the selected company, including unused/inactive/retired records;
 - funds and fund hierarchy;
 - budget categories, plans, and lines;
 - activities, counterparties, and merchants used by included company records;

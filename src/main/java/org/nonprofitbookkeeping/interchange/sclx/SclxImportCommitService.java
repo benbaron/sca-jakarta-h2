@@ -97,7 +97,7 @@ import java.util.function.Supplier;
 public final class SclxImportCommitService
 {
     private static final Set<String> SUPPORTED_ENTITY_TYPES = Set.of(
-            "ORGANIZATION", "ACCOUNT", "FUND", "ACTIVITY", "COUNTERPARTY", "MERCHANT",
+            "ORGANIZATION", "CHART", "ACCOUNT", "FUND", "ACTIVITY", "COUNTERPARTY", "MERCHANT",
             "BUDGET", "BUDGET_LINE", "BUDGET_CATEGORY", "TRANSACTION", "TRANSACTION_LINE", "SUPPLEMENTAL_DETAIL",
             "FIXED_ASSET", "DEPRECIATION_RUN", "INVENTORY_ITEM", "INVENTORY_MOVEMENT",
             "PROPERTY_CUSTODY_EVENT", "FUND_TRANSFER",
@@ -105,7 +105,7 @@ public final class SclxImportCommitService
             "BANK_IMPORT_ISSUE", "RECONCILIATION_SESSION", "RECONCILIATION_MATCH",
             "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT", "AUDIT_EVENT", "NMR_POLICY_VERSION");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
-            "activeChartName", "activeChartVersion", "activities", "counterparties",
+            "activeChartName", "activeChartVersion", "charts", "activities", "counterparties",
             "supplementalDetails", "fundTransfers", "transactionBudgets", "budgetMetadata", "budgetCategories", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "fixedAssets", "inventory", "propertyCustody", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "periodClose", "auditHistory", "nmrPolicies");
 
@@ -400,6 +400,7 @@ public final class SclxImportCommitService
                 }
                 if (allIdentical)
                 {
+                    writeCharts(em, company, SclxCharts.parse(root), previews, true, 0);
                     em.getTransaction().commit();
                     return successfulResult(current, 0L, current.operation().items().size(),
                             "SCLX_IDENTICAL_REIMPORT",
@@ -412,9 +413,15 @@ public final class SclxImportCommitService
                     afterBusinessWrite.accept(++writes);
                 }
 
-                ChartOfAccounts chart = targetChart(em, company, root, current.targetPopulated());
+                var chartData = SclxCharts.parse(root);
+                Map<String, ChartOfAccounts> charts = writeCharts(em, company, chartData, previews, current.targetPopulated()
+                        || company.getActiveChartOfAccounts() != null, writes);
+                writes += (int) chartData.charts().stream().filter(c -> required(previews,
+                        new EntityKey(SclxCharts.TYPE, c.id()), "chart preview").localEntityId() == null).count();
+                ChartOfAccounts chart = chartData.present() ? null : targetChart(em, company, root, current.targetPopulated());
                 Map<String, Account> accounts = writeAccounts(
-                        em, chart, root.path("chartOfAccounts"), current.mappings(), previews, writes);
+                        em, chart, root.path("chartOfAccounts"), current.mappings(), previews, writes,
+                        chartData, charts);
                 writes += newMasterCount(current.mappings(), SclxImportMappingRequirement.Kind.ACCOUNT);
                 Map<String, Fund> funds = writeFunds(
                         em, company, root.path("funds"), current.mappings(), previews, writes);
@@ -521,6 +528,10 @@ public final class SclxImportCommitService
                 em.flush();
                 recordIdentity(em, company, current, previews, "ORGANIZATION",
                         text(root.path("organization"), "organizationId"), String.valueOf(company.getId()));
+                for (var entry : charts.entrySet())
+                {
+                    recordIdentity(em, company, current, previews, SclxCharts.TYPE, entry.getKey(), entry.getValue().getId().toString());
+                }
                 recordMasterIdentities(em, company, current, previews, root.path("chartOfAccounts"),
                         "ACCOUNT", "accountId", accounts);
                 recordMasterIdentities(em, company, current, previews, root.path("funds"),
@@ -750,6 +761,54 @@ public final class SclxImportCommitService
         company.touchUpdatedAt();
     }
 
+    private Map<String, ChartOfAccounts> writeCharts(
+            EntityManager em, Company company, SclxCharts.Data data,
+            Map<EntityKey, SclxImportEntityPreview> previews, boolean preserveSelection, int writesBefore)
+    {
+        Map<String, ChartOfAccounts> result = new LinkedHashMap<>();
+        int writes = writesBefore;
+        for (var fact : data.charts())
+        {
+            var item = required(previews, new EntityKey(SclxCharts.TYPE, fact.id()), "chart preview");
+            var existing = em.createQuery("from ChartOfAccounts c where c.portableId = :id", ChartOfAccounts.class)
+                    .setParameter("id", fact.uuid()).getResultStream().findFirst().orElse(null);
+            if (existing != null)
+            {
+                ownership.requireOwnedBy(company, existing, "Imported chart");
+                if (item.localEntityId() == null || !item.localEntityId().equals(existing.getId().toString()))
+                    throw new IllegalStateException("Chart identity changed since preview");
+                if (item.conflictChoice() != SclxImportConflictChoice.KEEP_TARGET
+                        && (!fact.name().equals(existing.getName()) || !fact.version().equals(existing.getVersion())
+                            || fact.status() != existing.getStatus()))
+                    throw new IllegalStateException("Retained chart changed since preview");
+            }
+            else
+            {
+                requireNew(previews, SclxCharts.TYPE, fact.id());
+                existing = new ChartOfAccounts();
+                existing.setCompany(company);
+                existing.setPortableId(fact.uuid());
+                existing.setName(fact.name());
+                existing.setVersion(fact.version());
+                existing.setStatus(fact.status());
+                em.persist(existing);
+                afterBusinessWrite.accept(++writes);
+            }
+            result.put(fact.id(), existing);
+        }
+        if (data.present() && !preserveSelection)
+        {
+            ChartOfAccounts selected = data.charts().stream().filter(SclxCharts.Chart::selected)
+                    .map(c -> result.get(c.id())).findFirst().orElse(null);
+            if (selected != null && selected.getStatus() != ChartStatus.ACTIVE)
+            {
+                throw new IllegalStateException("The retained selected chart is not ACTIVE");
+            }
+            company.setActiveChartOfAccounts(selected);
+        }
+        return result;
+    }
+
     private ChartOfAccounts targetChart(
             EntityManager em,
             Company company,
@@ -790,7 +849,9 @@ public final class SclxImportCommitService
             JsonNode values,
             List<SclxImportMappingRequirement> mappings,
             Map<EntityKey, SclxImportEntityPreview> previews,
-            int writesBefore)
+            int writesBefore,
+            SclxCharts.Data chartData,
+            Map<String, ChartOfAccounts> charts)
     {
         List<JsonNode> ordered = parentFirst(values, "accountId", "parentAccountId", "account");
         Map<String, Account> result = new LinkedHashMap<>();
@@ -800,7 +861,22 @@ public final class SclxImportCommitService
             String externalId = text(value, "accountId");
             SclxImportMappingRequirement mapping = requiredMapping(
                     mappings, SclxImportMappingRequirement.Kind.ACCOUNT, externalId);
-            Account existing = findAccount(em, chart, mapping.targetCode());
+            ChartOfAccounts accountChart = chartData.present()
+                    ? required(charts, chartData.memberships().get(externalId), "account chart") : chart;
+            String code = chartData.present() ? text(value, "code") : mapping.targetCode();
+            Account existing = findAccount(em, accountChart, code);
+            if (chartData.present() && mapping.resolution() == SclxImportMappingRequirement.Resolution.AS_IS)
+            {
+                var item = required(previews, new EntityKey("ACCOUNT", externalId), "account preview");
+                Account retained = localEntity(em, item, Account.class);
+                if (retained == null || !SclxChartScope.sameChart(retained.getChart(), accountChart)
+                        || !retained.getCode().equals(code))
+                {
+                    throw new IllegalStateException("Retained account does not belong to its source chart");
+                }
+                result.put(externalId, retained);
+                continue;
+            }
             if ((mapping.resolution() == SclxImportMappingRequirement.Resolution.AS_IS
                     || mapping.resolution() == SclxImportMappingRequirement.Resolution.MAPPED)
                     && existing != null)
@@ -821,7 +897,7 @@ public final class SclxImportCommitService
                         "SCLX account mapping no longer matches the target chart: " + mapping.sourceCode() + ".");
             }
             Account account = new Account();
-            account.setChart(chart);
+            account.setChart(accountChart);
             account.setCode(text(value, "code"));
             account.setName(text(value, "name"));
             AccountClassification.PortableType classification =

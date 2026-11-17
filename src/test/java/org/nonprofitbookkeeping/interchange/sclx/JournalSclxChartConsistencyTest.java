@@ -163,7 +163,7 @@ class JournalSclxChartConsistencyTest
     }
 
     @Test
-    void existingDifferentChartEntryGetsActionableErrorAndCanBeExplicitlyCorrectedWithoutMovingAccounts() throws Exception
+    void existingDifferentOwnedChartEntryExportsWithoutReclassifyingHistory() throws Exception
     {
         Path source = directory.resolve("existing-entry");
         try (Jpa jpa = new Jpa(source))
@@ -177,20 +177,12 @@ class JournalSclxChartConsistencyTest
             Path destination = directory.resolve("company.sclx");
             var request = new SclxExportRequest(destination, Instant.parse("2026-11-01T00:00:00Z"), true);
             var before = rows(source);
-            var failure = assertThrows(IllegalArgumentException.class, () -> export.export(request));
-            assertTrue(failure.getMessage().contains("transaction #" + existing.id()));
-            assertTrue(failure.getMessage().contains("Other owned chart"));
-            assertTrue(failure.getMessage().contains("Transfer test chart"));
-            assertTrue(failure.getMessage().contains("existing history was not changed"));
-            assertFalse(Files.exists(destination));
-            assertEquals(before, rows(source));
-            Files.writeString(destination, "Retain prior export");
-            assertThrows(IllegalArgumentException.class, () -> export.export(request));
-            assertEquals("Retain prior export", Files.readString(destination));
-            // Explicit ordinary Journal correction, not automatic code-based remapping.
-            service.update(existing.id(), command(fixture, fixture.bank()));
             export.export(request);
-            assertTrue(Files.readString(destination).contains("chartOfAccounts"));
+            assertTrue(Files.readString(destination).contains("Other owned chart"));
+            assertTrue(Files.readString(destination).contains("Transfer test chart"));
+            assertEquals(before, rows(source));
+            var root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(destination.toFile());
+            assertEquals(2, SclxCharts.parse(root).charts().size());
             try (var em = jpa.em())
             {
                 assertEquals("Other owned chart", em.find(Account.class, outside).getChart().getName());
