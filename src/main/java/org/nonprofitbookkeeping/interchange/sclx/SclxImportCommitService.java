@@ -106,7 +106,7 @@ public final class SclxImportCommitService
             "PERIOD_CLOSE_RANGE", "PERIOD_CLOSE_EVENT", "AUDIT_EVENT", "NMR_POLICY_VERSION");
     private static final Set<String> SUPPORTED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "charts", "activities", "counterparties",
-            "supplementalDetails", "fundTransfers", "transactionBudgets", "budgetMetadata", "budgetCategories", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "fixedAssets", "inventory", "propertyCustody", "bankConfiguration",
+            "supplementalDetails", "fundTransfers", "transactionBudgets", "budgetMetadata", "budgetCategories", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "journalInformation", "fixedAssets", "inventory", "propertyCustody", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "periodClose", "auditHistory", "nmrPolicies");
 
     private final Jpa jpa;
@@ -297,6 +297,7 @@ public final class SclxImportCommitService
         Map<String, ExpenseFunction> expenseFunctions = SclxExpenseFunctions.parse(root);
         var acquisitions = SclxAssetAcquisitions.parse(root);
         var paymentReferences = SclxPaymentReferences.parse(root);
+        var journalInformation = SclxJournalInformation.parse(root);
         SclxCorrectionImportData corrections = SclxCorrectionImportData.parse(root);
         requireSupportedTransactionShape(root, details);
         ownership.requireNoOpenOwnershipIssues();
@@ -447,7 +448,7 @@ public final class SclxImportCommitService
                         {
                             TransactionWrite written = writeTransactions(em, company, root.path("transactions"), accounts, funds,
                                     activities, counterparties, merchants, details, previews, transactionBudgetCodes,
-                                    nmrLineIds, expenseFunctions, writtenBudgets.categories(), writesBeforeHistory, history);
+                                    nmrLineIds, expenseFunctions, writtenBudgets.categories(), journalInformation, writesBeforeHistory, history);
                             restoredCorrections[0] = writeCorrectionRelationships(em, company, corrections,
                                     written.transactions(), writesBeforeHistory + written.transactionCount());
                             for (var fact : paymentReferences.entrySet())
@@ -1325,6 +1326,7 @@ public final class SclxImportCommitService
             Set<String> nmrLineIds,
             Map<String, ExpenseFunction> expenseFunctions,
             Map<String, BudgetCategory> categories,
+            Map<String, org.nonprofitbookkeeping.model.TransactionInformation> journalInformation,
             int writesBefore,
             TransactionEntryService.SclxHistoryWriter history)
     {
@@ -1457,7 +1459,8 @@ public final class SclxImportCommitService
                     text(value, "description"),
                     null,
                     commands,
-                    supplementalCommands);
+                    supplementalCommands,
+                    journalInformation.get(transactionId));
             Txn transaction = history.enter(command, portableUuid(transactionId));
             transaction.setStatus(text(value, "status"));
             transactions.put(transactionId, transaction);

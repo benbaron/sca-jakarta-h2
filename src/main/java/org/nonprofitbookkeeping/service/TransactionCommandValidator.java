@@ -30,6 +30,12 @@ public class TransactionCommandValidator
             warnings.add("Transaction date is in the future.");
         }
 
+        String sourceReference = command.information().transferOrCheckReference();
+        if (sourceReference != null && sourceReference.length() > 200)
+        {
+            errors.add("Transfer/check reference must be at most 200 characters.");
+        }
+
         List<TransactionLineCommand> lines = command.lines();
         if (lines.size() < 2)
         {
@@ -61,6 +67,14 @@ public class TransactionCommandValidator
 
             BigDecimal debit = normalize(line.debit());
             BigDecimal credit = normalize(line.credit());
+            if (debit.stripTrailingZeros().scale() > 2 || credit.stripTrailingZeros().scale() > 2)
+            {
+                errors.add("Line " + row + " amounts must have at most two decimal places; fractional cents are not rounded.");
+            }
+            if ((long) debit.precision() - debit.scale() > 15 || (long) credit.precision() - credit.scale() > 15)
+            {
+                errors.add("Line " + row + " amounts exceed the ledger's 15 integer digits.");
+            }
             if (debit.compareTo(BigDecimal.ZERO) < 0)
             {
                 errors.add("Line " + row + " debit cannot be negative.");

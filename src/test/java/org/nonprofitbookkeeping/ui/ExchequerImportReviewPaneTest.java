@@ -31,6 +31,7 @@ class ExchequerImportReviewPaneTest
     private FundTransferTestFixture fixture;
     private ImportPreviewPanel panel;
     private Stage stage;
+    private Path csvFile;
 
     @BeforeEach
     void setup() throws Exception
@@ -42,6 +43,7 @@ class ExchequerImportReviewPaneTest
         previousUser = session.authenticatedUser();
         Path db = directory.resolve("review-ui");
         Path csv = ExchequerCsvFixture.write(directory.resolve("synthetic.csv"), "12/31/2025", "1/1/2027");
+        csvFile = csv;
         try (Jpa jpa = new Jpa(db))
         {
             fixture = FundTransferTestFixture.seed(jpa);
@@ -107,11 +109,11 @@ class ExchequerImportReviewPaneTest
             ((TextArea) panel.root().lookup("#exchequerEntryMemo")).setText("Edited reviewed entry");
             choose("exchequerLineAccount", fixture.bank());
             choose("exchequerLineFund", fixture.source());
-            ((TextField) panel.root().lookup("#exchequerLineDebit")).setText("12.3456");
+            ((TextField) panel.root().lookup("#exchequerLineDebit")).setText("12.34");
             table("exchequerProposedLines").getSelectionModel().select(1);
             choose("exchequerLineAccount", fixture.income());
             choose("exchequerLineFund", fixture.source());
-            ((TextField) panel.root().lookup("#exchequerLineCredit")).setText("12.3456");
+            ((TextField) panel.root().lookup("#exchequerLineCredit")).setText("12.34");
             ((TabPane) panel.root().lookup("#exchequerReviewPages")).getSelectionModel().select(0);
             proposals.getSelectionModel().select(1);
             button("deleteExchequerEntry").fire();
@@ -147,9 +149,95 @@ class ExchequerImportReviewPaneTest
             assertTrue(button("commitExchequerEntries").isDisabled());
             var saved = UiServiceRegistry.transactionEntry().search(null, null, "Final reviewed entry", 100).get(0);
             assertEquals(java.time.LocalDate.of(2025, 12, 30), saved.date());
-            assertEquals(new BigDecimal("12.3456"), UiServiceRegistry.transactionEntry().load(saved.id()).debitTotal());
+            assertEquals(new BigDecimal("12.3400"), UiServiceRegistry.transactionEntry().load(saved.id()).debitTotal());
             return null;
         });
+    }
+
+    @Test
+    void allFourSplitsAndEditableInformationReachTheProposedAndSavedJournalEntry() throws Exception
+    {
+        var records = ExchequerCsvFixture.header();
+        var row = ExchequerCsvFixture.row(1, "2/1/2026", "20");
+        row.set(4, "2/6/2026");
+        row.set(5, "000042");
+        row.set(6, "1/30/2026");
+        ExchequerCsvFixture.split(row, 0, "20", "Income A", "");
+        ExchequerCsvFixture.split(row, 1, "30", "Income B", "");
+        ExchequerCsvFixture.split(row, 2, "25", "", "Expense C");
+        ExchequerCsvFixture.split(row, 3, "5", "", "Expense D");
+        records.add(row);
+        java.nio.file.Files.writeString(csvFile, ExchequerCsvFixture.csv(records));
+        FxTestSupport.onFx(() ->
+        {
+            Platform.runLater(ExchequerImportReviewPaneTest::acceptConfirmation);
+            panel.root().lookupAll(".button").stream().filter(Button.class::isInstance).map(Button.class::cast)
+                    .filter(button -> button.getText().startsWith("Choose Another Exchequer")).findFirst().orElseThrow().fire();
+            return null;
+        });
+        await(() -> table("exchequerProposedEntries").getItems().size() == 1);
+        FxTestSupport.onFx(() ->
+        {
+            var proposals = table("exchequerProposedEntries");
+            for (int split = 1; split <= 4; split++)
+            {
+                final int ordinal = split;
+                var column = proposals.getColumns().stream().filter(value -> value.getText().equals("Split " + ordinal)).findFirst().orElseThrow();
+                assertFalse(column.getCellData(0).toString().isBlank());
+            }
+            button("editExchequerEntry").fire();
+            stage.getScene().getRoot().applyCss();
+            stage.getScene().getRoot().layout();
+            assertEquals("000042", ((TextField) panel.root().lookup("#exchequerTransferCheckReference")).getText());
+            var lines = table("exchequerProposedLines");
+            assertEquals(5, lines.getItems().size());
+            for (int index = 0; index < 5; index++)
+            {
+                lines.getSelectionModel().select(index);
+                choose("exchequerLineAccount", index == 0 ? fixture.bank() : index <= 2 ? fixture.income() : fixture.expense());
+                choose("exchequerLineFund", fixture.source());
+            }
+            ((TextField) panel.root().lookup("#exchequerTransferCheckReference")).setText("000043");
+            ((TextField) panel.root().lookup("#exchequerInformationStatementDate")).setText("2/7/2026");
+            ((TextField) panel.root().lookup("#exchequerInformationIncomingDate")).setText("1/29/2026");
+            ((TabPane) panel.root().lookup("#exchequerReviewPages")).getSelectionModel().select(0);
+            stage.getScene().getRoot().applyCss();
+            stage.getScene().getRoot().layout();
+            button("showExchequerSplits").fire();
+            stage.getScene().getRoot().layout();
+            String screenshot = System.getProperty("sca.exchequerFourSplitScreenshot");
+            if (screenshot != null)
+            {
+                var image = stage.getScene().snapshot(null);
+                var buffered = new java.awt.image.BufferedImage((int) image.getWidth(), (int) image.getHeight(), java.awt.image.BufferedImage.TYPE_INT_ARGB);
+                for (int y = 0; y < image.getHeight(); y++)
+                {
+                    for (int x = 0; x < image.getWidth(); x++)
+                    {
+                        buffered.setRGB(x, y, image.getPixelReader().getArgb(x, y));
+                    }
+                }
+                javax.imageio.ImageIO.write(buffered, "png", Path.of(screenshot).toFile());
+            }
+            ((CheckBox) panel.root().lookup("#confirmExchequerReview")).setSelected(true);
+            assertFalse(button("commitExchequerEntries").isDisabled());
+            Platform.runLater(ExchequerImportReviewPaneTest::acceptConfirmation);
+            panel.onSave();
+            return null;
+        });
+        await(() -> ((Label) panel.root().lookup("#exchequerReviewStatus")).getText().startsWith("Saved 1 entries"));
+        var saved = UiServiceRegistry.transactionEntry().search(null, null, "000043", 100).get(0);
+        assertEquals(5, saved.lines().size());
+        assertEquals(java.time.LocalDate.of(2026, 2, 7), saved.information().statementDate());
+        assertEquals(java.time.LocalDate.of(2026, 1, 29), saved.information().incomingDate());
+        assertTrue(saved.lines().stream().noneMatch(line -> line.bankCleared() || line.bankClearedOn() != null));
+    }
+
+    private static void acceptConfirmation()
+    {
+        javafx.stage.Window.getWindows().stream()
+                .filter(window -> window.getScene() != null && window.getScene().getRoot() instanceof DialogPane)
+                .findFirst().ifPresent(window -> ((Button) ((DialogPane) window.getScene().getRoot()).lookupButton(ButtonType.OK)).fire());
     }
 
     @Test

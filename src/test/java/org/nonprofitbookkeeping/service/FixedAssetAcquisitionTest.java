@@ -47,19 +47,19 @@ class FixedAssetAcquisitionTest
         try (Jpa jpa = new Jpa(database))
         {
             var f = AssetAcquisitionTestFixture.seed(jpa); var service = f.service(jpa);
-            command = purchase(f, "Equipment", "1000.1234");
+            command = purchase(f, "Equipment", "1000.1200");
             preview = service.previewAcquisition(command, key);
             assertEquals(1, count(jpa, "select count(t) from Txn t"));
             assertEquals(0, count(jpa, "select count(a) from FixedAsset a"));
             var saved = service.recordAcquisition(preview); id = saved.id();
             assertEquals(AssetAcquisitionSource.NEW_PURCHASE, saved.acquisition().source());
-            assertEquals(new BigDecimal("1000.1234"), saved.acquisition().sourceDebit());
-            assertEquals(new BigDecimal("1000.1234"), saved.acquisition().claimed());
+            assertEquals(new BigDecimal("1000.1200"), saved.acquisition().sourceDebit());
+            assertEquals(new BigDecimal("1000.1200"), saved.acquisition().claimed());
             assertEquals(new BigDecimal("0.0000"), saved.acquisition().remaining());
             var report = new org.nonprofitbookkeeping.report.AssetInventoryReportQueryService(jpa, () -> COMPANY)
                     .fixedAssetRegister(new org.nonprofitbookkeeping.report.AssetInventoryReportQueryService.FixedAssetReportRequest(
                             DATE, DATE, f.base().source(), f.asset(), null, null, 100));
-            assertEquals(new BigDecimal("1000.1234"), report.domainGross());
+            assertEquals(new BigDecimal("1000.1200"), report.domainGross());
             assertEquals(report.domainGross(), report.ledgerGross());
             assertEquals(new BigDecimal("0.0000"), report.difference());
             assertEquals(id, service.recordAcquisition(preview).id());
@@ -67,12 +67,12 @@ class FixedAssetAcquisitionTest
             assertEquals(1, count(jpa, "select count(a) from FixedAsset a"));
             try (EntityManager em = jpa.em())
             {
-                assertEquals(new BigDecimal("1000.1234"), em.createQuery("select sum(s.amountSigned) from TxnSplit s where s.account.id = :account", BigDecimal.class)
+                assertEquals(new BigDecimal("1000.1200"), em.createQuery("select sum(s.amountSigned) from TxnSplit s where s.account.id = :account", BigDecimal.class)
                         .setParameter("account", f.asset()).getSingleResult());
                 assertEquals(2L, em.createQuery("select count(s) from TxnSplit s where s.txn.id = :txn", Long.class)
                         .setParameter("txn", saved.acquisition().transactionId()).getSingleResult());
             }
-            service.update(id, f.command("Renamed equipment", "1000.1234"));
+            service.update(id, f.command("Renamed equipment", "1000.1200"));
         }
         try (Jpa jpa = new Jpa(database))
         {

@@ -67,13 +67,13 @@ class FunctionalExpenseTest
             var f = FunctionalExpenseTestFixture.seed(jpa); var entry = f.entry(jpa); var b = f.base();
             entry.enter(f.expense(DATE, b.expense(), b.source(), f.event(), "100", false, null));
             entry.enter(f.expense(DATE, b.expense(), b.source(), f.event(), "100", true, null));
-            entry.enter(f.expense(DATE, f.contra(), b.source(), f.otherEvent(), "25.1234", true, ExpenseFunction.FR));
-            entry.enter(f.expense(DATE, f.contra(), b.source(), f.otherEvent(), "30.1234", false, ExpenseFunction.AR));
+            entry.enter(f.expense(DATE, f.contra(), b.source(), f.otherEvent(), "25.12", true, ExpenseFunction.FR));
+            entry.enter(f.expense(DATE, f.contra(), b.source(), f.otherEvent(), "30.12", false, ExpenseFunction.AR));
             entry.enter(f.expense(DATE, b.expense(), b.destination(), f.event(), "12", false, ExpenseFunction.OA));
             var result = query(jpa).query(DATE, DATE, "GENERAL", f.event());
             assertFalse(result.ready()); amount("0", result.gl()); amount("0", result.unclassified()); amount("200", result.unknownGross());
             result = query(jpa).query(DATE, DATE, "GENERAL", f.otherEvent());
-            assertTrue(result.ready()); amount("5", result.gl()); amount("-25.1234", result.totals().get(ExpenseFunction.FR)); amount("30.1234", result.totals().get(ExpenseFunction.AR));
+            assertTrue(result.ready()); amount("5", result.gl()); amount("-25.12", result.totals().get(ExpenseFunction.FR)); amount("30.12", result.totals().get(ExpenseFunction.AR));
             amount("12", query(jpa).query(DATE, DATE, "DESIGNATED", null).gl());
             amount("0", query(jpa).query(DATE.minusDays(1), DATE.minusDays(1), null, null).gl());
             var request = new ReportRequest(ReportDefinition.FUNCTIONAL_EXPENSES, DATE, DATE, ReportFundOption.ALL_FUNDS, 1, new ReportDomainFilter.EventSelection(f.event()));

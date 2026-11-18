@@ -44,7 +44,7 @@ public final class SclxImportPreviewService
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Set<String> RECOGNIZED_EXTENSION_KEYS = Set.of(
             "activeChartName", "activeChartVersion", "charts", "activities", "counterparties",
-            "supplementalDetails", "fundTransfers", "transactionBudgets", "budgetMetadata", "budgetCategories", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "bankConfiguration",
+            "supplementalDetails", "fundTransfers", "transactionBudgets", "budgetMetadata", "budgetCategories", "transactionNmr", "expenseFunctions", "assetAcquisitions", "paymentReferences", "journalInformation", "bankConfiguration",
             "bankStatementFacts", "reconciliation", "fixedAssets", "inventory", "propertyCustody",
             "periodClose", "auditHistory", "nmrPolicies");
     private static final Set<String> UNSUPPORTED_ROOT_SECTIONS = Set.of(
@@ -161,6 +161,7 @@ public final class SclxImportPreviewService
         {
             identityRoot = SclxExpenseFunctions.identityDocument(SclxMerchantSettlementMetadata.identityDocument(SclxNmrItemMetadata.identityDocument(SclxTransactionNmrExtension.identityDocument(
                     SclxPaymentReferences.identityDocument(SclxTransactionBudgetExtension.identityDocument(document.root()))))));
+            identityRoot = SclxJournalInformation.identityDocument(identityRoot);
             identityRoot = SclxAssetAcquisitions.identityDocument(identityRoot);
             identityRoot = SclxBudgetMetadata.identityDocument(identityRoot);
             identityRoot = SclxFundTransfers.identityDocument(identityRoot);
@@ -1293,6 +1294,12 @@ public final class SclxImportPreviewService
                     String linePath = path + ".lines[" + lineIndex + "]";
                     BigDecimal debit = decimal(line.get("debit"), linePath + ".debit", messages);
                     BigDecimal credit = decimal(line.get("credit"), linePath + ".credit", messages);
+                    if (debit.stripTrailingZeros().scale() > 2 || credit.stripTrailingZeros().scale() > 2)
+                    {
+                        messages.add(message(InterchangeMessageSeverity.ERROR,
+                                "SCLX_LEDGER_PRECISION", linePath,
+                                "Ledger amounts require at most two decimal places; fractional cents are not rounded.", true));
+                    }
                     if (debit.signum() < 0 || credit.signum() < 0)
                     {
                         messages.add(message(InterchangeMessageSeverity.ERROR, "SCLX_NEGATIVE_POSTING_AMOUNT",

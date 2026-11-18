@@ -107,7 +107,7 @@ class ExchequerReportCsvImporterTest
     @Test
     void retainsMalformedBusinessRowsWithBlockingDiagnosticsAndValidNeighbors() throws Exception
     {
-        for (String fault : List.of("date", "statementDate", "missingDate", "amount", "precision", "balance", "bothCategories", "noCategory", "missingSplit", "splitRow", "timing", "duplicate"))
+        for (String fault : List.of("date", "statementDate", "missingDate", "amount", "precision", "balance", "bothCategories", "noCategory", "missingSplit", "splitRow", "timing", "duplicate", "fractionalCent"))
         {
             var records = header();
             var bad = row(1, "2/28/2026", "(10.00)"); split(bad, 0, "10.00", "", "Expense");
@@ -118,6 +118,7 @@ class ExchequerReportCsvImporterTest
                 case "missingDate" -> bad.set(3, "");
                 case "amount" -> bad.set(33, "1,00.00");
                 case "precision" -> bad.set(33, "10.12345");
+                case "fractionalCent" -> bad.set(33, "10.001");
                 case "balance" -> bad.set(2, "11");
                 case "bothCategories" -> bad.set(34, "Income too");
                 case "noCategory" -> bad.set(35, "");

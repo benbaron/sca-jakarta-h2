@@ -114,8 +114,8 @@ class CoreAccountingPacketServiceTest
             var yearEnd = java.time.LocalDate.of(2026, 12, 31);
             var nextYear = yearEnd.plusDays(1);
             long id = entry.enter(new TransactionCommand(yearEnd, null, "Year-end receipt", null,
-                    List.of(fixture.line(fixture.cash(), "42.1234", "0", fixture.event()),
-                            fixture.line(fixture.income(), "0", "42.1234", fixture.event())))).id();
+                    List.of(fixture.line(fixture.cash(), "42.1200", "0", fixture.event()),
+                            fixture.line(fixture.income(), "0", "42.1200", fixture.event())))).id();
             new TransactionCorrectionService(jpa, () -> COMPANY).reverse(id, nextYear, "tester", "Synthetic correction", false);
             long audits = count(jpa, "AuditEvent");
             var service = new CoreAccountingPacketService(() -> db, () -> COMPANY, null);
@@ -125,8 +125,8 @@ class CoreAccountingPacketServiceTest
             {
                 assertFalse(read(before, "General Ledger.csv").contains(nextYear.toString()));
                 assertTrue(read(after, "General Ledger.csv").contains(nextYear.toString()));
-                assertTrue(read(before, "Income Statement.csv").contains("42.1234"));
-                assertTrue(read(after, "Income Statement.csv").contains("-42.1234"));
+                assertTrue(read(before, "Income Statement.csv").contains("42.1200"));
+                assertTrue(read(after, "Income Statement.csv").contains("-42.1200"));
                 var canonical = new FinancialReportService(jpa, () -> COMPANY);
                 assertEquals(PoiXlsxFinancialReportAdapter.parseCsv(FinancialReportRenderer.renderBalanceSheetCsv(canonical.balanceSheet(nextYear, null))),
                         PoiXlsxFinancialReportAdapter.parseCsv(read(after, "Balance Sheet.csv")));

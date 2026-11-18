@@ -75,6 +75,28 @@ public class Txn
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
 
+    @Column(name = "transfer_or_check_reference", length = 200)
+    private String transferOrCheckReference;
+
+    @Column(name = "source_statement_date")
+    private LocalDate sourceStatementDate;
+
+    @Column(name = "incoming_check_transfer_date")
+    private LocalDate incomingCheckTransferDate;
+
+    public TransactionInformation getInformation()
+    {
+        return new TransactionInformation(transferOrCheckReference, sourceStatementDate, incomingCheckTransferDate);
+    }
+
+    public void setInformation(TransactionInformation information)
+    {
+        TransactionInformation facts = information == null ? TransactionInformation.empty() : information;
+        transferOrCheckReference = facts.transferOrCheckReference();
+        sourceStatementDate = facts.statementDate();
+        incomingCheckTransferDate = facts.incomingDate();
+    }
+
     public Long getId() { return id; }
     public Company getCompany() { return company; }
     public void setCompany(Company company) { this.company = company; }

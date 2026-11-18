@@ -512,6 +512,7 @@ public class TransactionEntryService
                                     "and (:toDate is null or t.txnDate <= :toDate) " +
                                     "and (:needle is null or lower(coalesce(t.memo, '')) like :needle " +
                                     "or lower(coalesce(p.displayName, '')) like :needle " +
+                                    "or lower(coalesce(t.transferOrCheckReference, '')) like :needle " +
                                     "or exists (select ps.id from TxnSplit ps where ps.txn = t and (" +
                                     "lower(coalesce(ps.paymentReference, '')) like :needle " +
                                     "or lower(ps.account.code) like :needle or lower(ps.account.name) like :needle))) " +
@@ -749,6 +750,7 @@ public class TransactionEntryService
         ownership().ensureOwnedBy(em, company, payee, "Payee");
         txn.setPayee(payee);
         txn.setMemo(command.memo());
+        txn.setInformation(command.information());
         Account bankAccount = command.bankAccountId() == null ? null : required(em, Account.class, command.bankAccountId(), "Bank account");
         if (bankAccount != null)
         {
@@ -1056,7 +1058,7 @@ public class TransactionEntryService
                 txn.getId(), txn.getTxnDate(), payee == null ? null : payee.getId(),
                 payee == null ? null : payee.getDisplayName(), txn.getMemo(),
                 bankAccount == null ? null : bankAccount.getId(), bankAccount == null ? null : bankAccount.getName(),
-                txn.getStatus(), lines, supplementalLines);
+                txn.getStatus(), lines, supplementalLines, txn.getInformation());
     }
 
     private static Map<Long, Long> reconciliationSessions(EntityManager em, long transactionId)
@@ -1155,7 +1157,8 @@ public class TransactionEntryService
     private static String snapshot(EntityManager em, Txn txn)
     {
         return "id=" + txn.getId() + ",date=" + txn.getTxnDate() + ",status=" + txn.getStatus()
-                + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo()) + ",payments=" + PaymentReferences.snapshot(em, txn)
+                + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo())
+                + (txn.getInformation().isEmpty() ? "" : ",information=" + txn.getInformation()) + ",payments=" + PaymentReferences.snapshot(em, txn)
                 + ",merchantReceivables=" + MerchantSettlementFacts.snapshot(em, txn)
                 + ",expenseFunctions=" + ExpenseFunctions.snapshot(em, txn)
                 + ",nmrItems=" + SupplementalIntegrityService.nmrSnapshot(em, txn);

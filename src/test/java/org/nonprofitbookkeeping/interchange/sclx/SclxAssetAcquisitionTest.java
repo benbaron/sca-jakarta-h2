@@ -26,7 +26,7 @@ class SclxAssetAcquisitionTest
         try (Jpa jpa = new Jpa(directory.resolve("source")))
         {
             var f = AssetAcquisitionTestFixture.seed(jpa); var service = f.service(jpa);
-            var purchased = service.recordAcquisition(service.previewAcquisition(new AssetAcquisitionCommand(null, f.command("Purchased", "1000.1234"),
+            var purchased = service.recordAcquisition(service.previewAcquisition(new AssetAcquisitionCommand(null, f.command("Purchased", "1000.1200"),
                     AssetAcquisitionSource.NEW_PURCHASE, f.base().bank(), null), UUID.randomUUID()));
             long transaction = new TransactionEntryService(jpa).enter(new TransactionCommand(DATE, null, "Shared invoice", null,
                     List.of(FundTransferTestFixture.line(f.asset(), f.base().source(), "1000", "0"),

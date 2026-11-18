@@ -71,10 +71,11 @@ public final class ExchequerImportService
                     lines.add(line(effect.negate(), "Category: " + split.category()));
                 }
             }
-            String memo = String.join(" | ", List.of(row.payee(), row.reference(), row.notes()).stream()
+            String memo = String.join(" | ", List.of(row.payee(), row.notes()).stream()
                     .filter(s -> s != null && !s.isBlank()).toList());
             entries.add(new ProposedEntry(row.sourceLine(),
-                    new TransactionCommand(row.transactionDate(), null, memo, null, lines)));
+                    new TransactionCommand(row.transactionDate(), null, memo, null, lines, List.of(),
+                            new TransactionInformation(row.reference(), row.statementDate(), row.incomingDate()))));
         }
         return new Preview(companyCode, document, entries);
     }
@@ -214,9 +215,15 @@ public final class ExchequerImportService
                 .setParameter("id", identity).setMaxResults(1).getResultList().isEmpty();
     }
 
+    /** Pure, exact validation of one CSV candidate, including lossless ledger storage precision. */
+    public static TransactionValidationResult validateCandidate(TransactionCommand command)
+    {
+        return new TransactionCommandValidator().validate(command);
+    }
+
     private void validateCurrentReferences(EntityManager em, Company company, TransactionCommand command)
     {
-        var validation = new TransactionCommandValidator().validate(command);
+        var validation = validateCandidate(command);
         if (!validation.valid())
         {
             throw new IllegalArgumentException(String.join(" ", validation.errors()));

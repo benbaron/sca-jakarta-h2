@@ -157,3 +157,5 @@ Ambiguous ownership fails closed; the application must not silently assign histo
 - deprecated `MainWindow`: session facade only; production shell is `ProductionWorkspaceWindow`.
 
 When a future slice proves the last current consumer of one of these compatibility families has disappeared, removal may be planned. Persistence cleanup must remain nondestructive unless an explicit migration says otherwise.
+
+P27-C11 adds nullable informational reference/statement/incoming date fields to the existing Txn header through V94. TransactionEntryService/TransactionCorrectionService retain authority, audits and native request replay include nonempty facts, and Journal/CSV/SCLX use the same command/view value. Statement information never writes TxnSplit bank-cleared/matching facts.

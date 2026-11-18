@@ -3,6 +3,7 @@ package org.nonprofitbookkeeping.service;
 import java.math.BigDecimal;
 import org.nonprofitbookkeeping.model.ExpenseFunction;
 import java.time.LocalDate;
+import org.nonprofitbookkeeping.model.TransactionInformation;
 import java.util.List;
 
 /**
@@ -17,8 +18,17 @@ public record TransactionView(Long id,
                               String bankAccountName,
                               String status,
                               List<Line> lines,
-                              List<TransactionSupplementalLineView> supplementalLines)
+                              List<TransactionSupplementalLineView> supplementalLines,
+                              TransactionInformation information)
 {
+    public TransactionView(Long id, LocalDate date, Long payeeId, String payeeName, String memo,
+                           Long bankAccountId, String bankAccountName, String status, List<Line> lines,
+                           List<TransactionSupplementalLineView> supplementalLines)
+    {
+        this(id, date, payeeId, payeeName, memo, bankAccountId, bankAccountName, status, lines, supplementalLines,
+                TransactionInformation.empty());
+    }
+
     public TransactionView(Long id,
                            LocalDate date,
                            Long payeeId,
@@ -34,6 +44,7 @@ public record TransactionView(Long id,
 
     public TransactionView
     {
+        information = information == null ? TransactionInformation.empty() : information;
         lines = lines == null ? List.of() : List.copyOf(lines);
         supplementalLines = supplementalLines == null ? List.of() : List.copyOf(supplementalLines);
     }
