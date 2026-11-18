@@ -127,7 +127,12 @@ public class ImportPreviewPanel implements AppPanel
 	private final TabPane previewTabs = new TabPane();
 	private final Button commitAccepted =
 		new Button("Save Accepted COA Rows");
-	private final Button previewCoa = new Button("Preview COA CSV…");
+	private ExchequerImportReviewPane exchequerReview;
+    private Node standardImportControls;
+    private Node standardImportWorkspace;
+    private java.util.function.Consumer<RunCommandResult> exchequerResultListener = ignored -> { };
+    private final Button previewExchequer = new Button("Import Exchequer CSV…");
+    private final Button previewCoa = new Button("Preview COA CSV…");
     private final javafx.beans.value.ChangeListener<Boolean> nmrPolicyPermissionListener =
             (observable, oldValue, newValue) -> updateSclxCommitAvailability();
 	private final Button previewSclx = new Button("Preview SCLX…");
@@ -348,7 +353,19 @@ public class ImportPreviewPanel implements AppPanel
 		sclxActor.textProperty().addListener(
 			(observable, oldValue, newValue) -> updateBankCommitAvailability());
 		
-		previewCoa.setOnAction(e -> chooseAndPreviewCoa());
+		previewExchequer.setId("previewExchequerCsvButton");
+        previewExchequer.setOnAction(e ->
+        {
+            if (exchequerReview == null)
+            {
+                chooseExchequerCsv();
+            }
+            else
+            {
+                showExchequerReview();
+            }
+        });
+        previewCoa.setOnAction(e -> chooseAndPreviewCoa());
 		previewCoa.setId("previewCoaCsvButton");
 		
 		previewBank.setOnAction(e -> chooseAndPreviewBank());
@@ -384,7 +401,7 @@ public class ImportPreviewPanel implements AppPanel
 		status.setId("importPreviewStatus");
 		status.setWrapText(true);
 		VBox controls = new VBox(6, title,
-			new HBox(8, previewSclx, repreviewSclx, previewCoa, commitAccepted),
+			new HBox(8, previewSclx, repreviewSclx, previewCoa, commitAccepted, previewExchequer),
 			new HBox(8, new Label("Configured bank account"), bankAccount,
 				previewBank, previewNormalizedBankCsv),
 			new HBox(8, new Label("Mapped CSV profile"), bankCsvProfile,
@@ -402,7 +419,8 @@ public class ImportPreviewPanel implements AppPanel
 		controlsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 		controlsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 		controlsScroll.setPannable(true);
-		root.setTop(controlsScroll);
+		standardImportControls = controlsScroll;
+        root.setTop(controlsScroll);
 		
 		buildAcceptedTable();
 		buildRejectedTable();
@@ -464,7 +482,8 @@ public class ImportPreviewPanel implements AppPanel
 		center.setDividerPositions(0.28);
 		CompanySplitPaneStateBinder.bind(center, "import-preview-workspace",
 			0.28);
-		root.setCenter(center);
+		standardImportWorkspace = center;
+        root.setCenter(center);
 		
 	}
 	
@@ -573,6 +592,7 @@ public class ImportPreviewPanel implements AppPanel
 	
 	private void setOperationControlsDisabled(boolean disabled)
 	{
+        previewExchequer.setDisable(disabled);
 		previewCoa.setDisable(disabled);
 		previewSclx.setDisable(disabled);
 		repreviewSclx.setDisable(disabled || lastSclxSource == null);
@@ -632,8 +652,91 @@ public class ImportPreviewPanel implements AppPanel
 		
 	}
 
+    private void chooseExchequerCsv()
+    {
+        if (exchequerReview != null && exchequerReview.hasUnsavedChanges())
+        {
+            Alert discard = new Alert(Alert.AlertType.CONFIRMATION,
+                    "Discard the current Exchequer import review and choose another file?", ButtonType.OK, ButtonType.CANCEL);
+            if (discard.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK)
+            {
+                return;
+            }
+        }
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Import Exchequer Ledger CSV");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Exchequer CSV", "*.csv"));
+        File file = fileSelection.apply(chooser, root.getScene() == null ? null : root.getScene().getWindow());
+        if (file == null)
+        {
+            return;
+        }
+        String company = activeCompanyCode.get();
+        String database = MainWindow.sharedSessionState().databaseSelection().activeDatabasePath();
+        var service = UiServiceRegistry.exchequerImport(company);
+        var references = UiServiceRegistry.exchequerReferences(company);
+        exchequerReview = new ExchequerImportReviewPane(service, references::loadActiveReferenceData,
+                CompanyUiFormat.activeCompany(), () -> Objects.equals(company, activeCompanyCode.get())
+                        && Objects.equals(database, MainWindow.sharedSessionState().databaseSelection().activeDatabasePath()));
+        exchequerReview.setCapabilitiesChanged(() -> commandCapabilitiesChangedListener.run());
+        exchequerReview.setResultListener(result -> exchequerResultListener.accept(result));
+        exchequerReview.busyProperty().addListener((o, a, busy) -> root.setDisable(busy));
+        previewExchequer.setText("Resume Exchequer Review…");
+        showExchequerReview();
+        exchequerReview.open(file.toPath());
+    }
+
+    private void showExchequerReview()
+    {
+        if (!(root.getCenter() instanceof ExchequerImportReviewPane))
+        {
+            // Preserve the actual production composition, including the shared header divider.
+            standardImportControls = root.getTop();
+            standardImportWorkspace = root.getCenter();
+        }
+        Button back = new Button("Back to Import");
+        back.setId("backFromExchequerReview");
+        back.setWrapText(true);
+        back.setTooltip(new Tooltip("Return to Import while keeping this review draft."));
+        back.setOnAction(event -> showStandardImport());
+        Button choose = new Button("Choose Another Exchequer CSV…");
+        choose.setWrapText(true);
+        choose.setTooltip(new Tooltip("Choose a different CSV after confirming discard of this unresolved review."));
+        choose.setOnAction(event -> chooseExchequerCsv());
+        root.setTop(new javafx.scene.layout.FlowPane(8, 6, back, choose));
+        root.setCenter(exchequerReview);
+        exchequerReview.onShown();
+        commandCapabilitiesChangedListener.run();
+    }
+
+    private void showStandardImport()
+    {
+        if (root.getCenter() instanceof ExchequerImportReviewPane)
+        {
+            root.setTop(standardImportControls);
+            root.setCenter(standardImportWorkspace);
+            commandCapabilitiesChangedListener.run();
+        }
+    }
+
+    @Override
+    public boolean hasUnsavedChanges()
+    {
+        return exchequerReview != null && exchequerReview.hasUnsavedChanges();
+    }
+
+    @Override
+    public void setCommandResultListener(java.util.function.Consumer<RunCommandResult> listener)
+    {
+        exchequerResultListener = Objects.requireNonNull(listener);
+    }
+
     private Button selectedSaveButton()
     {
+        if (exchequerReview != null && root.getCenter() == exchequerReview)
+        {
+            return exchequerReview.commitButton();
+        }
         return switch (previewTabs.getSelectionModel().getSelectedIndex())
         {
             case 0 -> commitAccepted;
@@ -687,7 +790,8 @@ public class ImportPreviewPanel implements AppPanel
     @Override
     public String commandResultMessage(AppCommand command)
     {
-        return status.getText();
+        return exchequerReview != null && root.getCenter() == exchequerReview
+                ? exchequerReview.statusMessage() : status.getText();
     }
 
     @Override
@@ -700,6 +804,10 @@ public class ImportPreviewPanel implements AppPanel
 	@Override
 	public void onPanelShown()
 	{
+        if (exchequerReview != null)
+        {
+            exchequerReview.onShown();
+        }
 		returnReconciliationSessionId = null;
 		reconciliationImportBankAccountId = null;
 		bankAccount.setDisable(false);
@@ -712,6 +820,7 @@ public class ImportPreviewPanel implements AppPanel
 			return;
 		}
 		
+        showStandardImport();
 		reloadBankTargets();
 		BankImportNavigationContext.ImportRequest importRequest = request.get();
 		CompanyBankAccount target = bankAccount.getItems().stream()

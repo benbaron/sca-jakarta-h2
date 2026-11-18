@@ -100,6 +100,8 @@ Legacy reconciliation-run repositories/services remain only as classified P17-C1
 
 ## Import staging versus accepted data
 
+- **Exchequer ledger CSV:** transient editable/deletable proposed entries; ExchequerImportService atomically accepts reviewed commands through TransactionEntryService into Txn/TxnSplit and immutable source AuditEvent receipts. No independent ledger or staging persistence.
+
 Transient preview is permitted because review state is not accepted business data. Each format has its own real commit boundary:
 
 - **COA CSV:** frozen source/company/chart/target scope; accepted accounts/external identities/audit commit atomically.

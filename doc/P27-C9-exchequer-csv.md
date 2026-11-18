@@ -1,35 +1,43 @@
-# P27-C9 Exchequer ledger-sheet CSV importer
+# P27-C9 Exchequer CSV review and journal import
 
-This slice delivers a reusable ExchequerReportCsvImporter and typed immutable in-memory report/row/split facts, exposed through ImportPreviewService. It reads the 2026-03 SCA Exchequer Ledger worksheet layout, not arbitrary spreadsheets or bank statements. The source contains seven header rows, an opening balance/date row, up to four accounting split blocks (AG:AM, BG:BM, CG:CM, DG:DM), and calculated/report helpers. Raw source facts and provenance remain available; report helpers are not independent accounting authority.
+Import -> Import Exchequer CSV opens an alternate page containing Proposed Entries, Edit Entry, and Original Source and Diagnostics work pages. Back to Import and Resume Exchequer Review preserve the same draft. Choose Another CSV confirms discard of an unresolved draft. Closing the workspace/application uses the existing unsaved-work protection.
 
-**Use every entry’s literal transaction date. Never validate/filter by report quarter, year, reporting range or filename.** Heading text is retained as informational source data. Opening balances are facts, not fabricated opening transactions. Blank/default template rows and pure computed/helper rows do not become journal entries. Populated zero-value/cancelled/note-only records remain non-posting records for review, not inferred void/reversal commands. Expense-function defaults alone do not create split lines. Negative values retain their sign; categories are source labels, not guessed native account classifications.
+Every entry starts with its literal transaction date. Never validate/filter by report quarter, year, reporting range, filename or calculated report-inclusion flag. Users may deliberately edit the proposed date and memo/payee, map accounts/Funds and optional Budget/Event/Merchant/expense function, edit debit/credit/notes, add/remove accounting lines and delete proposed entries before commit. Removal affects only the transient proposal. Original CSV bytes and existing Journal records are unchanged.
 
-The reader supports quoted commas, escaped quotes, multiline fields, BOM, strict UTF-8 by default and explicitly chosen encodings. It bounds bytes, cells, records, columns and field/record lengths, verifies the input layout, retains malformed business rows with blocking diagnostics, checks dates/money/split completeness and source net-versus-split consistency. Unknown timing or purpose text is never silently reclassified. The bank CSV reader reuses the shared lexer with its original narrow limits.
+## Reader and source facts
 
-The importer is a format/preview boundary, like existing format parsers. It performs no database writes and introduces no parallel ledger. Posting requires explicit native account/Fund/Budget/party mappings plus canonical transaction/lifecycle/idempotency/period validation. A single worksheet does not supply missing asset/liability schedules, native item identities, or other workbook tabs. No automatic account creation, reconciliation, reversal, opening entry or SCLX synthesis is inferred. A later UI/commit slice must use existing canonical services and preserve these facts.
+ExchequerReportCsvImporter reads the 2026-03 SCA Exchequer Ledger worksheet layout: seven header rows, opening balance/date and four split blocks (AG:AM, BG:BM, CG:CM, DG:DM). It returns immutable source facts through ImportPreviewService and performs no database writes. It supports quoted commas, escaped quotes, multiline fields, BOM, strict UTF-8 or an explicitly chosen encoding, with bounds on bytes/records/fields/columns/cells. Bank CSV retains its independent 128-column cap when reusing CsvRecordReader.
 
-Donor inspection: SCFX-SCA-Data-Exchange-Format SCLX_Ledger_IO_v14_canonical_import.bas confirms the four split groups and exclusion of function-only defaults. Its absolute-value conversion and report-period filtering are deliberately not adopted: preserve signs and follow the owner’s literal-date direction. No macro, formula or instruction embedded in CSV content is executed.
+Default-only/template/helper slots do not become entries. Zero-value/note-only records remain source evidence and never become zero-value journal entries. Invalid business rows remain available for correction or removal. Known statement-status text such as not cashed remains verbatim without an invented clearing date/state. Signed BigDecimal values retain negative adjustments. Source labels are not native account classifications. Opening balance, running balance, timing flags, reversal links, item numbers, quantities and raw text remain evidence, not fabricated openings, operational schedules, cleared facts or lifecycle commands.
 
-Synthetic automated fixtures must cover the actual wide shape without publishing the owner’s financial data. Private-file validation reports counts/diagnostics only and leaves the input bytes unchanged. Owner usage: call new ExchequerReportCsvImporter().read(path), or ImportPreviewService.previewExchequerReportCsv(path); inspect rows/splits/messages before any explicit mapping/acceptance work. No desktop command is added by this class-only request.
+Donor inspection: SCFX-SCA-Data-Exchange-Format SCLX_Ledger_IO_v14_canonical_import.bas confirms four split groups and excludes purpose-only defaults. Its absolute-value conversion and period filtering are not adopted. No embedded macro, formula or instruction is executed. Journal design already adapted from NonprofitAccounting JournalEntryWorkspaceFX supplies the stable-ID, one-sided-line, totals and focus-preserved editing approach; donor persistence/static company state is not imported.
 
-Known free-text statement statuses (including `not cashed`) remain available verbatim through Row.statementDateText(), with no invented statement date or cleared flag. Invalid numeric calendar dates still produce blocking diagnostics. Opening balance and computed running balance are distinct source facts; an unavailable computed balance does not invalidate the entry’s monetary inputs.
+## Proposed entries and acceptance
 
-Initial verification: baseline compile (21.9s) and 16 existing CSV/preview/review tests pass. Final focused reader/import/review gate passes **28 tests, zero failures/errors/skips (52.1s)**. The private owner file reads **1,009 records, 600 worksheet slots, 98 retained source records, 88 monetary candidates, 10 non-posting records, 502 blank/default rows and 401 helper rows**, with no blocking errors. All stated entry dates, January 3 through October 22, remain literal; source bytes/digest are unchanged. No real financial rows are copied into source control or published. Final clean verification passes **1,245 tests, zero failures/errors, 147 expected headless display skips (10:23)**. Packaged-JAR private-input validation passes. Exact published head 1404a40e9170278d155688a896fc647f60c5429b passes Linux and Windows [CI run 44218011323](https://github.com/benbaron/sca-jakarta-h2/actions/runs/44218011323), including full clean/repeat and all display workflows. Draft [PR #432](https://github.com/benbaron/sca-jakarta-h2/pull/432) awaits owner review/merge; no implementation bytes remain unpublished. Final verification receipts are local-only documentation so the accepted CI head stays unchanged.
+ExchequerImportService.preview constructs a signed bank-side line plus opposite category lines, without guessed mappings. All proposed master references start unmapped. For a zero-net monetary transaction, only meaningful category lines are proposed. A malformed proposal may be edited into a valid balanced command or removed. Apply Mappings to Same Source Labels copies the selected account to exact matching bank/category labels and the selected Fund to exact matching source Fund labels. This is explicit user action, never cross-chart code matching. Refresh Choices retains edits but invalidates review acknowledgement.
 
-## Calling the importer
+The review uses active selected-chart account and active company reference choices, live totals/validation, company money/date formatting, typed date/amount sorting, independently scrolling tables/forms, remembered table/divider state and hover text. Raw numeric input retains four-decimal precision despite two-decimal display normalization. Edits invalidate the batch review acknowledgement. Every remaining proposal must have a valid date, at least two meaningful one-sided lines, account/Fund IDs and balanced totals. Original diagnostics stay available; corrected canonical inputs determine acceptance readiness.
+
+Commit Reviewed Entries and File/toolbar Save share the same explicit confirmation and non-cancellable asynchronous commit. ExchequerImportService owns BOOKKEEPING_WRITE/current-company authorization before validation, unchanged-source verification, a company lock and one outer H2 transaction. It refreshes/rechecks the active selected chart and active master references before calling TransactionEntryService's caller-owned enter boundary. Canonical ownership, period, precision, supplemental and accounting rules remain authoritative. A failure identifies its source line/worksheet row, rolls back the entire batch and retains the draft. Success names saved Journal transaction IDs; corrections/deletions thereafter use Journal.
+
+Each accepted source row retains an immutable AuditEvent receipt, original source record, source SHA-256 and edited command alongside the canonical transaction audit. Deterministic company/source-field receipt identities prevent repeat acceptance after restart, file renaming, correction or transaction deletion. Exact repeats cannot be overridden. A similar existing date/total requires explicit acknowledgement after reviewing Journal; it is never silently discarded or merged. No schema change, sidecar persistence or second ledger is introduced.
+
+## Reader API
 
 ```java
 var report = new ExchequerReportCsvImporter().read(Path.of("ledger.csv"));
-// Or: new ImportPreviewService().previewExchequerReportCsv(path)
-if (report.hasBlockingErrors())
-{
-    // Present report.messages() and original row facts for correction/review.
-}
-for (var row : report.rows())
-{
-    // row.kind(), row.transactionDate(), row.splits(), row.originalFields()
-    // are source facts, not accepted native transaction commands.
-}
+// report.rows(), report.messages(), report.hasBlockingErrors()
+// Explicit legacy encoding: read(path, Charset.forName("windows-1252"))
 ```
 
-For explicitly encoded legacy files use read(path, Charset.forName("windows-1252")). Reading never changes the source or a database. Verify with the synthetic ExchequerReportCsvImporterTest/CsvRecordReaderTest and existing BankCsvReviewServiceTest/NormalizedBankCsvReviewServiceTest/ImportPreviewServiceTest. No UI layout changed; desktop routing remains unchanged.
+The reader API remains non-mutating. The production review and commit composition supersedes the initial class-only boundary of this still-open slice. Only synthetic financial fixtures are committed; uploaded source data is never published.
+
+## User checks
+
+Use a disposable company/database with an active chart and open dates. Open Import -> Import Exchequer CSV, inspect Original Source and Diagnostics, and confirm that entries outside the report heading's quarter/year retain their dates. Map a bank/category and Fund, apply matching-label mappings if appropriate, then edit a date/memo/amount, add/remove a line and delete a proposal. Switch pages and use Back/Resume; edits must remain. Resize the window and drag the header/editor dividers; access all columns/fields in both directions.
+
+An unmapped, invalid or unbalanced proposal must prevent commit. After explicit review and confirmation, verify the remaining entries/amounts/dates in Journal. Repeat the source import: accepted source rows must be identified and blocked. Confirm that a closed date, stale chart/master or changed source fails without partial writes. After successful acceptance use the normal Journal correction workflow rather than deleting source history.
+
+## Verification
+
+Parser-only revision 1404a40e passed local clean verification and Linux/Windows CI. Those results do not validate this review/commit extension. Extension baseline compile passed (22.6s); existing reader/preview/transaction baseline passed. Initial service gate passed six tests, expanded service gate seven tests. Initial UI attempts exposed display-socket access and test skin timing; these are not accepted display results. Final focused/display/clean and updated-head CI results are recorded in PLAN before handoff.
