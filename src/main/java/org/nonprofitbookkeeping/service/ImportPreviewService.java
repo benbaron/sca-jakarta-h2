@@ -4,6 +4,8 @@ import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
 import org.nonprofitbookkeeping.interchange.bank.BankStatementDocument;
 import org.nonprofitbookkeeping.interchange.bank.BankStatementParser;
 import org.nonprofitbookkeeping.model.BankingDataFormat;
+import org.nonprofitbookkeeping.interchange.exchequer.ExchequerReportCsvDocument;
+import org.nonprofitbookkeeping.interchange.exchequer.ExchequerReportCsvImporter;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,6 +40,12 @@ public class ImportPreviewService
         this.orchestrationService = orchestrationService;
         this.bankImportNormalizationService = bankImportNormalizationService;
         this.bankStatementParser = new BankStatementParser();
+    }
+
+    /** Reads Exchequer worksheet facts for explicit mapping/review; does not post accounting. */
+    public ExchequerReportCsvDocument previewExchequerReportCsv(Path path)
+    {
+        return new ExchequerReportCsvImporter().read(path);
     }
 
     public CoaPreviewResult previewCoaCsv(Path path)
