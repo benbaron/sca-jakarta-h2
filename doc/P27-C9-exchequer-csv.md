@@ -30,7 +30,7 @@ var report = new ExchequerReportCsvImporter().read(Path.of("ledger.csv"));
 // Explicit legacy encoding: read(path, Charset.forName("windows-1252"))
 ```
 
-The reader API remains non-mutating. The production review and commit composition supersedes the initial class-only boundary of this still-open slice. Only synthetic financial fixtures are committed; uploaded source data is never published.
+The reader API remains non-mutating. The production review and commit composition supersedes the initial class-only boundary. Only synthetic financial fixtures are committed; uploaded source data is never published.
 
 ## User checks
 
@@ -41,3 +41,9 @@ An unmapped, invalid or unbalanced proposal must prevent commit. After explicit 
 ## Verification
 
 Parser-only revision 1404a40e passed local clean verification and Linux/Windows CI. Those results do not validate this review/commit extension. Extension baseline compile passed (22.6s); existing reader/preview/transaction baseline passed. Initial service gate passed six tests, expanded service gate seven tests. Initial UI attempts exposed display-socket access and test skin timing; these are not accepted display results. Final focused/display/clean and updated-head CI results are recorded in PLAN before handoff.
+
+## Additional regression coverage (P27-C10)
+
+PR #432 is merged at c34db345 in current main; the original parser, nine service and two JavaFX review tests remain. ExchequerImportValidationTest adds parameterized coverage for nine invalid edited-command cases (unbalanced, zero, both-sided, negative, missing Fund/date, one line, overlong memo/notes), seven stale mapping cases (Fund, Payee, Budget, Event, Merchant, non-posting account, inactive header account), correction/deletion of malformed-date source proposals and unknown/empty selections. Every rejected batch verifies that earlier valid entries and all audit receipts roll back, then retries the same review successfully after correction. Accepted optional mappings and unchanged source bytes are verified. All input is synthetic.
+
+This is a test-only extension; no accounting, UI or schema behavior changes. Existing owner checks above still apply. Focused command: mvn -Dtest=ExchequerImportValidationTest,ExchequerImportServiceTest,ExchequerReportCsvImporterTest,CsvRecordReaderTest test. Full clean and new-head CI results are recorded in PLAN before handoff.

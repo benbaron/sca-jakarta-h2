@@ -1,18 +1,24 @@
 ---
-plan_version: 503
+plan_version: 506
 active_phase: P27
-active_slice: P27-C9
+active_slice: P27-C10
 active_status: VERIFYING
-active_branch: codex/P27-C9-exchequer-csv
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/432
-active_head: 1404a40e9170278d155688a896fc647f60c5429b
-next_action: "Finish final route/full clean verification, normally fast-forward #432 with the review/commit implementation, and inspect CI on its exact new head; await owner review/merge."
+active_branch: codex/P27-C10-exchequer-test-coverage
+active_pull_request: null
+active_head: c34db34502496e5c595212a4efeca793d3928bee
+next_action: "Publish the 19 added Exchequer regression cases in a new draft PR, run full clean and exact-head CI, then owner review/merge; no production code changes."
 
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
-### P27-C9 Exchequer CSV review and journal import — owner request
+### P27-C10 Exchequer import test coverage — owner request
+
+C9/#432 is DONE: merge c34db345 is confirmed in current main, and published implementation 8c0f6e7d passed full local and Linux/Windows CI. Preserve its local-only final receipt on the old branch. Start fresh codex/P27-C10-exchequer-test-coverage from current main; do not reuse the merged branch. Owner requests additional unit tests for the new import feature. Required reading: [C9 contract](P27-C9-exchequer-csv.md), import-review workflow and import authorization. Required inspection: ExchequerImportService/TransactionCommandValidator, reader/document/fixture, canonical entry and existing service/UI tests. No new accounting or UI behavior is planned. Donor behavior is unchanged; tests target production authority. Baseline compile passes (20.4s); existing service/parser baseline passes 18 tests with zero failures/errors/skips (01:02). Add invalid edited-command/atomic rollback, stale mappings, correction/deletion of invalid source proposals, and rejected-batch retry coverage using synthetic data. Implemented 19 additional parameterized/JUnit cases in ExchequerImportValidationTest. Focused service/parser/lexer gate passes **40/zero failures/errors/skips (01:31)**, including all 19 new cases. Every rejection checks batch/audit rollback and corrected retry; source correction/deletion retains original bytes and audit provenance. No production code or schema/UI changes. Full clean and new-head CI remain required before handoff.
+
+### P27-C9 Exchequer CSV review and journal import — DONE
+
+Confirmed merged as #432 / c34db345 in current main. Earlier implementation/pending notes below are historical; the final receipt is preserved on the old branch.
 
 Owner explicitly expands the still-open slice/#432 with an alternate Import review page, editable/deletable proposed entries and actual canonical ledger commit. This supersedes the former class-only scope. Current main is c1d0162d; #432 remains draft/open/unmerged on its owning codex/P27-C9-exchequer-csv branch. The initial parser revision 1404a40e passed local and Linux/Windows CI, but those checks do not validate this extension. C8/#431 is confirmed merged and DONE.
 
