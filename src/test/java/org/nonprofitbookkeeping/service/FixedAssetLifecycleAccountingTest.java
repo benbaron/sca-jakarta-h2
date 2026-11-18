@@ -327,6 +327,10 @@ class FixedAssetLifecycleAccountingTest
                     FixedAsset.Status.ACTIVE));
             service.runMonthlyDepreciation(
                     asset.id(), EVENT_DATE.plusMonths(1), "later completed depreciation");
+            assertTrue(new TransactionEntryService(jpa, () -> "SCA").search(null, null, "", 100).stream()
+                    .flatMap(txn -> txn.lines().stream())
+                    .allMatch(line -> line.debit().stripTrailingZeros().scale() <= 2
+                            && line.credit().stripTrailingZeros().scale() <= 2), "Depreciation posts whole cents");
             Counts before = counts(jpa);
 
             IllegalStateException rejected = assertThrows(IllegalStateException.class,

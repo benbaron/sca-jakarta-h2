@@ -164,10 +164,12 @@ public class InventoryServiceTest
                     InventoryMovement.MovementType.RECEIPT, new BigDecimal("3"),
                     LocalDate.of(2026, 4, 1), CASH_ACCOUNT_ID, false, "fractional receipt",
                     null, null, true, new BigDecimal("0.3333")));
+            assertEquals(new BigDecimal("1.0000"), service.load(item.id()).totalValue(), "Calculated receipt posts whole cents");
             service.recordMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.ISSUE, new BigDecimal("1"),
                     LocalDate.of(2026, 4, 2), CASH_ACCOUNT_ID, false, "partial issue",
                     null, null, true));
+            assertEquals(new BigDecimal("0.6700"), service.load(item.id()).totalValue(), "Partial issue leaves the cent residual for the final issue");
             service.recordMovement(item.id(), new InventoryMovementCommand(
                     InventoryMovement.MovementType.ISSUE, new BigDecimal("2"),
                     LocalDate.of(2026, 4, 3), CASH_ACCOUNT_ID, false, "final issue",

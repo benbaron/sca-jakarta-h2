@@ -542,7 +542,7 @@ public class TransactionCorrectionService
     {
         if (amount.stripTrailingZeros().scale() > 2)
         {
-            throw new IllegalStateException("Historical fractional-cent amounts require review before creating a correction; amounts are not rounded.");
+            throw new IllegalStateException("Correction amounts require at most two decimal places; fractional cents are not rounded.");
         }
         TxnSplit copy = new TxnSplit();
         copy.setTxn(target);

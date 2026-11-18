@@ -37,7 +37,7 @@ class OperationalAccountingPacketTest
             var base = f.nmr().base();
             var entry = base.entry(jpa);
             long earlier = entry.enter(new TransactionCommand(DATE.minusDays(1), null, "Earlier outstanding", null,
-                    List.of(base.line(base.cash(), "7.1234", "0", base.event()), base.line(base.income(), "0", "7.1234", base.event())))).id();
+                    List.of(base.line(base.cash(), "7.1200", "0", base.event()), base.line(base.income(), "0", "7.1200", base.event())))).id();
             entry.enter(f.receipt());
             entry.enter(f.payout());
             long bankId = configureBank(jpa, COMPANY, base.cash(), DATE.minusDays(10));
@@ -52,7 +52,7 @@ class OperationalAccountingPacketTest
             }
             var workspace = new BankReconciliationWorkspaceService(jpa);
             var session = workspace.start(new BankReconciliationWorkspaceService.StartCommand(COMPANY, bankId, DATE.plusDays(1),
-                    new BigDecimal("957.1234"), BankReconciliationWorkspaceService.ClearedStatePolicy.WARN_ONLY, "Synthetic statement"));
+                    new BigDecimal("957.1200"), BankReconciliationWorkspaceService.ClearedStatePolicy.WARN_ONLY, "Synthetic statement"));
             assertThrows(IllegalArgumentException.class, () -> workspace.readForPacket(session.sessionId(), "DEFAULT"));
             workspace.addManualLine(new BankReconciliationWorkspaceService.ManualStatementLineCommand(session.sessionId(),
                     DATE.plusDays(1), new BigDecimal("950"), "Processor payout", "PROC-001"));
@@ -73,7 +73,7 @@ class OperationalAccountingPacketTest
                 assertEquals("false", earlierRow.get("clearedThroughCutoff"));
                 assertEquals(DATE.plusDays(10).toString(), earlierRow.get("clearedOn"));
                 var bank = rows(zip, "Bank Configuration.csv").get(0);
-                money("7.1234", bank.get("bookBeginning")); money("957.1234", bank.get("bookEnding"));
+                money("7.1200", bank.get("bookBeginning")); money("957.1200", bank.get("bookEnding"));
                 assertTrue(read(zip, "Reconciliation Sessions.csv").contains(Long.toString(session.sessionId())));
                 assertTrue(read(zip, "Reconciliation Differences.csv").contains("UNMATCHED"));
                 assertTrue(read(zip, "Reconciled Statement Lines.csv").contains("PROC-001"));
@@ -143,7 +143,7 @@ class OperationalAccountingPacketTest
             var f = AssetAcquisitionTestFixture.seed(jpa);
             var assetService = f.service(jpa);
             var asset = assetService.recordAcquisition(assetService.previewAcquisition(new AssetAcquisitionCommand(null,
-                    f.command("Packet equipment", "50.1234"), AssetAcquisitionSource.NEW_PURCHASE, f.base().bank(), null), UUID.randomUUID()));
+                    f.command("Packet equipment", "50.1200"), AssetAcquisitionSource.NEW_PURCHASE, f.base().bank(), null), UUID.randomUUID()));
             assetService.runMonthlyDepreciation(asset.id(), LocalDate.of(2026, 4, 30), "Synthetic depreciation");
             long inventoryAccount;
             try (var em = jpa.em())
@@ -175,7 +175,7 @@ class OperationalAccountingPacketTest
                 assertTrue(read(zip, "Asset Acquisition Links.csv").contains("NEW_PURCHASE"));
                 assertTrue(read(zip, "Depreciation.csv").contains("Completed depreciation"));
                 var value = rows(zip, "Inventory and Supplies.csv").get(0);
-                money("2", value.get("quantity")); money("10.2468", value.get("totalValue"));
+                money("2", value.get("quantity")); money("10.2500", value.get("totalValue"));
                 assertTrue(read(zip, "Inventory Movements.csv").contains("RECEIPT"));
                 var property = rows(zip, "Property Custody.csv");
                 assertEquals(1, property.size()); assertEquals("Alex", property.get(0).get("guardian"));

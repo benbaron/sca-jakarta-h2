@@ -20,3 +20,7 @@ Owner explicitly reiterates the per-candidate balance invariant: each source CSV
 
 The owner's precision correction requires all new canonical journal amounts, including CSV and SCLX imports, to be whole cents (at most two meaningful decimal places). Trailing zeros are accepted; fractional cents are rejected without rounding. Exact per-candidate balancing remains mandatory. The existing four-place storage is retained solely to preserve historical records without rewriting or rounding them; it does not authorize new fractional-cent entries. Quantity precision is independent of ledger money. Review readiness and import share canonical validation.
 
+
+The full precision sweep exposed calculated inventory postings that previously used four-decimal monetary rounding. New inventory receipt/issue totals now round calculated valuations to cents (HALF_UP), while quantities and unit costs retain their independent precision and the final issue consumes the remaining carrying value. User-entered journal and imported posting amounts are still rejected rather than rounded. The existing fractional-unit-cost/residual and weighted-average inventory tests cover this prerequisite. Historical values and frozen recovery fixtures are unchanged.
+
+Owner clarified that this installation has no production history and historical four-decimal compatibility should not complicate the change. The rule is two-decimal ledger money; calculated monthly depreciation also uses cent rounding. No extra legacy recovery mechanism or historical conversion workflow is introduced.

@@ -28,7 +28,7 @@ class CoreAccountingPacketServiceTest
         {
             var fixture = seed(jpa);
             var entry = fixture.entry(jpa);
-            for (int i = 0; i < 251; i++) entry.enter(receipt(fixture, "1.2345", "=SUM(1,2)"));
+            for (int i = 0; i < 251; i++) entry.enter(receipt(fixture, "1.2300", "=SUM(1,2)"));
             entry.enter(new TransactionCommand(DATE.plusDays(1), null, "OUTSIDE-CUTOFF", null,
                     List.of(fixture.line(fixture.cash(), "10", "0", fixture.event()),
                             fixture.line(fixture.income(), "0", "10", fixture.event()))));
@@ -49,7 +49,7 @@ class CoreAccountingPacketServiceTest
                 String ledger = read(zip, "General Ledger.csv");
                 assertFalse(ledger.contains("OUTSIDE-CUTOFF"));
                 assertTrue(ledger.contains("'=SUM(1,2)"));
-                assertTrue(ledger.contains("1.2345"));
+                assertTrue(ledger.contains("1.2300"));
                 assertEquals(503, PoiXlsxFinancialReportAdapter.parseCsv(ledger).size());
                 var expected = PoiXlsxFinancialReportAdapter.parseCsv(
                         FinancialReportRenderer.renderTrialBalanceCsv(financial.trialBalance(DATE, null)));
@@ -87,8 +87,8 @@ class CoreAccountingPacketServiceTest
             for (int i = 0; i < 501; i++)
             {
                 entry.enter(new TransactionCommand(DATE, null, "Expense " + i, null,
-                        List.of(fixture.line(fixture.fee(), "1.2345", "0", null),
-                                fixture.line(fixture.base().cash(), "0", "1.2345", null))));
+                        List.of(fixture.line(fixture.fee(), "1.2300", "0", null),
+                                fixture.line(fixture.base().cash(), "0", "1.2300", null))));
             }
             var result = new CoreAccountingPacketService(() -> db, () -> COMPANY, null)
                     .export(DATE, DATE, directory.resolve("expenses.zip"));

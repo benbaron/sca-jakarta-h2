@@ -1007,7 +1007,7 @@ public class InventoryService
                 throw new IllegalArgumentException("Receipt and upward adjustment cost is required");
             }
             appliedUnitCost = scale(command.unitCost());
-            valueChange = change.multiply(appliedUnitCost).setScale(4, RoundingMode.HALF_UP);
+            valueChange = change.multiply(appliedUnitCost).setScale(2, RoundingMode.HALF_UP).setScale(4);
         }
         else
         {
@@ -1018,7 +1018,7 @@ public class InventoryService
             appliedUnitCost = average(carryingBefore, current);
             BigDecimal issuedValue = change.abs().compareTo(current) == 0
                     ? carryingBefore
-                    : carryingBefore.multiply(change.abs()).divide(current, 4, RoundingMode.HALF_UP);
+                    : carryingBefore.multiply(change.abs()).divide(current, 2, RoundingMode.HALF_UP).setScale(4);
             valueChange = issuedValue.negate();
         }
         BigDecimal carryingAfter = carryingBefore.add(valueChange).setScale(4, RoundingMode.HALF_UP);
