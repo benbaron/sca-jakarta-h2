@@ -1,16 +1,26 @@
 ---
-plan_version: 497
+plan_version: 503
 active_phase: P27
-active_slice: P27-C8
+active_slice: P27-C9
 active_status: VERIFYING
-active_branch: codex/P27-C8-sclx-all-charts
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/431
-active_head: cac433df8353a69746555da2a44ae08dd1869d40
-next_action: "Finish final clean verification and displayed Import/export gates; inspect exact-published-head GitHub checks for draft #431, correct failures and record actual results. No merge authorized or performed."
+active_branch: codex/P27-C9-exchequer-csv
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/432
+active_head: 1404a40e9170278d155688a896fc647f60c5429b
+next_action: "Finish final route/full clean verification, normally fast-forward #432 with the review/commit implementation, and inspect CI on its exact new head; await owner review/merge."
 
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C9 Exchequer CSV review and journal import — owner request
+
+Owner explicitly expands the still-open slice/#432 with an alternate Import review page, editable/deletable proposed entries and actual canonical ledger commit. This supersedes the former class-only scope. Current main is c1d0162d; #432 remains draft/open/unmerged on its owning codex/P27-C9-exchequer-csv branch. The initial parser revision 1404a40e passed local and Linux/Windows CI, but those checks do not validate this extension. C8/#431 is confirmed merged and DONE.
+
+Required reading completed: [C9 contract](P27-C9-exchequer-csv.md), import review workflow, persistence inventory, P20 import authorization, interface operation matrix, UI rules and editor guidelines. Inspected ImportPreviewPanel/task/registry, reference data, canonical transaction/validator/audit/ownership/period services, current migration shape and their tests. Donor design decisions use the existing Journal adaptation documented in editor-guidelines; no donor persistence is imported. Baseline compile passes (22.6s); baseline reader/preview/transaction gate passes 23/zero failures/errors/skips (56.6s).
+
+Implemented alternate Exchequer page with Proposed Entries, Edit Entry and Original Source/Diagnostics pages, Back/Resume draft retention, explicit active selected-chart account/Fund mapping, matching-label bulk mappings, refresh, header/line edits and proposal/line removal. Global Save and Commit share confirmation and asynchronous completion feedback. ExchequerImportService verifies source/scope, live write authority, stable references, duplicate acknowledgement and atomic canonical acceptance under a company lock. All entries and source audit receipts roll back together; deterministic source-field receipts block repeats after restart/correction/deletion. Original source records and edited commands are native audit facts. No schema change, parallel ledger, guessed openings/lifecycle/clearing or quarter filtering. No real uploaded financial records are committed or used for writing a user database.
+
+Expanded focused gate passes 11 tests (two real JavaFX review/geometry and nine H2 service tests), zero failures/errors/skips. Production header wrapping, Back/Resume, edit/delete and actual Journal acceptance are exercised. Synthetic narrow-window screenshot /tmp/p27-c9-review.png inspected; both-axis scrolling and divider movement verified. Earlier display attempts were rejected for missing display-socket access/test skin timing and premature resize assertions; no accounting assertion was weakened. Intrinsic editor width protects fields from clipping. Broader display/H2 gate /tmp/p27-c9-review-final-display.log passes 42/zero failures/errors/skips. A final two-test route run covers the final navigation/footer/short-caption adjustments; full clean/package and updated-head GitHub CI remain pending. All earlier results are superseded if product/test bytes change. Next: complete final gates, review diff, normally fast-forward the existing PR, inspect exact-head CI, then owner review/merge. Do not mark C9 DONE before current-main merge confirmation.
 
 ### P27-C8 all-chart company interchange — owner request
 

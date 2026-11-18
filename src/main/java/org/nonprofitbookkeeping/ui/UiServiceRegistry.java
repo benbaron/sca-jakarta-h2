@@ -209,6 +209,18 @@ public final class UiServiceRegistry
                 current.jpa(), () -> companyCode, current.authorizationGuard());
     }
 
+    public static org.nonprofitbookkeeping.service.ExchequerImportService exchequerImport(String companyCode)
+    {
+        ServiceBundle current = services();
+        return new org.nonprofitbookkeeping.service.ExchequerImportService(current.jpa(), companyCode,
+                current.authorizationGuard());
+    }
+
+    public static TransactionReferenceDataService exchequerReferences(String companyCode)
+    {
+        return new TransactionReferenceDataService(services().jpa(), () -> companyCode);
+    }
+
     public static TransactionCorrectionService transactionCorrection() { return services().transactionCorrection(); }
     public static TransactionReferenceDataService transactionReferenceData() { return services().transactionReferenceData(); }
     public static ReviewedStatementAcceptanceService reviewedStatementAcceptance()

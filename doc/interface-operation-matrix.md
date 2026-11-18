@@ -264,3 +264,5 @@ footer, while immediate command results remain compatible. Results from inactive
 or replaced panel instances are ignored, and workspace changes clear prior footer
 text without cancelling writes. Entry retains rejected drafts and displays the
 service reason. See [C11 checks](P29-C11-journal-save-feedback.md).
+
+P27-C9 Import Exchequer CSV opens an alternate review page with Proposed Entries, Edit Entry and Original Source/Diagnostics work pages. Back/Resume preserves edits. Delete Proposed Entry removes only an uncommitted proposal. Explicit Commit Reviewed Entries and global Save use the same guarded, source-checked atomic canonical import; successful entries are subsequently maintained in Journal. See [Exchequer CSV](P27-C9-exchequer-csv.md).

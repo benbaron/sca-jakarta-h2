@@ -410,3 +410,9 @@ Narrow tables expose their own horizontal bar, including empty tables. Settlemen
 Draft and the Banking editors use one local form scroll owner with horizontal
 access to fields. Enlarge a pane or scroll to reach the last column/field; labels
 and action captions wrap where space is limited.
+
+## Import Exchequer CSV
+
+Open Import -> Import Exchequer CSV and choose the worksheet CSV. Proposed Entries contains the records to save; Original Source and Diagnostics retains source facts, including non-monetary records. Edit Selected opens the date/memo/payee and accounting-line editor. Select each line and choose its account and Fund; optional Budget/Event/Merchant/purpose remain independent. Apply Mappings to Same Source Labels repeats the selected account/Fund mappings across matching source labels. Refresh Choices retains the draft.
+
+Edit or delete proposed entries before committing. Add/remove accounting lines as needed; totals and validation update immediately. Back to Import and Resume Exchequer Review retain the draft. Review the remaining entries/mappings, acknowledge similar Journal entries only after checking them, and choose Commit Reviewed Entries (or File -> Save). Confirm the complete batch. On failure no entries are saved; correct the identified proposal and retry. On success open Journal to inspect the listed transaction IDs. Further correction/deletion uses Journal. The source file is never edited.
