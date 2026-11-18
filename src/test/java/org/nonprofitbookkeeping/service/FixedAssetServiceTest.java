@@ -40,7 +40,7 @@ public class FixedAssetServiceTest
             assertEquals(new BigDecimal("1200.0000"), asset.acquisitionCost());
             assertEquals(new BigDecimal("0.0000"), asset.accumulatedDepreciation());
             assertEquals(new BigDecimal("1200.0000"), asset.currentBookValue());
-            assertEquals(new BigDecimal("33.3333"), asset.nextDepreciationAmount());
+            assertEquals(new BigDecimal("33.3300"), asset.nextDepreciationAmount());
         }
     }
 

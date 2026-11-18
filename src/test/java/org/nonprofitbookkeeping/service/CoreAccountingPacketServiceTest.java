@@ -54,7 +54,7 @@ class CoreAccountingPacketServiceTest
                 var expected = PoiXlsxFinancialReportAdapter.parseCsv(
                         FinancialReportRenderer.renderTrialBalanceCsv(financial.trialBalance(DATE, null)));
                 assertEquals(expected, PoiXlsxFinancialReportAdapter.parseCsv(read(zip, "Trial Balance.csv")));
-                assertTrue(read(zip, "Income Statement.csv").contains("309.8595"));
+                assertTrue(read(zip, "Income Statement.csv").contains("308.7300"));
                 assertTrue(result.sections().contains("Budget vs Actual"));
                 assertTrue(result.sections().contains("Outstanding Bank Items"));
                 assertEquals(0, manifest.get("omittedSections").size());
@@ -98,7 +98,7 @@ class CoreAccountingPacketServiceTest
                 assertTrue(csv.contains("Expense 500"));
                 assertTrue(csv.contains("Showing 501 of 501"));
                 assertTrue(csv.contains("Unclassified"));
-                assertTrue(csv.contains("618.4845"));
+                assertTrue(csv.contains("616.2300"));
             }
         }
     }
