@@ -2054,8 +2054,8 @@ public class FixedAssetService
         {
             return ZERO;
         }
-        BigDecimal monthly = depreciable.divide(BigDecimal.valueOf(asset.getUsefulLifeMonths()), 4, RoundingMode.HALF_UP);
-        return monthly.min(remaining).setScale(4, RoundingMode.HALF_UP);
+        BigDecimal monthly = depreciable.divide(BigDecimal.valueOf(asset.getUsefulLifeMonths()), 2, RoundingMode.HALF_UP);
+        return monthly.min(remaining).setScale(2, RoundingMode.HALF_UP).setScale(4);
     }
 
     private static String requireText(String value, String label)

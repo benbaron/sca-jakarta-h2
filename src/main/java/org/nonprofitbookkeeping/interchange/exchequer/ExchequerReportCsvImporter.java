@@ -233,7 +233,8 @@ public final class ExchequerReportCsvImporter
             }
             else if (net.compareTo(sum) != 0)
             {
-                error(messages, line, "SPLIT_BALANCE", "Net amount differs from signed income minus expense splits");
+                error(messages, line, "SPLIT_BALANCE", "This CSV candidate must balance individually: debit minus credit must be zero. Exact difference: "
+                        + net.subtract(sum).toPlainString() + ". Source net differs from signed income minus expense splits");
             }
             if (fields.get(9).isBlank())
             {
@@ -408,9 +409,9 @@ public final class ExchequerReportCsvImporter
             result = result.negate();
         }
         BigDecimal normalized = result.stripTrailingZeros();
-        if (normalized.scale() > 4 || normalized.precision() - normalized.scale() > 15)
+        if (normalized.scale() > ("quantity".equals(label) ? 4 : 2) || normalized.precision() - normalized.scale() > 15)
         {
-            error(messages, line, "DECIMAL_RANGE", label + " exceeds native decimal precision; no rounding was applied");
+            error(messages, line, "DECIMAL_RANGE", label + " exceeds allowed precision (money requires at most two decimal places); no rounding was applied");
             return null;
         }
         return result;

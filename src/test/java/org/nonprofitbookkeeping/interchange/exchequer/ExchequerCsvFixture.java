@@ -13,9 +13,9 @@ public final class ExchequerCsvFixture
         int ordinal = 0;
         for (String date : dates)
         {
-            var row = row(++ordinal, date, "10.1234");
+            var row = row(++ordinal, date, "10.12");
             row.set(7, "Example source payee " + ordinal);
-            split(row, 0, "10.1234", "Example Income", "");
+            split(row, 0, "10.12", "Example Income", "");
             records.add(row);
         }
         Files.writeString(path, csv(records));

@@ -30,7 +30,7 @@ class SclxFundTransfersTest
         try (Jpa jpa = new Jpa(db))
         {
             var fixture = seed(jpa); var service = new FundTransferService(jpa);
-            var original = service.save(fixture.command(REQUEST, "75.1234"));
+            var original = service.save(fixture.command(REQUEST, "75.1200"));
             var reverse = service.reverse(original.id(), DATE.plusDays(1), "Synthetic reversal reason");
             service.reverse(reverse.id(), DATE.plusDays(2), "Restore allocation");
             try (var em = jpa.em())

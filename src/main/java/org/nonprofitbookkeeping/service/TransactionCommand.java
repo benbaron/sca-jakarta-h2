@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.service;
 
 import java.time.LocalDate;
+import org.nonprofitbookkeeping.model.TransactionInformation;
 import java.util.List;
 
 /**
@@ -11,8 +12,15 @@ public record TransactionCommand(LocalDate date,
                                  String memo,
                                  Long bankAccountId,
                                  List<TransactionLineCommand> lines,
-                                 List<TransactionSupplementalLineCommand> supplementalLines)
+                                 List<TransactionSupplementalLineCommand> supplementalLines,
+                                 TransactionInformation information)
 {
+    public TransactionCommand(LocalDate date, Long payeeId, String memo, Long bankAccountId,
+                              List<TransactionLineCommand> lines, List<TransactionSupplementalLineCommand> supplementalLines)
+    {
+        this(date, payeeId, memo, bankAccountId, lines, supplementalLines, TransactionInformation.empty());
+    }
+
     public TransactionCommand(LocalDate date,
                               Long payeeId,
                               String memo,
@@ -24,6 +32,7 @@ public record TransactionCommand(LocalDate date,
 
     public TransactionCommand
     {
+        information = information == null ? TransactionInformation.empty() : information;
         lines = lines == null ? List.of() : List.copyOf(lines);
         supplementalLines = supplementalLines == null ? List.of() : List.copyOf(supplementalLines);
     }

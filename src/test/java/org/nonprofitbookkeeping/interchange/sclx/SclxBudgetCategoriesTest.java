@@ -43,8 +43,8 @@ class SclxBudgetCategoriesTest
             var plan=budgets.createDraft(new BudgetPlanCommand("Retained category links",2026,"V1",LocalDate.of(2026,1,1),LocalDate.of(2026,12,31),""));
             budgets.replaceDraftLines(plan.id(),List.of(new BudgetLineCommand(category,f.source(),null,null,new BigDecimal("50.1234"),"Retained line")));
             new TransactionEntryService(jpa).enter(new TransactionCommand(FundTransferTestFixture.DATE,null,"Categorized expense",null,
-                    List.of(new TransactionLineCommand(f.expense(),f.source(),category,null,null,new BigDecimal("7.1234"),BigDecimal.ZERO,false,""),
-                            FundTransferTestFixture.line(f.bank(),f.source(),"0","7.1234"))));
+                    List.of(new TransactionLineCommand(f.expense(),f.source(),category,null,null,new BigDecimal("7.1200"),BigDecimal.ZERO,false,""),
+                            FundTransferTestFixture.line(f.bank(),f.source(),"0","7.1200"))));
             try (var em=jpa.em())
             {
                 em.getTransaction().begin(); var used=em.find(BudgetCategory.class,category);

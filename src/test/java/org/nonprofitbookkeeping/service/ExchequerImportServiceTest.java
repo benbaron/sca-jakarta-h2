@@ -34,13 +34,13 @@ class ExchequerImportServiceTest
             assertEquals(LocalDate.of(2027, 1, 1), preview.entries().get(1).command().date());
             assertNull(preview.entries().get(0).command().lines().get(0).accountId());
             assertEquals(1L, count(jpa, "Txn"));
-            var retained = mapped(preview.entries().get(1), fixture, "Edited memo", "12.3456");
+            var retained = mapped(preview.entries().get(1), fixture, "Edited memo", "12.34");
             var result = service.commit(preview, List.of(retained), false);
             assertEquals(1, result.transactionIds().size());
             var saved = new TransactionEntryService(jpa).load(result.transactionIds().get(0));
             assertEquals("Edited memo", saved.memo());
             assertEquals(LocalDate.of(2027, 1, 1), saved.date());
-            assertEquals(new BigDecimal("12.3456"), saved.debitTotal());
+            assertEquals(new BigDecimal("12.3400"), saved.debitTotal());
             assertEquals(2L, count(jpa, "Txn"));
             assertArrayEquals(bytes, Files.readAllBytes(path));
             assertEquals(Set.of(retained.sourceLine()), service.importedSourceLines(preview));

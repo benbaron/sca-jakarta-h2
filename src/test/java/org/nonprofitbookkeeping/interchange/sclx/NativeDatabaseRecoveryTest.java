@@ -306,14 +306,16 @@ class NativeDatabaseRecoveryTest
                     var originalColumns = jsonStrings(expected.path("columns"));
                     var migratedColumns = new ArrayList<>(originalColumns);
                     if (table.equals("chart_of_accounts")) migratedColumns.add("portable_id");
-                    assertEquals(migratedColumns, columns, table + " original columns plus explicitly governed V93 addition");
+                    if (table.equals("txn")) migratedColumns.addAll(List.of("transfer_or_check_reference", "source_statement_date", "incoming_check_transfer_date"));
+                    assertEquals(migratedColumns, columns, table + " original columns plus governed V93/V94 additions");
                     java.util.Set<String> chartUuids = new java.util.HashSet<>();
                     int newMigrationRows = 0;
                     while (rs.next())
                     {
-                        if (table.equals("flyway_schema_history") && "93".equals(rs.getString("version")))
+                        if (table.equals("flyway_schema_history") && ("93".equals(rs.getString("version")) || "94".equals(rs.getString("version"))))
                         {
-                            assertEquals("V93__chart_portable_identity.sql", rs.getString("script"));
+                            assertEquals("93".equals(rs.getString("version")) ? "V93__chart_portable_identity.sql"
+                                    : "V94__journal_information.sql", rs.getString("script"));
                             assertTrue(rs.getBoolean("success"));
                             newMigrationRows++;
                             continue;
@@ -330,11 +332,17 @@ class NativeDatabaseRecoveryTest
                             assertEquals(uuid, java.util.UUID.fromString(uuid).toString());
                             assertTrue(chartUuids.add(uuid), "V93 chart UUIDs remain unique");
                         }
+                        if (table.equals("txn"))
+                        {
+                            assertNull(rs.getString("transfer_or_check_reference"), "V94 must not infer legacy references");
+                            assertNull(rs.getDate("source_statement_date"), "V94 must not invent legacy statement dates");
+                            assertNull(rs.getDate("incoming_check_transfer_date"), "V94 must not invent incoming dates");
+                        }
                         encoded.add(row.toString());
                     }
                     if (table.equals("flyway_schema_history"))
                     {
-                        assertEquals(1, newMigrationRows, "Exactly the governed V93 migration was appended");
+                        assertEquals(2, newMigrationRows, "Exactly the governed V93 and V94 migrations were appended");
                     }
                 }
                 Collections.sort(encoded);

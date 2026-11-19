@@ -103,6 +103,9 @@ public final class JournalWorkspacePanel implements AppPanel
     private long journalGeneration;
     private final DatePicker entryDate = new DatePicker();
     private final TextArea memoArea = new TextArea();
+    private final TextField transferOrCheckReference = new TextField();
+    private final DatePicker informationStatementDate = new DatePicker();
+    private final DatePicker informationIncomingDate = new DatePicker();
     private final ComboBox<TransactionLineEditorModel.Option> payeeBox = new ComboBox<>();
     private final ComboBox<TransactionLineEditorModel.Option> bankAccountBox = new ComboBox<>();
     private final Label status = new Label("Journal is ready.");
@@ -679,6 +682,19 @@ public final class JournalWorkspacePanel implements AppPanel
         addDetailField(grid, 1, "Status", transactionStatus);
         addDetailField(grid, 2, "Payee", payeeBox);
         addDetailField(grid, 3, "Bank account", bankAccountBox);
+        transferOrCheckReference.setId("journalTransferCheckReference");
+        informationStatementDate.setId("journalInformationStatementDate");
+        informationIncomingDate.setId("journalInformationIncomingDate");
+        transferOrCheckReference.setTooltip(new javafx.scene.control.Tooltip("Informational transfer/check reference. Structured payment facts remain on the bank line."));
+        informationStatementDate.setTooltip(new javafx.scene.control.Tooltip("Date shown on the source statement; this information does not mark a bank line cleared."));
+        informationIncomingDate.setTooltip(new javafx.scene.control.Tooltip("Source date of the incoming check or transfer."));
+        DatePicker additionalTransactionDate = new DatePicker();
+        additionalTransactionDate.setId("journalAdditionalTransactionDate");
+        additionalTransactionDate.valueProperty().bindBidirectional(entryDate.valueProperty());
+        addDetailField(grid, 4, "Transaction date", additionalTransactionDate);
+        addDetailField(grid, 5, "Transfer ID / Check #", transferOrCheckReference);
+        addDetailField(grid, 6, "Statement / cleared date (information)", informationStatementDate);
+        addDetailField(grid, 7, "Incoming check / transfer date", informationIncomingDate);
 
         bankAccountBox.setTooltip(new javafx.scene.control.Tooltip("Header bank context only. Enter payment method and check details on each bank line."));
         VBox content = new VBox(8, sectionHeading("Additional Details"), grid);
@@ -853,6 +869,11 @@ public final class JournalWorkspacePanel implements AppPanel
     private void configureEditorListeners()
     {
         entryDate.valueProperty().addListener((obs, oldValue, newValue) -> markDirty());
+        transferOrCheckReference.textProperty().addListener((obs, oldValue, newValue) -> markDirty());
+        informationStatementDate.valueProperty().addListener((obs, oldValue, newValue) -> markDirty());
+        informationStatementDate.getEditor().textProperty().addListener((obs, oldValue, newValue) -> markDirty());
+        informationIncomingDate.getEditor().textProperty().addListener((obs, oldValue, newValue) -> markDirty());
+        informationIncomingDate.valueProperty().addListener((obs, oldValue, newValue) -> markDirty());
         memoArea.textProperty().addListener((obs, oldValue, newValue) -> markDirty());
         payeeBox.valueProperty().addListener((obs, oldValue, newValue) -> markDirty());
         bankAccountBox.valueProperty().addListener((obs, oldValue, newValue) -> markDirty());
@@ -990,6 +1011,9 @@ public final class JournalWorkspacePanel implements AppPanel
             editorGeneration++;
             entryDate.setValue(ActivePeriodContext.get() == null ? LocalDate.now() : ActivePeriodContext.get());
             memoArea.clear();
+            transferOrCheckReference.clear();
+            informationStatementDate.setValue(null);
+            informationIncomingDate.setValue(null);
             payeeBox.setValue(null);
             bankAccountBox.setValue(null);
             lineTable.getItems().clear();
@@ -1064,6 +1088,9 @@ public final class JournalWorkspacePanel implements AppPanel
             createRequestId = null;
             entryDate.setValue(view.date());
             memoArea.setText(safe(view.memo()));
+            transferOrCheckReference.setText(safe(view.information().transferOrCheckReference()));
+            informationStatementDate.setValue(view.information().statementDate());
+            informationIncomingDate.setValue(view.information().incomingDate());
             payeeBox.setValue(option(view.payeeId(), "", view.payeeName()));
             bankAccountBox.setValue(option(view.bankAccountId(), "", view.bankAccountName()));
             lineTable.getItems().setAll(view.lines().stream().map(this::editorLineFromView).toList());
@@ -1279,7 +1306,21 @@ public final class JournalWorkspacePanel implements AppPanel
                 blankToNull(memoArea.getText()),
                 id(bankAccountBox.getValue()),
                 lineCommands,
-                supplemental);
+                supplemental,
+                new org.nonprofitbookkeeping.model.TransactionInformation(transferOrCheckReference.getText(),
+                        informationDate(informationStatementDate), informationDate(informationIncomingDate)));
+    }
+
+    private static LocalDate informationDate(DatePicker picker)
+    {
+        try
+        {
+            return picker.getConverter().fromString(picker.getEditor().getText());
+        }
+        catch (RuntimeException ex)
+        {
+            throw new IllegalArgumentException("Enter a valid informational date or leave it blank.", ex);
+        }
     }
 
     private List<TransactionSupplementalLineCommand> supplementalCommands()

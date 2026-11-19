@@ -561,6 +561,14 @@ public final class SclxCoreSnapshotAssembler
         {
             extensionValues.put(SclxTransactionNmrExtension.KEY, Map.of("version", 1, "lineIds", nmrLines));
         }
+        List<Map<String, Object>> journalInformation = transactions.stream()
+                .filter(transaction -> !transaction.getInformation().isEmpty())
+                .map(transaction -> SclxJournalInformation.export(exportedTransactionIds.get(transaction), transaction.getInformation()))
+                .sorted(Comparator.comparing(value -> value.get("transactionId").toString())).toList();
+        if (!journalInformation.isEmpty())
+        {
+            extensionValues.put(SclxJournalInformation.KEY, Map.of("version", 1, "transactions", journalInformation));
+        }
         List<Map<String, Object>> paymentReferences = transactionLines.stream()
                 .filter(line -> line.getPaymentMethod() != null)
                 .map(line -> SclxPaymentReferences.export(line, exportedLineIds.get(line))).toList();

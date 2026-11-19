@@ -94,6 +94,77 @@ class JournalPaymentReferencesTest
     }
 
     @Test
+    void informationalHeaderEditorsSaveReloadAndClearWithNewWithoutChangingBankClearance() throws Exception
+    {
+        FxTestSupport.onFx(() ->
+        {
+            panel = new JournalWorkspaceCompliancePanel();
+            stage = new Stage();
+            stage.setScene(new Scene(new VBox(panel.root()), 950, 700));
+            stage.show();
+            return null;
+        });
+        await(() -> choices("journalSelectedFund").getItems().size() >= 2);
+        FxTestSupport.onFx(() ->
+        {
+            ((DatePicker) panel.root().lookup("#journalEntryDate")).setValue(java.time.LocalDate.of(2026, 2, 1));
+            var bank = table().getItems().get(0);
+            var income = table().getItems().get(1);
+            bank.setAccount(new TransactionLineEditorModel.Option(fixture.bank(), "1000", "Bank"));
+            bank.setFund(new TransactionLineEditorModel.Option(fixture.source(), "GENERAL", "General"));
+            bank.setDebit("10");
+            income.setAccount(new TransactionLineEditorModel.Option(fixture.income(), "4000", "Income"));
+            income.setFund(bank.getFund());
+            income.setCredit("10");
+            ((TabPane) panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(2);
+            panel.root().applyCss();
+            ((javafx.scene.Parent) panel.root()).layout();
+            field("journalTransferCheckReference").setText("000042");
+            ((DatePicker) panel.root().lookup("#journalInformationStatementDate")).setValue(java.time.LocalDate.of(2026, 2, 6));
+            ((DatePicker) panel.root().lookup("#journalInformationIncomingDate")).setValue(java.time.LocalDate.of(2026, 1, 30));
+            ((DatePicker) panel.root().lookup("#journalAdditionalTransactionDate")).setValue(java.time.LocalDate.of(2026, 2, 2));
+            assertTrue(panel.hasUnsavedChanges());
+            panel.onSave();
+            return null;
+        });
+        await(() -> !panel.hasUnsavedChanges());
+        long id = UiServiceRegistry.transactionEntry().search(null, null, "000042", 100).get(0).id();
+        var saved = UiServiceRegistry.transactionEntry().load(id);
+        assertEquals(java.time.LocalDate.of(2026, 2, 2), saved.date());
+        assertEquals("000042", saved.information().transferOrCheckReference());
+        assertEquals(java.time.LocalDate.of(2026, 2, 6), saved.information().statementDate());
+        assertTrue(saved.lines().stream().noneMatch(line -> line.bankCleared() || line.bankClearedOn() != null));
+        FxTestSupport.onFx(() ->
+        {
+            panel.onNew();
+            ((TabPane) panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(2);
+            panel.root().applyCss();
+            ((javafx.scene.Parent) panel.root()).layout();
+            assertEquals("", field("journalTransferCheckReference").getText());
+            assertNull(((DatePicker) panel.root().lookup("#journalInformationStatementDate")).getValue());
+            DrillThroughCoordinator.openTransactionEditorWithContext("Edit transaction Txn #" + id);
+            panel.onPanelShown();
+            return null;
+        });
+        await(() ->
+        {
+            ((TabPane) panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(2);
+            panel.root().applyCss();
+            ((javafx.scene.Parent) panel.root()).layout();
+            return field("journalTransferCheckReference") != null && "000042".equals(field("journalTransferCheckReference").getText());
+        });
+        FxTestSupport.onFx(() ->
+        {
+            ((TabPane) panel.root().lookup("#journalWorkPanes")).getSelectionModel().select(2);
+            panel.root().applyCss();
+            ((javafx.scene.Parent) panel.root()).layout();
+            assertEquals("000042", field("journalTransferCheckReference").getText());
+            assertEquals(java.time.LocalDate.of(2026, 1, 30), ((DatePicker) panel.root().lookup("#journalInformationIncomingDate")).getValue());
+            return null;
+        });
+    }
+
+    @Test
     void closedDateSaveOffersExactRangeNavigationAndRetainsAccountingDraft() throws Exception
     {
         org.nonprofitbookkeeping.service.PeriodCloseRangeView closed;
@@ -170,12 +241,12 @@ class JournalPaymentReferencesTest
             ((DatePicker)panel.root().lookup("#journalEntryDate")).setValue(java.time.LocalDate.of(2026, 2, 1));
             var expense = table().getItems().get(0); var bank = table().getItems().get(1);
             expense.setAccount(new TransactionLineEditorModel.Option(fixture.expense(), "5000", "Expense"));
-            expense.setFund(new TransactionLineEditorModel.Option(fixture.source(), "GENERAL", "General")); expense.setDebit("10.1234");
+            expense.setFund(new TransactionLineEditorModel.Option(fixture.source(), "GENERAL", "General")); expense.setDebit("10.1200");
             expense.setActivity(new TransactionLineEditorModel.Option(event.id(), event.code(), event.name()));
-            bank.setAccount(new TransactionLineEditorModel.Option(fixture.bank(), "1000", "Bank")); bank.setFund(expense.getFund()); bank.setCredit("10.1234");
+            bank.setAccount(new TransactionLineEditorModel.Option(fixture.bank(), "1000", "Bank")); bank.setFund(expense.getFund()); bank.setCredit("10.1200");
             assertEquals("", expense.expenseFunction.get(), "Expense purpose must not be inferred from Event/account");
-            commitExactMoneyCell(0, "debit", "$10.1234");
-            commitExactMoneyCell(1, "credit", "10.1234");
+            commitExactMoneyCell(0, "debit", "$10.1200");
+            commitExactMoneyCell(1, "credit", "10.1200");
             editExpenseFunction("AR"); assertTrue(panel.hasUnsavedChanges());
             button("journalWorkspaceSaveButton").fire(); return null;
         });
@@ -183,7 +254,7 @@ class JournalPaymentReferencesTest
         var saved = UiServiceRegistry.transactionEntry().search(null, null, "", 20).stream()
                 .filter(t -> t.lines().stream().anyMatch(l -> l.expenseFunction() != null)).findFirst().orElseThrow();
         assertEquals(org.nonprofitbookkeeping.model.ExpenseFunction.AR, saved.lines().get(0).expenseFunction());
-        assertEquals("10.1234", saved.lines().get(0).debit().toPlainString()); assertNull(saved.lines().get(1).expenseFunction());
+        assertEquals("10.1200", saved.lines().get(0).debit().toPlainString()); assertNull(saved.lines().get(1).expenseFunction());
         FxTestSupport.onFx(() ->
         {
             editExpenseFunction("OA"); assertTrue(panel.hasUnsavedChanges(), "Function-only commits must protect the shared draft");
@@ -192,7 +263,7 @@ class JournalPaymentReferencesTest
         });
         await(() -> !panel.hasUnsavedChanges());
         assertEquals(org.nonprofitbookkeeping.model.ExpenseFunction.OA, UiServiceRegistry.transactionEntry().load(saved.id()).lines().get(0).expenseFunction());
-        assertEquals("10.1234", UiServiceRegistry.transactionEntry().load(saved.id()).lines().get(0).debit().toPlainString());
+        assertEquals("10.1200", UiServiceRegistry.transactionEntry().load(saved.id()).lines().get(0).debit().toPlainString());
         assertEquals(2, UiServiceRegistry.transactionEntry().search(null, null, "", 20).size());
         FxTestSupport.onFx(() ->
         {
@@ -242,7 +313,7 @@ class JournalPaymentReferencesTest
         {
             var rows = (TableView<org.nonprofitbookkeeping.report.ReportTableModel.Row>)report.root().lookup("#report-table-functional-expenses");
             return rows != null && rows.getItems().stream().anyMatch(r -> "GL CONTROL".equals(r.value("record"))
-                    && new java.math.BigDecimal("10.1234").equals(r.value("net")));
+                    && new java.math.BigDecimal("10.1200").equals(r.value("net")));
         });
         FxTestSupport.onFx(() ->
         {
@@ -258,7 +329,7 @@ class JournalPaymentReferencesTest
         await(() ->
         {
             var rows = (TableView<org.nonprofitbookkeeping.report.ReportTableModel.Row>)report.root().lookup("#report-table-functional-expenses");
-            return rows != null && rows.getItems().stream().anyMatch(r -> "GL CONTROL".equals(r.value("record")) && new java.math.BigDecimal("30.1234").equals(r.value("net")));
+            return rows != null && rows.getItems().stream().anyMatch(r -> "GL CONTROL".equals(r.value("record")) && new java.math.BigDecimal("30.1200").equals(r.value("net")));
         });
     }
 
@@ -271,7 +342,7 @@ class JournalPaymentReferencesTest
         var cell = table().lookupAll(".table-cell").stream().map(TableCell.class::cast)
                 .filter(c -> c.getIndex() == row && c.getTableColumn() == column).findFirst().orElseThrow();
         var editor = (TextField)cell.getGraphic();
-        assertEquals("10.1234", editor.getText());
+        assertEquals("10.1200", editor.getText());
         editor.setText(text); editor.fireEvent(new javafx.event.ActionEvent());
     }
 

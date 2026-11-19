@@ -28,7 +28,7 @@ class CoreAccountingPacketServiceTest
         {
             var fixture = seed(jpa);
             var entry = fixture.entry(jpa);
-            for (int i = 0; i < 251; i++) entry.enter(receipt(fixture, "1.2345", "=SUM(1,2)"));
+            for (int i = 0; i < 251; i++) entry.enter(receipt(fixture, "1.2300", "=SUM(1,2)"));
             entry.enter(new TransactionCommand(DATE.plusDays(1), null, "OUTSIDE-CUTOFF", null,
                     List.of(fixture.line(fixture.cash(), "10", "0", fixture.event()),
                             fixture.line(fixture.income(), "0", "10", fixture.event()))));
@@ -49,12 +49,12 @@ class CoreAccountingPacketServiceTest
                 String ledger = read(zip, "General Ledger.csv");
                 assertFalse(ledger.contains("OUTSIDE-CUTOFF"));
                 assertTrue(ledger.contains("'=SUM(1,2)"));
-                assertTrue(ledger.contains("1.2345"));
+                assertTrue(ledger.contains("1.2300"));
                 assertEquals(503, PoiXlsxFinancialReportAdapter.parseCsv(ledger).size());
                 var expected = PoiXlsxFinancialReportAdapter.parseCsv(
                         FinancialReportRenderer.renderTrialBalanceCsv(financial.trialBalance(DATE, null)));
                 assertEquals(expected, PoiXlsxFinancialReportAdapter.parseCsv(read(zip, "Trial Balance.csv")));
-                assertTrue(read(zip, "Income Statement.csv").contains("309.8595"));
+                assertTrue(read(zip, "Income Statement.csv").contains("308.7300"));
                 assertTrue(result.sections().contains("Budget vs Actual"));
                 assertTrue(result.sections().contains("Outstanding Bank Items"));
                 assertEquals(0, manifest.get("omittedSections").size());
@@ -87,8 +87,8 @@ class CoreAccountingPacketServiceTest
             for (int i = 0; i < 501; i++)
             {
                 entry.enter(new TransactionCommand(DATE, null, "Expense " + i, null,
-                        List.of(fixture.line(fixture.fee(), "1.2345", "0", null),
-                                fixture.line(fixture.base().cash(), "0", "1.2345", null))));
+                        List.of(fixture.line(fixture.fee(), "1.2300", "0", null),
+                                fixture.line(fixture.base().cash(), "0", "1.2300", null))));
             }
             var result = new CoreAccountingPacketService(() -> db, () -> COMPANY, null)
                     .export(DATE, DATE, directory.resolve("expenses.zip"));
@@ -98,7 +98,7 @@ class CoreAccountingPacketServiceTest
                 assertTrue(csv.contains("Expense 500"));
                 assertTrue(csv.contains("Showing 501 of 501"));
                 assertTrue(csv.contains("Unclassified"));
-                assertTrue(csv.contains("618.4845"));
+                assertTrue(csv.contains("616.2300"));
             }
         }
     }
@@ -114,8 +114,8 @@ class CoreAccountingPacketServiceTest
             var yearEnd = java.time.LocalDate.of(2026, 12, 31);
             var nextYear = yearEnd.plusDays(1);
             long id = entry.enter(new TransactionCommand(yearEnd, null, "Year-end receipt", null,
-                    List.of(fixture.line(fixture.cash(), "42.1234", "0", fixture.event()),
-                            fixture.line(fixture.income(), "0", "42.1234", fixture.event())))).id();
+                    List.of(fixture.line(fixture.cash(), "42.1200", "0", fixture.event()),
+                            fixture.line(fixture.income(), "0", "42.1200", fixture.event())))).id();
             new TransactionCorrectionService(jpa, () -> COMPANY).reverse(id, nextYear, "tester", "Synthetic correction", false);
             long audits = count(jpa, "AuditEvent");
             var service = new CoreAccountingPacketService(() -> db, () -> COMPANY, null);
@@ -125,8 +125,8 @@ class CoreAccountingPacketServiceTest
             {
                 assertFalse(read(before, "General Ledger.csv").contains(nextYear.toString()));
                 assertTrue(read(after, "General Ledger.csv").contains(nextYear.toString()));
-                assertTrue(read(before, "Income Statement.csv").contains("42.1234"));
-                assertTrue(read(after, "Income Statement.csv").contains("-42.1234"));
+                assertTrue(read(before, "Income Statement.csv").contains("42.1200"));
+                assertTrue(read(after, "Income Statement.csv").contains("-42.1200"));
                 var canonical = new FinancialReportService(jpa, () -> COMPANY);
                 assertEquals(PoiXlsxFinancialReportAdapter.parseCsv(FinancialReportRenderer.renderBalanceSheetCsv(canonical.balanceSheet(nextYear, null))),
                         PoiXlsxFinancialReportAdapter.parseCsv(read(after, "Balance Sheet.csv")));

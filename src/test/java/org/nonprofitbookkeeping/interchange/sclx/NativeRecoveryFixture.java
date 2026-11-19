@@ -173,7 +173,7 @@ final class NativeRecoveryFixture
     {
         var fixed = assets.service(jpa);
         var purchased = fixed.recordAcquisition(fixed.previewAcquisition(new AssetAcquisitionCommand(null,
-                assets.command("Purchased asset", "1000.1234"), AssetAcquisitionSource.NEW_PURCHASE, base.bank(), null), UUID.randomUUID()));
+                assets.command("Purchased asset", "1000.1200"), AssetAcquisitionSource.NEW_PURCHASE, base.bank(), null), UUID.randomUUID()));
         fixed.runMonthlyDepreciation(purchased.id(), AssetAcquisitionTestFixture.DATE.plusMonths(1), "Retained depreciation");
         var stock = new InventoryService(jpa, new TransactionEntryService(jpa), () -> COMPANY);
         var item = stock.create(new InventoryItemCommand(COMPANY, inventory, base.source(), "Valued stock", "Supply", BigDecimal.ZERO, "each", BigDecimal.ZERO,

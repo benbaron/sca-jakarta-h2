@@ -540,6 +540,10 @@ public class TransactionCorrectionService
 
     private static TxnSplit copySplit(TxnSplit source, Txn target, BigDecimal amount)
     {
+        if (amount.stripTrailingZeros().scale() > 2)
+        {
+            throw new IllegalStateException("Correction amounts require at most two decimal places; fractional cents are not rounded.");
+        }
         TxnSplit copy = new TxnSplit();
         copy.setTxn(target);
         copy.setAccount(source.getAccount());
@@ -660,7 +664,8 @@ public class TransactionCorrectionService
     private static String snapshot(EntityManager em, Txn txn)
     {
         return "id=" + txn.getId() + ",date=" + txn.getTxnDate() + ",status=" + txn.getStatus()
-                + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo()) + ",payments=" + PaymentReferences.snapshot(em, txn)
+                + ",memo=" + (txn.getMemo() == null ? "" : txn.getMemo())
+                + (txn.getInformation().isEmpty() ? "" : ",information=" + txn.getInformation()) + ",payments=" + PaymentReferences.snapshot(em, txn)
                 + ",merchantReceivables=" + MerchantSettlementFacts.snapshot(em, txn)
                 + ",expenseFunctions=" + ExpenseFunctions.snapshot(em, txn)
                 + ",nmrItems=" + SupplementalIntegrityService.nmrSnapshot(em, txn);

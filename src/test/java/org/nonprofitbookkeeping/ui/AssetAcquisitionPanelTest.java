@@ -109,7 +109,7 @@ class AssetAcquisitionPanelTest
         FxTestSupport.onFx(() ->
         {
             assertNull(combo("assetAcquisitionSource").getValue(), "Acquisition route must be deliberate");
-            fill("Equipment", "1000.1234", AssetAcquisitionSource.NEW_PURCHASE);
+            fill("Equipment", "1000.1200", AssetAcquisitionSource.NEW_PURCHASE);
             assertTrue(panel.hasUnsavedChanges());
             panel.onSave();
             assertTrue(button("assetRegisterSave").isDisabled());
@@ -131,14 +131,14 @@ class AssetAcquisitionPanelTest
         {
             assertFalse(panel.hasUnsavedChanges());
             var saved = table().getItems().get(0);
-            assertEquals("1000.1234", saved.acquisitionCost().toPlainString());
+            assertEquals("1000.1200", saved.acquisitionCost().toPlainString());
             assertEquals(AssetAcquisitionSource.NEW_PURCHASE, saved.acquisition().source());
             text("assetAcquisitionCost").requestFocus(); return null;
         });
         await(() -> text("assetAcquisitionCost").isFocused());
         FxTestSupport.onFx(() ->
         {
-            assertEquals("1000.1234", text("assetAcquisitionCost").getText());
+            assertEquals("1000.1200", text("assetAcquisitionCost").getText());
             text("assetName").requestFocus(); return null;
         });
         await(() -> text("assetName").isFocused());
@@ -154,7 +154,7 @@ class AssetAcquisitionPanelTest
         FxTestSupport.onFx(() ->
         {
             assertEquals(1, UiServiceRegistry.fixedAssets().listAssets("DEFAULT").size());
-            assertEquals("1000.1234", table().getItems().get(0).acquisitionCost().toPlainString());
+            assertEquals("1000.1200", table().getItems().get(0).acquisitionCost().toPlainString());
             MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.viewer());
             assertTrue(button("assetRegisterSave").isDisabled()); assertTrue(button("assetAcquisitionUnlink").isDisabled());
             assertTrue(text("assetName").isDisabled()); assertFalse(button("assetAcquisitionJournal").isDisabled());

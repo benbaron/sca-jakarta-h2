@@ -1,16 +1,26 @@
 ---
-plan_version: 503
+plan_version: 512
 active_phase: P27
-active_slice: P27-C9
+active_slice: P27-C11
 active_status: VERIFYING
-active_branch: codex/P27-C9-exchequer-csv
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/432
-active_head: 1404a40e9170278d155688a896fc647f60c5429b
-next_action: "Finish final route/full clean verification, normally fast-forward #432 with the review/commit implementation, and inspect CI on its exact new head; await owner review/merge."
+active_branch: codex/P27-C11-journal-information
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/434
+active_head: 801467d7a735d670baaf463a175a513f447946b4
+next_action: "Inspect remaining exact-head CI steps for #434, record final results, then await owner review/merge; do not advance the slice before merge."
 
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C11 Journal information and four-split CSV review — owner request
+
+Draft [PR #434](https://github.com/benbaron/sca-jakarta-h2/pull/434), branch `codex/P27-C11-journal-information`, implements V94 nullable journal information (reference, source statement date and incoming date), command/view/entity/audit/search/native replay, Journal Additional Details and CSV editors, Split 1–4 source summaries with mapped line identities, and strict journalInformation-v1 SCLX round trips. Every CSV candidate must independently have exact debit-minus-credit zero; opposite row errors cannot cancel across the batch. Owner additionally requires two-decimal ledger money: canonical manual/CSV entry and update reject fractional cents without rounding; SCLX preview reports the same blocking error; calculated inventory receipt/issue valuations and monthly depreciation round to cents. Quantities/unit costs retain independent precision. Owner confirms there is no production history; no additional historical conversion/compatibility workflow is introduced. No quarter filtering or bank-clearance inference. C10/#433 remains independently verified, open/unmerged.
+
+Final local acceptance passes on the published product/test bytes: `mvn clean verify` **1,273 tests / zero failures/errors / 151 expected headless display skips (10:38)**; real Xvfb Journal/import gate **40 tests / zero failures/errors/skips (03:32)**; packaged thin-JAR plus normal-dependency probe passes canonical cent acceptance/rejection, information save/restart, literal dates, repeat protection and unchanged synthetic source. Production classes were explicitly verified as loaded from the built application JAR. Split 1–4 visual artifact matches the previously inspected full screenshot byte-for-byte; the cropped repeated image was a viewer artifact. Evidence is `/workspace/p27-c11-evidence/`, logs `/tmp/p27-c11-clean-accepted.log` and `/tmp/p27-c11-display-final.log`. Final source/test bytes are unchanged since `7fdbe580`; published head including documentation is `801467d7a735d670baaf463a175a513f447946b4`. Exact-head CI [44243107414](https://github.com/benbaron/sca-jakarta-h2/actions/runs/44243107414) passed Windows, clean/repeat verification, period-close, overflow, import workflows and Journal feedback, but its final production route gate found one obsolete asset-purchase UI fixture (1000.1234); the app correctly rejected it. All other reported tests passed. The fixture is corrected to 1000.1200; all three targeted real-display asset tests pass (01:16), /tmp/p27-c11-asset-cents-ui.log. No production code changes follow the accepted source freeze; the test correction requires a new published head and final CI. The corrected fixture and this progress receipt are published together; the final success receipt will remain local-only after corrected-head CI finishes. Status remains VERIFYING until owner merge.
+
+Owner adds this request while C10 is verifying: show/import splits 1–4 into proposed entries and add editable informational transfer/check reference, transaction date, statement/cleared date and incoming check/transfer date, with CSV/SCLX import. C9 is merged at c34db345 (current main). C10 [draft #433](https://github.com/benbaron/sca-jakarta-h2/pull/433), head 34a10b3d, passes focused 40/full 1,275 and Linux/Windows CI 44228604488; its local-only final receipt is preserved on codex/P27-C10-exchequer-test-coverage at 912e77a4. C10 remains VERIFYING pending owner merge and is independent/test-only, not a production prerequisite for C11. Start fresh codex/P27-C11-journal-information from main. No merging #433 or reusing its branch.
+
+Required reading: [C11 contract](P27-C11-journal-information.md), C9, canonical editor/UI rules, period/correction policy, import workflow/authorization, SCLX identity/extension and native recovery contracts. Required inspection: reader/document/proposal/review, Txn/commands/views/entry/correction/create-replay/audits, Journal/format/state, SCLX serializers/assemblers/query/identity/preview/commit, migrations and frozen-upgrade tests. Existing reader already parses four split groups; proposal projection loops them, but summary table exposes no individual split columns. Preserve all meaningful splits and make their source order/amounts visible; never fabricate zero-value accounting lines. Statement date is informational, separate from authoritative reconciliation/cleared flags. Existing transaction date remains the sole accounting date. An async question asks whether an extra separate incoming check number is intended; the four existing CSV fields are unambiguous and can proceed independently. Baseline compile passes (25.6s); existing entry/replay/import baseline passes 26/zero failures/errors/skips (01:13). New additive migration, canonical metadata audit/replay, Journal/review editing, CSV mapping, supported SCLX extension/identity and regression/migration/UI/round-trip checks are required. No private source publication or user-database mutation.
 
 ### P27-C9 Exchequer CSV review and journal import — owner request
 

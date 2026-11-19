@@ -73,7 +73,7 @@ class AccountingReadinessTest
             assertEquals(first.dataRevision(), service.previewReadiness(DATE, DATE).dataRevision());
             assertNotEquals(first.dataRevision(), service.previewReadiness(DATE, DATE.plusDays(1)).dataRevision());
             f.entry(jpa).enter(new TransactionCommand(DATE, null, "Inside cutoff", null,
-                    List.of(f.line(f.cash(), "3.1234", "0", f.event()), f.line(f.income(), "0", "3.1234", f.event()))));
+                    List.of(f.line(f.cash(), "3.1200", "0", f.event()), f.line(f.income(), "0", "3.1200", f.event()))));
             assertNotEquals(first.dataRevision(), service.previewReadiness(DATE, DATE).dataRevision());
             var other = new CoreAccountingPacketService(() -> db, () -> "DEFAULT", null).previewReadiness(DATE, DATE);
             assertEquals("DEFAULT", other.companyCode());

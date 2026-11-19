@@ -56,9 +56,16 @@ final class JournalCreateRequests
         }
         try
         {
-            byte[] input = JSON.writeValueAsBytes(Arrays.asList(classified ? "journal-create-v2" : "journal-create-v1", company.getId(), date(command.date()), command.payeeId(),
-                    command.memo(), command.bankAccountId(), lines, details));
-            return (classified ? "Journal create request v2 SHA-256: " : PREFIX) + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(input));
+            boolean informed = !command.information().isEmpty();
+            List<Object> content = new ArrayList<>(Arrays.asList(informed ? "journal-create-v3" : classified ? "journal-create-v2" : "journal-create-v1",
+                    company.getId(), date(command.date()), command.payeeId(), command.memo(), command.bankAccountId(), lines, details));
+            if (informed)
+            {
+                var facts = command.information();
+                content.add(Arrays.asList(facts.transferOrCheckReference(), date(facts.statementDate()), date(facts.incomingDate())));
+            }
+            byte[] input = JSON.writeValueAsBytes(content);
+            return (informed ? "Journal create request v3 SHA-256: " : classified ? "Journal create request v2 SHA-256: " : PREFIX) + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(input));
         }
         catch (JsonProcessingException | NoSuchAlgorithmException ex)
         {

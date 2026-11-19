@@ -177,3 +177,7 @@ discarding the draft/request identity. Refreshing the journal list must not hide
 the saved/failed command result. A known committed transaction with a display
 refresh error reports its ID and asks for reload, rather than reporting a false
 rollback. See [Save feedback checks](../P29-C11-journal-save-feedback.md).
+
+## P27-C11 journal source information
+
+Additional Details edits the optional Transfer ID / Check #, Statement / cleared date (information), and Incoming check / transfer date. Its Transaction date editor shares the existing Entry date value. Full Save retains all fields with the accounting lines; New clears source information and load restores it. Source dates never set authoritative bank-line clearing facts. CSV review provides the same fields and explicit Split 1–4 proposal summaries.
