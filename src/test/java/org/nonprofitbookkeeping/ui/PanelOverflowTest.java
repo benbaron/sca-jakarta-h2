@@ -129,7 +129,9 @@ class PanelOverflowTest
     {
         FxTestSupport.onFx(() ->
         {
-            var banking = new PanelFactory().create(AppPanelId.BANKING);
+            // The full bank/link editor remains a secondary tool of the unified workspace.
+            var banking = new BankingPanel();
+            PanelViewport.prepare(banking.root(), "banking-secondary-maintenance-overflow");
             show(banking.root(), 480, 560); banking.root().setStyle("-fx-font-size: 18px;"); layout();
             TabPane bankTabs = (TabPane) banking.root().lookup(".work-pane-tabs");
             for (int index = 0; index < bankTabs.getTabs().size(); index++)
@@ -154,16 +156,32 @@ class PanelOverflowTest
             snapshot("banking-editor");
             Label status = (Label) banking.root().lookup("#bankingStatus");
             assertTrue(status.isWrapText());
-            var reconciliation = new PanelFactory().create(AppPanelId.RECONCILIATION_RUNS);
-            show(reconciliation.root(), 600, 650); layout();
-            TabPane workflow = (TabPane) reconciliation.root().lookup("#reconciliationWorkflowTabs");
-            workflow.getSelectionModel().select(0); layout();
-            SplitPane setup = (SplitPane) reconciliation.root().lookup("#reconciliationSetupSplit");
-            assertHorizontalAccess((TableView<?>) setup.getItems().get(1).lookup(".table-view"));
-            workflow.getSelectionModel().select(2); layout();
-            SplitPane match = (SplitPane) reconciliation.root().lookup("#reconciliationMatchSplit");
-            for (Node pane : match.getItems()) assertHorizontalAccess((TableView<?>) pane.lookup(".table-view"));
-            snapshot("reconciliation-match");
+            var workspace = new PanelFactory().create(AppPanelId.BANKING);
+            show(workspace.root(), 480, 560); workspace.root().setStyle("-fx-font-size: 18px;"); layout();
+            TabPane pages = (TabPane)workspace.root().lookup("#bankingWorkspacePages");
+            for (int index=0;index<3;index++)
+            {
+                pages.getSelectionModel().select(index); layout();
+                if (index==1) assertTrue(workspace.root().lookup("#bankingWorkspaceOpenJournal").isDisabled(),"No journal drill command without a selected entry");
+                var tables=workspace.root().lookupAll(".table-view").stream().filter(TableView.class::isInstance)
+                        .map(node->(TableView<?>)node).filter(PanelOverflowTest::shown).toList();
+                assertFalse(tables.isEmpty(),"Each Banking work pane exposes its own table");
+                tables.forEach(this::assertHorizontalAccess);
+                String splitId=index==0?"banking-workspace-accounts":index==1?"banking-workspace-journal":"banking-workspace-reconciliation";
+                SplitPane split=(SplitPane)workspace.root().lookup("#"+splitId);
+                ScrollPane editor=(ScrollPane)split.getItems().get(index==2?0:1);
+                TextField field=(TextField)workspace.root().lookup(index==0?"#bankingWorkspaceNickname":index==1?"#bankingWorkspaceReference":"#bankingWorkspaceStatementEnding");
+                field.setMinWidth(700); field.setPrefWidth(700); layout();
+                assertEquals(1,ownBars(editor,Orientation.HORIZONTAL).size(),"One local horizontal owner for Banking pane "+index);
+                assertTrue(ownBars(editor,Orientation.VERTICAL).size()<=1,"No duplicated vertical form scrollbar");
+                editor.setHvalue(editor.getHmax()); editor.setVvalue(editor.getVmax()); layout();
+                var clip=editor.lookup(".viewport").localToScene(editor.lookup(".viewport").getLayoutBounds());
+                var content=editor.getContent().localToScene(editor.getContent().getBoundsInLocal());
+                assertTrue(content.getMaxX()<=clip.getMaxX()+2,"The last form column must remain reachable");
+            }
+            assertTrue(((Label)workspace.root().lookup("#bankingWorkspaceStatus")).isWrapText());
+            assertEquals("Banking",new PanelFactory().create(AppPanelId.RECONCILIATION_RUNS).title());
+            snapshot("banking-reconciliation");
             return null;
         });
     }

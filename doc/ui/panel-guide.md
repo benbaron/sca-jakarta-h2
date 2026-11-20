@@ -13,8 +13,8 @@ Admin**. Sign in with an account assigned to the selected company. Leave Passwor
 blank for an account without a password; ADMIN maintains account passwords.
 
 Open destinations through the left navigation or Destinations menu. Journal is
-the transaction entry and review workspace. Banking, Bank Reconciliation and Bank
-Transactions handle bank work. Preview supported imports before accepting them.
+the transaction entry and review workspace. Banking contains Accounts, Bank journal
+and Reconcile; the older Bank Reconciliation and Bank Transactions routes open this same workspace. Preview supported imports before accepting them.
 File/toolbar Save applies to the active function; explicit action buttons identify
 operations with a different scope. A disabled command may require a selection,
 a valid preview, or a permission available to another role.

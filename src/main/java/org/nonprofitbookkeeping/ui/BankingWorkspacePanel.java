@@ -84,6 +84,7 @@ public final class BankingWorkspacePanel implements AppPanel
     private final Button removeManual;
     private final Button newStatementButton;
     private final Button correctOpeningButton;
+    private final Button openJournalButton;
     private AccountView selected;
     private Snapshot snapshot;
     private OpeningView opening;
@@ -152,11 +153,14 @@ public final class BankingWorkspacePanel implements AppPanel
         cleared.setDisable(true);
         statementEnd.setId("bankingWorkspaceStatementEnd");
         firstDate.setId("bankingWorkspaceFirstDate");
+        manualDate.setId("bankingWorkspaceManualDate");
         reviewed.setId("bankingWorkspaceOpeningReviewed");
         result.setId("bankingWorkspaceResult");
         openingAmount.setId("bankingWorkspaceOpeningAmount");
         firstOpening.setId("bankingWorkspaceFirstOpeningPane");
         status.setId("bankingWorkspaceStatus");
+        entryBank.setId("bankingWorkspaceEntryBank");
+        entryDate.setId("bankingWorkspaceEntryDate");
         match = action("Match and clear", "bankingWorkspaceMatch", this::match, ApplicationPermission.BOOKKEEPING_WRITE);
         unmatch = action("Unmatch", "bankingWorkspaceUnmatch", this::unmatch, ApplicationPermission.BOOKKEEPING_WRITE);
         complete = action("Complete reconciliation", "bankingWorkspaceComplete", this::complete,
@@ -179,6 +183,7 @@ public final class BankingWorkspacePanel implements AppPanel
                               ApplicationPermission.BOOKKEEPING_WRITE);
         newStatementButton=action("New statement", "bankingWorkspaceNewStatement", this::newStatement, ApplicationPermission.BOOKKEEPING_WRITE);
         correctOpeningButton=action("Correct first opening…", "bankingWorkspaceCorrectOpening", this::correctOpening, ApplicationPermission.BOOKKEEPING_WRITE);
+        openJournalButton=action("Open complete journal entry", "bankingWorkspaceOpenJournal", this::openJournal, null);
         for (Control input : List.of(nickname,masked,active))
         {
             UiPermissionGate.gate(input,ApplicationPermission.COMPANY_ADMIN,"Edit configured bank account");
@@ -297,7 +302,7 @@ public final class BankingWorkspacePanel implements AppPanel
         details.add(cleared, 1, 3);
         add(details, 4, "Cleared date", clearedDate);
         var editor = new VBox(8, entryTitle, details, flow(saveReference,
-                              action("Open complete journal entry", "bankingWorkspaceOpenJournal", this::openJournal, null),
+                              openJournalButton,
                               action("Reconcile selected account", "bankingWorkspaceGoReconcile", ()->pages.getSelectionModel().select(2), null)),
                               label("Banking is derived from this configured ledger account. Transfers clear separately per bank. Use Open complete journal entry for ledger corrections or deletion."));
         return vertical(journal, editor, "banking-workspace-journal", .62);
@@ -335,7 +340,7 @@ public final class BankingWorkspacePanel implements AppPanel
         CompanySplitPaneStateBinder.bind(split, "banking-workspace-match", .5);
         var body = new BorderPane(split);
         body.setBottom(new VBox(7, pairDifference, flow(match, unmatch, saveProgress, complete, removeManual),
-                                label("Statement sources are retained. Remove an erroneous manual entry after unmatching; use Journal to correct ledger entries."),
+                                label("Reconciliation history and imported sources cannot be deleted. Remove an unlinked manual entry after unmatching; correct ledger entries in Journal."),
                                 action("Create missing journal entry from reviewed statement…", "bankingWorkspaceCreateMissing",
                                        ()->secondary("Reviewed statement acceptance", statementTools.get()), ApplicationPermission.BOOKKEEPING_WRITE)));
         return vertical(PanelViewport.section(header), body, "banking-workspace-reconciliation", .48);
@@ -552,6 +557,9 @@ public final class BankingWorkspacePanel implements AppPanel
                 candidates.getItems().clear();
                 statementEnd.setValue(d.end == null ? LocalDate.now() : d.end);
                 statementEnding.setText(d.ending == null ? "" : d.ending);
+                firstDate.setValue(d.firstDate == null ? selected.configuration().openingDate() : d.firstDate);
+                firstAmount.setText(d.firstAmount == null ? "" : d.firstAmount);
+                reviewed.setSelected(d.reviewed);
                 openingAmount.setText("Not established");
                 openingSource.setText("Start a statement for this account to confirm its opening.");
                 openingBook.setText("Calculated from the journal when the period is selected.");
@@ -617,6 +625,8 @@ public final class BankingWorkspacePanel implements AppPanel
             if (item == null)
             {
                 entryTitle.setText("Select a bank journal entry");
+                entryBank.setText(selected == null ? "" : selected.label()+"\n"+selected.ledgerLabel());
+                entryDate.setText("");
                 reference.setDisable(true);
                 reference.clear();
                 cleared.setSelected(false);
@@ -824,13 +834,19 @@ public final class BankingWorkspacePanel implements AppPanel
             status.setText("Enter the statement ending balance and Save progress to start this account's statement first.");
             return;
         }
+        long id = snapshot.sessionId();
+        Map<Long, ManualDraft> manualDrafts = draft().manual;
+        ManualDraft pending = manualDrafts.computeIfAbsent(id, ignored -> new ManualDraft());
         var dialog = new Dialog<ButtonType>();
         dialog.setTitle("Manual statement entry — " + selected.label());
         dialog.getDialogPane().getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
         var grid = new GridPane();
         grid.setHgap(12);
         grid.setVgap(8);
-        manualDate.setValue(snapshot.statementEndDate());
+        manualDate.setValue(pending.date == null ? snapshot.statementEndDate() : pending.date);
+        manualDescription.setText(pending.description == null ? "" : pending.description);
+        manualReference.setText(pending.reference == null ? "" : pending.reference);
+        manualAmount.setText(pending.amount == null ? "" : pending.amount);
         add(grid, 0, "Bank date", manualDate);
         add(grid, 1, "Reference / check / deposit #", manualReference);
         add(grid, 2, "Description", manualDescription);
@@ -839,11 +855,23 @@ public final class BankingWorkspacePanel implements AppPanel
         FullTextTooltipInstaller.install(dialog.getDialogPane());
         if (dialog.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK)
         {
-            long id = snapshot.sessionId();
+            pending.date = manualDate.getValue();
+            pending.description = manualDescription.getText();
+            pending.reference = manualReference.getText();
+            pending.amount = manualAmount.getText();
+            pending.dirty = true;
             var service = reconciliation.get();
             var command = new ManualStatementLineCommand(id, manualDate.getValue(), money(manualAmount.getText()),
                     manualDescription.getText(), manualReference.getText());
-            run("Save manual bank statement entry", ()->service.addManualLine(command), saved->reload(selected.id(),id));
+            run("Save manual bank statement entry", ()->service.addManualLine(command), saved ->
+            {
+                manualDrafts.remove(id);
+                reload(selected.id(), id);
+            });
+        }
+        else
+        {
+            manualDrafts.remove(id);
         }
     }
 
@@ -891,7 +919,10 @@ public final class BankingWorkspacePanel implements AppPanel
     {
         capture();
         Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle(title);
+        dialog.setResizable(true);
+        if (root.getScene() != null && root.getScene().getWindow() != null) dialog.initOwner(root.getScene().getWindow());
+        PanelViewport.prepare(panel.root(), "banking-secondary-" + title);
+        dialog.setTitle(title + (selected == null ? "" : " — " + selected.label()));
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         if (selected != null)
         {
@@ -956,6 +987,7 @@ public final class BankingWorkspacePanel implements AppPanel
         manualStatement.setDisable(busy || !mutable);
         saveProgress.setDisable(busy || selected == null || !selected.active() || snapshot != null && !mutable);
         var selectedItem = journal.getSelectionModel().getSelectedItem();
+        openJournalButton.setDisable(busy || selectedItem == null);
         saveReference.setDisable(busy || selected == null || !selected.active() || selectedItem == null || selectedItem.cleared() || selectedItem.mixedClearing());
         saveAccount.setDisable(busy || selected == null);
         newStatementButton.setDisable(busy || selected == null || !selected.active());
@@ -1002,7 +1034,10 @@ public final class BankingWorkspacePanel implements AppPanel
         }, error->
         {
             if (token != generation || !scope.equals(scope()))return;
-            busy = false; status.setText(operation + " failed; draft retained: " + UiErrors.safeMessage(error)); updateActions();
+            busy = false;
+            root.setDisable(false);
+            status.setText(operation + " failed; draft retained: " + UiErrors.safeMessage(error));
+            updateActions();
             commandFeedback.accept(new RunCommandResult(false, status.getText()));
         });
     }
@@ -1045,7 +1080,7 @@ public final class BankingWorkspacePanel implements AppPanel
     public boolean hasUnsavedChanges()
     {
         return drafts.values().stream().anyMatch(d -> d.accountDirty || !d.references.isEmpty()
-                || d.headerDirty || d.openingDirty);
+                || d.headerDirty || d.openingDirty || d.manual.values().stream().anyMatch(manual -> manual.dirty));
     }
 
     @Override
@@ -1174,6 +1209,10 @@ public final class BankingWorkspacePanel implements AppPanel
     }
     private BigDecimal money(String text)
     {
+        if (text == null || text.isBlank())
+        {
+            throw new IllegalArgumentException("Enter the amount explicitly; enter 0.00 to confirm zero.");
+        }
         BigDecimal value = format.parseMoney(text);
         if (value == null || value.stripTrailingZeros().scale() > 2)
         {
@@ -1276,5 +1315,15 @@ public final class BankingWorkspacePanel implements AppPanel
         boolean openingDirty;
         boolean editOpening;
         final Map<Long, String> references = new HashMap<>();
+        final Map<Long, ManualDraft> manual = new HashMap<>();
     }
+    private static final class ManualDraft
+    {
+        LocalDate date;
+        String description;
+        String reference;
+        String amount;
+        boolean dirty;
+    }
+
 }

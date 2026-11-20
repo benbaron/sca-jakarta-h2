@@ -124,7 +124,7 @@ jobs:
         shell: pwsh
         run: |
           $reports = @(Get-ChildItem target/surefire-reports/TEST-*.xml)
-          if ($reports.Count -ne 6) { throw "Expected six Windows regression reports." }
+          if ($reports.Count -ne 7) { throw "Expected seven Windows regression reports." }
           foreach ($report in $reports) {
             [xml]$suite = Get-Content $report.FullName
             if ([int]$suite.testsuite.tests -lt 1 -or [int]$suite.testsuite.skipped -gt 0) {

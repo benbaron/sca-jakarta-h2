@@ -1,19 +1,23 @@
 ---
-plan_version: 514
+plan_version: 515
 active_phase: P27
 active_slice: P27-C12
 active_status: VERIFYING
 active_branch: codex/P27-C12-banking-workspace
-active_pull_request: null
-active_head: 4840207a
-next_action: "Finish final clean, displayed and packaged validation of the four Banking views, publish the focused PR, and inspect exact-head Linux/Windows CI; do not merge."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/435
+active_head: 93ba3a0f8f2f541c0f95843b0b79fd7a89dd3d74
+next_action: "Publish final Banking recovery/scope/overflow fixes to PR 435, finish final clean/display/package checks and inspect updated-head Linux/Windows CI; do not merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C12 Approved unified Banking workspace
 
-Owner approved all four revised panels: Accounts summary/configuration, bank-specific Journal details, Reconcile, and first-reconciliation opening setup. This is one coherent slice on fresh main 4840207a. P27-C11/#434 is confirmed merged and DONE; its successful final CI is 44246428157, with local receipt preserved at 0af93bf5 on the prior branch. No prior branch reuse or history discard. [C12 contract](P27-C12-banking-workspace.md) governs this explicit owner-approved replacement of the three banking pages. Baseline compile passes (19.4s); existing reconciliation/mutation/authorization/ledger-query tests pass (58.3s). Implementation and added service/SCLX/display tests are present. Affected service/native recovery/close gates pass 25 tests without failures or skips (02:05). Corrected displayed Banking/import-return/secondary-review/production-route gate passes 6 tests without failures or skips (01:31). The final opening-correction action and contextual Save labels were added after that display gate and remain in the final display scope. Full clean/display/package/CI and publication are in progress. No user database is being modified. The optional grouping clarification received no reply; the stated default combines one instrument across Funds while preserving distinct instruments and separate bank accounts. New V95/native/SCLX opening and undo facts, all four JavaFX views and legacy secondary routes are implemented. The first full clean gate found the synthetic close-review fixture still finalizing an unconfirmed opening; it is corrected to explicitly confirm its known zero starting position. No production bypass is added.
+Owner approved all four revised panels: Accounts summary/configuration, bank-specific Journal details, Reconcile, and first-reconciliation opening setup. This coherent slice starts from main 4840207a; P27-C11/#434 is confirmed merged and DONE. Its local-only final receipt remains preserved at 0af93bf5 on the prior branch. [C12 contract](P27-C12-banking-workspace.md) governs the approved replacement of the three banking pages. Published draft [PR #435](https://github.com/benbaron/sca-jakarta-h2/pull/435), branch codex/P27-C12-banking-workspace, implementation head 93ba3a0f8f2f541c0f95843b0b79fd7a89dd3d74. No user database or frozen archive was modified. The optional grouping clarification received no reply; the stated default combines one instrument across Funds while preserving distinct instruments and separate bank accounts.
+
+Implementation includes V95/native/SCLX opening provenance and grouped undo facts, all four JavaFX views, reference editing, manual/import return and account-pinned secondary tools. Baseline compile and existing regression checks passed. Affected service/SCLX/native recovery/close tests pass 25/zero failures/errors/skips (02:05). Full clean verification passed 1,288 tests/zero failures/errors/154 expected headless display skips (10:05); a separate integrated real-display gate passed 64/zero failures/errors/skips (04:38). The built-JAR probe passed explicit opening, grouped clearing, native restart/inherited source and SCLX import/undo, with production classes loaded from the JAR. Final local UI fixes add a no-selection Journal state, account/session-specific failed manual drafts, reenable the workspace after a rejected save, and reject blank opening/ending amounts instead of silently accepting zero. The five final Banking interaction tests pass without skips (01:23); integrated final display/package and final clean validation are pending.
+
+Initial-head CI run 44651656023 passed clean/repeated headless verification and all 17 Windows displayed tests. It failed Linux's obsolete overflow fixture (still expecting the replaced Banking form at the primary route) and Windows's six-report assertion after adding a seventh displayed suite. The corrected overflow fixture exercises all three new work panes plus the retained prepared secondary form; the report guard expects seven executed suites. These fixes and the final scoped/error recovery changes require successor-head CI. No successful CI is claimed for the initial head. Keep VERIFYING until owner merge; do not merge automatically.
 
 Required reading: banking-and-reconciliation, banking lifecycle, bank import/reconciliation authority, C1 cleared-state policy, P20 authorization, payment references, UI design/editor/operation rules and SCLX/native recovery contracts. Inspect configured accounts, canonical bank splits, service sessions/matches, all three banking UI classes, panel routing, portable banking facts and migration/recovery tests. Existing match/cleared primitives and canonical journal remain authoritative; no second ledger. This approved contract supersedes old interactive policy radio choices and finalization rules where they conflict with the new exact-balanced workflow.
 
