@@ -56,6 +56,10 @@ public enum AppPanelId
         {
             return JOURNAL_PANE;
         }
+        if (id == RECONCILIATION_RUNS || id == BANK_TRANSACTIONS)
+        {
+            return BANKING;
+        }
         return id;
     }
 }

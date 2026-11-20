@@ -24,6 +24,15 @@ public class BankImportNavigationContextTest
     }
 
     @Test
+    void firstStatementImportRetainsExactAccountWithoutInventingASession()
+    {
+        var request = BankImportNavigationContext.parseImportRequest(BankImportNavigationContext.forAccount(3002)).orElseThrow();
+        assertEquals(3002, request.bankAccountId());
+        assertEquals(0, request.reconciliationSessionId());
+        assertEquals(3002, BankImportNavigationContext.parseAccountReturn(BankImportNavigationContext.returnToAccount(3002)).orElseThrow());
+    }
+
+    @Test
     void rejectsUnrelatedOrMalformedContext()
     {
         assertTrue(BankImportNavigationContext.parseImportRequest("Banking: import statement").isEmpty());

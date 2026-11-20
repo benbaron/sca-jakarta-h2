@@ -38,10 +38,12 @@ final class CheckExceptionsPane implements AppPanel
     private Row selectedRow;
     private VBox editor;
     private Button saveReviewButton;
+    private Button allBanksButton;
     private Runnable commandCapabilitiesChangedListener = () -> { };
     CheckExceptionsPane()
     {
         root.setId("checkExceptionsPane");
+        status.setId("checkReviewStatus");
         root.setMinSize(0, 0);
         table.setId("checkExceptionsTable");
         table.setMinSize(0, 0);
@@ -99,6 +101,7 @@ final class CheckExceptionsPane implements AppPanel
             bank.setValue(null);
             refresh();
         }, false);
+        allBanksButton = allBanks;
         exceptionsOnly.setOnAction(event -> filter());
         FlowPane filters = new FlowPane(8, 8, new Label("Bank"), bank, new Label("Review through"), through,
                 new Label("Issued on/before (age review)"), ageCutoff, exceptionsOnly, refresh, allBanks);
@@ -161,7 +164,11 @@ final class CheckExceptionsPane implements AppPanel
         var reconciliationService = UiServiceRegistry.bankReconciliationWorkspace();
         String company = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
         UiAsync.run("check-review-bank-options", () -> reconciliationService.listConfiguredBankAccounts(company),
-                values -> bank.getItems().setAll(values), ex -> status.setText(UiErrors.safeMessage(ex)));
+                values ->
+                {
+                    bank.getItems().setAll(values);
+                    applyPinnedAccount();
+                }, ex -> status.setText(UiErrors.safeMessage(ex)));
         refresh();
     }
 
@@ -263,13 +270,35 @@ final class CheckExceptionsPane implements AppPanel
         return accepted;
     }
 
+    private Long pinnedAccount;
+    private long reportGeneration;
+
+    void pinConfiguredAccount(long id)
+    {
+        if (dirty) throw new IllegalStateException("Save or discard the check review before changing account scope.");
+        pinnedAccount = id;
+        reportGeneration++;
+        busy = false;
+        bank.setDisable(true);
+        allBanksButton.setDisable(true);
+        applyPinnedAccount();
+    }
+
+    private void applyPinnedAccount()
+    {
+        if (pinnedAccount == null) return;
+        bank.getItems().stream().filter(row -> row.id() == pinnedAccount).findFirst().ifPresent(bank::setValue);
+        refresh();
+    }
+
     private void refresh()
     {
         if (busy || !discard())
         {
             return;
         }
-        Long bankId = bank.getValue() == null ? null : bank.getValue().id();
+        long generation = ++reportGeneration;
+        Long bankId = pinnedAccount != null ? pinnedAccount : bank.getValue() == null ? null : bank.getValue().id();
         LocalDate date = through.getValue(), cutoff = ageCutoff.getValue();
         busy = true;
         editor.setDisable(true);
@@ -278,6 +307,7 @@ final class CheckExceptionsPane implements AppPanel
         UiAsync.run("check-exception-report", () -> reviewService.report(bankId, date, cutoff),
                 values ->
                 {
+                    if (generation != reportGeneration) return;
                     busy = false;
                     editor.setDisable(false);
                     rows = values;
@@ -290,6 +320,7 @@ final class CheckExceptionsPane implements AppPanel
                 },
                 ex ->
                 {
+                    if (generation != reportGeneration) return;
                     busy = false;
                     editor.setDisable(false);
                     updateSaveAvailability();

@@ -20,10 +20,10 @@ final class SclxReconciliationExtension
     private static final Set<String> SESSION_KEYS = Set.of(
             "reconciliationSessionId", "bankAccountId", "statementStartDate", "statementEndDate",
             "statementEndingBalance", "mismatchPolicy", "status", "notes", "beginningBalance",
-            "bookBalanceAll", "bookBalanceCleared", "differenceAmount", "createdAt", "updatedAt");
+            "bookBalanceAll", "bookBalanceCleared", "differenceAmount", "createdAt", "updatedAt", "openingAmount", "openingSourceSessionId");
     private static final Set<String> MATCH_KEYS = Set.of(
             "reconciliationMatchId", "reconciliationSessionId", "statementLineId", "lineId",
-            "matchStatus", "resolutionNote", "createdAt", "updatedAt");
+            "matchStatus", "resolutionNote", "createdAt", "updatedAt", "priorCleared", "priorClearedOn");
     private static final Set<String> POLICIES = Set.of(
             "WARN_ONLY", "OVERWRITE_LEDGER_CLEARED_STATE", "NEVER_OVERWRITE_REQUIRE_MANUAL",
             "DECIDE_PER_IMPORTED_LINE");
@@ -127,7 +127,9 @@ final class SclxReconciliationExtension
         {
             throw new IllegalArgumentException(PATH + " has unsupported fields");
         }
-        return new Data(sessions(root), matches(root));
+        Data result = new Data(sessions(root), matches(root));
+        validateOpeningProvenance(root, result);
+        return result;
     }
 
     private static List<SessionEntry> sessions(Map<?, ?> root)
@@ -182,6 +184,13 @@ final class SclxReconciliationExtension
             {
                 throw new IllegalArgumentException(path + " must reference a statement line or transaction line");
             }
+            if (map.containsKey("priorCleared"))
+            {
+                SclxExtensionValueReader.flag(map, "priorCleared", path);
+                SclxExtensionValueReader.date(map, "priorClearedOn", path, true);
+            }
+            else if (map.get("priorClearedOn") != null)
+                throw new IllegalArgumentException(path + ".priorClearedOn requires priorCleared");
             String status = SclxExtensionValueReader.text(map, "matchStatus", path);
             requireSupported(status, MATCH_STATUSES, path + ".matchStatus");
             result.add(new MatchEntry(
@@ -195,6 +204,29 @@ final class SclxReconciliationExtension
                     SclxExtensionValueReader.instant(map, "updatedAt", path, false)));
         }
         return List.copyOf(result);
+    }
+
+    private static void validateOpeningProvenance(Map<?, ?> root, Data data)
+    {
+        Map<String, SessionEntry> sessions = new LinkedHashMap<>();
+        data.sessions().forEach(value -> sessions.put(value.reconciliationSessionId(), value));
+        for (Map<?, ?> node : SclxExtensionValueReader.objects(SclxExtensionValueReader.array(root, "sessions", PATH), PATH, SESSION_KEYS))
+        {
+            BigDecimal amount = SclxExtensionValueReader.decimal(node, "openingAmount", PATH, true);
+            String sourceId = SclxExtensionValueReader.optionalText(node, "openingSourceSessionId", PATH);
+            if (amount != null && amount.stripTrailingZeros().scale() > 2)
+                throw new IllegalArgumentException("Reconciliation opening must use whole cents.");
+            SessionEntry current = sessions.get(node.get("reconciliationSessionId"));
+            if (amount != null && amount.compareTo(current.beginningBalance()) != 0)
+                throw new IllegalArgumentException("Confirmed opening and recorded beginning balance differ.");
+            if (sourceId == null) continue;
+            SessionEntry source = sessions.get(sourceId);
+            if (amount == null || source == null || !"FINALIZED".equals(source.status())
+                    || !current.bankAccountId().equals(source.bankAccountId())
+                    || !current.statementStartDate().equals(source.statementEndDate().plusDays(1))
+                    || source.statementEndingBalance() == null || amount.compareTo(source.statementEndingBalance()) != 0)
+                throw new IllegalArgumentException("Reconciliation opening source must be the preceding completed statement for the same account and amount.");
+        }
     }
 
     static Set<String> uniqueSessionIds(Data data)

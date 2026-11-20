@@ -20,6 +20,11 @@ public final class BankReviewQueryService
 
     public List<ReviewRow> listRows(String companyCode)
     {
+        return listRows(companyCode, null);
+    }
+
+    public List<ReviewRow> listRows(String companyCode, Long accountId)
+    {
         try (EntityManager em = jpa.em())
         {
             return em.createQuery("""
@@ -32,11 +37,12 @@ public final class BankReviewQueryService
                               left join l.bankAccount a
                               left join l.matchedTransaction mt
                               left join l.acceptedTransaction acceptedTxn
-                             where l.company.code = :companyCode
+                             where l.company.code = :companyCode and (:accountId is null or a.id = :accountId)
                              order by coalesce(l.postedDate, l.transactionDate) desc,
                                       l.sourceTransactionId, l.deterministicFingerprint, l.id
                             """, Object[].class)
                     .setParameter("companyCode", requiredCompany(companyCode))
+                    .setParameter("accountId", accountId)
                     .setMaxResults(1_000_000)
                     .getResultList().stream()
                     .map(row -> new ReviewRow(

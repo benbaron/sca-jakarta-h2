@@ -325,7 +325,7 @@ class PaneSaveCoverageTest
 
     @Test
     @SuppressWarnings("unchecked")
-    void reconciliationSaveTargetsCheckReviewWithoutSavingOrFinalizingAnotherSubpane() throws Exception
+    void bankingSecondaryCheckReviewSavesWithoutSavingOrFinalizingReconciliation() throws Exception
     {
         Path database = Path.of(MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
         try (var jpa = new org.nonprofitbookkeeping.persistence.Jpa(database))
@@ -349,22 +349,42 @@ class PaneSaveCoverageTest
         {
             window.openPanel(AppPanelId.RECONCILIATION_RUNS);
             window.applyCss();
-            assertTrue(saveMenu().isDisable());
-            TabPane workflow = (TabPane) window.lookup("#reconciliationWorkflowTabs");
-            selectTab(workflow, "5. Checks / Exceptions");
-            window.applyCss();
             return null;
         });
-        await(() -> !((TableView<?>) window.lookup("#checkExceptionsTable")).getItems().isEmpty());
+        await(() -> !window.lookup("#bankingWorkspaceAccount").isDisabled());
         FxTestSupport.onFx(() ->
         {
-            ((TableView<?>) window.lookup("#checkExceptionsTable")).getSelectionModel().selectFirst();
-            ((TextArea) window.lookup("#checkReviewNote")).setText("Saved from File menu");
-            ((TextField) window.lookup("#checkEvidenceReference")).setText("menu-evidence");
-            assertEquals("Save Review", saveMenu().getText());
-            assertFalse(saveMenu().isDisable());
-            saveMenu().fire();
-            assertTrue(saveMenu().isDisable(), "Save is disabled during the asynchronous write.");
+            javafx.application.Platform.runLater(() ->
+            {
+                for (var dialog : java.util.List.copyOf(javafx.stage.Window.getWindows()))
+                {
+                    if (dialog == stage || dialog.getScene() == null) continue;
+                    var root = dialog.getScene().getRoot();
+                    var table = (TableView<?>) root.lookup("#checkExceptionsTable");
+                    if (table != null)
+                    {
+                        var submitted = new java.util.concurrent.atomic.AtomicBoolean();
+                        ((Label)root.lookup("#checkReviewStatus")).textProperty().addListener((observable,oldValue,newValue) ->
+                        {
+                            if (newValue.startsWith("Review saved")) javafx.application.Platform.runLater(() -> ((Stage)dialog).close());
+                        });
+                        table.getItems().addListener((javafx.collections.ListChangeListener<Object>) change ->
+                        {
+                            if (table.getItems().isEmpty() || !submitted.compareAndSet(false,true)) return;
+                            javafx.application.Platform.runLater(() ->
+                            {
+                            table.getSelectionModel().clearSelection();
+                            table.getSelectionModel().selectFirst();
+                            ((TextArea)root.lookup("#checkReviewNote")).setText("Saved from secondary check review");
+                            ((TextField)root.lookup("#checkEvidenceReference")).setText("menu-evidence");
+                            Button save = (Button)root.lookup("#checkRecordReview");
+                            assertFalse(save.isDisabled()); save.fire();
+                            });
+                        });
+                    }
+                }
+            });
+            ((Button)window.lookup("#bankingWorkspaceChecks")).fire();
             return null;
         });
         await(() -> UiServiceRegistry.checkExceptions().report(null, java.time.LocalDate.of(2026, 12, 31), null)

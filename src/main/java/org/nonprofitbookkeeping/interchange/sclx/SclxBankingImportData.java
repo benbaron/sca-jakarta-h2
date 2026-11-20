@@ -16,6 +16,8 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Set;
 
 /** Strict, non-mutating projection of governed banking and reconciliation extensions. */
@@ -180,6 +182,25 @@ final class SclxBankingImportData
             requireReference(session.bankAccountId(), bankAccountIds,
                     APP + ".reconciliation.sessions[].bankAccountId");
         }
+        Map<String, SessionValue> sessionsById = new LinkedHashMap<>();
+        sessions.forEach(value -> sessionsById.put(value.externalId(), value));
+        for (SessionValue session : sessions)
+        {
+            if (session.openingAmount() != null && session.openingAmount().stripTrailingZeros().scale() > 2)
+                throw new IllegalStateException("Reconciliation opening must use whole cents.");
+            if (session.openingAmount() != null && session.openingAmount().compareTo(session.beginningBalance()) != 0)
+                throw new IllegalStateException("Confirmed opening and recorded beginning balance differ.");
+            if (session.openingSourceSessionId() == null) continue;
+            SessionValue previous = sessionsById.get(session.openingSourceSessionId());
+            if (session.openingAmount() == null || previous == null || !"FINALIZED".equals(previous.status())
+                    || !session.bankAccountId().equals(previous.bankAccountId())
+                    || !session.statementStartDate().equals(previous.statementEndDate().plusDays(1))
+                    || previous.statementEndingBalance() == null || session.openingAmount().compareTo(previous.statementEndingBalance()) != 0)
+                throw new IllegalStateException("Reconciliation opening source must be the preceding completed statement for the same account and amount.");
+        }
+        for (MatchValue match : matches)
+            if (match.priorCleared() == null && match.priorClearedOn() != null)
+                throw new IllegalStateException("Prior cleared date requires a prior cleared flag.");
         Set<String> statementLineIds = linesById.keySet();
         for (MatchValue match : matches)
         {
@@ -496,7 +517,7 @@ final class SclxBankingImportData
                     Set.of("reconciliationSessionId", "bankAccountId", "statementStartDate",
                             "statementEndDate", "statementEndingBalance", "mismatchPolicy", "status", "notes",
                             "beginningBalance", "bookBalanceAll", "bookBalanceCleared", "differenceAmount",
-                            "createdAt", "updatedAt"),
+                            "createdAt", "updatedAt", "openingAmount", "openingSourceSessionId"),
                     Set.of("reconciliationSessionId", "bankAccountId", "statementStartDate",
                             "statementEndDate", "mismatchPolicy", "status", "beginningBalance", "bookBalanceAll",
                             "bookBalanceCleared", "differenceAmount", "createdAt", "updatedAt"), itemPath);
@@ -527,7 +548,9 @@ final class SclxBankingImportData
                     decimal(session, "bookBalanceCleared", itemPath, true, true),
                     decimal(session, "differenceAmount", itemPath, true, true),
                     instant(session, "createdAt", itemPath),
-                    instant(session, "updatedAt", itemPath)));
+                    instant(session, "updatedAt", itemPath),
+                    optionalDecimal(session, "openingAmount", itemPath, true),
+                    optionalText(session, "openingSourceSessionId", itemPath)));
         }
 
         Set<String> matchIds = new HashSet<>();
@@ -539,7 +562,7 @@ final class SclxBankingImportData
             requireObject(match, itemPath);
             requireFields(match,
                     Set.of("reconciliationMatchId", "reconciliationSessionId", "statementLineId", "lineId",
-                            "matchStatus", "resolutionNote", "createdAt", "updatedAt"),
+                            "matchStatus", "resolutionNote", "createdAt", "updatedAt", "priorCleared", "priorClearedOn"),
                     Set.of("reconciliationMatchId", "reconciliationSessionId", "matchStatus", "createdAt",
                             "updatedAt"), itemPath);
             String externalId = unique(
@@ -566,7 +589,9 @@ final class SclxBankingImportData
                     status,
                     optionalText(match, "resolutionNote", itemPath),
                     instant(match, "createdAt", itemPath),
-                    instant(match, "updatedAt", itemPath)));
+                    instant(match, "updatedAt", itemPath),
+                    absent(match.get("priorCleared")) ? null : flag(match, "priorCleared", itemPath),
+                    optionalDate(match, "priorClearedOn", itemPath)));
         }
     }
 
@@ -578,6 +603,17 @@ final class SclxBankingImportData
     List<ClearanceValue> clearances() { return clearances; }
     List<SessionValue> sessions() { return sessions; }
     List<MatchValue> matches() { return matches; }
+
+    static void validateWorkflowMetadata(JsonNode root)
+    {
+        JsonNode reconciliation = root.path("extensions").path("scaJakartaH2").path("reconciliation");
+        boolean present = false;
+        for (JsonNode session : reconciliation.path("sessions"))
+            present |= session.has("openingAmount") || session.has("openingSourceSessionId");
+        for (JsonNode match : reconciliation.path("matches"))
+            present |= match.has("priorCleared") || match.has("priorClearedOn");
+        if (present) parse(root);
+    }
 
     private static boolean absent(JsonNode value)
     {
@@ -863,10 +899,10 @@ final class SclxBankingImportData
             String externalId, String bankAccountId, LocalDate statementStartDate, LocalDate statementEndDate,
             BigDecimal statementEndingBalance, String mismatchPolicy, String status, String notes,
             BigDecimal beginningBalance, BigDecimal bookBalanceAll, BigDecimal bookBalanceCleared,
-            BigDecimal differenceAmount, Instant createdAt, Instant updatedAt) { }
+            BigDecimal differenceAmount, Instant createdAt, Instant updatedAt, BigDecimal openingAmount, String openingSourceSessionId) { }
 
     record MatchValue(
             String externalId, String reconciliationSessionId, String statementLineId,
             String transactionLineId, String matchStatus, String resolutionNote,
-            Instant createdAt, Instant updatedAt) { }
+            Instant createdAt, Instant updatedAt, Boolean priorCleared, LocalDate priorClearedOn) { }
 }

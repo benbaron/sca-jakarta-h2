@@ -22,9 +22,15 @@ Use **Budget Editor** and **Budget vs Actual** under **PLANNING** for versioned 
 
 ## Payments, checks and reconciliation
 
-Enter payment references in Journal, then open **Bank Reconciliation** and its **5. Checks / Exceptions** tab for delivery, review, cancel and reissue. Reissue retains the old and replacement references without duplicating the original expense.
+Open **Banking** under **ACCOUNTING**. One shared bank/account selector controls **Accounts**, **Bank journal**, and **Reconcile**. Accounts shows the bank, masked number, full ledger/chart identity and configured account's Active status; use **Bank / account settings…** for bank maintenance and new links. Deactivation retains history.
 
-Use **Bank Reconciliation** under **ACCOUNTING** for statement matching and finalization. Under WARN_ONLY, matching an uncleared ledger line changes no data and tells you to use **Mark Cleared** first. Mark it cleared, then match. Finalized reconciliation prevents incompatible correction or check actions.
+Enter payment references in Journal or edit an eligible instrument in **Bank journal**. Its cleared flag/date describe this bank account only. A transfer's other bank account clears independently. **Open complete journal entry** opens the canonical entry for permitted corrections.
+
+In **Reconcile**, import OFX/QFX or CSV, or enter a statement header and lines manually. Imported dates and ending balance are offered for explicit review. For the first statement, confirm a known opening amount/date and review the starting journal position and outstanding items; the application does not assume zero or create an opening entry. Later statements inherit the preceding completed closing statement balance for that account. Beginning book balance is shown separately.
+
+Select equal-amount statement and bank-journal items, then **Match and clear**. One instrument's Fund allocations match together; normal journal and bank dates can differ. **Unmatch** restores the prior clearing facts. Outstanding checks carry forward. **Save progress** retains unfinished work; **Complete reconciliation** requires a known opening, zero difference, all statement items accounted for and no unresolved source errors. Completed history is read-only. Erroneous unlinked manual statement rows can be removed with their source/audit history retained; ledger corrections use Journal.
+
+Use **Checks / exceptions…** within Reconcile for delivery, review, Void and Reissue. Save Review changes review facts; Void and Reissue retain correction/reference history without duplicating the original expense. **Statements / export…** retains account-scoped review, explicit journal acceptance and statement export. Import alone does not post ledger entries.
 
 ## Operational assistants
 

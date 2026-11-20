@@ -105,6 +105,9 @@ public final class WorkspaceServicesFactory
                 UiServiceRegistry::bankReviewQuery,
                 UiServiceRegistry::ledgerQuery,
                 UiServiceRegistry::reviewedStatementAcceptance,
-                UiServiceRegistry::transactionReferenceData);
+                UiServiceRegistry::transactionReferenceData,
+                UiServiceRegistry::bankingWorkspaceQuery,
+                UiServiceRegistry::bankReconciliationWorkspace,
+                UiServiceRegistry::transactionEntry);
     }
 }

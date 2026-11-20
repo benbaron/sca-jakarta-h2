@@ -435,6 +435,14 @@ public class BankingPanel implements AppPanel
         });
     }
 
+    void selectConfiguredAccount(long id, boolean create)
+    {
+        workPanes.getSelectionModel().select(1);
+        bankAccounts.getItems().stream().filter(row -> row.getId() == id).findFirst()
+                .ifPresent(row -> bankAccounts.getSelectionModel().select(row));
+        if (create) onNew();
+    }
+
     private void reload()
     {
         String company = activeCompanyCode();

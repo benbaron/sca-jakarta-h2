@@ -29,7 +29,7 @@ class ReleaseOperatingGuideTest
                 "src/main/java/org/nonprofitbookkeeping/ui/DatabaseTransferCoordinator.java"));
 
         for (String label : Set.of("Journal", "Merchant Settlement Assistant", "Event Accounting",
-                "Bank Reconciliation", "Budget Editor", "Budget vs Actual", "Recognition Assistant",
+                "Banking", "Budget Editor", "Budget vs Actual", "Recognition Assistant",
                 "Asset Register", "Inventory", "Property Custody", "Import",
                 "Opening Conversion", "Period Close", "Report Library", "Fund Transfers",
                 "Events / Activities", "Administration"))

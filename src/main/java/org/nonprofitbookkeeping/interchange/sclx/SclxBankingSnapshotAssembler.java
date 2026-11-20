@@ -15,6 +15,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -208,7 +209,7 @@ final class SclxBankingSnapshotAssembler
                 .peek(session -> requireSession(
                         session, bankAccountByPortableId, sessionPortableIds))
                 .sorted(Comparator.comparing(session -> session.portableId().toString()))
-                .map(session -> SclxReconciliationExtension.sessionEntry(
+                .map(session -> withOpening(session, companyCode, SclxReconciliationExtension.sessionEntry(
                         SclxPortableIdentity.reconciliationSession(
                                 companyCode, session.portableId().toString()),
                         SclxPortableIdentity.bankAccount(
@@ -224,7 +225,7 @@ final class SclxBankingSnapshotAssembler
                         session.bookBalanceCleared(),
                         session.differenceAmount(),
                         session.createdAt(),
-                        session.updatedAt()))
+                        session.updatedAt())))
                 .toList();
 
         List<Map<String, Object>> matches = banking.reconciliationMatches().stream()
@@ -234,7 +235,7 @@ final class SclxBankingSnapshotAssembler
                         banking.statementLines(),
                         exportedLineIdByLocalId))
                 .sorted(Comparator.comparing(match -> match.portableId().toString()))
-                .map(match -> SclxReconciliationExtension.matchEntry(
+                .map(match -> withPriorClearing(match, SclxReconciliationExtension.matchEntry(
                         SclxPortableIdentity.reconciliationMatch(
                                 companyCode, match.portableId().toString()),
                         SclxPortableIdentity.reconciliationSession(
@@ -247,7 +248,7 @@ final class SclxBankingSnapshotAssembler
                         match.matchStatus(),
                         match.resolutionNote(),
                         match.createdAt(),
-                        match.updatedAt()))
+                        match.updatedAt())))
                 .toList();
 
         return new Result(
@@ -255,6 +256,27 @@ final class SclxBankingSnapshotAssembler
                 SclxBankStatementFactsExtension.value(
                         importBatches, statementLines, issues, clearance),
                 SclxReconciliationExtension.value(sessions, matches));
+    }
+
+    private static Map<String, Object> withOpening(SclxBankingSnapshot.ReconciliationSession session,
+            String companyCode, Map<String, Object> base)
+    {
+        if (session.openingAmount() == null) return base;
+        Map<String, Object> result = new LinkedHashMap<>(base);
+        result.put("openingAmount", session.openingAmount());
+        if (session.openingSourcePortableId() != null)
+            result.put("openingSourceSessionId", SclxPortableIdentity.reconciliationSession(companyCode, session.openingSourcePortableId().toString()));
+        return java.util.Collections.unmodifiableMap(result);
+    }
+
+    private static Map<String, Object> withPriorClearing(SclxBankingSnapshot.ReconciliationMatch match,
+            Map<String, Object> base)
+    {
+        if (match.priorCleared() == null) return base;
+        Map<String, Object> result = new LinkedHashMap<>(base);
+        result.put("priorCleared", match.priorCleared());
+        result.put("priorClearedOn", match.priorClearedOn());
+        return java.util.Collections.unmodifiableMap(result);
     }
 
     private static void requireBank(Bank bank, Company company)

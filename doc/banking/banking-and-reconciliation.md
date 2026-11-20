@@ -74,11 +74,9 @@ The Banking panel must give both options:
 
 For reconciliation and statement import, "configured bank accounts" means only Chart of Accounts accounts with the `BANK` function that are linked to a Bank record through the Banking panel. A standalone account with the `BANK` function is not sufficient.
 
-## Bank Reconciliation panel
+## Banking workspace and Reconcile
 
-The Bank Reconciliation panel lets the user select any configured bank account.
-
-For the selected bank account and statement/as-of date, it reads all ledger transactions involving that bank account.
+P27-C12 replaces the three top-level banking pages with Banking: Accounts, Bank journal and Reconcile, plus explicit first-opening setup. The shared configured-account selector controls all three panes. Full ledger/chart identity remains visible. Existing configuration, statement review/export/acceptance and Checks / Exceptions remain secondary actions. See [the approved C12 contract](../P27-C12-banking-workspace.md).
 
 ## Balance calculations
 
@@ -92,20 +90,9 @@ other banks/companies, legacy close runs, custom closed ranges, gaps and reopene
 ranges do not advance statement coverage. Explicit successors continue from their
 selected finalized predecessor and retain their existing audit trail.
 
-Beginning book balance is configured opening balance plus canonical bank activity
-before the stored session start; ending book balance includes all activity through
-the statement end. Cleared book balance includes only cleared bank splits through
-that end, plus opening balance. These balances are recalculated from the ledger,
-not copied from close snapshots or predecessor statement balances.
+Beginning book balance is canonical bank journal activity before the session start; ending book balance is canonical activity through statement end. Configured opening metadata is not added again as another ledger amount. Beginning cleared balance comes from this account's immediately preceding completed closing statement, or an explicitly reviewed first opening amount/date. No implicit zero opening or automatic opening journal is permitted.
 
-The ledger comparison includes in-range splits and older unsettled splits (uncleared
-or lacking a statement relationship). Once included, a current-session relationship
-keeps an older split visible and available for symmetric unmatch. Older settled
-splits stay outside the new comparison. Imported statements remain bounded by the
-stored session dates. Existing difference/finalization and correction protections
-still apply; carrying an outstanding item does not declare it resolved. Existing
-session dates, finalized history and interchange facts are never rewritten.
-Accounting close/reopen governs accounting writes, not bank statement coverage.
+Ending cleared balance is confirmed opening plus this session's matched bank movements whose actual clearing dates are in range. Older outstanding journal items can clear in the current statement; later clearing cannot rewrite a previous period. Outstanding unmatched ledger items carry forward without blocking an otherwise correct reconciliation. Completion requires a known opening/ending balance, exact zero difference, every statement item matched and no unresolved import errors. Offset amounts cannot hide unresolved statement rows. Completed history remains immutable. Accounting close/reopen governs accounting writes rather than bank statement coverage.
 
 ## Cleared state
 
@@ -124,14 +111,9 @@ Reconciliation accepts two deliberately separate statement-source paths:
 
 Reconciliation does not parse or persist imported CSV/OFX/QFX files itself. QIF is not an enabled production format because the governed Import Preview parser contract does not define QIF.
 
-## Cleared-state mismatch handling
+## Explicit match and undo
 
-The reconciliation workflow must offer four options:
-
-1. warn only;
-2. overwrite ledger cleared state;
-3. never overwrite and require manual resolution;
-4. choose per imported line.
+The approved Reconcile workflow uses Match and clear as an explicit reviewed action. It requires equal bank-item and statement amounts and the same company/configured account. A whole instrument's Fund allocations clear together; distinct instruments and different bank accounts remain separate. Actual bank posting date is used when present. Unmatch restores each allocation's prior flag/date and removes the whole relationship atomically. The four historical mismatch policy values remain readable for compatibility; their old radio buttons are not the replacement workflow.
 
 ## Comparison report
 

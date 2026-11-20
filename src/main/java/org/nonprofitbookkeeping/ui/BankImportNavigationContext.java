@@ -24,6 +24,28 @@ final class BankImportNavigationContext
         return IMPORT_PREFIX + bankAccountId + SESSION_SEPARATOR + reconciliationSessionId;
     }
 
+    static String forAccount(long bankAccountId)
+    {
+        if (bankAccountId <= 0) throw new IllegalArgumentException("Configured bank account ID must be positive.");
+        return IMPORT_PREFIX + bankAccountId;
+    }
+
+    static String returnToAccount(long bankAccountId)
+    {
+        return "banking:account=" + bankAccountId;
+    }
+
+    static OptionalLong parseAccountReturn(String context)
+    {
+        if (context == null || !context.startsWith("banking:account=")) return OptionalLong.empty();
+        try
+        {
+            long value = Long.parseLong(context.substring("banking:account=".length()));
+            return value > 0 ? OptionalLong.of(value) : OptionalLong.empty();
+        }
+        catch (NumberFormatException ex) { return OptionalLong.empty(); }
+    }
+
     static Optional<ImportRequest> parseImportRequest(String context)
     {
         if (context == null || !context.startsWith(IMPORT_PREFIX))
@@ -31,15 +53,11 @@ final class BankImportNavigationContext
             return Optional.empty();
         }
         int separator = context.indexOf(SESSION_SEPARATOR, IMPORT_PREFIX.length());
-        if (separator < 0)
-        {
-            return Optional.empty();
-        }
         try
         {
-            long bankAccountId = Long.parseLong(context.substring(IMPORT_PREFIX.length(), separator));
-            long reconciliationSessionId = Long.parseLong(context.substring(separator + SESSION_SEPARATOR.length()));
-            if (bankAccountId <= 0 || reconciliationSessionId <= 0)
+            long bankAccountId = Long.parseLong(context.substring(IMPORT_PREFIX.length(), separator < 0 ? context.length() : separator));
+            long reconciliationSessionId = separator < 0 ? 0 : Long.parseLong(context.substring(separator + SESSION_SEPARATOR.length()));
+            if (bankAccountId <= 0 || (separator >= 0 && reconciliationSessionId <= 0))
             {
                 return Optional.empty();
             }

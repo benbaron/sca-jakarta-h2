@@ -15,7 +15,7 @@ import java.util.UUID;
 /** Persists one explicitly entered bank statement fact inside a caller-owned transaction. */
 public final class BankStatementManualEntryService
 {
-    public void addLine(
+    public BankStatementLine addLine(
             EntityManager em,
             Company company,
             CompanyBankAccount bankAccount,
@@ -64,5 +64,6 @@ public final class BankStatementManualEntryService
         line.setReference(fixedReference);
         line.setStatus(BankStatementLine.Status.IMPORTED);
         em.persist(line);
+        return line;
     }
 }

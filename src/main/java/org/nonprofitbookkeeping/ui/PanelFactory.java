@@ -36,16 +36,17 @@ public final class PanelFactory
                         services::bankCsvMappingProfileService,
                         services::normalizedBankCsvReviewService));
         factories.put(AppPanelId.BANKING,
-                () -> new BankingPanel(services.bankReviewQueryService(), services.context()::activeCompanyCode));
-        factories.put(AppPanelId.BANK_TRANSACTIONS,
-                () -> new BankTransactionsPanel(
-                        services.ledgerQueryService(),
-                        services.bankReviewQueryService(),
+                () -> new BankingWorkspacePanel(
+                        services::bankingWorkspaceQuery, services::bankReconciliationWorkspace,
+                        services::bankConfigurationService, services::transactionEntry,
                         services.context()::activeCompanyCode,
-                        services::bankConfigurationService,
-                        services.bankStatementExportActions(),
-                        services::reviewedStatementAcceptanceService,
-                        services::transactionReferenceDataService));
+                        () -> services.context().activeDatabasePath().toString(),
+                        () -> new BankingPanel(services.bankReviewQueryService(), services.context()::activeCompanyCode),
+                        () -> new BankTransactionsPanel(services.ledgerQueryService(), services.bankReviewQueryService(),
+                                services.context()::activeCompanyCode, services::bankConfigurationService,
+                                services.bankStatementExportActions(), services::reviewedStatementAcceptanceService,
+                                services::transactionReferenceDataService)));
+
     }
 
     PanelFactory(CompanySessionController companySessionController)
@@ -76,7 +77,7 @@ public final class PanelFactory
         factories.put(AppPanelId.DASHBOARD, dashboardFactory);
         factories.put(AppPanelId.JOURNAL_PANE, JournalWorkspaceCompliancePanel::new);
         factories.put(AppPanelId.EVENT_ACCOUNTING, EventAccountingPanel::new);
-        factories.putIfAbsent(AppPanelId.BANKING, BankingPanel::new);
+        factories.putIfAbsent(AppPanelId.BANKING, BankingWorkspacePanel::new);
         factories.put(AppPanelId.BUDGET_EDITOR, BudgetEditorPanel::new);
         factories.put(AppPanelId.BUDGET_VS_ACTUAL, BudgetVsActualPanel::new);
         factories.put(AppPanelId.BUDGET_CATEGORIES, BudgetCategoriesPanel::new);
@@ -88,12 +89,10 @@ public final class PanelFactory
         factories.put(AppPanelId.DEPRECIATION_RUNS, DepreciationRunsPanel::new);
         factories.put(AppPanelId.INVENTORY, InventoryPanel::new);
         factories.put(AppPanelId.PROPERTY_CUSTODY, PropertyCustodyPanel::new);
-        factories.put(AppPanelId.RECONCILIATION_RUNS, ReconciliationRunsPanel::new);
         factories.put(AppPanelId.PERIOD_CLOSE_RUNS, PeriodCloseRunsPanel::new);
         factories.put(AppPanelId.IMPORT_PREVIEW, importPreviewFactory);
         factories.put(AppPanelId.OPENING_CONVERSION, OpeningConversionPanel::new);
         factories.put(AppPanelId.APPROVAL_AUDIT, ApprovalAuditPanel::new);
-        factories.putIfAbsent(AppPanelId.BANK_TRANSACTIONS, BankTransactionsPanel::new);
         factories.put(AppPanelId.REPORT_LIBRARY, ReportLibraryPanel::new);
         factories.put(AppPanelId.CHART_OF_ACCOUNTS, ChartOfAccountsInterchangePanel::new);
         factories.put(AppPanelId.FUNDS, FundsPanel::new);
@@ -109,6 +108,8 @@ public final class PanelFactory
         EnumSet<AppPanelId> result = EnumSet.copyOf(factories.keySet());
         result.add(AppPanelId.LEDGER_REGISTER);
         result.add(AppPanelId.TXN_EDITOR);
+        result.add(AppPanelId.RECONCILIATION_RUNS);
+        result.add(AppPanelId.BANK_TRANSACTIONS);
         return result;
     }
 

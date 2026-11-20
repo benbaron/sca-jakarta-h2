@@ -395,6 +395,66 @@ public class TransactionEntryService
         return txn;
     }
 
+    /** Changes only one configured bank instrument's factual reference, preserving every ledger split. */
+    public TransactionView updateBankingReference(long configuredAccountId, long anchorSplitId,
+                                                 String expectedReference, String reference)
+    {
+        String actor = ServiceAuthorization.actor(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCodeSupplier.get(), "update banking reference", "system");
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            try
+            {
+                Company company = selectedCompany(em);
+                SupplementalIntegrityService.lock(em, company);
+                var bank = required(em, org.nonprofitbookkeeping.model.CompanyBankAccount.class, configuredAccountId, "Configured bank account");
+                if (bank.getCompany() == null || !java.util.Objects.equals(company.getId(), bank.getCompany().getId()))
+                    throw new PostingException("Configured bank account belongs to another company.");
+                if (!bank.isActive() || bank.getBank() == null || bank.getAccount() == null)
+                    throw new PostingException("Select an active configured bank account linked to a bank and ledger account.");
+                BankConfigurationService.validateBankLedgerAccount(bank.getAccount());
+                TxnSplit anchor = required(em, TxnSplit.class, anchorSplitId, "Bank journal line");
+                Txn txn = anchor.getTxn();
+                ownership().ensureOwnedBy(em, company, txn, "Transaction");
+                if (bank.getAccount() == null || !java.util.Objects.equals(bank.getAccount().getId(), anchor.getAccount().getId()))
+                    throw new PostingException("The journal line does not use this configured bank account.");
+                if (!"ENTERED".equals(txn.getStatus())) throw new PostingException("Only entered journal records can be edited.");
+                if (!java.util.Objects.equals(expectedReference == null || expectedReference.isEmpty() ? null : expectedReference, anchor.getPaymentReference()))
+                    throw new PostingException("Banking reference changed; refresh the selected entry before editing.");
+                requireNotFixedAssetLifecycleTransaction(em, txn.getId());
+                FundTransferIntegrityService.requireUnlinked(em, txn.getId(), "edit banking reference");
+                PaymentReferences.requireUnlinked(em, txn, "edit banking reference");
+                requireNotReconciled(em, txn.getId(), "edit banking reference");
+                requireOpenRange(em, txn.getTxnDate(), "edit banking reference");
+                var members = em.createQuery("select s from TxnSplit s where s.txn = :txn and s.account = :account order by s.id", TxnSplit.class)
+                        .setParameter("txn", txn).setParameter("account", anchor.getAccount()).getResultList().stream()
+                        .filter(split -> java.util.Objects.equals(split.getPaymentReference(), anchor.getPaymentReference())
+                                && java.util.Objects.equals(split.getPaymentMethod(), anchor.getPaymentMethod())
+                                && java.util.Objects.equals(split.getPaymentIssuedOn(), anchor.getPaymentIssuedOn())).toList();
+                if (members.stream().anyMatch(split -> split.isBankCleared() || split.getMatchedBankStatementLine() != null))
+                    throw new PostingException("Unmatch the bank item in Reconcile before editing its reference.");
+                String before = snapshot(em, txn);
+                var facts = members.stream().map(PaymentReferences::read).toList();
+                members.forEach(split -> split.setPaymentCheckKey(null)); em.flush();
+                for (int i = 0; i < members.size(); i++)
+                {
+                    PaymentReference old = facts.get(i);
+                    PaymentReferences.apply(em, members.get(i), new PaymentReference(
+                            old == null ? PaymentReference.Method.OTHER : old.method(), reference,
+                            old == null ? null : old.issuedOn(), old == null ? null : old.deliveredOn(),
+                            old == null ? null : old.evidenceReference(), old == null ? null : old.reviewedOn(),
+                            old == null ? null : old.reviewNote()));
+                }
+                txn.touchUpdatedAt();
+                em.persist(audit(company, actor, "BANKING_REFERENCE_UPDATED", txn, before, snapshot(em, txn), null));
+                em.getTransaction().commit();
+                return load(txn.getId());
+            }
+            catch (RuntimeException ex) { rollbackIfActive(em); throw ex; }
+        }
+    }
+
     public TransactionView update(long transactionId, TransactionCommand command)
     {
         String auditActor = ServiceAuthorization.actor(

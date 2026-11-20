@@ -51,4 +51,20 @@ public class DrillThroughCoordinatorTest
         assertEquals("", DrillThroughCoordinator.consumeContext(AppPanelId.CHART_OF_ACCOUNTS));
         assertTrue(DrillThroughCoordinator.consumeContext(AppPanelId.FUNDS).isBlank());
     }
+    @Test
+    void retiredBankingRoutesShareTheWorkspaceAndRetainExactSessionOrSubpaneIntent()
+    {
+        AtomicReference<AppPanelId> opened=new AtomicReference<>();
+        DrillThroughCoordinator.configureOpener(opened::set);
+        String exact=BankImportNavigationContext.forReconciliationSession(42);
+        DrillThroughCoordinator.openPanelWithContext(AppPanelId.RECONCILIATION_RUNS,exact);
+        assertEquals(AppPanelId.BANKING,opened.get());
+        assertEquals(exact,DrillThroughCoordinator.consumeContext(AppPanelId.BANKING));
+        DrillThroughCoordinator.openPanelWithContext(AppPanelId.RECONCILIATION_RUNS,"Dashboard: reconciliation");
+        assertEquals("banking:reconcile",DrillThroughCoordinator.consumeContext(AppPanelId.BANKING));
+        DrillThroughCoordinator.openPanelWithContext(AppPanelId.BANK_TRANSACTIONS,"durable review rows");
+        assertEquals("banking:statements",DrillThroughCoordinator.consumeContext(AppPanelId.BANKING));
+        assertEquals(AppPanelId.BANKING,AppPanelId.canonical(AppPanelId.BANK_TRANSACTIONS));
+    }
+
 }
