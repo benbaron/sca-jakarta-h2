@@ -122,6 +122,7 @@ public class BankTransactionsPanel implements AppPanel
         Tab statementReviewTab = new Tab("Statement Review", buildStatementReviewPane());
         statementReviewTab.setClosable(false);
         TabPane tabs = new TabPane(ledgerTab, statementReviewTab);
+        authorityTabs = tabs;
         tabs.setId("bankTransactionsAuthorityTabs");
         root.setCenter(tabs);
 
@@ -285,6 +286,23 @@ public class BankTransactionsPanel implements AppPanel
         reviewTable.setPlaceholder(new Label("No durable bank review rows for the active company."));
     }
 
+    private TabPane authorityTabs;
+
+    void showStatementReview()
+    {
+        authorityTabs.getSelectionModel().select(1);
+    }
+
+    private Long pinnedAccount;
+
+    void pinConfiguredAccount(long id)
+    {
+        pinnedAccount = id;
+        ledgerAccount.setDisable(true);
+        exportAccount.setDisable(true);
+        reload();
+    }
+
     private void reload()
     {
         if (followActivePeriodDefaults)
@@ -313,7 +331,7 @@ public class BankTransactionsPanel implements AppPanel
 
     private void reloadLedgerAccounts(String activeCompany)
     {
-        Long selectedId = ledgerAccount.getValue() == null
+        Long selectedId = pinnedAccount != null ? pinnedAccount : ledgerAccount.getValue() == null
                 ? null
                 : ledgerAccount.getValue().configuredBankAccountId();
         try
@@ -382,7 +400,7 @@ public class BankTransactionsPanel implements AppPanel
     {
         try
         {
-            reviewTable.getItems().setAll(reviewQuery.listRows(activeCompany));
+            reviewTable.getItems().setAll(reviewQuery.listRows(activeCompany, pinnedAccount));
             reviewStatus.setText("Loaded " + reviewTable.getItems().size()
                     + " imported statement review row(s) for " + activeCompany + ".");
         }
@@ -479,13 +497,13 @@ public class BankTransactionsPanel implements AppPanel
 
     private void reloadExportAccounts(String activeCompany)
     {
-        Long selectedId = exportAccount.getValue() == null ? null : exportAccount.getValue().id();
+        Long selectedId = pinnedAccount != null ? pinnedAccount : exportAccount.getValue() == null ? null : exportAccount.getValue().id();
         try
         {
             List<BankAccountOption> accounts = bankConfigurationService.get()
                     .listBankAccounts(activeCompany)
                     .stream()
-                    .filter(CompanyBankAccount::isActive)
+                    .filter(value -> value.isActive() || Objects.equals(value.getId(), pinnedAccount))
                     .map(BankTransactionsPanel::accountOption)
                     .toList();
             exportAccount.getItems().setAll(accounts);

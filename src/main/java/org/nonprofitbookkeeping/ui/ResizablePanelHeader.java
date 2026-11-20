@@ -50,6 +50,11 @@ final class ResizablePanelHeader
 
     private static SplitPane split(Node header, Node body, String key)
     {
+        return split(header, body, key, .28);
+    }
+
+    static SplitPane split(Node header, Node body, String key, double defaultPosition)
+    {
         ScrollPane scroll = header instanceof ScrollPane existing ? existing : new ScrollPane(header);
         scroll.setFitToWidth(true);
         scroll.setFitToHeight(true);
@@ -71,7 +76,7 @@ final class ResizablePanelHeader
         split.setId("panelHeaderSplit-" + identity);
         split.getProperties().put("sca.headerPath", key);
         split.getStyleClass().add(STYLE);
-        CompanySplitPaneStateBinder.bindHeader(split, "control-header-" + identity, .28);
+        CompanySplitPaneStateBinder.bindHeader(split, "control-header-" + identity, defaultPosition);
         return split;
     }
 

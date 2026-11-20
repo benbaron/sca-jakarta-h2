@@ -165,6 +165,7 @@ public final class SclxImportPreviewService
             identityRoot = SclxAssetAcquisitions.identityDocument(identityRoot);
             identityRoot = SclxBudgetMetadata.identityDocument(identityRoot);
             identityRoot = SclxFundTransfers.identityDocument(identityRoot);
+            SclxBankingImportData.validateWorkflowMetadata(document.root());
             var categoryFacts = SclxBudgetCategories.parse(document.root());
             if (categoryFacts.present()) messages.add(message(InterchangeMessageSeverity.INFO, "SCLX_BUDGET_CATEGORIES",
                     "$.extensions.scaJakartaH2.budgetCategories", "Complete category masters: " + categoryFacts.byCode().size() + ".", false));

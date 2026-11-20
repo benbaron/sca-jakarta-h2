@@ -43,6 +43,17 @@ final class DrillThroughCoordinator
         }
         AppPanelId panelId = AppPanelId.canonical(requestedPanelId);
         String normalizedContext = context == null ? "" : context;
+        if (requestedPanelId == AppPanelId.RECONCILIATION_RUNS
+                && !normalizedContext.startsWith("reconciliation:session=")
+                && !normalizedContext.startsWith("bank-import-return:reconciliation="))
+        {
+            normalizedContext = "banking:reconcile";
+        }
+        else if (requestedPanelId == AppPanelId.BANK_TRANSACTIONS)
+        {
+            normalizedContext = normalizedContext.toLowerCase(java.util.Locale.ROOT).contains("review")
+                    ? "banking:statements" : "banking:journal";
+        }
         PANEL_CONTEXT.put(panelId, normalizedContext);
         debug("Opening " + panelId + " with context '" + safeContext(normalizedContext) + "'.");
         opener.accept(panelId);

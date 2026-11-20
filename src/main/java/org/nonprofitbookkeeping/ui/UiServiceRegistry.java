@@ -316,6 +316,11 @@ public final class UiServiceRegistry
         return new SclxImportCommitService(
                 current.jpa(), () -> fixedCompanyCode, current.authorizationGuard());
     }
+    public static org.nonprofitbookkeeping.service.BankingWorkspaceQuery bankingWorkspaceQuery()
+    {
+        return new org.nonprofitbookkeeping.service.BankingWorkspaceQuery(services().jpa());
+    }
+
     public static BankReconciliationWorkspaceService bankReconciliationWorkspace() { return services().bankReconciliationWorkspace(); }
     public static PeriodCloseRangeService periodCloseRangeService() { return services().periodCloseRangeService(); }
     public static AuditHistoryService auditHistory() { return services().auditHistory(); }

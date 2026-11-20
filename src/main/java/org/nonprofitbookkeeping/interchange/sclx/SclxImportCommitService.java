@@ -1944,6 +1944,20 @@ public final class SclxImportCommitService
                         transactions.lines(),
                         existingSessions,
                         existingMatches);
+        for (var value : newSessions)
+        {
+            Long priorId = value.openingSourceSessionId() == null ? null
+                    : required(reconciliations.sessions(), value.openingSourceSessionId(), "opening source session");
+            em.createNativeQuery("update bank_reconciliation_session set opening_amount = ?, opening_source_session_id = ? where id = ?")
+                    .setParameter(1, value.openingAmount()).setParameter(2, priorId)
+                    .setParameter(3, reconciliations.sessions().get(value.externalId())).executeUpdate();
+        }
+        for (var value : newMatches)
+        {
+            em.createNativeQuery("update bank_reconciliation_match set prior_cleared = ?, prior_cleared_on = ? where id = ?")
+                    .setParameter(1, value.priorCleared()).setParameter(2, value.priorClearedOn())
+                    .setParameter(3, reconciliations.matches().get(value.externalId())).executeUpdate();
+        }
         if (!newSessions.isEmpty() || !newMatches.isEmpty())
         {
             afterBusinessWrite.accept(++writes);

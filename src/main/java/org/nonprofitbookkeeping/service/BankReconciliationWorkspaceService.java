@@ -88,7 +88,15 @@ public class BankReconciliationWorkspaceService
                                      String clearedState,
                                      DifferenceCategory matchStatus,
                                      Long matchedLedgerSplitId,
-                                     String resolution) { }
+                                     String resolution,
+                                     boolean manual)
+    {
+        public StatementEntryView(Long statementLineId, LocalDate date, String description, String reference,
+                BigDecimal amount, String clearedState, DifferenceCategory matchStatus, Long matchedLedgerSplitId, String resolution)
+        {
+            this(statementLineId,date,description,reference,amount,clearedState,matchStatus,matchedLedgerSplitId,resolution,false);
+        }
+    }
     public record LedgerLineView(Long splitId,
                                  Long txnId,
                                  LocalDate date,
@@ -148,6 +156,135 @@ public class BankReconciliationWorkspaceService
         this.authorizationGuard = authorizationGuard;
     }
 
+    public Snapshot updateStatementBalance(long sessionId, BigDecimal endingBalance)
+    {
+        String actor = bookkeepingActorForSession(sessionId, "update statement ending balance", "system");
+        if (endingBalance == null || endingBalance.stripTrailingZeros().scale() > 2)
+        {
+            throw new IllegalArgumentException("Enter a known statement ending balance with at most two decimal places.");
+        }
+        try (EntityManager em = jpa.em())
+        {
+            EntityTransaction tx = em.getTransaction();
+            tx.begin();
+            try
+            {
+                SessionRow row = requireMutableSession(em, sessionId);
+                em.createNativeQuery("update bank_reconciliation_session set statement_ending_balance = ?, updated_at = CURRENT_TIMESTAMP where id = ?")
+                .setParameter(1, endingBalance).setParameter(2, sessionId).executeUpdate();
+                recordAudit(em, row.company(), actor, "RECONCILIATION_STATEMENT_BALANCE_CHANGED", "BANK_RECONCILIATION_SESSION",
+                            String.valueOf(sessionId), "Updated bank statement ending balance.", String.valueOf(row.statementEndingBalance()),
+                            endingBalance.toPlainString(), "Explicit statement header save");
+                CompanyBankAccount account = configuredBankAccount(em, row.bankAccountId(), row.company());
+                recalculateBalances(em, sessionId, account, row.startDate(), row.endDate(), endingBalance);
+                tx.commit();
+            }
+            catch (RuntimeException ex)
+            {
+                rollback(tx);
+                throw ex;
+            }
+        }
+        return load(sessionId);
+    }
+
+    public record OpeningView(BigDecimal clearedOpening, BigDecimal bookOpening,
+                              LocalDate startDate, Long sourceSessionId, LocalDate sourceEndingDate,
+                              boolean confirmed, String source) { }
+
+    /** Opening facts are account/session scoped; reading never invents a zero opening. */
+
+    public OpeningView opening(long sessionId)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            SessionRow row = session(em, sessionId);
+            CompanyBankAccount account = configuredBankAccount(em, row.bankAccountId(), row.company());
+            Object[] facts = (Object[])
+                             em.createNativeQuery("select opening_amount, opening_source_session_id from bank_reconciliation_session where id = ?")
+                             .setParameter(1, sessionId).getSingleResult();
+            BigDecimal value = amountOrNull(facts[0]);
+            Long source = facts[1] == null ? null : ((Number) facts[1]).longValue();
+            LocalDate sourceEnd = source == null ? null : session(em, source).endDate();
+            BigDecimal book = ledgerLinesThrough(em, row.company(), account.getAccount(), row.endDate()).stream()
+                              .filter(split -> split.getTxn().getTxnDate().isBefore(row.startDate()))
+                              .map(TxnSplit::getAmountSigned).reduce(BigDecimal.ZERO, BigDecimal::add);
+            return new OpeningView(value, amount(book), row.startDate(), source, sourceEnd, value != null,
+                                   source != null ? "Completed reconciliation ending " + sourceEnd
+                                   : value != null ? "Confirmed first statement opening"
+                                   : row.status() == SessionStatus.FINALIZED ? "Recorded historical reconciliation" : "First statement opening required");
+        }
+    }
+
+    public Snapshot confirmOpening(long sessionId, LocalDate beginningDate, BigDecimal opening, boolean reviewed)
+    {
+        String actor = bookkeepingActorForSession(sessionId, "confirm reconciliation opening", "system");
+        if (!reviewed || beginningDate == null || opening == null || opening.stripTrailingZeros().scale() > 2)
+        {
+            throw new IllegalArgumentException("Confirm the beginning date, whole-cent opening balance and review of the journal starting position/outstanding items.");
+        }
+        try (EntityManager em = jpa.em())
+        {
+            EntityTransaction tx = em.getTransaction();
+            tx.begin();
+            try
+            {
+                SessionRow row = requireMutableSession(em, sessionId);
+                Object[] facts = (Object[])
+                                 em.createNativeQuery("select opening_amount, opening_source_session_id from bank_reconciliation_session where id = ?")
+                                 .setParameter(1, sessionId).getSingleResult();
+                if (facts[1] != null)
+                {
+                    throw new IllegalStateException("Opening comes from a completed reconciliation and cannot be replaced.");
+                }
+                if (!matches(em, sessionId, true).isEmpty())
+                {
+                    throw new IllegalStateException("Remove existing matches before correcting the first opening.");
+                }
+                if (beginningDate.isAfter(row.endDate()))
+                {
+                    throw new IllegalArgumentException("Beginning date must not follow statement end.");
+                }
+                CompanyBankAccount account = configuredBankAccount(em, row.bankAccountId(), row.company());
+                if (account.getOpeningDate() != null && beginningDate.isBefore(account.getOpeningDate()))
+                {
+                    throw new IllegalArgumentException("Beginning date precedes the configured bank opening date.");
+                }
+                em.createNativeQuery("update bank_reconciliation_session set statement_start_date = ?, opening_amount = ?, updated_at = CURRENT_TIMESTAMP where id = ?")
+                .setParameter(1, beginningDate).setParameter(2, opening).setParameter(3, sessionId).executeUpdate();
+                recordAudit(em, row.company(), actor, "RECONCILIATION_OPENING_CONFIRMED", "BANK_RECONCILIATION_SESSION",
+                            String.valueOf(sessionId), "Confirmed first bank statement opening and reviewed starting journal/outstanding position.",
+                            String.valueOf(facts[0]), "date=" + beginningDate + "; opening=" + opening, "User reviewed opening position");
+                recalculateBalances(em, sessionId, account, beginningDate, row.endDate(), row.statementEndingBalance());
+                tx.commit();
+            }
+            catch (RuntimeException ex)
+            {
+                rollback(tx);
+                throw ex;
+            }
+        }
+        return load(sessionId);
+    }
+
+    private void inheritOpening(EntityManager em, long sessionId, CompanyBankAccount account, LocalDate start)
+    {
+        @SuppressWarnings("unchecked")
+        List<Object[]> previous =
+            em.createNativeQuery("select id, statement_ending_balance from bank_reconciliation_session where company_id = ? and bank_account_id = ? and status = 'FINALIZED' and statement_end_date = ? and statement_ending_balance is not null order by id desc")
+            .setParameter(1, account.getCompany().getId()).setParameter(2, account.getId()).setParameter(3, start.minusDays(1))
+            .setMaxResults(1).getResultList();
+        if (!previous.isEmpty())
+        {
+            if (((BigDecimal) previous.get(0)[1]).stripTrailingZeros().scale() > 2)
+            {
+                throw new IllegalStateException("Previous statement ending balance contains fractional cents; review it before starting a successor.");
+            }
+            em.createNativeQuery("update bank_reconciliation_session set opening_amount = ?, opening_source_session_id = ? where id = ?")
+            .setParameter(1, previous.get(0)[1]).setParameter(2, previous.get(0)[0]).setParameter(3, sessionId).executeUpdate();
+        }
+    }
+
     public List<BankAccountOption> listConfiguredBankAccounts(String companyCode)
     {
         try (EntityManager em = jpa.em())
@@ -192,11 +329,26 @@ public class BankReconciliationWorkspaceService
         }
     }
 
+    public List<SessionSummary> listSessionsForAccount(String companyCode, long bankAccountId)
+    {
+        try (EntityManager em = jpa.em())
+        {
+            Company company = companyByCode(em, companyCode);
+            @SuppressWarnings("unchecked")
+            List<Object[]> rows = em.createNativeQuery("""
+                    select s.id, cba.name, a.code, s.statement_start_date, s.statement_end_date, s.status, s.difference_amount
+                    from bank_reconciliation_session s join company_bank_account cba on cba.id=s.bank_account_id
+                    left join account a on a.id=cba.account_id
+                    where s.company_id=? and s.bank_account_id=? order by s.statement_end_date desc,s.id desc
+                    """).setParameter(1,company.getId()).setParameter(2,bankAccountId).getResultList();
+            return rows.stream().map(BankReconciliationWorkspaceService::sessionSummary).toList();
+        }
+    }
+
     public Snapshot start(StartCommand command)
     {
-        requireBookkeepingWriteForCompany(
-                command == null ? null : command.companyCode(),
-                "start reconciliation");
+        String actor = ServiceAuthorization.actor(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                command == null ? null : command.companyCode(), "start reconciliation", "system");
         validateStart(command);
         long sessionId;
         try (EntityManager em = jpa.em())
@@ -206,7 +358,9 @@ public class BankReconciliationWorkspaceService
             try
             {
                 Company company = companyByCode(em, command.companyCode());
+                em.lock(company, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
                 CompanyBankAccount bankAccount = configuredBankAccount(em, command.bankAccountId(), company);
+                requireActive(bankAccount);
                 LocalDate startDate = reconciliationStartDate(em, bankAccount, command.statementEndDate());
                 sessionId = positiveId();
                 em.createNativeQuery("""
@@ -224,7 +378,10 @@ public class BankReconciliationWorkspaceService
                         .setParameter(7, policy(command.policy()).name())
                         .setParameter(8, blankToNull(command.notes()))
                         .executeUpdate();
+                inheritOpening(em, sessionId, bankAccount, startDate);
                 recalculateBalances(em, sessionId, bankAccount, startDate, command.statementEndDate(), command.statementEndingBalance());
+                recordAudit(em,company,actor,"RECONCILIATION_STARTED","BANK_RECONCILIATION_SESSION",String.valueOf(sessionId),
+                        "Started bank reconciliation.",null,"account="+bankAccount.getId()+"; through="+command.statementEndDate()+"; statementEnding="+command.statementEndingBalance(),"User started statement");
                 tx.commit();
             }
             catch (RuntimeException ex)
@@ -261,12 +418,14 @@ public class BankReconciliationWorkspaceService
             try
             {
                 SessionRow predecessor = session(em, command.finalizedSessionId());
+                em.lock(predecessor.company(), jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
                 if (predecessor.status() != SessionStatus.FINALIZED)
                 {
                     throw new IllegalStateException("A successor can be started only from a finalized reconciliation session.");
                 }
                 CompanyBankAccount bankAccount = configuredBankAccount(
                         em, predecessor.bankAccountId(), predecessor.company());
+                requireActive(bankAccount);
                 LocalDate startDate = predecessor.endDate().plusDays(1);
                 if (command.statementEndDate().isBefore(startDate))
                 {
@@ -295,6 +454,7 @@ public class BankReconciliationWorkspaceService
                         .setParameter(7, successorPolicy.name())
                         .setParameter(8, blankToNull(command.notes()))
                         .executeUpdate();
+                inheritOpening(em, successorId, bankAccount, startDate);
                 recalculateBalances(em, successorId, bankAccount, startDate,
                         command.statementEndDate(), endingBalance);
                 recordAudit(
@@ -351,10 +511,9 @@ public class BankReconciliationWorkspaceService
 
     public Snapshot addManualLine(ManualStatementLineCommand command)
     {
-        requireBookkeepingWriteForSession(
-                command == null ? null : command.sessionId(),
-                "add reconciliation statement line");
-        if (command == null || command.date() == null || command.amount() == null || compare(command.amount(), BigDecimal.ZERO) == 0)
+        String actor = bookkeepingActorForSession(command == null ? null : command.sessionId(),
+                "add reconciliation statement line", "system");
+        if (command == null || command.date() == null || command.amount() == null || command.amount().stripTrailingZeros().scale() > 2 || compare(command.amount(), BigDecimal.ZERO) == 0)
         {
             throw new IllegalArgumentException("Manual statement date and nonzero amount are required.");
         }
@@ -367,7 +526,7 @@ public class BankReconciliationWorkspaceService
                 SessionRow session = requireMutableSession(em, command.sessionId());
                 CompanyBankAccount bankAccount = configuredBankAccount(em, session.bankAccountId(), session.company());
                 requireStatementDateInRange(session, command.date());
-                manualStatementService.addLine(
+                BankStatementLine created = manualStatementService.addLine(
                         em,
                         session.company(),
                         bankAccount,
@@ -375,6 +534,8 @@ public class BankReconciliationWorkspaceService
                         command.amount(),
                         command.description(),
                         command.reference());
+                recordAudit(em, session.company(), actor, "MANUAL_STATEMENT_ENTERED", "BANK_STATEMENT_LINE", String.valueOf(created.getId()),
+                        "Entered reviewed manual bank statement fact.", null, "date="+command.date()+"; amount="+command.amount()+"; reference="+command.reference(), "User entered statement fact");
                 tx.commit();
             }
             catch (RuntimeException ex)
@@ -384,6 +545,52 @@ public class BankReconciliationWorkspaceService
             }
         }
         return load(command.sessionId());
+    }
+
+    /** Retires an erroneous manual statement fact without deleting its source/audit history. */
+    public Snapshot removeManualLine(long sessionId, long statementId)
+    {
+        String actor = bookkeepingActorForSession(sessionId, "remove manual statement entry", "system");
+        try (EntityManager em = jpa.em())
+        {
+            EntityTransaction tx = em.getTransaction();
+            tx.begin();
+            try
+            {
+                SessionRow row = requireMutableSession(em, sessionId);
+                var bank = configuredBankAccount(em, row.bankAccountId(), row.company());
+                var statement = requireStatementLine(em, row, bank, statementId);
+                var batch = statement.getBatch();
+                if (batch.getSourceFormat() != org.nonprofitbookkeeping.model.BankImportBatch.SourceFormat.OTHER
+                        || !"Manual reconciliation entry".equals(batch.getSourceName()) || batch.getTotalLineCount() != 1)
+                {
+                    throw new IllegalStateException("Imported statement source facts are retained. Only an unlinked manual entry can be removed here.");
+                }
+                long links = ((Number)
+                              em.createNativeQuery("select count(*) from bank_reconciliation_match where statement_line_id = ? and txn_split_id is not null")
+                              .setParameter(1, statementId).getSingleResult()).longValue();
+                if (links != 0 || statement.getMatchedTransaction() != null || statement.getAcceptedTransaction() != null)
+                {
+                    throw new IllegalStateException("Unmatch this statement entry before removing it; accepted journal entries require their correction workflow.");
+                }
+                statement.setStatus(BankStatementLine.Status.REJECTED);
+                statement.touchUpdatedAt();
+                batch.setStatus(org.nonprofitbookkeeping.model.BankImportBatch.Status.REJECTED);
+                batch.setRejectedLineCount(1);
+                recordAudit(em, row.company(), actor, "MANUAL_STATEMENT_REMOVED", "BANK_STATEMENT_LINE", String.valueOf(statementId),
+                            "Removed erroneous manual statement entry from reconciliation; retained source fact.", "IMPORTED", "REJECTED",
+                            "User confirmed removal");
+                em.flush();
+                recalculateBalances(em, sessionId, bank, row.startDate(), row.endDate(), row.statementEndingBalance());
+                tx.commit();
+            }
+            catch (RuntimeException ex)
+            {
+                rollback(tx);
+                throw ex;
+            }
+        }
+        return load(sessionId);
     }
 
     public Snapshot autoMatch(long sessionId)
@@ -408,7 +615,7 @@ public class BankReconciliationWorkspaceService
                     }
                     List<StatementEntryView> candidates = current.statementEntries().stream()
                             .filter(statement -> !usedStatements.contains(statement.statementLineId()))
-                            .filter(statement -> Objects.equals(statement.date(), ledger.date()))
+                            .filter(statement -> Objects.equals(em.find(BankStatementLine.class,statement.statementLineId()).getTransactionDate(), ledger.date()))
                             .filter(statement -> compare(statement.amount(), ledger.amount()) == 0)
                             .toList();
                     if (candidates.size() == 1)
@@ -427,6 +634,150 @@ public class BankReconciliationWorkspaceService
             }
         }
         return load(sessionId);
+    }
+
+    /** Explicit reviewed bank-item match: all Fund allocations of one instrument clear atomically. */
+    public Snapshot matchBankItem(long sessionId, long statementLineId, long anchorSplitId)
+    {
+        String actor = bookkeepingActorForSession(sessionId, "match and clear bank item", "system");
+        try (EntityManager em = jpa.em())
+        {
+            EntityTransaction tx = em.getTransaction();
+            tx.begin();
+            try
+            {
+                SessionRow row = requireMutableSession(em, sessionId);
+                if (em.createNativeQuery("select opening_amount from bank_reconciliation_session where id = ?")
+                        .setParameter(1, sessionId).getSingleResult() == null)
+                {
+                    throw new IllegalStateException("Confirm the statement opening before matching.");
+                }
+                CompanyBankAccount bank = configuredBankAccount(em, row.bankAccountId(), row.company());
+                BankStatementLine statement = requireStatementLine(em, row, bank, statementLineId);
+                TxnSplit anchor = requireLedgerSplit(em, row, bank, anchorSplitId);
+                List<TxnSplit> group = bankItemSplits(em, anchor);
+                for (TxnSplit member : group)
+                {
+                    requireLedgerSplit(em, row, bank, member.getId());
+                }
+                BigDecimal total = group.stream().map(TxnSplit::getAmountSigned).reduce(BigDecimal.ZERO, BigDecimal::add);
+                if (compare(total, statement.getAmount()) != 0)
+                {
+                    throw new IllegalArgumentException("Selected bank item and statement amounts differ; no clearing changes were made.");
+                }
+                LocalDate clearedDate = statement.getPostedDate() == null ? statement.getTransactionDate() : statement.getPostedDate();
+                requireStatementDateInRange(row, clearedDate);
+                boolean alreadyMatched = Objects.equals(statement.getMatchedTransaction(), anchor.getTxn())
+                                         && group.stream().allMatch(split -> hasRelationshipMatch(em, sessionId, statementLineId, split.getId())
+                                                 && split.getMatchedBankStatementLine() != null
+                                                 && Objects.equals(split.getMatchedBankStatementLine().getId(), statementLineId));
+                if (!alreadyMatched)
+                {
+                    if (statement.getMatchedTransaction() != null || hasAnyRelationshipMatchForStatement(em, sessionId, statementLineId)
+                            || group.stream().anyMatch(split -> split.getMatchedBankStatementLine() != null
+                                                       || hasAnyRelationshipMatchForSplit(em, sessionId, split.getId())))
+                    {
+                        throw new IllegalStateException("Bank item or statement entry already has another match.");
+                    }
+                    for (TxnSplit split : group)
+                    {
+                        insertMatch(em, sessionId, statementLineId, split.getId(), DifferenceCategory.MATCHED,
+                                    "Reviewed bank item; journal date " + split.getTxn().getTxnDate() + "; bank clear date " + clearedDate);
+                        em.createNativeQuery("update bank_reconciliation_match set prior_cleared = ?, prior_cleared_on = ? where session_id = ? and statement_line_id = ? and txn_split_id = ?")
+                        .setParameter(1, split.isBankCleared()).setParameter(2, split.getBankClearedOn())
+                        .setParameter(3, sessionId).setParameter(4, statementLineId).setParameter(5, split.getId()).executeUpdate();
+                        split.setBankCleared(true);
+                        split.setBankClearedOn(clearedDate);
+                        split.setMatchedBankStatementLine(statement);
+                    }
+                    statement.setMatchedTransaction(anchor.getTxn());
+                    statement.setStatus(BankStatementLine.Status.MATCHED);
+                    statement.touchUpdatedAt();
+                    recordAudit(em, row.company(), actor, "BANK_ITEM_MATCHED_AND_CLEARED", "BANK_RECONCILIATION_SESSION",
+                                String.valueOf(sessionId),
+                                "Matched one bank instrument across " + group.size() + " Fund allocations.", null,
+                                "statement=" + statementLineId + "; amount=" + total + "; clearDate=" + clearedDate, "Explicit reviewed match");
+                }
+                em.flush();
+                recalculateBalances(em, sessionId, bank, row.startDate(), row.endDate(), row.statementEndingBalance());
+                tx.commit();
+            }
+            catch (RuntimeException ex)
+            {
+                rollback(tx);
+                throw ex;
+            }
+        }
+        return load(sessionId);
+    }
+
+    public Snapshot unmatchBankItem(long sessionId, long statementLineId, long anchorSplitId)
+    {
+        String actor = bookkeepingActorForSession(sessionId, "unmatch bank item", "system");
+        try (EntityManager em = jpa.em())
+        {
+            EntityTransaction tx = em.getTransaction();
+            tx.begin();
+            try
+            {
+                SessionRow row = requireMutableSession(em, sessionId);
+                CompanyBankAccount bank = configuredBankAccount(em, row.bankAccountId(), row.company());
+                BankStatementLine statement = requireStatementLine(em, row, bank, statementLineId);
+                TxnSplit anchor = requireLedgerSplit(em, row, bank, anchorSplitId);
+                List<TxnSplit> group = bankItemSplits(em, anchor);
+                for (TxnSplit split : group)
+                {
+                    if (!hasRelationshipMatch(em, sessionId, statementLineId, split.getId())
+                            || statement.getMatchedTransaction() == null
+                            || !Objects.equals(statement.getMatchedTransaction().getId(), split.getTxn().getId())
+                            || split.getMatchedBankStatementLine() == null
+                            || !Objects.equals(split.getMatchedBankStatementLine().getId(), statementLineId))
+                    {
+                        throw new IllegalStateException("The whole bank item must have one symmetric match in this session.");
+                    }
+                }
+                for (TxnSplit split : group)
+                {
+                    Object[] previous = (Object[])
+                                        em.createNativeQuery("select prior_cleared, prior_cleared_on from bank_reconciliation_match where session_id = ? and statement_line_id = ? and txn_split_id = ?")
+                                        .setParameter(1, sessionId).setParameter(2, statementLineId).setParameter(3, split.getId()).getSingleResult();
+                    split.setMatchedBankStatementLine(null);
+                    if (previous[0] != null)
+                    {
+                        split.setBankCleared(Boolean.TRUE.equals(previous[0]));
+                        split.setBankClearedOn(dateOrNull(previous[1]));
+                    }
+                }
+                em.createNativeQuery("delete from bank_reconciliation_match where session_id = ? and statement_line_id = ?")
+                .setParameter(1, sessionId).setParameter(2, statementLineId).executeUpdate();
+                statement.setMatchedTransaction(null);
+                statement.setStatus(statement.getAcceptedTransaction() == null
+                                    ? BankStatementLine.Status.IMPORTED : BankStatementLine.Status.ACCEPTED);
+                statement.touchUpdatedAt();
+                recordAudit(em, row.company(), actor, "BANK_ITEM_UNMATCHED", "BANK_RECONCILIATION_SESSION", String.valueOf(sessionId),
+                            "Removed whole bank-item match and restored prior clearing facts.", "statement=" + statementLineId, null,
+                            "Explicit unmatch");
+                em.flush();
+                recalculateBalances(em, sessionId, bank, row.startDate(), row.endDate(), row.statementEndingBalance());
+                tx.commit();
+            }
+            catch (RuntimeException ex)
+            {
+                rollback(tx);
+                throw ex;
+            }
+        }
+        return load(sessionId);
+    }
+
+    private static List<TxnSplit> bankItemSplits(EntityManager em, TxnSplit anchor)
+    {
+        return em.createQuery("select s from TxnSplit s where s.txn = :txn and s.account = :account order by s.id",
+                              TxnSplit.class)
+               .setParameter("txn", anchor.getTxn()).setParameter("account", anchor.getAccount()).getResultList().stream()
+               .filter(split -> Objects.equals(split.getPaymentMethod(), anchor.getPaymentMethod())
+                       && Objects.equals(split.getPaymentReference(), anchor.getPaymentReference())
+                       && Objects.equals(split.getPaymentIssuedOn(), anchor.getPaymentIssuedOn())).toList();
     }
 
     public Snapshot matchSelected(long sessionId, Long statementLineId, Long splitId, boolean overwriteCleared)
@@ -589,45 +940,66 @@ public class BankReconciliationWorkspaceService
 
     public Snapshot save(long sessionId, boolean finalize)
     {
-        requireBookkeepingWriteForSession(
-                sessionId,
-                finalize ? "finalize reconciliation" : "save reconciliation");
+        return saveStatement(sessionId, null, finalize);
+    }
+
+    /** Header save and progress/completion status share one serialized transaction. */
+    public Snapshot saveStatement(long sessionId, BigDecimal endingBalance, boolean finalize)
+    {
+        if (endingBalance != null && endingBalance.stripTrailingZeros().scale() > 2)
+            throw new IllegalArgumentException("Statement balance requires whole cents.");
+        String actor = bookkeepingActorForSession(sessionId,
+                finalize ? "finalize reconciliation" : "save reconciliation", "system");
         Snapshot current = load(sessionId);
         if (current.status() == SessionStatus.FINALIZED)
         {
-            if (finalize)
+            if (finalize && (endingBalance == null || current.balances().statementEndingBalance() != null
+                    && endingBalance.compareTo(current.balances().statementEndingBalance()) == 0))
             {
                 return current;
             }
             throw finalizedMutation(sessionId);
         }
-        if (finalize && !isBalanced(current))
+        if (finalize && endingBalance == null && !isBalanced(current))
         {
             throw new IllegalStateException(
                     "Reconciliation cannot be finalized until balances and differences are resolved.");
         }
-        SessionStatus status = finalize
-                ? SessionStatus.FINALIZED
-                : (isBalanced(current) ? SessionStatus.BALANCED : SessionStatus.UNRESOLVED);
         try (EntityManager em = jpa.em())
         {
             EntityTransaction tx = em.getTransaction();
             tx.begin();
             try
             {
-                requireMutableSession(em, sessionId);
+                SessionRow locked = requireMutableSession(em, sessionId);
+                CompanyBankAccount account = configuredBankAccount(em, locked.bankAccountId(), locked.company());
+                if (endingBalance != null)
+                    em.createNativeQuery("update bank_reconciliation_session set statement_ending_balance = ? where id = ?")
+                            .setParameter(1, endingBalance).setParameter(2, sessionId).executeUpdate();
+                recalculateBalances(em, sessionId, account, locked.startDate(), locked.endDate(),
+                        endingBalance == null ? locked.statementEndingBalance() : endingBalance);
+                Snapshot fresh = snapshot(em, sessionId);
+                if (finalize && !isBalanced(fresh))
+                    throw new IllegalStateException("Reconciliation changed; resolve the current opening, matches and difference before completion.");
+                SessionStatus currentStatus = finalize ? SessionStatus.FINALIZED
+                        : isBalanced(fresh) ? SessionStatus.BALANCED : SessionStatus.UNRESOLVED;
                 int updated = em.createNativeQuery("""
                         update bank_reconciliation_session
                            set status = ?, updated_at = CURRENT_TIMESTAMP
                          where id = ? and status <> 'FINALIZED'
                         """)
-                        .setParameter(1, status.name())
+                        .setParameter(1, currentStatus.name())
                         .setParameter(2, sessionId)
                         .executeUpdate();
                 if (updated != 1)
                 {
                     throw finalizedMutation(sessionId);
                 }
+                recordAudit(em, locked.company(), actor, finalize ? "RECONCILIATION_COMPLETED" : "RECONCILIATION_SAVED",
+                        "BANK_RECONCILIATION_SESSION", String.valueOf(sessionId),
+                        "Saved reviewed bank reconciliation state.", "status="+locked.status()+"; statementEnding="+locked.statementEndingBalance(),
+                        "status="+currentStatus+"; statementEnding="+fresh.balances().statementEndingBalance(),
+                        finalize ? "Confirmed completion" : "Saved progress");
                 tx.commit();
             }
             catch (RuntimeException ex)
@@ -714,6 +1086,40 @@ public class BankReconciliationWorkspaceService
         Map<Long, MatchRow> statementMatches = statementMatches(em, sessionId);
         Map<Long, MatchRow> splitMatches = splitMatches(em, sessionId);
         List<DifferenceView> differences = differences(ledger, statements, statementMatches, splitMatches, session);
+        Object established = em.createNativeQuery("select opening_amount from bank_reconciliation_session where id = ?")
+                .setParameter(1, sessionId).getSingleResult();
+        if (established == null && session.status() != SessionStatus.FINALIZED)
+        {
+            differences = new ArrayList<>(differences);
+            differences.add(new DifferenceView(DifferenceCategory.BEGINNING_BALANCE_DIFFERENCE,
+                    session.startDate(), null, null, null, "Confirm the first statement opening and starting journal position."));
+        }
+        if (established != null)
+        {
+            differences = new ArrayList<>(differences);
+            for (BankStatementLine statement : statements)
+            {
+                List<MatchRow> members = splitMatches.values().stream()
+                        .filter(match -> Objects.equals(match.statementLineId(), statement.getId())).toList();
+                if (members.isEmpty()) continue;
+                List<TxnSplit> splits = members.stream().map(match -> em.find(TxnSplit.class,match.splitId())).toList();
+                TxnSplit anchor = splits.get(0);
+                Set<Long> expected = bankItemSplits(em,anchor).stream().map(TxnSplit::getId).collect(java.util.stream.Collectors.toSet());
+                Set<Long> actual = splits.stream().map(TxnSplit::getId).collect(java.util.stream.Collectors.toSet());
+                BigDecimal total = splits.stream().map(TxnSplit::getAmountSigned).reduce(BigDecimal.ZERO,BigDecimal::add);
+                boolean valid = expected.equals(actual) && total.compareTo(statement.getAmount()) == 0
+                        && members.stream().allMatch(match -> match.status() == DifferenceCategory.MATCHED)
+                        && splits.stream().allMatch(split -> split.isBankCleared() && split.getBankClearedOn() != null
+                            && !split.getBankClearedOn().isBefore(session.startDate()) && !split.getBankClearedOn().isAfter(session.endDate())
+                            && split.getMatchedBankStatementLine() != null && Objects.equals(split.getMatchedBankStatementLine().getId(),statement.getId())
+                            && Objects.equals(split.getAccount().getId(),bankAccount.getAccount().getId())
+                            && Objects.equals(split.getTxn().getId(),anchor.getTxn().getId()))
+                        && statement.getMatchedTransaction() != null && Objects.equals(statement.getMatchedTransaction().getId(),anchor.getTxn().getId());
+                if (!valid) differences.add(new DifferenceView(DifferenceCategory.CLEARED_STATE_MISMATCH,
+                        anchor.getTxn().getTxnDate(), statement.getPostedDate() == null ? statement.getTransactionDate() : statement.getPostedDate(),
+                        total, statement.getAmount(), "Matched bank instrument is incomplete or its clearing evidence changed; review and unmatch before completion."));
+            }
+        }
         return new Snapshot(
                 session.id(),
                 session.company().getCode(),
@@ -732,7 +1138,9 @@ public class BankReconciliationWorkspaceService
 
     private static boolean isBalanced(Snapshot snapshot)
     {
-        return compare(snapshot.balances().difference(), BigDecimal.ZERO) == 0
+        return snapshot.balances().statementEndingBalance() != null
+                && snapshot.statementEntries().stream().allMatch(line -> line.matchedLedgerSplitId() != null)
+                && compare(snapshot.balances().difference(), BigDecimal.ZERO) == 0
                 && snapshot.differences().stream().noneMatch(difference -> unresolved(difference.category()));
     }
 
@@ -884,21 +1292,26 @@ public class BankReconciliationWorkspaceService
                     null, session.endDate(), session.bookCleared(), session.statementEndingBalance(),
                     "Statement ending balance and cleared book balance differ."));
         }
-        return output;
+        return output.stream().filter(difference -> difference.category() != DifferenceCategory.UNMATCHED_LEDGER
+                && difference.category() != DifferenceCategory.DATE_MISMATCH
+                && difference.category() != DifferenceCategory.AMOUNT_MISMATCH
+                && difference.category() != DifferenceCategory.DUPLICATE_POSSIBLE).toList();
     }
 
     private static StatementEntryView statementView(BankStatementLine line, MatchRow match)
     {
         return new StatementEntryView(
                 line.getId(),
-                line.getTransactionDate(),
+                line.getPostedDate() == null ? line.getTransactionDate() : line.getPostedDate(),
                 firstNonBlank(line.getName(), line.getMemo(), line.getTransactionType(), "Statement line " + line.getId()),
                 firstNonBlank(line.getReference(), line.getCheckNumber(), line.getSourceTransactionId(), ""),
                 amount(line.getAmount()),
-                line.getStatus() == BankStatementLine.Status.MATCHED ? "matched" : "not cleared",
+                line.getStatus() == BankStatementLine.Status.ERROR ? "Import error — review source" : line.getStatus().name(),
                 match == null ? DifferenceCategory.UNMATCHED_STATEMENT : match.status(),
                 match == null ? null : match.splitId(),
-                match == null ? "" : match.note());
+                match == null ? "" : match.note(),
+                line.getBatch().getSourceFormat() == org.nonprofitbookkeeping.model.BankImportBatch.SourceFormat.OTHER
+                        && "Manual reconciliation entry".equals(line.getBatch().getSourceName()));
     }
 
     private static LedgerLineView ledgerView(TxnSplit split, MatchRow match)
@@ -921,27 +1334,26 @@ public class BankReconciliationWorkspaceService
 
     private void recalculateBalances(EntityManager em, long sessionId, CompanyBankAccount bankAccount, LocalDate start, LocalDate end, BigDecimal statementEndingBalance)
     {
-        BigDecimal beginning = amount(bankAccount.getOpeningBalance());
-        BigDecimal periodActivity = BigDecimal.ZERO;
-        BigDecimal cleared = amount(bankAccount.getOpeningBalance());
-        for (TxnSplit split : ledgerLinesThrough(em, bankAccount.getCompany(), bankAccount.getAccount(), end))
+        Object supplied = em.createNativeQuery("select opening_amount from bank_reconciliation_session where id = ?")
+                .setParameter(1, sessionId).getSingleResult();
+        BigDecimal beginning = amount(supplied == null ? null : (BigDecimal) supplied);
+        BigDecimal all = ledgerLinesThrough(em, bankAccount.getCompany(), bankAccount.getAccount(), end).stream()
+                .map(TxnSplit::getAmountSigned).reduce(BigDecimal.ZERO, BigDecimal::add);
+        // Only this session's evidence advances its confirmed opening. A later session's
+        // cleared flag/date cannot retroactively change this period's result.
+        @SuppressWarnings("unchecked")
+        List<Number> splitIds = em.createNativeQuery("select distinct txn_split_id from bank_reconciliation_match where session_id = ? and statement_line_id is not null and txn_split_id is not null and match_status = 'MATCHED'")
+                .setParameter(1, sessionId).getResultList();
+        BigDecimal cleared = beginning;
+        for (Number id : splitIds)
         {
-            LocalDate transactionDate = split.getTxn().getTxnDate();
-            BigDecimal signed = amount(split.getAmountSigned());
-            if (transactionDate.isBefore(start))
+            TxnSplit split = em.find(TxnSplit.class, id.longValue());
+            LocalDate clearDate = split.getBankClearedOn();
+            if (split.isBankCleared() && clearDate != null && !clearDate.isBefore(start) && !clearDate.isAfter(end))
             {
-                beginning = beginning.add(signed);
-            }
-            else if (!transactionDate.isAfter(end))
-            {
-                periodActivity = periodActivity.add(signed);
-            }
-            if (split.isBankCleared() && !transactionDate.isAfter(end))
-            {
-                cleared = cleared.add(signed);
+                cleared = cleared.add(split.getAmountSigned());
             }
         }
-        BigDecimal all = beginning.add(periodActivity);
         BigDecimal difference = statementEndingBalance == null ? BigDecimal.ZERO : amount(statementEndingBalance).subtract(cleared);
         em.createNativeQuery("""
                 update bank_reconciliation_session
@@ -1292,15 +1704,15 @@ public class BankReconciliationWorkspaceService
         return em.createQuery("""
                 select l from BankStatementLine l
                 where l.bankAccount = :bankAccount
-                  and l.transactionDate >= :start
-                  and l.transactionDate <= :end
+                  and coalesce(l.postedDate,l.transactionDate) >= :start
+                  and coalesce(l.postedDate,l.transactionDate) <= :end
                   and l.status not in (:excluded)
                 order by l.transactionDate, l.id
                 """, BankStatementLine.class)
                 .setParameter("bankAccount", bankAccount)
                 .setParameter("start", start)
                 .setParameter("end", end)
-                .setParameter("excluded", List.of(BankStatementLine.Status.ERROR, BankStatementLine.Status.DUPLICATE))
+                .setParameter("excluded", List.of(BankStatementLine.Status.DUPLICATE, BankStatementLine.Status.REJECTED))
                 .getResultList();
     }
 
@@ -1338,13 +1750,13 @@ public class BankReconciliationWorkspaceService
                 .setParameter("end", statementEnd)
                 .getSingleResult();
         LocalDate firstStatement = em.createQuery("""
-                select min(l.transactionDate) from BankStatementLine l
-                 where l.bankAccount = :bankAccount and l.transactionDate <= :end
+                select min(coalesce(l.postedDate,l.transactionDate)) from BankStatementLine l
+                 where l.bankAccount = :bankAccount and coalesce(l.postedDate,l.transactionDate) <= :end
                    and l.status not in (:excluded)
                 """, LocalDate.class)
                 .setParameter("bankAccount", bankAccount)
                 .setParameter("end", statementEnd)
-                .setParameter("excluded", List.of(BankStatementLine.Status.ERROR, BankStatementLine.Status.DUPLICATE))
+                .setParameter("excluded", List.of(BankStatementLine.Status.ERROR, BankStatementLine.Status.DUPLICATE, BankStatementLine.Status.REJECTED))
                 .getSingleResult();
         if (firstLedger != null && firstLedger.isBefore(start))
         {
@@ -1360,11 +1772,19 @@ public class BankReconciliationWorkspaceService
     private SessionRow requireMutableSession(EntityManager em, long sessionId)
     {
         SessionRow session = session(em, sessionId);
+        em.lock(session.company(), jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        session = session(em, sessionId);
         if (session.status() == SessionStatus.FINALIZED)
         {
             throw finalizedMutation(sessionId);
         }
+        requireActive(configuredBankAccount(em, session.bankAccountId(), session.company()));
         return session;
+    }
+
+    private static void requireActive(CompanyBankAccount account)
+    {
+        if (!account.isActive()) throw new IllegalStateException("This configured bank account is inactive; its reconciliation history is read-only.");
     }
 
     private static IllegalStateException finalizedMutation(long sessionId)
@@ -1390,9 +1810,10 @@ public class BankReconciliationWorkspaceService
             throw new IllegalArgumentException(
                     "Statement line does not belong to the reconciliation bank account.");
         }
-        requireStatementDateInRange(session, statement.getTransactionDate());
+        requireStatementDateInRange(session, statement.getPostedDate() == null ? statement.getTransactionDate() : statement.getPostedDate());
         if (statement.getStatus() == BankStatementLine.Status.ERROR
-                || statement.getStatus() == BankStatementLine.Status.DUPLICATE)
+                || statement.getStatus() == BankStatementLine.Status.DUPLICATE
+                || statement.getStatus() == BankStatementLine.Status.REJECTED)
         {
             throw new IllegalArgumentException(
                     "Statement line is not eligible for reconciliation: " + statement.getStatus() + ".");
@@ -1511,7 +1932,7 @@ public class BankReconciliationWorkspaceService
                 .getResultStream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Configured bank account does not exist for company: " + id));
-        if (!bankAccount.isActive() || bankAccount.getBank() == null || bankAccount.getAccount() == null)
+        if (bankAccount.getBank() == null || bankAccount.getAccount() == null)
         {
             throw new IllegalArgumentException("Reconciliation requires an active configured bank account linked to a Bank and chart account.");
         }
@@ -1553,6 +1974,8 @@ public class BankReconciliationWorkspaceService
         {
             throw new IllegalArgumentException("Company, configured bank account, and statement ending date are required.");
         }
+        if (command.statementEndingBalance() != null && command.statementEndingBalance().stripTrailingZeros().scale() > 2)
+            throw new IllegalArgumentException("Statement ending balance requires whole cents.");
     }
 
     private static ClearedStatePolicy policy(ClearedStatePolicy value)

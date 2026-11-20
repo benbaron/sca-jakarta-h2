@@ -307,15 +307,17 @@ class NativeDatabaseRecoveryTest
                     var migratedColumns = new ArrayList<>(originalColumns);
                     if (table.equals("chart_of_accounts")) migratedColumns.add("portable_id");
                     if (table.equals("txn")) migratedColumns.addAll(List.of("transfer_or_check_reference", "source_statement_date", "incoming_check_transfer_date"));
-                    assertEquals(migratedColumns, columns, table + " original columns plus governed V93/V94 additions");
+                    if (table.equals("bank_reconciliation_session")) migratedColumns.addAll(List.of("opening_amount", "opening_source_session_id"));
+                    if (table.equals("bank_reconciliation_match")) migratedColumns.addAll(List.of("prior_cleared", "prior_cleared_on"));
+                    assertEquals(migratedColumns, columns, table + " original columns plus governed V93/V94/V95 additions");
                     java.util.Set<String> chartUuids = new java.util.HashSet<>();
                     int newMigrationRows = 0;
                     while (rs.next())
                     {
-                        if (table.equals("flyway_schema_history") && ("93".equals(rs.getString("version")) || "94".equals(rs.getString("version"))))
+                        if (table.equals("flyway_schema_history") && ("93".equals(rs.getString("version")) || "94".equals(rs.getString("version")) || "95".equals(rs.getString("version"))))
                         {
                             assertEquals("93".equals(rs.getString("version")) ? "V93__chart_portable_identity.sql"
-                                    : "V94__journal_information.sql", rs.getString("script"));
+                                    : "94".equals(rs.getString("version")) ? "V94__journal_information.sql" : "V95__reconciliation_opening_provenance.sql", rs.getString("script"));
                             assertTrue(rs.getBoolean("success"));
                             newMigrationRows++;
                             continue;
@@ -338,11 +340,21 @@ class NativeDatabaseRecoveryTest
                             assertNull(rs.getDate("source_statement_date"), "V94 must not invent legacy statement dates");
                             assertNull(rs.getDate("incoming_check_transfer_date"), "V94 must not invent incoming dates");
                         }
+                        if (table.equals("bank_reconciliation_session"))
+                        {
+                            assertNull(rs.getBigDecimal("opening_amount"), "V95 must not confirm legacy openings");
+                            assertNull(rs.getObject("opening_source_session_id"), "V95 must not invent opening provenance");
+                        }
+                        if (table.equals("bank_reconciliation_match"))
+                        {
+                            assertNull(rs.getObject("prior_cleared"), "V95 must not invent prior clearing flags");
+                            assertNull(rs.getDate("prior_cleared_on"), "V95 must not invent prior clearing dates");
+                        }
                         encoded.add(row.toString());
                     }
                     if (table.equals("flyway_schema_history"))
                     {
-                        assertEquals(2, newMigrationRows, "Exactly the governed V93 and V94 migrations were appended");
+                        assertEquals(3, newMigrationRows, "Exactly the governed V93, V94 and V95 migrations were appended");
                     }
                 }
                 Collections.sort(encoded);

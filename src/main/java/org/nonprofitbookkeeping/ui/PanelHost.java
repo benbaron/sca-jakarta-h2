@@ -53,11 +53,7 @@ public class PanelHost extends TabPane
      */
     static AppPanelId canonicalPanelId(AppPanelId id)
     {
-        if (id == AppPanelId.LEDGER_REGISTER || id == AppPanelId.TXN_EDITOR)
-        {
-            return AppPanelId.JOURNAL_PANE;
-        }
-        return id;
+        return AppPanelId.canonical(id);
     }
 
     public void show(AppPanelId requestedId)
@@ -72,6 +68,7 @@ public class PanelHost extends TabPane
         getSelectionModel().select(tab);
         activeId = id;
         AppPanel panel = panels.get(id);
+        if (panel instanceof BankingWorkspacePanel banking) banking.showLegacyDestination(requestedId);
         if (panel != null && previouslySelected == tab)
         {
             panel.onPanelShown();

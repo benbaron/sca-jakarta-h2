@@ -97,7 +97,11 @@ class ReconciliationAuthorizationIntegrationTest
             assertEquals(statementCountBefore, statementLineCount(jpa));
             assertEquals(matchCountBefore, reconciliationMatchCount(jpa));
             assertFalse(bankSplitCleared(jpa));
-            assertEquals(10L, authorizationDenialCount(jpa));
+            assertThrows(AuthorizationException.class, () -> service.confirmOpening(sessionId, LocalDate.of(2026,3,1), BigDecimal.ZERO, true));
+            assertThrows(AuthorizationException.class, () -> service.matchBankItem(sessionId, STATEMENT_LINE_ID, BANK_SPLIT_ID));
+            assertThrows(AuthorizationException.class, () -> service.unmatchBankItem(sessionId, STATEMENT_LINE_ID, BANK_SPLIT_ID));
+            assertThrows(AuthorizationException.class, () -> service.saveStatement(sessionId, BigDecimal.ZERO, true));
+            assertEquals(14L, authorizationDenialCount(jpa));
         }
     }
 
@@ -123,6 +127,7 @@ class ReconciliationAuthorizationIntegrationTest
 
             long sessionId = startMarch(service);
             assertNotNull(sessionId);
+            service.confirmOpening(sessionId, LocalDate.of(2026, 3, 1), BigDecimal.ZERO, true);
 
             current.set(Optional.of(session(
                     managerUserId,

@@ -843,10 +843,9 @@ public class ImportPreviewPanel implements AppPanel
 		bankAccount.setValue(target);
 		reconciliationImportBankAccountId = importRequest.bankAccountId();
 		bankAccount.setDisable(true);
-		returnReconciliationSessionId = importRequest.reconciliationSessionId();
-		status.setText("Reconciliation session " +
-			importRequest.reconciliationSessionId() +
-			" selected configured account " + target.getName() +
+		returnReconciliationSessionId = importRequest.reconciliationSessionId() > 0 ? importRequest.reconciliationSessionId() : null;
+        status.setText((returnReconciliationSessionId == null ? "Banking" : "Reconciliation session " + returnReconciliationSessionId)
+                + " selected configured account " + target.getName() +
 			". Preview OFX/QFX, mapped CSV, or normalized CSV; QIF is not a governed production import format.");
 		
 	}
@@ -2585,10 +2584,15 @@ public class ImportPreviewPanel implements AppPanel
 	{
 		Long sessionId = returnReconciliationSessionId;
 		
-		if (sessionId == null)
-		{
-			return;
-		}
+        if (sessionId == null)
+        {
+            if (reconciliationImportBankAccountId != null)
+            {
+                DrillThroughCoordinator.openPanelWithContext(AppPanelId.BANKING,
+                        BankImportNavigationContext.returnToAccount(reconciliationImportBankAccountId));
+            }
+            return;
+        }
 		
 		returnReconciliationSessionId = null;
 		DrillThroughCoordinator.openPanelWithContext(

@@ -78,6 +78,10 @@ public final class PeriodCloseTestFixture
         {
             var session = workspace.start(new BankReconciliationWorkspaceService.StartCommand(code, bankId, end, BigDecimal.ZERO,
                     BankReconciliationWorkspaceService.ClearedStatePolicy.WARN_ONLY, "Synthetic balanced statement"));
+            if (!workspace.opening(session.sessionId()).confirmed())
+            {
+                workspace.confirmOpening(session.sessionId(), session.statementStartDate(), BigDecimal.ZERO, true);
+            }
             workspace.save(session.sessionId(), true);
         }
         var service = evidence(jpa, db, code);

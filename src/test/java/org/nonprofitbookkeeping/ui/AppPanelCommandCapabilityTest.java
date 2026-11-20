@@ -64,7 +64,6 @@ class AppPanelCommandCapabilityTest
         expected.put(AppPanelId.TXN_EDITOR, journalCommands());
         expected.put(AppPanelId.JOURNAL_PANE, journalCommands());
         expected.put(AppPanelId.EVENT_ACCOUNTING, Set.of());
-        expected.put(AppPanelId.BANKING, editorCommands());
         expected.put(AppPanelId.BUDGET_EDITOR, Set.of());
         expected.put(AppPanelId.BUDGET_VS_ACTUAL, Set.of());
         expected.put(AppPanelId.BUDGET_CATEGORIES, editorCommands());
@@ -75,12 +74,10 @@ class AppPanelCommandCapabilityTest
         expected.put(AppPanelId.ASSETS_REGISTER, editorCommands());
         expected.put(AppPanelId.DEPRECIATION_RUNS, Set.of());
         expected.put(AppPanelId.INVENTORY, Set.of(AppCommand.NEW_ACTIVE));
-        expected.put(AppPanelId.RECONCILIATION_RUNS, Set.of());
         expected.put(AppPanelId.PERIOD_CLOSE_RUNS, Set.of());
         expected.put(AppPanelId.IMPORT_PREVIEW, Set.of());
         expected.put(AppPanelId.OPENING_CONVERSION, Set.of());
         expected.put(AppPanelId.APPROVAL_AUDIT, Set.of());
-        expected.put(AppPanelId.BANK_TRANSACTIONS, Set.of());
         expected.put(AppPanelId.REPORT_LIBRARY, Set.of());
         expected.put(AppPanelId.CHART_OF_ACCOUNTS, editorCommands());
         expected.put(AppPanelId.FUNDS, editorCommands());
@@ -90,6 +87,8 @@ class AppPanelCommandCapabilityTest
         expected.put(AppPanelId.DIAGNOSTICS, Set.of());
         expected.put(AppPanelId.HELP, Set.of());
 
+        // Banking capabilities vary with async account/session selection and are exercised
+        // through actual Save/match/complete actions in BankingWorkspacePanelTest.
         PanelHost host = FxTestSupport.onFx(() ->
         {
             PanelHost created = new PanelHost();

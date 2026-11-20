@@ -42,6 +42,7 @@ final class CheckExceptionsPane implements AppPanel
     CheckExceptionsPane()
     {
         root.setId("checkExceptionsPane");
+        status.setId("checkReviewStatus");
         root.setMinSize(0, 0);
         table.setId("checkExceptionsTable");
         table.setMinSize(0, 0);
@@ -99,6 +100,7 @@ final class CheckExceptionsPane implements AppPanel
             bank.setValue(null);
             refresh();
         }, false);
+        allBanks.setId("checkReviewAllBanks");
         exceptionsOnly.setOnAction(event -> filter());
         FlowPane filters = new FlowPane(8, 8, new Label("Bank"), bank, new Label("Review through"), through,
                 new Label("Issued on/before (age review)"), ageCutoff, exceptionsOnly, refresh, allBanks);
@@ -161,7 +163,11 @@ final class CheckExceptionsPane implements AppPanel
         var reconciliationService = UiServiceRegistry.bankReconciliationWorkspace();
         String company = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
         UiAsync.run("check-review-bank-options", () -> reconciliationService.listConfiguredBankAccounts(company),
-                values -> bank.getItems().setAll(values), ex -> status.setText(UiErrors.safeMessage(ex)));
+                values ->
+                {
+                    bank.getItems().setAll(values);
+                    applyPinnedAccount();
+                }, ex -> status.setText(UiErrors.safeMessage(ex)));
         refresh();
     }
 
@@ -263,13 +269,31 @@ final class CheckExceptionsPane implements AppPanel
         return accepted;
     }
 
+    private Long pinnedAccount;
+
+    void pinConfiguredAccount(long id)
+    {
+        pinnedAccount = id;
+        bank.setDisable(true);
+        var allBanks = root.lookup("#checkReviewAllBanks");
+        if (allBanks != null) allBanks.setDisable(true);
+        applyPinnedAccount();
+    }
+
+    private void applyPinnedAccount()
+    {
+        if (pinnedAccount == null) return;
+        bank.getItems().stream().filter(row -> row.id() == pinnedAccount).findFirst().ifPresent(bank::setValue);
+        refresh();
+    }
+
     private void refresh()
     {
         if (busy || !discard())
         {
             return;
         }
-        Long bankId = bank.getValue() == null ? null : bank.getValue().id();
+        Long bankId = pinnedAccount != null ? pinnedAccount : bank.getValue() == null ? null : bank.getValue().id();
         LocalDate date = through.getValue(), cutoff = ageCutoff.getValue();
         busy = true;
         editor.setDisable(true);

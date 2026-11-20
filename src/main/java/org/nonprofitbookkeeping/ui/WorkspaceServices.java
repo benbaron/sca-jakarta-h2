@@ -8,6 +8,9 @@ import org.nonprofitbookkeeping.interchange.bank.BankReviewQueryService;
 import org.nonprofitbookkeeping.interchange.bank.BankStatementReviewService;
 import org.nonprofitbookkeeping.interchange.bank.NormalizedBankCsvReviewService;
 import org.nonprofitbookkeeping.service.BankConfigurationService;
+import org.nonprofitbookkeeping.service.BankingWorkspaceQuery;
+import org.nonprofitbookkeeping.service.BankReconciliationWorkspaceService;
+import org.nonprofitbookkeeping.service.TransactionEntryService;
 import org.nonprofitbookkeeping.service.LedgerQueryService;
 import org.nonprofitbookkeeping.service.ReviewedStatementAcceptanceService;
 import org.nonprofitbookkeeping.service.TransactionReferenceDataService;
@@ -43,6 +46,10 @@ public final class WorkspaceServices
     private final Supplier<ReviewedStatementAcceptanceService> reviewedStatementAcceptanceService;
     private final Supplier<TransactionReferenceDataService> transactionReferenceDataService;
 
+    private final Supplier<BankingWorkspaceQuery> bankingWorkspaceQuery;
+    private final Supplier<BankReconciliationWorkspaceService> bankReconciliationWorkspace;
+    private final Supplier<TransactionEntryService> transactionEntry;
+
     WorkspaceServices(
             WorkspaceContext context,
             AppStateStore stateStore,
@@ -63,7 +70,10 @@ public final class WorkspaceServices
             Supplier<BankReviewQueryService> bankReviewQueryService,
             Supplier<LedgerQueryService> ledgerQueryService,
             Supplier<ReviewedStatementAcceptanceService> reviewedStatementAcceptanceService,
-            Supplier<TransactionReferenceDataService> transactionReferenceDataService)
+            Supplier<TransactionReferenceDataService> transactionReferenceDataService,
+            Supplier<BankingWorkspaceQuery> bankingWorkspaceQuery,
+            Supplier<BankReconciliationWorkspaceService> bankReconciliationWorkspace,
+            Supplier<TransactionEntryService> transactionEntry)
     {
         this.context = Objects.requireNonNull(context, "context");
         this.stateStore = Objects.requireNonNull(stateStore, "stateStore");
@@ -91,8 +101,15 @@ public final class WorkspaceServices
                 reviewedStatementAcceptanceService, "reviewedStatementAcceptanceService");
         this.transactionReferenceDataService = Objects.requireNonNull(
                 transactionReferenceDataService, "transactionReferenceDataService");
+        this.bankingWorkspaceQuery = Objects.requireNonNull(bankingWorkspaceQuery);
+        this.bankReconciliationWorkspace = Objects.requireNonNull(bankReconciliationWorkspace);
+        this.transactionEntry = Objects.requireNonNull(transactionEntry);
         this.panelFactory = new PanelFactory(this);
     }
+
+    BankingWorkspaceQuery bankingWorkspaceQuery() { return bankingWorkspaceQuery.get(); }
+    BankReconciliationWorkspaceService bankReconciliationWorkspace() { return bankReconciliationWorkspace.get(); }
+    TransactionEntryService transactionEntry() { return transactionEntry.get(); }
 
     public WorkspaceContext context()
     {

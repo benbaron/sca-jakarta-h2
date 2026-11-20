@@ -210,7 +210,7 @@ class ImportWorkflowPanelTest
         assertEquals(0, count("BankImportBatch"));
         confirm("commitPreviewedBankReviewButton", ButtonType.OK);
         await(() -> status().startsWith("Committed normalized"));
-        assertEquals(AppPanelId.RECONCILIATION_RUNS, destination.get());
+        assertEquals(AppPanelId.BANKING, destination.get());
         FxTestSupport.onFx(() ->
         {
             assertEquals(321L, BankImportNavigationContext.parseReconciliationReturn(

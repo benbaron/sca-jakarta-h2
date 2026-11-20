@@ -53,8 +53,19 @@ record SclxBankingSnapshot(
             BigDecimal bookBalanceCleared,
             BigDecimal differenceAmount,
             Instant createdAt,
-            Instant updatedAt)
+            Instant updatedAt,
+            BigDecimal openingAmount,
+            UUID openingSourcePortableId)
     {
+        ReconciliationSession(UUID portableId, UUID bankAccountPortableId, LocalDate statementStartDate,
+                LocalDate statementEndDate, BigDecimal statementEndingBalance, String mismatchPolicy,
+                String status, String notes, BigDecimal beginningBalance, BigDecimal bookBalanceAll,
+                BigDecimal bookBalanceCleared, BigDecimal differenceAmount, Instant createdAt, Instant updatedAt)
+        {
+            this(portableId, bankAccountPortableId, statementStartDate, statementEndDate, statementEndingBalance,
+                    mismatchPolicy, status, notes, beginningBalance, bookBalanceAll, bookBalanceCleared,
+                    differenceAmount, createdAt, updatedAt, null, null);
+        }
     }
 
     record ReconciliationMatch(
@@ -65,7 +76,16 @@ record SclxBankingSnapshot(
             String matchStatus,
             String resolutionNote,
             Instant createdAt,
-            Instant updatedAt)
+            Instant updatedAt,
+            Boolean priorCleared,
+            LocalDate priorClearedOn)
     {
+        ReconciliationMatch(UUID portableId, UUID sessionPortableId, UUID statementLinePortableId,
+                Long transactionSplitLocalId, String matchStatus, String resolutionNote,
+                Instant createdAt, Instant updatedAt)
+        {
+            this(portableId, sessionPortableId, statementLinePortableId, transactionSplitLocalId,
+                    matchStatus, resolutionNote, createdAt, updatedAt, null, null);
+        }
     }
 }

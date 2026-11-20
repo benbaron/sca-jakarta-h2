@@ -110,46 +110,23 @@ and outflow use configured bank-account lines.
 
 ## Banking and configured bank accounts
 
-Use Banks or Bank accounts to maintain the selected record type. New/Save follows
-that selected view and retains drafts in the other view. The Administration bank
-account summary is read-only; create or edit its records in Banking. Import Bank
-Statement opens Import. Review / Export Statements opens Bank Transactions.
+Open Banking and use its shared bank/account selector. **Accounts** displays the complete ledger/chart identity, Active status and this account's reconciliation status. Save account details updates its nickname, masked number and active state. Bank / account settings opens full bank/link maintenance. Deactivate records to retain history.
+
+**Bank journal** shows the bank-account portion of canonical Journal entries. Save banking reference edits an eligible instrument without changing amounts or Fund splits. Cleared flag/date are read-only here and updated by Reconcile. Transfers clear separately per bank account. Open complete journal entry for permitted ledger correction or deletion.
 
 ## Bank Transactions
 
-Statement export starts with the selected accounting period's full start/end
-range. It follows later period selections until either export date is edited or
-cleared. Refresh re-evaluates untouched fiscal defaults and preserves a custom
-range. Imported bank dates remain source facts.
-
-Ledger Activity is the accounting record. Statement Review contains imported bank
-evidence for matching or explicit acceptance. Import alone does not create a
-second bank ledger. Review selected rows before accepting them or opening their
-transaction for correction.
+The former destination now routes into Banking. Statement review and export remain under **Reconcile → Statements / export…**, scoped to the selected account. Export date defaults remain editable. Imported bank dates are source facts. Explicit reviewed acceptance creates a balanced canonical Journal entry; import alone does not post.
 
 ## Bank Reconciliation: setup and statement
 
-Work through Setup, Statement, Match and Review. Enter a manual statement line or
-open Import for OFX/QFX, mapped CSV or normalized bank CSV. QIF is not a
-supported production import format. Select the intended configured bank account
-and statement dates before matching. New coverage continues after that bank's
-nearest earlier finalized statement, or starts at its configured opening date.
-Accounting close/reopen dates do not shorten it. Older unsettled ledger items
-remain available for review; settled predecessor items stay outside the comparison.
+The former destination now opens **Banking → Reconcile**. Select the intended configured account, then use a saved statement or New statement. Import OFX/QFX, mapped CSV or normalized CSV before or after starting the session; QIF remains unsupported. Review imported dates/ending balance or enter them manually. A first reconciliation requires explicit opening date/amount and confirmation of the starting journal/outstanding position. No zero is assumed. Later statements inherit that account's preceding completed closing statement. Beginning book balance is displayed separately and derives only from Journal.
 
 ## Bank Reconciliation: matching and continuation
 
-Checks / Exceptions initially reviews through the accounting period end. Its
-review/correction date remains separately editable and is never advanced by a
-period change. Enter delivery/evidence and age-review dates explicitly.
+Match equal-amount statement and bank-journal items with **Match and clear**. Fund allocations of one instrument match together; actual bank clearing dates may differ from journal dates. Unmatch restores the previous clearing facts. Outstanding ledger items carry to later statements. Save progress preserves unfinished work; Complete reconciliation requires a confirmed opening, zero difference and all statement rows accounted for, without unresolved import errors. Completed history stays read-only. An erroneous unlinked manual statement entry may be removed while retaining its source/audit history; use Journal for ledger correction.
 
-Match statement rows to ledger lines and review differences. A difference
-explanation records a reconciliation fact without creating or changing a Journal
-entry. **Warn only** preserves ledger cleared state; use **Mark Cleared** before
-matching an uncleared ledger line when required.
-
-Finalized sessions are read-only. Start a successor to continue reconciliation
-while preserving the finalized predecessor.
+Open **Checks / exceptions…** within Reconcile for the check workflow below. Its review/correction date remains separately editable and is never advanced by a period change.
 
 ## Bank Reconciliation: check review, Void and Reissue
 

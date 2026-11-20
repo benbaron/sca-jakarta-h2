@@ -84,8 +84,9 @@ final class SclxBankingSnapshotQuery
                                s.book_balance_cleared,
                                s.difference_amount,
                                s.created_at,
-                               s.updated_at
+                               s.updated_at, s.opening_amount, prior.portable_id
                           from bank_reconciliation_session s
+                          left join bank_reconciliation_session prior on prior.id = s.opening_source_session_id
                           join company_bank_account a on a.id = s.bank_account_id
                          where s.company_id = ?
                          order by s.portable_id
@@ -105,7 +106,7 @@ final class SclxBankingSnapshotQuery
                                m.match_status,
                                m.resolution_note,
                                m.created_at,
-                               m.updated_at
+                               m.updated_at, m.prior_cleared, m.prior_cleared_on
                           from bank_reconciliation_match m
                           join bank_reconciliation_session s on s.id = m.session_id
                           left join bank_statement_line l on l.id = m.statement_line_id
@@ -137,7 +138,7 @@ final class SclxBankingSnapshotQuery
                 decimal(row[10], false, "book_balance_cleared"),
                 decimal(row[11], false, "difference_amount"),
                 instant(row[12], "created_at"),
-                instant(row[13], "updated_at"));
+                instant(row[13], "updated_at"), decimal(row[14], true, "opening_amount"), nullableUuid(row[15]));
     }
 
     private static SclxBankingSnapshot.ReconciliationMatch match(Object[] row)
@@ -150,7 +151,7 @@ final class SclxBankingSnapshotQuery
                 text(row[4], "match_status"),
                 optionalText(row[5]),
                 instant(row[6], "created_at"),
-                instant(row[7], "updated_at"));
+                instant(row[7], "updated_at"), (Boolean) row[8], row[9] == null ? null : date(row[9], "prior_cleared_on"));
     }
 
     private static UUID uuid(Object value, String field)

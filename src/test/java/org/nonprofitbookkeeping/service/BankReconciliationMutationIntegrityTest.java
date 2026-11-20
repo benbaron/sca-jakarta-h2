@@ -349,7 +349,7 @@ public class BankReconciliationMutationIntegrityTest
             sessionId = next.sessionId();
             assertEquals(LocalDate.of(2026, 4, 1), next.statementStartDate());
             assertEquals(5003L, next.ledgerLines().get(0).splitId());
-            assertEquals(0, next.balances().beginningBalance().compareTo(new BigDecimal("-35.75")));
+            assertEquals(0, next.balances().beginningBalance().compareTo(new BigDecimal("-25.75")), "Outstanding items do not alter the preceding statement closing balance");
             assertEquals(0, next.balances().bookBalanceAllTransactions().compareTo(new BigDecimal("-35.75")));
             assertThrows(IllegalArgumentException.class, () -> service.markCleared(sessionId, BANK_SPLIT));
             service.markCleared(sessionId, 5003L);
@@ -358,7 +358,7 @@ public class BankReconciliationMutationIntegrityTest
             var manual = service.addManualLine(new ManualStatementLineCommand(sessionId,
                     LocalDate.of(2026, 4, 16), new BigDecimal("-10.00"), "March check clears", "manual"));
             statementId = manual.statementEntries().get(0).statementLineId();
-            service.matchSelected(sessionId, statementId, 5003L, false);
+            service.matchBankItem(sessionId, statementId, 5003L);
             assertEquals(5003L, service.load(sessionId).ledgerLines().get(0).splitId());
             assertEquals(0, service.load(sessionId).balances().difference().signum());
         }
@@ -367,7 +367,7 @@ public class BankReconciliationMutationIntegrityTest
             BankReconciliationWorkspaceService service = new BankReconciliationWorkspaceService(jpa);
             assertEquals(LocalDate.of(2026, 4, 1), service.load(sessionId).statementStartDate());
             assertEquals(5003L, service.load(sessionId).ledgerLines().get(0).splitId());
-            service.unmatchSelected(sessionId, statementId, 5003L);
+            service.unmatchBankItem(sessionId, statementId, 5003L);
             assertEquals(5003L, service.load(sessionId).ledgerLines().get(0).splitId());
             assertEquals(0L, relationshipCount(jpa, sessionId, statementId, 5003L));
         }
@@ -381,7 +381,7 @@ public class BankReconciliationMutationIntegrityTest
             seed(jpa);
             execute(jpa, "update company_bank_account set opening_date = null where id = 3001");
             execute(jpa, "update txn set txn_date = DATE '2025-12-31' where id = 4001");
-            execute(jpa, "update bank_statement_line set transaction_date = DATE '2025-12-30' where id = 7001");
+            execute(jpa, "update bank_statement_line set transaction_date = DATE '2025-12-30', posted_date = DATE '2025-12-30' where id = 7001");
             BankReconciliationWorkspaceService service = new BankReconciliationWorkspaceService(jpa);
             var first = service.load(startMarch(service));
             assertEquals(LocalDate.of(2025, 12, 30), first.statementStartDate());
@@ -433,6 +433,7 @@ public class BankReconciliationMutationIntegrityTest
     private static long finalizedMarch(BankReconciliationWorkspaceService service)
     {
         long sessionId = startMarch(service);
+        service.confirmOpening(sessionId, LocalDate.of(2026, 3, 1), BigDecimal.ZERO, true);
         service.matchSelected(sessionId, STATEMENT, BANK_SPLIT, true);
         assertEquals(SessionStatus.FINALIZED, service.save(sessionId, true).status());
         return sessionId;
@@ -444,7 +445,7 @@ public class BankReconciliationMutationIntegrityTest
         assertTrue(ex.getMessage().contains("read-only"));
     }
 
-    private static void seed(Jpa jpa)
+    public static void seed(Jpa jpa)
     {
         try (var em = jpa.em())
         {
