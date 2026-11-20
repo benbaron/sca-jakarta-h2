@@ -157,6 +157,10 @@ loads and refresh current range/history/coverage after success. Invalidate old
 readiness/review observations; never silently save a review or clear another
 company/database draft. Dashboard reloads when shown again.
 
+## Banking pane limit (P27-C13)
+
+The owner's Banking correction counts actual visible split leaves, including control headers. Banking's shared account selector stays compact and locally scrollable without its own divider. Accounts and Bank journal each have one table/detail split. Reconcile separates Statement setup (one form viewport) from Match entries (one split between the two tables). No extra split may surround those work panes. Switching panes retains the same controller, account/session selections and drafts. This is an explicit Banking exception to the control-header rule below.
+
 ## P29-C7 independently resizable control headers
 
 Production control headers above a business workspace expose a real horizontal

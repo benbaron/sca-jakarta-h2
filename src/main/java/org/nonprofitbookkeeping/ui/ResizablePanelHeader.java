@@ -22,8 +22,18 @@ final class ResizablePanelHeader
     {
     }
 
+    /** Retain compact, locally scrollable chrome when another split would exceed the pane limit. */
+    static void keepCompact(BorderPane panel)
+    {
+        panel.getProperties().put("sca.compactControlHeader", true);
+    }
+
     static void prepare(Node node, String key)
     {
+        if (Boolean.TRUE.equals(node.getProperties().get("sca.compactControlHeader")))
+        {
+            return;
+        }
         if (node instanceof BorderPane border && border.getTop() != null && border.getCenter() != null
                 && actionable(border.getTop()))
         {

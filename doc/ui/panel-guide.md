@@ -114,19 +114,23 @@ Open Banking and use its shared bank/account selector. **Accounts** displays the
 
 **Bank journal** shows the bank-account portion of canonical Journal entries. Save banking reference edits an eligible instrument without changing amounts or Fund splits. Cleared flag/date are read-only here and updated by Reconcile. Transfers clear separately per bank account. Open complete journal entry for permitted ledger correction or deletion.
 
+Each Banking work pane has at most two visible panes. The shared account selector stays compact. Accounts and Bank journal retain one table/detail divider. Reconcile separates the full-height **Statement setup** form from **Match entries**, whose only divider separates the two tables. Change views without losing the current account, selected records or unsaved setup/reference values.
+
+To enter a bank statement manually, open Reconcile → Statement setup, enter its ending date/balance and click Save progress. For a first reconciliation, review and confirm the beginning date/balance. Use Enter statement manually… for each bank transaction (deposits positive, withdrawals negative). Open Match entries to select and match the corresponding journal records. Complete reconciliation remains available beside Save progress when its validation permits.
+
 ## Bank Transactions
 
-The former destination now routes into Banking. Statement review and export remain under **Reconcile → Statements / export…**, scoped to the selected account. Export date defaults remain editable. Imported bank dates are source facts. Explicit reviewed acceptance creates a balanced canonical Journal entry; import alone does not post.
+The former destination now routes into Banking. Statement review and export remain under **Reconcile → Statement setup → Statements / export…**, scoped to the selected account. Export date defaults remain editable. Imported bank dates are source facts. Explicit reviewed acceptance creates a balanced canonical Journal entry; import alone does not post.
 
 ## Bank Reconciliation: setup and statement
 
-The former destination now opens **Banking → Reconcile**. Select the intended configured account, then use a saved statement or New statement. Import OFX/QFX, mapped CSV or normalized CSV before or after starting the session; QIF remains unsupported. Review imported dates/ending balance or enter them manually. A first reconciliation requires explicit opening date/amount and confirmation of the starting journal/outstanding position. No zero is assumed. Later statements inherit that account's preceding completed closing statement. Beginning book balance is displayed separately and derives only from Journal.
+The former destination now opens **Banking → Reconcile**. Select the intended configured account, then open **Statement setup** and select a saved reconciliation or New statement. Import OFX/QFX, mapped CSV or normalized CSV before or after starting the session; QIF remains unsupported. Review imported dates/ending balance or enter them manually. A first reconciliation requires explicit opening date/amount and confirmation of the starting journal/outstanding position. No zero is assumed. Later statements inherit that account's preceding completed closing statement. Beginning book balance is displayed separately and derives only from Journal.
 
 ## Bank Reconciliation: matching and continuation
 
-Match equal-amount statement and bank-journal items with **Match and clear**. Fund allocations of one instrument match together; actual bank clearing dates may differ from journal dates. Unmatch restores the previous clearing facts. Outstanding ledger items carry to later statements. Save progress preserves unfinished work; Complete reconciliation requires a confirmed opening, zero difference and all statement rows accounted for, without unresolved import errors. Completed history stays read-only. An erroneous unlinked manual statement entry may be removed while retaining its source/audit history; use Journal for ledger correction.
+Open **Reconcile → Match entries** to see the statement and bank-journal tables side by side. Match equal-amount items with **Match and clear**. Fund allocations of one instrument match together; actual bank clearing dates may differ from journal dates. Unmatch restores the previous clearing facts. Outstanding ledger items carry to later statements. Save progress preserves unfinished work; Complete reconciliation requires a confirmed opening, zero difference and all statement rows accounted for, without unresolved import errors. Completed history stays read-only. An erroneous unlinked manual statement entry may be removed while retaining its source/audit history; use Journal for ledger correction.
 
-Open **Checks / exceptions…** within Reconcile for the check workflow below. Its review/correction date remains separately editable and is never advanced by a period change.
+Open **Checks / exceptions…** within Reconcile → Statement setup for the check workflow below. Its review/correction date remains separately editable and is never advanced by a period change.
 
 ## Bank Reconciliation: check review, Void and Reissue
 

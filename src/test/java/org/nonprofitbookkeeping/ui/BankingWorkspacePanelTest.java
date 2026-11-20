@@ -131,6 +131,7 @@ class BankingWorkspacePanelTest
         await(() -> !account().isDisabled() && !panel.root().lookup("#bankingWorkspaceFirstOpeningPane").isVisible());
         FxTestSupport.onFx(()->
         {
+            reconciliationPages().getSelectionModel().select(1);
             statements().getSelectionModel().selectFirst(); candidates().getSelectionModel().selectFirst();
             assertFalse(button("bankingWorkspaceMatch").isDisabled()); button("bankingWorkspaceMatch").fire(); return null;
         });
@@ -217,21 +218,26 @@ class BankingWorkspacePanelTest
             stage.setWidth(650); stage.setHeight(520); panel.root().setStyle("-fx-font-size: 19px;");
             for (int page = 0; page < 3; page++)
             {
-                pages()
-                .getSelectionModel().select(page);
+                pages().getSelectionModel().select(page);
+                if (page == 2) reconciliationPages().getSelectionModel().select(1);
                 ((Parent)panel.root()).applyCss();
                 ((Parent)panel.root()).layout();
                 var split = (SplitPane)panel.root().lookup(page == 0 ? "#banking-workspace-accounts" : page == 1 ?
-                        "#banking-workspace-journal" : "#banking-workspace-reconciliation");
+                        "#banking-workspace-journal" : "#bankingWorkspaceMatchingSplit");
                 assertNotNull(split);
-                assertEquals(Orientation.VERTICAL, split.getOrientation());
+                assertEquals(page == 2 ? Orientation.HORIZONTAL : Orientation.VERTICAL, split.getOrientation());
                 split.setDividerPositions(.5);
                 assertFalse(split.lookupAll(".split-pane-divider").isEmpty());
+                assertEquals(2, visibleSplitLeaves(panel.root()), "Count header splits too; never allow a third pane");
                 for (var node : panel.root().lookupAll(".table-view"))
                 {
                     assertEquals(TableView.UNCONSTRAINED_RESIZE_POLICY, ((TableView<?>)node).getColumnResizePolicy());
                 }
             }
+            reconciliationPages().getSelectionModel().select(0);
+            ((Parent)panel.root()).applyCss();
+            ((Parent)panel.root()).layout();
+            assertEquals(1, visibleSplitLeaves(panel.root()), "Statement setup uses one full-height viewport");
             assertTrue(panel.root().lookup("#bankingWorkspaceFirstOpeningPane").isVisible());
             assertFalse(panel.root().lookupAll(".scroll-pane").isEmpty());
             MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.viewer().withCompany("SCA", java.util.Set.of(ReservedSecurityRole.VIEWER), java.time.Instant.now()));
@@ -368,6 +374,72 @@ class BankingWorkspacePanelTest
         FxTestSupport.onFx(() -> {assertFalse(panel.hasUnsavedChanges());return null;});
     }
 
+    @Test
+    void reconciliationSetupAndMatchViewsPreserveDraftsAndHaveAtMostTwoActualPanes()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            pages().getSelectionModel().select(2);
+            text("bankingWorkspaceStatementEnding").setText("123.45");
+            text("bankingWorkspaceFirstOpening").setText("99.00");
+            ((DatePicker)panel.root().lookup("#bankingWorkspaceStatementEnd")).setValue(LocalDate.of(2026,3,31));
+            for (int pass = 0; pass < 2; pass++)
+            {
+                reconciliationPages().getSelectionModel().select(1);
+                ((Parent)panel.root()).applyCss(); ((Parent)panel.root()).layout();
+                assertEquals(2, visibleSplitLeaves(panel.root()));
+                assertNotNull(statements()); assertNotNull(candidates());
+                reconciliationPages().getSelectionModel().select(0);
+                ((Parent)panel.root()).applyCss(); ((Parent)panel.root()).layout();
+                assertEquals(1, visibleSplitLeaves(panel.root()));
+                assertEquals("123.45",text("bankingWorkspaceStatementEnding").getText());
+                assertEquals("99.00",text("bankingWorkspaceFirstOpening").getText());
+                assertEquals(LocalDate.of(2026,3,31),((DatePicker)panel.root().lookup("#bankingWorkspaceStatementEnd")).getValue());
+                assertTrue(panel.hasUnsavedChanges());
+            }
+            assertTrue(((javafx.scene.layout.BorderPane)panel.root()).getTop().getBoundsInParent().getHeight() < 140,
+                    "Shared bank selector must stay compact at normal window size");
+            return null;
+        });
+    }
+
+    @Test
+    void exactSessionDrillThroughOpensItsMatchingView()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            DrillThroughCoordinator.configureOpener(ignored -> { });
+            DrillThroughCoordinator.openPanelWithContext(AppPanelId.BANKING,
+                    BankImportNavigationContext.forReconciliationSession(sessionId));
+            panel.onPanelShown();
+            DrillThroughCoordinator.configureOpener(null);
+            return null;
+        });
+        await(() -> !account().isDisabled() && pages().getSelectionModel().getSelectedIndex() == 2);
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals(3001,account().getValue().id());
+            assertEquals(1,reconciliationPages().getSelectionModel().getSelectedIndex());
+            assertFalse(statements().getItems().isEmpty());
+            assertFalse(candidates().getItems().isEmpty());
+            return null;
+        });
+    }
+
+    /** Counts actual selected split leaves, deliberately without the old control-header exception. */
+    private static int visibleSplitLeaves(javafx.scene.Node node)
+    {
+        if (node instanceof SplitPane split)
+            return split.getItems().stream().mapToInt(BankingWorkspacePanelTest::visibleSplitLeaves).sum();
+        if (node instanceof TabPane tabs)
+            return visibleSplitLeaves(tabs.getSelectionModel().getSelectedItem().getContent());
+        if (node instanceof ScrollPane scroll)
+            return visibleSplitLeaves(scroll.getContent());
+        if (node instanceof Parent parent && !(node instanceof Control))
+            return parent.getChildrenUnmodifiable().stream().mapToInt(BankingWorkspacePanelTest::visibleSplitLeaves).max().orElse(1);
+        return 1;
+    }
+
     private void manualDialog(java.util.function.Consumer<DialogPane> action)
     {
         var failure=new java.util.concurrent.atomic.AtomicReference<Throwable>();
@@ -444,6 +516,10 @@ class BankingWorkspacePanelTest
     TabPane pages()
     {
         return (TabPane)panel.root().lookup("#bankingWorkspacePages");
+    }
+    TabPane reconciliationPages()
+    {
+        return (TabPane)panel.root().lookup("#bankingWorkspaceReconciliationPages");
     }
     Button button(String id)
     {

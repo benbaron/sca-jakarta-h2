@@ -23,6 +23,7 @@ public final class BankingWorkspacePanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
     private final WorkPaneTabs pages = new WorkPaneTabs("bankingWorkspacePages");
+    private final WorkPaneTabs reconciliationPages = new WorkPaneTabs("bankingWorkspaceReconciliationPages");
     private final ComboBox<AccountView> account = new ComboBox<>();
     private final TableView<AccountView> accounts = table("bankingWorkspaceAccounts");
     private final TableView<BankItem> journal = table("bankingWorkspaceJournal");
@@ -195,9 +196,13 @@ public final class BankingWorkspacePanel implements AppPanel
         configureTables();
         pages.addPane("Accounts", accountsPane()).addPane("Bank journal", journalPane()).addPane("Reconcile",
                 reconciliationPane());
-        VBox chrome = new VBox(7, label("Banking"), label("Bank / account — shared across all three work panes"), account,
-                               contextLabel);
-        root.setTop(chrome);
+        account.setMinWidth(0);
+        contextLabel.setMinWidth(0);
+        HBox selector = new HBox(8, label("Bank / account"), account);
+        HBox.setHgrow(account, Priority.ALWAYS);
+        VBox chrome = new VBox(4, selector, contextLabel);
+        root.setTop(PanelViewport.section(chrome));
+        ResizablePanelHeader.keepCompact(root);
         root.setCenter(pages);
         root.setBottom(status);
         account.valueProperty().addListener((obs, old, value) ->
@@ -318,7 +323,7 @@ public final class BankingWorkspacePanel implements AppPanel
         add(fields, 2, "Beginning book balance", openingBook);
         add(fields, 3, "Statement ending date", statementEnd);
         add(fields, 4, "Statement ending balance", statementEnding);
-        add(fields, 5, "Saved statement for this account", history);
+        add(fields, 5, "Saved reconciliation for this account", history);
         var first = new GridPane();
         first.setHgap(12);
         first.setVgap(7);
@@ -326,7 +331,7 @@ public final class BankingWorkspacePanel implements AppPanel
         add(first, 1, "First statement opening balance", firstAmount);
         firstOpening.getChildren().setAll(label("First reconciliation opening — review before confirming"), first, reviewed,
                                           confirmOpening);
-        var header = new VBox(8, result, balanceSummary, firstOpening, fields, importedHeader, flow(useImported, correctOpeningButton),
+        var header = new VBox(8, firstOpening, fields, importedHeader, flow(useImported, correctOpeningButton),
                               flow(importStatement, manualStatement,
                                    newStatementButton,
                                    action("Statements / export…", "bankingWorkspaceStatementTools", ()->secondary("Statement review and export",
@@ -339,11 +344,15 @@ public final class BankingWorkspacePanel implements AppPanel
         split.setMinSize(0, 0);
         CompanySplitPaneStateBinder.bind(split, "banking-workspace-match", .5);
         var body = new BorderPane(split);
-        body.setBottom(new VBox(7, pairDifference, flow(match, unmatch, saveProgress, complete, removeManual),
+        body.setBottom(new VBox(7, pairDifference, flow(match, unmatch, removeManual),
                                 label("Reconciliation history and imported sources cannot be deleted. Remove an unlinked manual entry after unmatching; correct ledger entries in Journal."),
                                 action("Create missing journal entry from reviewed statement…", "bankingWorkspaceCreateMissing",
                                        ()->secondary("Reviewed statement acceptance", statementTools.get()), ApplicationPermission.BOOKKEEPING_WRITE)));
-        return vertical(PanelViewport.section(header), body, "banking-workspace-reconciliation", .48);
+        reconciliationPages.addPane("Statement setup", header).addPane("Match entries", body);
+        VBox pane = new VBox(6, result, balanceSummary, flow(saveProgress, complete), reconciliationPages);
+        pane.setMinSize(0, 0);
+        VBox.setVgrow(reconciliationPages, Priority.ALWAYS);
+        return pane;
     }
 
     private void configureTables()
@@ -429,7 +438,7 @@ public final class BankingWorkspacePanel implements AppPanel
                 if (service.listSessions(owner).stream().noneMatch(row->row.id() == id))
                     throw new IllegalArgumentException("Reconciliation belongs to another company or no longer exists.");
                 return service.load(id);
-            }, value-> { selected = null; pages.getSelectionModel().select(2); reload(value.bankAccountId(), id); });
+            }, value-> { selected = null; pages.getSelectionModel().select(2); reconciliationPages.getSelectionModel().select(1); reload(value.bankAccountId(), id); });
         }
         else
         {
@@ -437,6 +446,7 @@ public final class BankingWorkspacePanel implements AppPanel
             if (returned.isPresent())
             {
                 pages.getSelectionModel().select(2);
+                reconciliationPages.getSelectionModel().select(0);
                 reload(returned.getAsLong(), null);
             }
             else
@@ -534,7 +544,7 @@ public final class BankingWorkspacePanel implements AppPanel
         loading = true;
         try
         {
-            contextLabel.setText(selected.label() + "\n" + selected.ledgerLabel());
+            contextLabel.setText(selected.ledgerLabel());
             bankName.setText(selected.bank());
             ledgerName.setText(selected.ledgerLabel());
             nickname.setText(d.accountDirty ? d.nickname : selected.configuration().nickname() == null ? selected.name() :
@@ -555,6 +565,8 @@ public final class BankingWorkspacePanel implements AppPanel
                 history.setValue(null);
                 statements.getItems().clear();
                 candidates.getItems().clear();
+                candidates.setPlaceholder(label("Start or select a reconciliation in Statement setup to show eligible journal entries."));
+                statements.setPlaceholder(label("Start or select a reconciliation in Statement setup, then import or enter bank transactions."));
                 statementEnd.setValue(d.end == null ? LocalDate.now() : d.end);
                 statementEnding.setText(d.ending == null ? "" : d.ending);
                 firstDate.setValue(d.firstDate == null ? selected.configuration().openingDate() : d.firstDate);
@@ -574,6 +586,8 @@ public final class BankingWorkspacePanel implements AppPanel
                 statementEnd.setValue(snapshot.statementEndDate());
                 statementEnding.setText(d.headerDirty &&
                                         d.ending != null ? d.ending : format.formatMoney(snapshot.balances().statementEndingBalance()));
+                candidates.setPlaceholder(label("No eligible journal entries for this account and statement period."));
+                statements.setPlaceholder(label("No bank transactions in this reconciliation. Import or enter them from Statement setup."));
                 statements.getItems().setAll(snapshot.statementEntries());
                 Set<Long> scopeIds = new HashSet<>();
                 snapshot.ledgerLines().forEach(line->scopeIds.add(line.splitId()));
@@ -676,6 +690,7 @@ public final class BankingWorkspacePanel implements AppPanel
         {
             return;
         }
+        reconciliationPages.getSelectionModel().select(0);
         capture();
         resetStatementDraft();
         Draft d = draft();

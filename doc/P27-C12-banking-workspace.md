@@ -34,11 +34,17 @@ V95 adds nullable opening_amount/opening_source_session_id and prior_cleared/pri
 
 The repository-designated NonprofitAccounting donor was inspected (AlternateReconciliationPanel, AlternateReconciliationService, OperationalReconciliationService and BankingTransactionRecord). Its separate banking-record persistence and implicit zero opening conflict with the approved canonical journal/known-opening contract, so those implementations are not imported. The useful account-context/beginning-plus-cleared-movements presentation is implemented with this repository's existing TxnSplit, statement and session authorities. No parallel ledger is introduced.
 
+## Owner correction: two visible panes (P27-C13)
+
+Banking's shared account selector is compact, locally scrollable chrome without an outer divider. Accounts and Bank journal retain only their table/detail divider. Reconcile offers Statement setup (one full-height form) and Match entries (two side-by-side tables with one divider). Counts include control headers: no visible work pane exceeds two actual split leaves. Existing controller, canonical services, authorization and account/session drafts remain authoritative. This supersedes the original nested Reconcile setup/match split and the header exception for Banking. New reconciliations explain why matching tables are empty rather than implying journal data is absent.
+
 ## How to use
 
-Open Banking and select a bank/account. Accounts shows the full linked ledger/chart identity and configuration status. Bank journal lists the bank portion of canonical journal entries and permits reference edits when the underlying entry is editable. Reconcile selects the saved statement for that account or starts a new statement. Import OFX/CSV or enter the statement header/lines manually. For the first statement, explicitly confirm the opening date/balance and reviewed starting position. Match equal amounts, review outstanding items and the difference, Save progress or Complete when balanced. Later statements inherit that account's preceding completed closing balance. Unmatch restores every allocation's prior clearing evidence; transfers remain separate per bank account.
+Open Banking and select a bank/account. Accounts shows the full linked ledger/chart identity and configuration status. Bank journal lists the bank portion of canonical journal entries and permits reference edits when the underlying entry is editable. Reconcile → Statement setup selects the saved reconciliation for that account or starts a new one. Import OFX/CSV or enter the statement header/lines manually. For the first statement, explicitly confirm the opening date/balance and reviewed starting position. In Match entries, match equal amounts, review outstanding items and the difference, Save progress or Complete when balanced. Later statements inherit that account's preceding completed closing balance. Unmatch restores every allocation's prior clearing evidence; transfers remain separate per bank account.
 
 ## Progress
+
+C12 is DONE: PR #435 merged into main 728aa79d. Its final validation receipt below is historical. C13 applies the owner-requested two-pane layout correction described above.
 
 Ready-for-review [PR #435](https://github.com/benbaron/sca-jakarta-h2/pull/435), branch codex/P27-C12-banking-workspace, base main 4840207a, accepted published source 919d176cb66ede285d496406ad0bdfd5128164d3. Final local clean passes **1,290 tests/zero failures/errors/156 expected headless display skips (11:32)**. The separate integrated real-display/package gate passes **65 tests without failures/errors/skips (04:50)**. The rebuilt-JAR probe passes known opening, grouped clearing, native restart/source and SCLX import/undo, verifying product class origins in the JAR. Final Banking tests cover blank-balance rejection, async failure recovery, independent failed manual drafts, empty-account details and pinned check results.
 
@@ -47,7 +53,7 @@ Ready-for-review [PR #435](https://github.com/benbaron/sca-jakarta-h2/pull/435),
 ## Owner acceptance checks
 
 - Open Banking, select two configured accounts (including different banks when available), and verify account/chart identities and independent drafts/history.
-- In Reconcile, leave the first opening blank: confirmation must fail. Enter a reviewed amount/date explicitly, including 0.00 when appropriate; compare the separately displayed book opening.
+- In Reconcile → Statement setup, leave the first opening blank: confirmation must fail. Enter a reviewed amount/date explicitly, including 0.00 when appropriate; compare the separately displayed book opening.
 - Import OFX/CSV or enter a statement manually. Review the ending date/balance; match and unmatch one instrument with multiple Fund allocations, and verify the whole item clears together using the bank date.
 - Leave an older outstanding journal item unmatched; a reconciled statement can still complete when all statement rows are accounted for and the difference is zero. Complete, then start the next statement and check the inherited source/opening for that same account.
 - Try an invalid manual amount, switch accounts, then return: the failed draft stays with its account/statement. Confirm secondary statement/check tools stay scoped and full chart identities remain visible. Use draggable dividers and local horizontal scrollbars at a narrow window size.

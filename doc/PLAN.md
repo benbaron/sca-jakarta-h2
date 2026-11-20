@@ -1,17 +1,25 @@
 ---
-plan_version: 516
+plan_version: 517
 active_phase: P27
-active_slice: P27-C12
+active_slice: P27-C13
 active_status: VERIFYING
-active_branch: codex/P27-C12-banking-workspace
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/435
-active_head: 919d176cb66ede285d496406ad0bdfd5128164d3
-next_action: "Owner review and merge ready PR 435 at accepted head 919d176c; all required gates passed. After confirmed merge, fetch main and select the earliest unfinished unblocked slice. Do not merge automatically."
+active_branch: codex/P27-C13-banking-layout
+active_pull_request: null
+active_head: 728aa79d19b6afa21e7ccf44e63e083172f853cc
+next_action: "Implement Banking layout with at most two actual visible split panes, validate displayed geometry and behavior, publish a focused PR and inspect CI; do not merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
+### P27-C13 Banking pane simplification — owner request
+
+Owner requests at most two visible panes across each Banking tab and its subdivisions, including control-header splits. This explicitly overrides the earlier header-exception interpretation for Banking. PR #435 is confirmed merged into current main 728aa79d; C12 is DONE. Fresh branch codex/P27-C13-banking-layout preserves its final local receipt as 36fef232. Baseline compile passes (28.3s). Required reading: C12 contract, UI design/editor rules and operation matrix. Required inspection: BankingWorkspacePanel, ResizablePanelHeader, PanelViewport, split-state binding and displayed Banking/overflow/production-route tests. Reuse the existing controller, services and drafts; no accounting, migration or donor-model change.
+
+Accounts and Bank journal retain table/detail two-pane splits. The shared selector becomes compact two-axis chrome without its own split. Reconcile uses one full-height Statement setup work pane and a separate Match entries work pane containing only the two matching tables. Common status/commands stay compact. Preserve all controls, authorizations, account/session drafts, native table scrolling and existing matching/Save/import paths. Add displayed checks counting actual visible split leaves, with no header exception, and test narrow/enlarged-font geometry, divider movement and setup/match draft persistence. Update [C12 usage/contract](P27-C12-banking-workspace.md) and UI rules for this owner-approved layout. Initial real-display gate passes 13 tests without failures/errors/skips (02:26), including actual split counts, narrow/enlarged-font overflow, matching/undo/completion, drafts and production routes. Styled Accounts, Bank journal, first-opening setup and Match entries screenshots were inspected. Final exact-session navigation, global Save, packaged build and full clean/CI gates remain pending. Current status VERIFYING; final display/package and clean verification are running or pending. Publish the focused PR and inspect its exact-head Linux/Windows checks; do not merge.
+
 ### P27-C12 Approved unified Banking workspace
+
+Closeout: DONE. PR #435 merged into current main 728aa79d19b6afa21e7ccf44e63e083172f853cc; accepted source 919d176c and exact-head CI 44659644272 passed. The following pre-merge receipt is historical. C13 owns the subsequent owner-requested layout correction.
 
 All four approved Banking views are implemented in ready-for-review [PR #435](https://github.com/benbaron/sca-jakarta-h2/pull/435): Accounts, Bank journal, Reconcile, and explicit first-opening setup within Reconcile. Shared company/account scope includes full bank/ledger/chart identity, independent account/statement drafts and history, atomic matching across one instrument's Fund allocations, independent clearing of bank transfers, manual/import return and pinned secondary tools. Canonical journal splits remain authoritative. V95 and optional SCLX application metadata retain reviewed opening provenance and prior clearing evidence. No user database or frozen archive was modified.
 
