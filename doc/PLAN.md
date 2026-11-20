@@ -1,21 +1,27 @@
 ---
-plan_version: 517
+plan_version: 518
 active_phase: P27
 active_slice: P27-C13
 active_status: VERIFYING
 active_branch: codex/P27-C13-banking-layout
-active_pull_request: null
-active_head: 728aa79d19b6afa21e7ccf44e63e083172f853cc
-next_action: "Implement Banking layout with at most two actual visible split panes, validate displayed geometry and behavior, publish a focused PR and inspect CI; do not merge."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/436
+active_head: e7020cf9748bf3024c1f946b833f41d610d69ce6
+next_action: "Owner review and merge ready PR 436 at accepted head e7020cf9; all gates passed. After confirmed merge, fetch main and select the earliest unfinished unblocked slice. Do not merge automatically."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C13 Banking pane simplification — owner request
 
-Owner requests at most two visible panes across each Banking tab and its subdivisions, including control-header splits. This explicitly overrides the earlier header-exception interpretation for Banking. PR #435 is confirmed merged into current main 728aa79d; C12 is DONE. Fresh branch codex/P27-C13-banking-layout preserves its final local receipt as 36fef232. Baseline compile passes (28.3s). Required reading: C12 contract, UI design/editor rules and operation matrix. Required inspection: BankingWorkspacePanel, ResizablePanelHeader, PanelViewport, split-state binding and displayed Banking/overflow/production-route tests. Reuse the existing controller, services and drafts; no accounting, migration or donor-model change.
+All requested Banking layouts now have at most two actual visible panes, including control headers. Accounts and Bank journal each have one table/detail divider. The shared selector stays compact and locally scrollable without an outer split. Reconcile separates a full-height Statement setup form from Match entries, whose only divider separates the two tables. Common Save progress/Complete actions remain visible. Existing controller, services, permissions and account/session drafts remain authoritative. Exact-session navigation opens matching; first-import account returns open setup. History is labeled Saved reconciliation; empty matching tables explain the setup requirement. No accounting or schema behavior changed.
 
-Accounts and Bank journal retain table/detail two-pane splits. The shared selector becomes compact two-axis chrome without its own split. Reconcile uses one full-height Statement setup work pane and a separate Match entries work pane containing only the two matching tables. Common status/commands stay compact. Preserve all controls, authorizations, account/session drafts, native table scrolling and existing matching/Save/import paths. Add displayed checks counting actual visible split leaves, with no header exception, and test narrow/enlarged-font geometry, divider movement and setup/match draft persistence. Update [C12 usage/contract](P27-C12-banking-workspace.md) and UI rules for this owner-approved layout. Initial real-display gate passes 13 tests without failures/errors/skips (02:26), including actual split counts, narrow/enlarged-font overflow, matching/undo/completion, drafts and production routes. Styled Accounts, Bank journal, first-opening setup and Match entries screenshots were inspected. Final exact-session navigation, global Save, packaged build and full clean/CI gates remain pending. Current status VERIFYING; final display/package and clean verification are running or pending. Publish the focused PR and inspect its exact-head Linux/Windows checks; do not merge.
+Ready-for-review [PR #436](https://github.com/benbaron/sca-jakarta-h2/pull/436), branch codex/P27-C13-banking-layout, accepted source **e7020cf9748bf3024c1f946b833f41d610d69ce6**, tree **792f2064636dd1f2385e6aad399f884eac2dc06d**. Fresh branch starts from main 728aa79d19b6afa21e7ccf44e63e083172f853cc after confirmed merge of C12/#435. C12 final local receipt was preserved as 36fef232. The new remote branch was confirmed absent and published by ordinary push; final native ref and PR metadata confirm the same accepted head. This documentation-only final receipt stays local to keep that accepted source/check head stable; the PR description contains actual final results.
+
+Required reading and inspection completed: [C12 contract and C13 correction](P27-C12-banking-workspace.md), UI design/editor rules, operation matrix, BankingWorkspacePanel, shared viewport/header handling, split-state binding and displayed Banking/overflow/production-route/Save tests. This owner request explicitly overrides the earlier control-header exception for Banking. Existing donor decisions in C12 remain applicable; no new model or donor code is introduced. Governing updates: C12/C13 contract, UI design rules, panel guide and operation matrix. Baseline compile passed (28.3s).
+
+Final validation passes: **local clean verify 1,292 tests / zero failures/errors / 158 expected headless display skips (11:07)**; **real-display/package 22 tests / zero failures/errors/skips (03:15)**, including seven Banking cases, actual split counting with no header exception, narrow/enlarged-font geometry, divider access, setup/match draft retention, matching/undo/completion, exact-session navigation and global Save. The **built-JAR probe** passes known opening, grouped clearing, native restart/provenance and SCLX grouped undo, explicitly checking product class origins in the application JAR. Styled Accounts, Bank journal, first-opening setup and matching screenshots were visually inspected with synthetic data. Initial 13-case display gate also passed (02:26); final 22-case gate supersedes it.
+
+[Exact-head CI run 44678680901](https://github.com/benbaron/sca-jakarta-h2/actions/runs/44678680901) completed **success**. Linux job 136096563250 passed theme rendering, clean verification, repeat suite, Period Close, overflow, imports, Journal/SCLX feedback and production JavaFX routes. Windows job 136096562902 passed **21 displayed tests / zero failures/errors/skips across seven required suites**; actual Windows test totals and each run/job/step result were inspected. No final executed gate failed. Evidence: /workspace/p27-c13-evidence/. No user financial file, database or frozen archive was changed. Owner installed-desktop acceptance remains for review; no owner testing is inferred from automated display checks. Keep VERIFYING until owner merge. Next action: owner review/merge #436, then fetch current main and select the earliest unfinished unblocked slice. No automatic merge.
 
 ### P27-C12 Approved unified Banking workspace
 
