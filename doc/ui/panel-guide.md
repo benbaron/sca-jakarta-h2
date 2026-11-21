@@ -116,7 +116,7 @@ Open Banking and use its shared bank/account selector. **Accounts** displays the
 
 Each Banking work pane has at most two visible panes. The shared account selector stays compact. Accounts and Bank journal retain one table/detail divider. Reconcile separates the full-height **Statement setup** form from **Match entries**, whose only divider separates the two tables. Change views without losing the current account, selected records or unsaved setup/reference values.
 
-To enter a bank statement manually, open Reconcile → Statement setup, enter its ending date/balance and click Save progress. For a first reconciliation, review and confirm the beginning date/balance. Use Enter statement manually… for each bank transaction (deposits positive, withdrawals negative). Open Match entries to select and match the corresponding journal records. Complete reconciliation remains available beside Save progress when its validation permits.
+To enter a bank statement manually, open Reconcile → Statement setup, enter its ending date/balance and click Save progress. For a first reconciliation, review and confirm the beginning date/balance. Use **Enter statement manually** to reveal the inline bank-date/reference/description/amount editor. Deposits are positive; withdrawals are negative. Click **Save statement entry** for each bank transaction, or **Cancel entry** to discard the current draft. Global Save targets the entry while its inline editor is active. Failed input remains available for correction, and switching accounts/reconciliations preserves separate unfinished entries. Open Match entries to select and match the corresponding journal records. Complete reconciliation remains available beside Save progress when its validation permits.
 
 ## Bank Transactions
 

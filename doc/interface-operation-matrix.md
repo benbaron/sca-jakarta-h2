@@ -53,7 +53,7 @@ Production global and panel-local mutation controls reflect the same fixed `Appl
 | Dashboard | yes | no | no | New opens the canonical Journal entry workflow. |
 | Journal | yes | yes | yes | Retired Ledger Register/Transaction Editor aliases normalize here. |
 | Event Accounting | no | no | no | Read-only Activity-linked accounting, related configured-bank context, Journal drill-through and navigation to Events / Activities maintenance. |
-| Banking | yes | yes | no | New/Save follows Accounts, Bank journal or Reconcile. Reconcile has Statement setup and Match entries views sharing one account/session draft. The compact selector and selected view expose at most two actual split leaves; statement import/review actions remain panel-local. |
+| Banking | yes | yes | no | New/Save follows Accounts, Bank journal or Reconcile. Reconcile has Statement setup and Match entries views sharing one account/session draft. Manual bank statement entry is inline in Statement setup; global Save targets that active entry. The compact selector and selected view expose at most two actual split leaves; statement import/review actions remain panel-local. |
 | Asset Register | yes | yes | no | Stable asset identity and governed lifecycle operations. |
 | Inventory | yes | item editor only | no | Stable item identity and governed movement/lifecycle operations. |
 | Property Custody | yes | custody event draft | no | Save Custody Event appends assignment/confirmation/loan/return/transfer/removal history; Correct Selected appends a replacement. |

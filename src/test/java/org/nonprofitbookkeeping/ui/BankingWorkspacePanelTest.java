@@ -344,34 +344,143 @@ class BankingWorkspacePanelTest
                 "SCA",3002L,LocalDate.of(2026,3,31),new BigDecimal("-7"),null,null));
         FxTestSupport.onFx(() -> {pages().getSelectionModel().select(2);panel.onPanelShown();return null;});
         await(() -> !account().isDisabled());
-        manualDialog(pane ->
+        manualEntry(pane ->
         {
             ((DatePicker)pane.lookup("#bankingWorkspaceManualDate")).setValue(LocalDate.of(2026,3,20));
             ((TextField)pane.lookup("#bankingWorkspaceManualDescription")).setText("Checking draft");
             ((TextField)pane.lookup("#bankingWorkspaceManualReference")).setText("A-000042");
             ((TextField)pane.lookup("#bankingWorkspaceManualAmount")).setText("0.00");
-            ((Button)pane.lookupButton(ButtonType.OK)).fire();
+            ((Button)pane.lookup("#bankingWorkspaceSaveManual")).fire();
         });
         await(() -> !account().isDisabled());
         FxTestSupport.onFx(() -> {assertTrue(panel.hasUnsavedChanges());account().getSelectionModel().select(1);return null;});
         await(() -> !account().isDisabled() && account().getValue().id()==3002);
-        manualDialog(pane ->
+        manualEntry(pane ->
         {
             assertEquals("",((TextField)pane.lookup("#bankingWorkspaceManualDescription")).getText());
             assertEquals("",((TextField)pane.lookup("#bankingWorkspaceManualReference")).getText());
             assertEquals(LocalDate.of(2026,3,31),((DatePicker)pane.lookup("#bankingWorkspaceManualDate")).getValue());
-            ((Button)pane.lookupButton(ButtonType.CANCEL)).fire();
+            ((Button)pane.lookup("#bankingWorkspaceCancelManual")).fire();
         });
         FxTestSupport.onFx(() -> {assertTrue(panel.hasUnsavedChanges());account().getSelectionModel().select(0);return null;});
         await(() -> !account().isDisabled() && account().getValue().id()==3001);
-        manualDialog(pane ->
+        manualEntry(pane ->
         {
             assertEquals("Checking draft",((TextField)pane.lookup("#bankingWorkspaceManualDescription")).getText());
             assertEquals("A-000042",((TextField)pane.lookup("#bankingWorkspaceManualReference")).getText());
             assertEquals(LocalDate.of(2026,3,20),((DatePicker)pane.lookup("#bankingWorkspaceManualDate")).getValue());
-            ((Button)pane.lookupButton(ButtonType.CANCEL)).fire();
+            ((Button)pane.lookup("#bankingWorkspaceCancelManual")).fire();
         });
         FxTestSupport.onFx(() -> {assertFalse(panel.hasUnsavedChanges());return null;});
+    }
+
+    @Test
+    void inlineManualEntryRejectsFractionalCentsThenGlobalSavePersistsTheReviewedRecord()
+    {
+        int before = new BankReconciliationWorkspaceService(jpa).load(sessionId).statementEntries().size();
+        FxTestSupport.onFx(() -> {pages().getSelectionModel().select(2);return null;});
+        manualEntry(editor ->
+        {
+            ((DatePicker)editor.lookup("#bankingWorkspaceManualDate")).setValue(LocalDate.of(2026,3,22));
+            text("bankingWorkspaceManualDescription").setText("Manual deposit");
+            text("bankingWorkspaceManualReference").setText("D-000007");
+            text("bankingWorkspaceManualAmount").setText("17.501");
+            button("bankingWorkspaceSaveManual").fire();
+            assertTrue(((Label)panel.root().lookup("#bankingWorkspaceStatus")).getText().contains("whole-cent"));
+            assertEquals("17.501",text("bankingWorkspaceManualAmount").getText());
+            assertTrue(panel.hasUnsavedChanges());
+            assertEquals(1,visibleSplitLeaves(panel.root()));
+            assertEquals(before,new BankReconciliationWorkspaceService(jpa).load(sessionId).statementEntries().size());
+            text("bankingWorkspaceManualAmount").setText("17.50");
+            reconciliationPages().getSelectionModel().select(1);
+            assertEquals("Save progress",panel.commandLabel(AppCommand.SAVE_ACTIVE));
+            reconciliationPages().getSelectionModel().select(0);
+            assertEquals("17.50",text("bankingWorkspaceManualAmount").getText());
+            assertEquals("Save statement entry",panel.commandLabel(AppCommand.SAVE_ACTIVE));
+            return;
+        });
+        FxTestSupport.onFx(() ->
+        {
+            ((Parent)panel.root()).applyCss(); ((Parent)panel.root()).layout();
+            snapshot("manual-entry-inline");
+            panel.onSave();
+            return null;
+        });
+        await(() -> !account().isDisabled() && !panel.root().lookup("#bankingWorkspaceManualEditor").isVisible());
+        var saved = new BankReconciliationWorkspaceService(jpa).load(sessionId);
+        assertEquals(before+1,saved.statementEntries().size());
+        var row = saved.statementEntries().stream().filter(entry -> "Manual deposit".equals(entry.description())).findFirst().orElseThrow();
+        assertEquals("D-000007",row.reference());
+        assertEquals(LocalDate.of(2026,3,22),row.date());
+        assertEquals(0,new BigDecimal("17.50").compareTo(row.amount()));
+        assertTrue(row.manual());
+        FxTestSupport.onFx(() ->
+        {
+            assertFalse(panel.hasUnsavedChanges());
+            button("bankingWorkspaceManual").fire();
+            MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.viewer().withCompany("SCA", java.util.Set.of(ReservedSecurityRole.VIEWER), java.time.Instant.now()));
+            assertTrue(button("bankingWorkspaceSaveManual").isDisabled());
+            assertTrue(text("bankingWorkspaceManualAmount").isDisabled());
+            assertFalse(button("bankingWorkspaceCancelManual").isDisabled());
+            button("bankingWorkspaceCancelManual").fire();
+            return null;
+        });
+    }
+
+    @Test
+    void inlineManualDraftsStayWithTheirPeriodAndMustBeResolvedBeforeCompletion()
+    {
+        var service = new BankReconciliationWorkspaceService(jpa);
+        service.confirmOpening(sessionId,LocalDate.of(2026,3,1),BigDecimal.ZERO,true);
+        service.matchBankItem(sessionId,7001,5001);
+        var aprilState = service.start(new BankReconciliationWorkspaceService.StartCommand(
+                "SCA",3001L,LocalDate.of(2026,4,30),new BigDecimal("-25.75"),null,null));
+        long april = aprilState.sessionId();
+        int aprilRows = aprilState.statementEntries().size();
+        FxTestSupport.onFx(() -> {pages().getSelectionModel().select(2);panel.onPanelShown();return null;});
+        await(() -> !account().isDisabled());
+        manualEntry(editor ->
+        {
+            assertFalse(button("bankingWorkspaceComplete").isDisabled());
+            text("bankingWorkspaceManualDescription").setText("March draft");
+            text("bankingWorkspaceManualAmount").setText("5.00");
+            assertTrue(button("bankingWorkspaceComplete").isDisabled());
+            assertTrue(button("bankingWorkspaceComplete").getTooltip().getText().contains("Save or cancel"));
+            selectSession(april);
+        });
+        await(() -> !account().isDisabled() && history().getValue().id()==april);
+        manualEntry(editor ->
+        {
+            assertEquals("",text("bankingWorkspaceManualDescription").getText());
+            assertEquals(LocalDate.of(2026,4,30),((DatePicker)editor.lookup("#bankingWorkspaceManualDate")).getValue());
+            text("bankingWorkspaceManualDescription").setText("April draft");
+            text("bankingWorkspaceManualAmount").setText("8.00");
+            selectSession(sessionId);
+        });
+        await(() -> !account().isDisabled() && history().getValue().id()==sessionId);
+        FxTestSupport.onFx(() ->
+        {
+            assertTrue(panel.root().lookup("#bankingWorkspaceManualEditor").isVisible());
+            assertEquals("March draft",text("bankingWorkspaceManualDescription").getText());
+            assertEquals("5.00",text("bankingWorkspaceManualAmount").getText());
+            button("bankingWorkspaceCancelManual").fire();
+            assertFalse(button("bankingWorkspaceComplete").isDisabled());
+            assertTrue(panel.hasUnsavedChanges(),"Cancelling March must retain the April draft");
+            selectSession(april);
+            return null;
+        });
+        await(() -> !account().isDisabled() && history().getValue().id()==april);
+        FxTestSupport.onFx(() ->
+        {
+            assertTrue(panel.root().lookup("#bankingWorkspaceManualEditor").isVisible());
+            assertEquals("April draft",text("bankingWorkspaceManualDescription").getText());
+            assertEquals("8.00",text("bankingWorkspaceManualAmount").getText());
+            button("bankingWorkspaceCancelManual").fire();
+            assertFalse(panel.hasUnsavedChanges());
+            return null;
+        });
+        assertEquals(1,service.load(sessionId).statementEntries().size());
+        assertEquals(aprilRows,service.load(april).statementEntries().size());
     }
 
     @Test
@@ -440,29 +549,18 @@ class BankingWorkspacePanelTest
         return 1;
     }
 
-    private void manualDialog(java.util.function.Consumer<DialogPane> action)
+    private void manualEntry(java.util.function.Consumer<Parent> action)
     {
-        var failure=new java.util.concurrent.atomic.AtomicReference<Throwable>();
         FxTestSupport.onFx(() ->
         {
-            Platform.runLater(() ->
-            {
-                for(var window:List.copyOf(javafx.stage.Window.getWindows()))
-                {
-                    if(window.getScene()==null || !(window.getScene().getRoot() instanceof DialogPane pane))continue;
-                    if(pane.lookup("#bankingWorkspaceManualAmount")==null)continue;
-                    try {action.accept(pane);}
-                    catch(Throwable error)
-                    {
-                        failure.set(error);
-                        ((Button)pane.lookupButton(ButtonType.CANCEL)).fire();
-                    }
-                    return;
-                }
-                failure.set(new AssertionError("Manual statement dialog did not appear"));
-            });
+            long windows = javafx.stage.Window.getWindows().stream().filter(javafx.stage.Window::isShowing).count();
             button("bankingWorkspaceManual").fire();
-            if(failure.get()!=null)throw new AssertionError(failure.get());
+            Parent editor = (Parent)panel.root().lookup("#bankingWorkspaceManualEditor");
+            assertTrue(editor.isVisible());
+            assertTrue(editor.isManaged());
+            assertEquals(windows,javafx.stage.Window.getWindows().stream().filter(javafx.stage.Window::isShowing).count(),
+                    "Manual statement entry must stay in the workspace");
+            action.accept(editor);
             return null;
         });
     }
@@ -516,6 +614,15 @@ class BankingWorkspacePanelTest
     TabPane pages()
     {
         return (TabPane)panel.root().lookup("#bankingWorkspacePages");
+    }
+    @SuppressWarnings("unchecked")
+    ComboBox<BankReconciliationWorkspaceService.SessionSummary> history()
+    {
+        return (ComboBox<BankReconciliationWorkspaceService.SessionSummary>)panel.root().lookup("#bankingWorkspaceHistory");
+    }
+    private void selectSession(long id)
+    {
+        history().getSelectionModel().select(history().getItems().stream().filter(row -> row.id()==id).findFirst().orElseThrow());
     }
     TabPane reconciliationPages()
     {
