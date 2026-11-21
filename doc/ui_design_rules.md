@@ -161,6 +161,8 @@ company/database draft. Dashboard reloads when shown again.
 
 The owner's Banking correction counts actual visible split leaves, including control headers. Banking's shared account selector stays compact and locally scrollable without its own divider. Accounts and Bank journal each have one table/detail split. Reconcile separates Statement setup (one form viewport) from Match entries (one split between the two tables). No extra split may surround those work panes. Switching panes retains the same controller, account/session selections and drafts. This is an explicit Banking exception to the control-header rule below.
 
+Routine manual bank statement entry uses an inline editor in Statement setup, with bank date, reference, description and signed amount plus explicit Save statement entry / Cancel entry actions. It shares the existing form viewport and controller; it adds no window or split. Rejected edits remain visible and are scoped by company/database/account/reconciliation. Global Save targets the active inline entry. Completing a reconciliation requires saving or cancelling its unfinished manual entry first.
+
 ## P29-C7 independently resizable control headers
 
 Production control headers above a business workspace expose a real horizontal

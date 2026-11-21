@@ -1,17 +1,25 @@
 ---
-plan_version: 518
+plan_version: 519
 active_phase: P27
-active_slice: P27-C13
+active_slice: P27-C14
 active_status: VERIFYING
-active_branch: codex/P27-C13-banking-layout
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/436
-active_head: e7020cf9748bf3024c1f946b833f41d610d69ce6
-next_action: "Owner review and merge ready PR 436 at accepted head e7020cf9; all gates passed. After confirmed merge, fetch main and select the earliest unfinished unblocked slice. Do not merge automatically."
+active_branch: codex/P27-C14-inline-bank-statement
+active_pull_request: null
+active_head: a2cea81e3e762c94a3b1e380a33030fe77af93de
+next_action: "Replace manual bank-statement data-entry popup with inline Statement setup editor; verify draft scope, Save/Cancel, validation, permissions and one-pane layout; publish focused PR and inspect CI. Do not merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
+### P27-C14 Inline manual bank statement entry — owner correction
+
+Owner requires Enter statement manually to follow the workspace style rather than opening a data-entry popup. Reuse the Statement setup viewport with an inline bank-date/reference/description/signed-amount editor and explicit Save statement entry / Cancel entry actions. Preserve the one-pane setup and two-table matching limit, existing service validation/audit, account/session-specific rejected drafts, permissions and global Save routing. No new accounting model, migration or unrelated dialog rewrite. Routine manual statement entry is an inline form; destructive confirmations remain governed separately.
+
+PR #436 is confirmed merged into main a2cea81e; C13 is DONE. Fresh codex/P27-C14-inline-bank-statement preserves the prior local receipt as 8d13bde5. Baseline compile passes (16.6s). Required reading: C12/C13 Banking contract, UI design/editor guidelines, operation matrix and panel guide. Required inspection: manualStatement, draft capture/apply, async and Save routing, BankStatementManualEntryService / reconciliation commands, displayed Banking/overflow/Save tests. Existing C12 donor decisions remain applicable; this is an interaction correction in the same area. Add actual displayed regressions for no extra window, successful save, rejection/retry/cancel, account/period isolation, permissions and inline scrolling. Implementation is present. The first real-display/package gate passes 23 tests with zero failures/errors/skips (03:09), covering inline entry, validation/retry, Save routing, permissions, scoped drafts and no new window. Styled inline-entry screenshot was inspected. The period-isolation/completion-blocker regression passed its UI checks but assumed the later reconciliation had no existing source rows; its final assertion now checks unchanged row count after cancellation. Final displayed/package and clean/CI gates are pending. Status VERIFYING; publication pending.
+
 ### P27-C13 Banking pane simplification — owner request
+
+Closeout: DONE. PR #436 merged into current main a2cea81e3e762c94a3b1e380a33030fe77af93de after accepted-head CI 44678680901 passed. The receipt below is historical; C14 owns the owner-requested inline manual-entry correction.
 
 All requested Banking layouts now have at most two actual visible panes, including control headers. Accounts and Bank journal each have one table/detail divider. The shared selector stays compact and locally scrollable without an outer split. Reconcile separates a full-height Statement setup form from Match entries, whose only divider separates the two tables. Common Save progress/Complete actions remain visible. Existing controller, services, permissions and account/session drafts remain authoritative. Exact-session navigation opens matching; first-import account returns open setup. History is labeled Saved reconciliation; empty matching tables explain the setup requirement. No accounting or schema behavior changed.
 

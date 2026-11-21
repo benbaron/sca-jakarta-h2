@@ -1,5 +1,6 @@
 package org.nonprofitbookkeeping.ui;
 
+import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -60,6 +61,7 @@ public final class BankingWorkspacePanel implements AppPanel
     private final TextField manualReference = field("bankingWorkspaceManualReference");
     private final TextField manualAmount = field("bankingWorkspaceManualAmount");
     private final DatePicker manualDate = new DatePicker();
+    private final VBox manualEditor = new VBox(8);
     private final Label pairDifference = label("Select one statement entry and one bank item.");
     private final CompanyUiFormat format = CompanyUiFormat.activeCompany();
     private final Supplier<BankingWorkspaceQuery> query;
@@ -81,6 +83,8 @@ public final class BankingWorkspacePanel implements AppPanel
     private final Button importStatement;
     private final Button manualStatement;
     private final Button saveProgress;
+    private final Button saveManual;
+    private final Button cancelManual;
     private final Button useImported;
     private final Button removeManual;
     private final Button newStatementButton;
@@ -174,8 +178,11 @@ public final class BankingWorkspacePanel implements AppPanel
                                 ApplicationPermission.BOOKKEEPING_WRITE);
         importStatement = action("Import bank statement…", "bankingWorkspaceImport", this::importStatement,
                                  ApplicationPermission.BOOKKEEPING_WRITE);
-        manualStatement = action("Enter statement manually…", "bankingWorkspaceManual", this::manualStatement,
+        manualStatement = action("Enter statement manually", "bankingWorkspaceManual", this::manualStatement,
                                  ApplicationPermission.BOOKKEEPING_WRITE);
+        saveManual = action("Save statement entry", "bankingWorkspaceSaveManual", this::saveManualEntry,
+                            ApplicationPermission.BOOKKEEPING_WRITE);
+        cancelManual = action("Cancel entry", "bankingWorkspaceCancelManual", this::cancelManualEntry, null);
         saveProgress = action("Save progress", "bankingWorkspaceSaveProgress", this::saveProgress,
                               ApplicationPermission.BOOKKEEPING_WRITE);
         useImported = action("Use imported statement dates / balance", "bankingWorkspaceUseImported", this::useImportedHeader,
@@ -257,6 +264,12 @@ public final class BankingWorkspacePanel implements AppPanel
             }
         });
         pages.getSelectionModel().selectedIndexProperty().addListener((obs, old, value) -> capabilitiesChanged.run());
+        reconciliationPages.getSelectionModel().selectedIndexProperty().addListener((obs, old, value) -> capabilitiesChanged.run());
+        manualDate.valueProperty().addListener((obs, old, value) -> captureManualEntry());
+        for (TextField input : List.of(manualDescription, manualReference, manualAmount))
+        {
+            input.textProperty().addListener((obs, old, value) -> captureManualEntry());
+        }
         nickname.textProperty().addListener((o, a, b)->markAccount());
         masked.textProperty().addListener((o, a, b)->markAccount());
         active.selectedProperty().addListener((o, a, b)->markAccount());
@@ -337,7 +350,7 @@ public final class BankingWorkspacePanel implements AppPanel
                                    action("Statements / export…", "bankingWorkspaceStatementTools", ()->secondary("Statement review and export",
                                            statementTools.get()), null),
                                    action("Checks / exceptions…", "bankingWorkspaceChecks", ()->secondary("Checks / exceptions",
-                                           new CheckExceptionsPane()), null)));
+                                           new CheckExceptionsPane()), null)), manualEntryEditor());
         var split = new SplitPane(titled("Bank statement entries", statements),
                                   titled("Banking journal entries — selected account only", candidates));
         split.setId("bankingWorkspaceMatchingSplit");
@@ -611,6 +624,7 @@ public final class BankingWorkspacePanel implements AppPanel
                                        + "     Difference: " + (opening.confirmed() ? format.formatMoney(snapshot.balances().difference()) :
                                                "Opening required"));
             }
+            applyManualEntry();
             firstOpening.setVisible(snapshot != null && opening != null && (!opening.confirmed() || d.editOpening)
                     && snapshot.status() != SessionStatus.FINALIZED);
             firstOpening.setManaged(firstOpening.isVisible());
@@ -842,6 +856,22 @@ public final class BankingWorkspacePanel implements AppPanel
         run("Complete reconciliation", ()->service.saveStatement(id, ending, true), saved-> {draft().headerDirty = false; reload(selected.id(), id);});
     }
 
+    private Node manualEntryEditor()
+    {
+        manualEditor.setId("bankingWorkspaceManualEditor");
+        var grid = new GridPane();
+        grid.setHgap(12);
+        grid.setVgap(8);
+        add(grid, 0, "Bank date", manualDate);
+        add(grid, 1, "Reference / check / deposit #", manualReference);
+        add(grid, 2, "Description", manualDescription);
+        add(grid, 3, "Amount (+ deposit, − withdrawal)", manualAmount);
+        manualEditor.getChildren().setAll(label("Manual bank statement entry"), grid, flow(saveManual, cancelManual));
+        manualEditor.setVisible(false);
+        manualEditor.setManaged(false);
+        return manualEditor;
+    }
+
     private void manualStatement()
     {
         if (snapshot == null)
@@ -849,45 +879,110 @@ public final class BankingWorkspacePanel implements AppPanel
             status.setText("Enter the statement ending balance and Save progress to start this account's statement first.");
             return;
         }
-        long id = snapshot.sessionId();
-        Map<Long, ManualDraft> manualDrafts = draft().manual;
-        ManualDraft pending = manualDrafts.computeIfAbsent(id, ignored -> new ManualDraft());
-        var dialog = new Dialog<ButtonType>();
-        dialog.setTitle("Manual statement entry — " + selected.label());
-        dialog.getDialogPane().getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
-        var grid = new GridPane();
-        grid.setHgap(12);
-        grid.setVgap(8);
-        manualDate.setValue(pending.date == null ? snapshot.statementEndDate() : pending.date);
-        manualDescription.setText(pending.description == null ? "" : pending.description);
-        manualReference.setText(pending.reference == null ? "" : pending.reference);
-        manualAmount.setText(pending.amount == null ? "" : pending.amount);
-        add(grid, 0, "Bank date", manualDate);
-        add(grid, 1, "Reference / check / deposit #", manualReference);
-        add(grid, 2, "Description", manualDescription);
-        add(grid, 3, "Signed amount", manualAmount);
-        dialog.getDialogPane().setContent(PanelViewport.section(grid));
-        FullTextTooltipInstaller.install(dialog.getDialogPane());
-        if (dialog.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK)
+        ManualDraft pending = draft().manual.computeIfAbsent(snapshot.sessionId(), ignored ->
         {
-            pending.date = manualDate.getValue();
-            pending.description = manualDescription.getText();
-            pending.reference = manualReference.getText();
-            pending.amount = manualAmount.getText();
-            pending.dirty = true;
-            var service = reconciliation.get();
-            var command = new ManualStatementLineCommand(id, manualDate.getValue(), money(manualAmount.getText()),
-                    manualDescription.getText(), manualReference.getText());
-            run("Save manual bank statement entry", ()->service.addManualLine(command), saved ->
+            var value = new ManualDraft();
+            value.date = snapshot.statementEndDate();
+            return value;
+        });
+        pending.editing = true;
+        applyManualEntry();
+        updateActions();
+        Platform.runLater(() ->
+        {
+            if (selected == null || snapshot == null || !manualEditor.isVisible()
+                    || draft().manual.get(snapshot.sessionId()) != pending)
             {
-                manualDrafts.remove(id);
-                reload(selected.id(), id);
-            });
-        }
-        else
+                return;
+            }
+            root.applyCss();
+            root.layout();
+            manualDate.requestFocus();
+            Node parent = manualEditor.getParent();
+            while (parent != null && !(parent instanceof ScrollPane))
+            {
+                parent = parent.getParent();
+            }
+            if (parent instanceof ScrollPane scroll)
+            {
+                scroll.setVvalue(scroll.getVmax());
+            }
+        });
+    }
+
+    private void applyManualEntry()
+    {
+        ManualDraft pending = selected == null || snapshot == null ? null : draft().manual.get(snapshot.sessionId());
+        boolean show = pending != null && pending.editing;
+        manualEditor.setVisible(show);
+        manualEditor.setManaged(show);
+        boolean wasLoading = loading;
+        loading = true;
+        try
         {
-            manualDrafts.remove(id);
+            manualDate.setValue(show ? pending.date : null);
+            manualDescription.setText(show ? Objects.requireNonNullElse(pending.description, "") : "");
+            manualReference.setText(show ? Objects.requireNonNullElse(pending.reference, "") : "");
+            manualAmount.setText(show ? Objects.requireNonNullElse(pending.amount, "") : "");
         }
+        finally
+        {
+            loading = wasLoading;
+        }
+    }
+
+    private void captureManualEntry()
+    {
+        if (loading || selected == null || snapshot == null || !manualEditor.isVisible())
+        {
+            return;
+        }
+        ManualDraft pending = draft().manual.get(snapshot.sessionId());
+        if (pending == null)
+        {
+            return;
+        }
+        pending.date = manualDate.getValue();
+        pending.description = manualDescription.getText();
+        pending.reference = manualReference.getText();
+        pending.amount = manualAmount.getText();
+        pending.dirty = true;
+        updateActions();
+    }
+
+    private void saveManualEntry()
+    {
+        if (snapshot == null || selected == null || !manualEditor.isVisible())
+        {
+            return;
+        }
+        captureManualEntry();
+        long id = snapshot.sessionId();
+        long bank = selected.id();
+        Map<Long, ManualDraft> pending = draft().manual;
+        var command = new ManualStatementLineCommand(id, manualDate.getValue(), money(manualAmount.getText()),
+                manualDescription.getText(), manualReference.getText());
+        var service = reconciliation.get();
+        run("Save manual bank statement entry", () -> service.addManualLine(command), saved ->
+        {
+            pending.remove(id);
+            reload(bank, id);
+        });
+    }
+
+    private void cancelManualEntry()
+    {
+        if (selected != null && snapshot != null)
+        {
+            draft().manual.remove(snapshot.sessionId());
+        }
+        applyManualEntry();
+        updateActions();
+    }
+
+    private boolean manualEntryActive()
+    {
+        return manualEditor.isVisible() && reconciliationPages.getSelectionModel().getSelectedIndex() == 0;
     }
 
     private void removeManual()
@@ -986,7 +1081,14 @@ public final class BankingWorkspacePanel implements AppPanel
                          item.statementLineId() != null || draft().references.containsKey(item.anchorSplitId()));
         unmatch.setDisable(busy || !mutable || !pair || item.statementLineId() == null ||
                            !Objects.equals(item.statementLineId(), st.statementLineId()));
-        complete.setDisable(busy || !mutable || !balanced() || selected != null && draft().editOpening);
+        boolean pendingManual = snapshot != null && selected != null
+                && draft().manual.containsKey(snapshot.sessionId()) && draft().manual.get(snapshot.sessionId()).dirty;
+        complete.setDisable(busy || !mutable || !balanced() || selected != null && draft().editOpening || pendingManual);
+        if (UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE))
+        {
+            complete.setTooltip(new Tooltip(pendingManual ? "Save or cancel the manual statement entry before completing reconciliation."
+                    : "Complete this reconciliation when every statement entry is accounted for and the difference is zero."));
+        }
         removeManual.setDisable(busy || !mutable || st == null || !st.manual() || st.matchedLedgerSplitId() != null);
         boolean editingOpening=selected!=null && draft().editOpening;
         confirmOpening.setDisable(busy || !mutable || known && !editingOpening);
@@ -1000,6 +1102,12 @@ public final class BankingWorkspacePanel implements AppPanel
         useImported.setDisable(busy || snapshot != null || suggestedHeader == null || selected == null || !selected.active());
         importStatement.setDisable(busy || selected == null || !selected.active() || snapshot != null && !mutable);
         manualStatement.setDisable(busy || !mutable);
+        saveManual.setDisable(busy || !mutable);
+        cancelManual.setDisable(busy);
+        for (Control input : List.of(manualDate, manualDescription, manualReference, manualAmount))
+        {
+            input.setDisable(busy || !mutable);
+        }
         saveProgress.setDisable(busy || selected == null || !selected.active() || snapshot != null && !mutable);
         var selectedItem = journal.getSelectionModel().getSelectedItem();
         openJournalButton.setDisable(busy || selectedItem == null);
@@ -1128,6 +1236,7 @@ public final class BankingWorkspacePanel implements AppPanel
         int page = pages.getSelectionModel().getSelectedIndex();
         if (page == 0) return "Save account details";
         if (page == 1) return "Save banking reference";
+        if (manualEntryActive()) return "Save statement entry";
         return selected != null && draft().openingDirty && opening != null && (!opening.confirmed() || draft().editOpening)
                 ? "Confirm starting balance" : "Save progress";
     }
@@ -1154,7 +1263,11 @@ public final class BankingWorkspacePanel implements AppPanel
                 saveReference();
                 break;
             default:
-                if (draft().openingDirty && snapshot != null && opening != null && (!opening.confirmed() || draft().editOpening))
+                if (manualEntryActive())
+                {
+                    saveManualEntry();
+                }
+                else if (draft().openingDirty && snapshot != null && opening != null && (!opening.confirmed() || draft().editOpening))
                 {
                     confirmOpening();
                 }
@@ -1338,6 +1451,7 @@ public final class BankingWorkspacePanel implements AppPanel
         String description;
         String reference;
         String amount;
+        boolean editing;
         boolean dirty;
     }
 
