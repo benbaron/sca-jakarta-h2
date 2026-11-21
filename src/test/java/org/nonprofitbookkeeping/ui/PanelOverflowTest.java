@@ -159,7 +159,7 @@ class PanelOverflowTest
             var workspace = new PanelFactory().create(AppPanelId.BANKING);
             show(workspace.root(), 480, 560); workspace.root().setStyle("-fx-font-size: 18px;"); layout();
             TabPane pages = (TabPane)workspace.root().lookup("#bankingWorkspacePages");
-            for (int index=0;index<3;index++)
+            for (int index=0;index<2;index++)
             {
                 pages.getSelectionModel().select(index); layout();
                 if (index==1) assertTrue(workspace.root().lookup("#bankingWorkspaceOpenJournal").isDisabled(),"No journal drill command without a selected entry");
@@ -167,10 +167,10 @@ class PanelOverflowTest
                         .map(node->(TableView<?>)node).filter(PanelOverflowTest::shown).toList();
                 assertFalse(tables.isEmpty(),"Each Banking work pane exposes its own table");
                 tables.forEach(this::assertHorizontalAccess);
-                String splitId=index==0?"banking-workspace-accounts":index==1?"banking-workspace-journal":"banking-workspace-reconciliation";
+                String splitId=index==0?"banking-workspace-accounts":"banking-workspace-journal";
                 SplitPane split=(SplitPane)workspace.root().lookup("#"+splitId);
-                ScrollPane editor=(ScrollPane)split.getItems().get(index==2?0:1);
-                TextField field=(TextField)workspace.root().lookup(index==0?"#bankingWorkspaceNickname":index==1?"#bankingWorkspaceReference":"#bankingWorkspaceStatementEnding");
+                ScrollPane editor=(ScrollPane)split.getItems().get(1);
+                TextField field=(TextField)workspace.root().lookup(index==0?"#bankingWorkspaceNickname":"#bankingWorkspaceReference");
                 field.setMinWidth(700); field.setPrefWidth(700); layout();
                 assertEquals(1,ownBars(editor,Orientation.HORIZONTAL).size(),"One local horizontal owner for Banking pane "+index);
                 assertTrue(ownBars(editor,Orientation.VERTICAL).size()<=1,"No duplicated vertical form scrollbar");
@@ -179,6 +179,23 @@ class PanelOverflowTest
                 var content=editor.getContent().localToScene(editor.getContent().getBoundsInLocal());
                 assertTrue(content.getMaxX()<=clip.getMaxX()+2,"The last form column must remain reachable");
             }
+            pages.getSelectionModel().select(2); layout();
+            TabPane reconciliation=(TabPane)workspace.root().lookup("#bankingWorkspaceReconciliationPages");
+            reconciliation.getSelectionModel().select(0); layout();
+            ScrollPane setup=(ScrollPane)reconciliation.getSelectionModel().getSelectedItem().getContent();
+            TextField ending=(TextField)workspace.root().lookup("#bankingWorkspaceStatementEnding");
+            ending.setMinWidth(700); ending.setPrefWidth(700); layout();
+            assertEquals(1,ownBars(setup,Orientation.HORIZONTAL).size(),"Statement setup has local horizontal overflow");
+            assertTrue(ownBars(setup,Orientation.VERTICAL).size()<=1,"No duplicated setup vertical scrollbar");
+            setup.setHvalue(setup.getHmax()); setup.setVvalue(setup.getVmax()); layout();
+            var setupClip=setup.lookup(".viewport").localToScene(setup.lookup(".viewport").getLayoutBounds());
+            var setupContent=setup.getContent().localToScene(setup.getContent().getBoundsInLocal());
+            assertTrue(setupContent.getMaxX()<=setupClip.getMaxX()+2,"Setup's final field column remains reachable");
+            reconciliation.getSelectionModel().select(1); layout();
+            SplitPane matching=(SplitPane)workspace.root().lookup("#bankingWorkspaceMatchingSplit");
+            assertEquals(2,matching.getItems().size());
+            assertEquals(Orientation.HORIZONTAL,matching.getOrientation());
+            matching.getItems().forEach(item->assertHorizontalAccess((TableView<?>)item.lookup(".table-view")));
             assertTrue(((Label)workspace.root().lookup("#bankingWorkspaceStatus")).isWrapText());
             assertEquals("Banking",new PanelFactory().create(AppPanelId.RECONCILIATION_RUNS).title());
             snapshot("banking-reconciliation");
