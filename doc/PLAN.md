@@ -1,17 +1,51 @@
 ---
-plan_version: 526
-active_phase: P28
-active_slice: P28-C3
-active_status: VERIFYING
-active_branch: codex/P28-C3-manual-procedure-tests
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/440
-active_head: cf5e19a82859b5c473cbcdc955090cb991ec4191
-next_action: "Owner review the manual procedure tests, coverage map and ready PR 440 at accepted head cf5e19a8; all focused/full and Linux/Windows CI gates passed. Keep VERIFYING until owner merge. C2/#439 remains open; edit the authoritative manual directly in Word. No automatic merge."
+plan_version: 527
+active_phase: P27
+active_slice: P27-C15
+active_status: IN_PROGRESS
+active_branch: codex/P27-C15-import-suggestions
+active_pull_request: null
+active_head: ff48a52f643f29c737e77a395fe34fb039245b6d (base; implementation pending)
+next_action: "Implement owner-approved CSV suggestion combos, unique exact matching and explicit clearing of unresolved optional values; test retention, refresh, validation and actual display. Update the authoritative Word manual, verify and publish a fresh PR; no automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
+### P27-C15 CSV source suggestions in lookup fields — owner request
+
+IN_PROGRESS on codex/P27-C15-import-suggestions from current main ff48a52f
+(C3/#440 confirmed merged and DONE). Carry its final receipt as 281b7202.
+[Contract](P27-C15-import-suggestions.md): show raw source suggestions in grey in
+the same lookup field as the eventual record; automatically choose only unique
+exact matches from eligible active records. Apply to Account, Fund, Budget
+Category, Merchant and Payee. Owner requires choosing or explicitly clearing an
+unmatched optional suggestion before commit. Drafts, bulk mappings, refresh,
+source evidence and atomic canonical Save remain authoritative. No new panes,
+windows, ledger, schema or import format.
+
+C2/#439 is still open/VERIFYING. Its already-authorized Word-primary documentation
+changes at dadd715c are integrated by ordinary merge so the authoritative Word
+manual can be edited without losing those changes; no PR is automatically merged.
+Only PLAN conflicted; resolve around this selected C15 task while retaining C2/C3
+receipts. Existing C2 publication/CI remain historical and do not validate C15.
+Required reading: AGENTS, current PLAN, Exchequer C9/C11 contracts, UI design,
+editor and operation rules, current review/reference service, styling and actual
+FX tests. Baseline compile passes (15.8s); real-display baseline is next. Remaining:
+implementation, pure/display regression tests, native screenshot inspection,
+Word instructions, full verification, publication and exact-head CI.
+
+
+### P28-C2 Word as primary manual — owner correction
+
+Publication: [draft PR #439](https://github.com/benbaron/sca-jakarta-h2/pull/439), implementation e33827c6a97993194fb6440f241d20d065423273, tree 2e67bafda860d69ddaa8f8d91bf01255eb7e326e. New branch published by ordinary push after confirming it absent; native remote and PR metadata match. This following commit changes only publication documentation; inspect CI on its resulting final head, not the earlier implementation head. Local clean verification is running.
+
+VERIFYING on codex/P28-C2-word-primary, fresh from main ef1006f7495b069aa64a5b28d7c01f8ad5358433 after confirmed #438 merge. Prior local receipt is carried as 2421f514. The owner's explicit Word-primary instruction supersedes C1's Markdown-source workflow. [C2 contract](P28-C2-word-manual-authority.md) governs direct editing of [the authoritative Word manual](user-manual.docx), preservation of comments/tracked changes/formatting/media, a Markdown landing page only and removal of the old generator. Engineering specifications retain their own authority. No application/schema/accounting behavior changes.
+
+Required reading/inspection: AGENTS, current PLAN, C1 manual contract, both manuals, existing generator and operating/panel guide references; C1 is merged and DONE. Baseline ReleaseOperatingGuideTest passes two tests, zero failures/errors/skips (39.6s). Delivered: Word authority notices, Markdown landing page, retired generator and updated active instructions. All ZIP parts except word/document.xml are byte-identical; all original paragraphs except the final review notice are intact. Nine tables, two images, 18 valid Contents links and all 80 bookmarks remain; review annotation counts are unchanged. Local links pass; LibreOffice render remains 31 pages, cover/final page visually inspected. Changed-guide check passes two tests, zero failures/errors/skips (29.6s). Evidence: /workspace/p28-c2-evidence/. Remaining: final local clean verification and final-published-head Linux/Windows CI. Keep VERIFYING until owner merge; no automatic merge.
+
 ### P28-C3 Executable manual procedures — owner request
+
+Closeout: DONE after #440 merged at ff48a52f. The following receipt is historical; C15 owns the subsequent CSV interface request.
 
 Final receipt: [PR #440](https://github.com/benbaron/sca-jakarta-h2/pull/440) is ready,
 open and unmerged. Accepted remote head **cf5e19a82859b5c473cbcdc955090cb991ec4191**,
