@@ -1,17 +1,50 @@
 ---
-plan_version: 528
+plan_version: 529
 active_phase: P27
 active_slice: P27-C15
 active_status: VERIFYING
 active_branch: codex/P27-C15-import-suggestions
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/441
-active_head: 71b19b860d8c6237b7bec385a9df1d33ea3c9460 (implementation; publication receipt follows)
-next_action: "Finish local clean verification and final published-head Linux/Windows CI for PR 441. C15 focused/display and document checks pass. Keep VERIFYING until owner review/merge; no automatic merge."
+active_head: 7b310acaea1c1f1011e4682c8b3403cc77b348dd
+next_action: "Owner review the CSV suggestions, whole-entry Apply/Cancel, row states and multi-delete in ready PR 441 at accepted head 7b310aca; all local/display/document and Linux/Windows CI gates passed. Keep VERIFYING until confirmed merge; no automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C15 CSV source suggestions in lookup fields — owner request
+
+Final receipt: [PR #441](https://github.com/benbaron/sca-jakarta-h2/pull/441) is ready
+for review, open and unmerged. Accepted remote head
+**7b310acaea1c1f1011e4682c8b3403cc77b348dd**, tree
+**93ac445b443c42964c76743c02c8ef2aab21c515**, matches published native ref/PR read-back.
+**Local clean verify passes 1,330 tests, zero failures/errors and 165 expected
+headless display skips (10:11)**. Final actual-display/focused gate passes 37,
+zero failures/errors/skips (02:11); earlier broad gate 62 (03:39). All eight
+CSV display scenarios and eight pure matching/state tests pass. Synthetic native
+Updated/Ready/grey-editor screenshots were inspected, including computed grey
+color, bold-to-normal fonts and actual dropdown behavior. Word package checks
+preserve every other part/paragraph; final render remains 31 pages and its updated
+import text was inspected. Links and whitespace pass. No user database/private
+CSV, schema or accounting-service changes.
+
+[Exact-head CI 45068903655](https://github.com/benbaron/sca-jakarta-h2/actions/runs/45068903655)
+completed success. Linux job 137351198238 passed rendering, clean/repeat,
+Period Close, overflow, imports, Journal/SCLX feedback and production JavaFX routes.
+Windows job 137351198067 passed 23 actual display tests across seven suites,
+without failures/errors/skips. Final job/step metadata and actual Windows log
+totals were inspected. No final executed gate failed. Evidence and screenshots:
+/workspace/p27-c15-evidence/.
+
+This final documentation-only receipt stays local to preserve the green remote
+head; PR description carries actual results. No app/test/style/Word bytes changed
+after final validation. Earlier pending-check notes below are historical.
+Remaining: owner review and merge, including the integrated Word-primary changes
+from C2/#439. No PR is automatically merged. Apply accepts a whole record into
+the transient batch; only final Commit writes Journal. Refresh preserves unfinished
+edits and accepted values, clears update markers and revalidates references;
+it is not another acceptance. Use Ctrl/Cmd/Shift and Delete Selected Entries (N)
+for multi-delete. Keep C15 VERIFYING until merge; then fetch main and follow the
+latest owner instruction/earliest unfinished unblocked slice.
 
 Publication: [draft PR #441](https://github.com/benbaron/sca-jakarta-h2/pull/441),
 implementation **71b19b860d8c6237b7bec385a9df1d33ea3c9460**, tree
@@ -22,7 +55,7 @@ preserved. Final focused/display gate passes 37/zero failures/errors/skips (02:1
 prior broad gate 62 (03:39); native screenshots and direct Word package/render
 checks pass. Local clean verification is running. This publication-only receipt
 requires its resulting head to receive exact-head CI; no final success or merge
-is claimed. No application/test/Word bytes change in this receipt.
+is claimed by that earlier note; final results are above. No application/test/Word bytes change in this receipt.
 
 Owner further specifies whole-entry acceptance, row validity styling and multi-
 delete. Clarification selects immediate acceptance by Apply Entry Changes;
