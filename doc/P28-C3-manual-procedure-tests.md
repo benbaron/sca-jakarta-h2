@@ -88,3 +88,29 @@ implementation 15f87277c3a3f052f9a36d7327238487ee1ebf59, tree
 confirming current main/absent remote. PR head matches. This publication receipt
 changes documentation only; accept CI on its resulting head. Final clean
 verification is running; exact-head CI remains pending.
+
+## Final verification receipt
+
+[PR #440](https://github.com/benbaron/sca-jakarta-h2/pull/440) is ready for review,
+open/unmerged, accepted remote head cf5e19a82859b5c473cbcdc955090cb991ec4191,
+tree 3f6c0b508ba61e5e36f25bb7ca7b5bb2ce4a596f. Native ref and PR metadata
+match. This final local-only receipt preserves the green remote head; the PR
+contains actual final results. Earlier pending-check progress notes are historical.
+
+Final local clean verify passes **1,317 tests, zero failures/errors and 160
+expected headless display skips (12:52)**. All 23 new cases ran without skips:
+13 pure unit and ten service/file integration. Final focused gate passes 33
+without failures/errors/skips (01:24).
+
+[Exact-head CI 44982489768](https://github.com/benbaron/sca-jakarta-h2/actions/runs/44982489768)
+passes both jobs. Linux 137085851305 passes rendering, clean/repeat, Period Close,
+overflow, imports, Journal/SCLX feedback and production routes. Windows
+137085851573 passes all 23 display tests across seven required suites with
+zero failures/errors/skips; actual log totals were inspected. Final run/job/step
+metadata and logs are retained under /workspace/p28-c3-evidence/, including the
+four new full-run XML reports. No final executed gate failed.
+
+No Word or user-data changes; no application/test changes after validation.
+Remaining: owner review the mapped scenarios and merge #440. C2/#439 remains
+independently open. Keep VERIFYING until confirmed merge; do not merge
+or regenerate the authoritative Word manual automatically.

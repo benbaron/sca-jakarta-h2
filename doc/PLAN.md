@@ -1,25 +1,49 @@
 ---
-plan_version: 521
+plan_version: 526
 active_phase: P28
 active_slice: P28-C3
 active_status: VERIFYING
 active_branch: codex/P28-C3-manual-procedure-tests
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/440
-active_head: 45cba4ae05b80d1ae56a37538aea385914225bfa
-next_action: "P28-C3 final focused gate passes 33 tests. Finish local clean verification and inspect final published-head CI for PR 440. Keep VERIFYING until owner merge. C2/#439 remains open; the user-selected Word manual is authoritative."
+active_head: cf5e19a82859b5c473cbcdc955090cb991ec4191
+next_action: "Owner review the manual procedure tests, coverage map and ready PR 440 at accepted head cf5e19a8; all focused/full and Linux/Windows CI gates passed. Keep VERIFYING until owner merge. C2/#439 remains open; edit the authoritative manual directly in Word. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P28-C3 Executable manual procedures — owner request
 
+Final receipt: [PR #440](https://github.com/benbaron/sca-jakarta-h2/pull/440) is ready,
+open and unmerged. Accepted remote head **cf5e19a82859b5c473cbcdc955090cb991ec4191**,
+tree **3f6c0b508ba61e5e36f25bb7ca7b5bb2ce4a596f**, matches native ref/PR metadata.
+**Final local clean verify: 1,317 tests / zero failures/errors / 160 expected
+headless display skips (12:52)**. All 23 new manual cases executed without skips:
+13 pure unit, ten service/file integration. Final focused gate: 33/zero failures,
+errors or skips (01:24). [Exact-head CI 44982489768](https://github.com/benbaron/sca-jakarta-h2/actions/runs/44982489768)
+is successful: Linux job 137085851305 passed rendering, clean/repeat verification,
+Period Close, overflow, imports, Journal/SCLX feedback and production JavaFX routes;
+Windows job 137085851573 passed 23 displayed tests across seven suites without
+failures/errors/skips. Final job/step metadata and actual Windows totals were
+inspected. No final executed gate failed. Word bytes remain unchanged; no user
+financial data, database or frozen archive was touched. Evidence including the
+new full-run XML reports is /workspace/p28-c3-evidence/.
+
+This final documentation-only receipt stays local to preserve the green remote
+source/check head; PR description records the actual results. No application or
+test bytes changed after final validation. Prior pending-check notes below are
+historical. Remaining: owner review/merge of #440, with C2/#439 still independently
+open/VERIFYING. Inspect the coverage map against the Word manual and run the new
+selector if desired. External facts and installed-desktop human acceptance are
+not established by unit tests. Keep C3 VERIFYING until confirmed owner merge;
+do not merge automatically. After merge, verify current main and choose the next
+unfinished unblocked slice under the latest owner instruction.
+
 Publication: [draft PR #440](https://github.com/benbaron/sca-jakarta-h2/pull/440),
 implementation **15f87277c3a3f052f9a36d7327238487ee1ebf59**, tree
 **9178453aced64f7f96a99e45c00df2fcb95a7b4b**. Current main remains ef1006f7;
 new branch was confirmed absent and published by ordinary push. Native remote
 and PR read-back match. This following documentation-only receipt requires its
-resulting final head to receive exact-head CI. Local clean verification is
-running; no final success or merge is claimed.
+resulting final head to receive exact-head CI; final results are recorded above. This earlier publication note is historical.
 
 VERIFYING on codex/P28-C3-manual-procedure-tests from current main ef1006f7.
 [Contract](P28-C3-manual-procedure-tests.md): derive behavioral unit/integration
@@ -43,9 +67,11 @@ prerequisite correction directly unblocks a manual procedure; the JSON contract
 and fresh/legacy receipt tests document it. One header-versus-instrument reference
 test assumption was corrected to match the manual. First corrected focused gate
 passes 27 tests (01:15); expanded gate passes 33 (01:19), all zero failures/errors/skips.
-The final namespace form retains Unicode code capacity; final focused gate passes 33 tests, zero failures/errors/skips (01:24). Final diff/links/test-map references pass; Word bytes are unchanged. New tests: 13 pure unit plus 10 service/file integration cases. Remaining: final local clean verification and exact-final-head Linux/Windows CI. No automatic merge.
+The final namespace form retains Unicode code capacity; final focused gate passes 33 tests, zero failures/errors/skips (01:24). Final diff/links/test-map references pass; Word bytes are unchanged. New tests: 13 pure unit plus 10 service/file integration cases. All final gates passed as recorded above. Remaining: owner review and merge. No automatic merge.
 
 ### P28-C1 User manual first working draft — owner request
+
+Closeout: DONE after #438 merged at ef1006f7. The following initial C1 receipt is historical; the owner subsequently made Word authoritative in C2/#439. Do not follow its superseded Markdown-to-Word editing workflow.
 
 Owner requests a user manual and explicitly adds company setup/management, database handling, file import/export and reports/reporting. The selected reader format is Word (option 2); keep editable Markdown source with the repository and generate a matching Word review copy. This is a documentation-only correction to P28 release guidance. PR #437 is confirmed merged into main 45cba4ae; P27-C14 is DONE. Fresh codex/P28-C1-user-manual preserves its final local receipt as 8f399067. Existing ReleaseOperatingGuideTest baseline passes 2 tests (26.9s).
 
