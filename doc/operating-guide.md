@@ -1,6 +1,6 @@
 # SCA Bookkeeping operating guide
 
-This guide is a quick reference to the current production workspace. For task-based procedures, use the [user manual](user-manual.md) or its [Word review copy](user-manual.docx). Verify the active company in the toolbar; select accounting defaults in Period Close. Commands are permission-gated; a disabled command explains the missing role, selection, preview or other prerequisite.
+This guide is a quick reference to the current production workspace. For task-based procedures, use the [Word user manual](user-manual.docx), the authoritative manual for direct editing and review. Verify the active company in the toolbar; select accounting defaults in Period Close. Commands are permission-gated; a disabled command explains the missing role, selection, preview or other prerequisite.
 
 ## Company setup and master data
 

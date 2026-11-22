@@ -735,7 +735,7 @@ public class ImportPreviewPanel implements AppPanel
     {
         if (exchequerReview != null && root.getCenter() == exchequerReview)
         {
-            return exchequerReview.commitButton();
+            return exchequerReview.selectedSaveButton();
         }
         return switch (previewTabs.getSelectionModel().getSelectedIndex())
         {

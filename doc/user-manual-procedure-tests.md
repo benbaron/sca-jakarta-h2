@@ -88,3 +88,14 @@ stays a draft until explicitly activated; no Journal history or bank link moves.
 The new procedure tests reproduce the original failure and verify both fresh
 and legacy-receipt paths. Same-chart idempotency/rollback tests remain in the
 adjacent chart-import suites.
+
+
+## C15 import review UI coverage
+
+ImportReferenceSuggestionTest adds exact/ambiguous/stale/cleared draft-state
+coverage. ExchequerImportReviewPaneTest now checks same-field grey hints, automatic
+five-field matching, native dropdowns, explicit optional clearing, whole-record
+Apply/Cancel, contextual Save, Updated/Ready/grey row rendering, multi-delete and
+refresh preserving both applied and unfinished edits. The Word import procedure
+reflects those actions; it remains the manual source. New UI cases require a
+real display and are exercised by the existing CI Import workflow gate.

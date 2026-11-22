@@ -268,3 +268,12 @@ service reason. See [C11 checks](P29-C11-journal-save-feedback.md).
 P27-C9 Import Exchequer CSV opens an alternate review page with Proposed Entries, Edit Entry and Original Source/Diagnostics work pages. Back/Resume preserves edits. Delete Proposed Entry removes only an uncommitted proposal. Explicit Commit Reviewed Entries and global Save use the same guarded, source-checked atomic canonical import; successful entries are subsequently maintained in Journal. See [Exchequer CSV](P27-C9-exchequer-csv.md).
 
 P27-C11 Journal Additional Details and Exchequer Edit Entry maintain informational transfer/check reference and source statement/incoming dates through the existing full Save. Transaction date shares the existing accounting date; reconciliation still owns bank-cleared flags. Import Proposed Entries exposes Split 1–4 columns plus a Show Splits action; the canonical batch commit preserves every meaningful source split. SCLX exports/imports the optional journalInformation-v1 extension. See [C11](P27-C11-journal-information.md).
+
+
+P27-C15 Exchequer Edit Entry contextual Save routes to Apply Entry Changes,
+validating/accepting that whole proposal without writing Journal. Proposed Entries
+Save and Commit Reviewed Entries retain the existing atomic confirmation/commit.
+Unapplied changes survive refresh but block that commit; Cancel restores the last
+applied record. Grey source suggestions require real eligible IDs or explicit
+optional clearing; exact unique matches may auto-resolve. Multi-select Delete
+removes only selected transient proposals. See [C15](P27-C15-import-suggestions.md).
