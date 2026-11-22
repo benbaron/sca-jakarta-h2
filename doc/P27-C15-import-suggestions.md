@@ -103,3 +103,10 @@ part and original paragraph remains unchanged; nine tables, two illustrations,
 pages; updated import pages inspected. Specification links and whitespace pass.
 Full clean verification and exact-head CI remain pending. Evidence:
 /workspace/p27-c15-evidence/. No user database/private CSV or schema changes.
+
+Published [draft PR #441](https://github.com/benbaron/sca-jakarta-h2/pull/441),
+implementation 71b19b860d8c6237b7bec385a9df1d33ea3c9460, tree
+2efcbd677d4036b56c227a322218695406cef14a. New branch confirmed absent and
+published normally; native ref/PR match. This receipt changes documentation
+only; accept CI on its resulting final head. Local clean verification is running;
+exact-head CI remains pending. No automatic merge.

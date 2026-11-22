@@ -4,14 +4,25 @@ active_phase: P27
 active_slice: P27-C15
 active_status: VERIFYING
 active_branch: codex/P27-C15-import-suggestions
-active_pull_request: null
-active_head: ff48a52f643f29c737e77a395fe34fb039245b6d (base; implementation pending)
-next_action: "C15 final display gate passed 37 tests; finish local clean verification, publish the CSV suggestion/entry-acceptance changes and inspect exact-head Linux/Windows CI. Keep VERIFYING until owner merge; no automatic merge."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/441
+active_head: 71b19b860d8c6237b7bec385a9df1d33ea3c9460 (implementation; publication receipt follows)
+next_action: "Finish local clean verification and final published-head Linux/Windows CI for PR 441. C15 focused/display and document checks pass. Keep VERIFYING until owner review/merge; no automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C15 CSV source suggestions in lookup fields — owner request
+
+Publication: [draft PR #441](https://github.com/benbaron/sca-jakarta-h2/pull/441),
+implementation **71b19b860d8c6237b7bec385a9df1d33ea3c9460**, tree
+**2efcbd677d4036b56c227a322218695406cef14a**. Current main remains ff48a52f;
+the absent new branch was published by ordinary push and PR read-back matches.
+Integrated C2 documentation head dadd715c and carried C3 receipt 281b7202 are
+preserved. Final focused/display gate passes 37/zero failures/errors/skips (02:11),
+prior broad gate 62 (03:39); native screenshots and direct Word package/render
+checks pass. Local clean verification is running. This publication-only receipt
+requires its resulting head to receive exact-head CI; no final success or merge
+is claimed. No application/test/Word bytes change in this receipt.
 
 Owner further specifies whole-entry acceptance, row validity styling and multi-
 delete. Clarification selects immediate acceptance by Apply Entry Changes;
