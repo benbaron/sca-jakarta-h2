@@ -81,3 +81,10 @@ service/file integration) plus ten adjacent chart JSON cases. All 113 named
 suites in the chapter map exist; local links and whitespace pass. The Word
 document is byte-identical to current main. Full clean verification and exact-head
 CI remain pending. Evidence: /workspace/p28-c3-evidence/.
+
+Published [draft PR #440](https://github.com/benbaron/sca-jakarta-h2/pull/440),
+implementation 15f87277c3a3f052f9a36d7327238487ee1ebf59, tree
+9178453aced64f7f96a99e45c00df2fcb95a7b4b, by normal new-branch push after
+confirming current main/absent remote. PR head matches. This publication receipt
+changes documentation only; accept CI on its resulting head. Final clean
+verification is running; exact-head CI remains pending.
