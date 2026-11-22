@@ -1,6 +1,6 @@
 # Panel and function guide
 
-This is the Markdown source for panel-level operating instructions. For task-based procedures, use the [user manual](../user-manual.md) or its [Word review copy](../user-manual.docx). Each function
+This is the Markdown source for panel-level operating instructions. For task-based procedures, use the [Word user manual](../user-manual.docx), the authoritative manual for direct editing and review. Each function
 has its own heading so it can be gathered into a manual. Screens show controls,
 current results and validation; hover over a control for a short local hint.
 

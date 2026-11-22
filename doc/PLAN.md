@@ -1,17 +1,25 @@
 ---
-plan_version: 522
+plan_version: 523
 active_phase: P28
-active_slice: P28-C1
+active_slice: P28-C2
 active_status: VERIFYING
-active_branch: codex/P28-C1-user-manual
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/438
-active_head: 3c5591670828177f479fb1c9d9da28451fd0f6d0
-next_action: "Owner review the Word manual and ready PR 438 at accepted head 3c559167; all gates passed. Apply accepted comments to Markdown and regenerate Word. Keep VERIFYING until owner merge; do not merge automatically."
+active_branch: codex/P28-C2-word-primary
+active_pull_request: null
+active_head: 2421f514 (carried receipt; implementation pending)
+next_action: "P28-C2 document/guide checks passed; run final clean verification, publish a fresh PR and inspect exact-head CI. Edit the manual directly in Word; never regenerate it from Markdown."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
+### P28-C2 Word as primary manual — owner correction
+
+VERIFYING on codex/P28-C2-word-primary, fresh from main ef1006f7495b069aa64a5b28d7c01f8ad5358433 after confirmed #438 merge. Prior local receipt is carried as 2421f514. The owner's explicit Word-primary instruction supersedes C1's Markdown-source workflow. [C2 contract](P28-C2-word-manual-authority.md) governs direct editing of [the authoritative Word manual](user-manual.docx), preservation of comments/tracked changes/formatting/media, a Markdown landing page only and removal of the old generator. Engineering specifications retain their own authority. No application/schema/accounting behavior changes.
+
+Required reading/inspection: AGENTS, current PLAN, C1 manual contract, both manuals, existing generator and operating/panel guide references; C1 is merged and DONE. Baseline ReleaseOperatingGuideTest passes two tests, zero failures/errors/skips (39.6s). Delivered: Word authority notices, Markdown landing page, retired generator and updated active instructions. All ZIP parts except word/document.xml are byte-identical; all original paragraphs except the final review notice are intact. Nine tables, two images, 18 valid Contents links and all 80 bookmarks remain; review annotation counts are unchanged. Local links pass; LibreOffice render remains 31 pages, cover/final page visually inspected. Changed-guide check passes two tests, zero failures/errors/skips (29.6s). Evidence: /workspace/p28-c2-evidence/. Remaining: final clean verification, fresh PR publication and exact-head Linux/Windows CI. Keep VERIFYING until owner merge; no automatic merge.
+
 ### P28-C1 User manual first working draft — owner request
+
+Closeout: DONE, merged in #438 at ef1006f7. The following C1 receipt is historical. C2 supersedes all Markdown-to-Word generation instructions; future edits and accepted comments go directly into the authoritative Word file.
 
 The first task-based [user manual](user-manual.md) and owner-selected [Word review copy](user-manual.docx) are written: approximately 9,100 words in 18 chapters, with nine comparison/reference tables and two native synthetic Banking illustrations. Core procedures cover creating/managing companies, creating/opening/switching databases, backup/restore, file import/export, Report Library/report exports/packets, Journal, revised Banking, period close and other established functions. Vocabulary, permissions, prerequisites, expected results and concrete troubleshooting address the owner's earlier statement/account/chart/NMR/ownership questions. This is a working draft for content review, not an approved external SCA policy or submission procedure. No application/schema/accounting behavior or private financial data changed.
 

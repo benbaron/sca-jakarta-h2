@@ -291,6 +291,14 @@ Required documentation behavior:
 - use concise Javadoc for important public APIs;
 - do not create new planning documents under legacy `docs/`.
 
+The authoritative user manual is `doc/user-manual.docx`. Make manual edits directly in
+that Word file, preserving comments, tracked changes, formatting, links and images.
+`doc/user-manual.md` is a landing page only. Never regenerate or replace the Word
+manual from Markdown or extracted text. Apply accepted review corrections directly
+to the Word document; do not silently accept/reject unrelated tracked changes or
+remove review comments. Engineering specifications and execution records under
+`doc/` retain their existing authority.
+
 ## 8. Non-negotiable technical rules
 
 Use:
