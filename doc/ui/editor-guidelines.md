@@ -181,3 +181,17 @@ rollback. See [Save feedback checks](../P29-C11-journal-save-feedback.md).
 ## P27-C11 journal source information
 
 Additional Details edits the optional Transfer ID / Check #, Statement / cleared date (information), and Incoming check / transfer date. Its Transaction date editor shares the existing Entry date value. Full Save retains all fields with the accounting lines; New clears source information and load restores it. Source dates never set authoritative bank-line clearing facts. CSV review provides the same fields and explicit Split 1–4 proposal summaries.
+
+
+## P27-C15 Exchequer source suggestions and whole-entry Apply
+
+CSV Account/Fund/Budget/Merchant/Payee hints render grey in their native combo
+value area until resolved to a unique exact eligible ID or explicitly selected.
+Supplied optional hints require a selection or Clear. Original source labels are
+not identities; active selected-chart/company choice scope stays authoritative.
+Apply Entry Changes validates and immediately accepts the whole transient record;
+Cancel restores its last applied state. Contextual Save on Edit Entry performs
+Apply; Proposed Entries Save is the batch commit. Ready rows are normal, invalid
+or unapplied rows grey, and valid Updated rows bold until Refresh Review reloads
+choices and clears the marker. Accepted changes remain. Multi-select Delete acts
+only on selected proposals. See [C15](../P27-C15-import-suggestions.md).

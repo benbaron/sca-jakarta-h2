@@ -612,6 +612,47 @@ dashboard-footer-link,
     -fx-faint-focus-color: -color-accent-muted;
 }
 
+/* Source hints remain readable and selectable; they are not accepted references. */
+.combo-box .list-cell.import-source-suggestion,
+.table-view .table-cell.import-source-suggestion
+{
+    -fx-text-fill: #5f6b7a;
+    -fx-font-style: italic;
+}
+
+.production-workspace.theme-atlantafx .combo-box .list-cell.import-source-suggestion,
+.production-workspace.theme-atlantafx .table-view .table-cell.import-source-suggestion
+{
+    -fx-text-fill: -color-fg-muted;
+}
+
+.table-view .table-row-cell.import-entry-invalid .table-cell
+{
+    -fx-text-fill: #5f6b7a;
+}
+
+.production-workspace.theme-atlantafx .table-row-cell.import-entry-invalid .table-cell
+{
+    -fx-text-fill: -color-fg-muted;
+}
+
+.table-view .table-row-cell.import-entry-updated .table-cell
+{
+    -fx-font-weight: bold;
+}
+
+.table-view .table-row-cell:selected .table-cell.import-source-suggestion,
+.table-view .table-row-cell.import-entry-invalid:selected .table-cell
+{
+    -fx-text-fill: -fx-selection-bar-text;
+}
+
+.production-workspace.theme-atlantafx .table-row-cell:selected .table-cell.import-source-suggestion,
+.production-workspace.theme-atlantafx .table-row-cell.import-entry-invalid:selected .table-cell
+{
+    -fx-text-fill: -color-fg-default;
+}
+
 .production-workspace.theme-atlantafx .label,
 .production-workspace.theme-atlantafx .check-box,
 .production-workspace.theme-atlantafx .radio-button,

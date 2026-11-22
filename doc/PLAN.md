@@ -1,19 +1,29 @@
 ---
-plan_version: 527
+plan_version: 528
 active_phase: P27
 active_slice: P27-C15
-active_status: IN_PROGRESS
+active_status: VERIFYING
 active_branch: codex/P27-C15-import-suggestions
 active_pull_request: null
 active_head: ff48a52f643f29c737e77a395fe34fb039245b6d (base; implementation pending)
-next_action: "Implement owner-approved CSV suggestion combos, unique exact matching and explicit clearing of unresolved optional values; test retention, refresh, validation and actual display. Update the authoritative Word manual, verify and publish a fresh PR; no automatic merge."
+next_action: "C15 final display gate passed 37 tests; finish local clean verification, publish the CSV suggestion/entry-acceptance changes and inspect exact-head Linux/Windows CI. Keep VERIFYING until owner merge; no automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C15 CSV source suggestions in lookup fields — owner request
 
-IN_PROGRESS on codex/P27-C15-import-suggestions from current main ff48a52f
+Owner further specifies whole-entry acceptance, row validity styling and multi-
+delete. Clarification selects immediate acceptance by Apply Entry Changes;
+Refresh Review only reloads/revalidates and clears the recent-update marker.
+Cancel restores the last applied complete draft. Edit Entry contextual Save
+performs Apply; Proposed Entries Save commits the full batch. Native multi-select
+and Delete Selected Entries (N) remove only transient proposals. Whole-row statuses
+are Ready/normal, Needs attention or Unapplied edits/grey, valid Updated/bold.
+Initial pure/display gate passes 15/zero failures/errors/skips (01:11). Additional
+styled rendered-font/color assertions and direct Word instructions are in progress.
+
+VERIFYING on codex/P27-C15-import-suggestions from current main ff48a52f
 (C3/#440 confirmed merged and DONE). Carry its final receipt as 281b7202.
 [Contract](P27-C15-import-suggestions.md): show raw source suggestions in grey in
 the same lookup field as the eventual record; automatically choose only unique
@@ -30,7 +40,7 @@ Only PLAN conflicted; resolve around this selected C15 task while retaining C2/C
 receipts. Existing C2 publication/CI remain historical and do not validate C15.
 Required reading: AGENTS, current PLAN, Exchequer C9/C11 contracts, UI design,
 editor and operation rules, current review/reference service, styling and actual
-FX tests. Baseline compile passes (15.8s); real-display baseline is next. Remaining:
+FX tests. Baseline compile passes (15.8s); real-display baseline passes three tests (51.2s). Remaining:
 implementation, pure/display regression tests, native screenshot inspection,
 Word instructions, full verification, publication and exact-head CI.
 
@@ -2892,3 +2902,19 @@ Final published head `fb7f78131a8ce935dd832f3168112dff3c14234c` and its fetched 
 The first backup-only LOB monitor is rejected: 50 concurrency runs pass but the first original 64-generation run fails on copy close, generation 3 (`/tmp/p27-c7-original-50.log`; native evidence `/workspace/p27-c7-original-50/run-16972419623038673674`). Original archive graph is coherent (17 temp / 4 permanent / 21 refs); copy lifecycle persists 17 dangling temp records with only 4 refs. Source closes coherently. Revised paired-map groups use MVStore's existing checkpoint lock and suppress reentrant auto-checkpoint until the group completes; streaming data allocation stays incremental. Revised focused gate 9 tests passes, and **50 unchanged concurrency tests / 1,200 snapshots** plus **50 unchanged original 64-generation tests / 3,200 snapshots** both finish with exit 0. Logs/source/class hashes are retained under `/workspace/p27-c7-evidence`. No original assertions or test bodies changed. Vendor namespace exception includes exactly LobStorageMap and MVStore, with attributed upstream hashes, reviewable patches and embedded MPL license. Final focused/combined full/packaging/UI/CI gates remain.
 
 Final C7 focused recovery gate: **27 tests, zero failures/errors/skips (02:35)**, `/tmp/p27-c7-atomic-recovery.log`. Both longer native batches pass with unchanged original test bodies: 50 concurrency / 1,200 snapshots and 50 original 64-generation / 3,200 snapshots. Next integrate by normal merge into #430 and validate the combined source, packaged driver/classpath and UI before accepting new exact-head CI.
+
+
+C15 final focused/display result: **37 tests, zero failures/errors/skips (02:11)**,
+including eight exact-match/draft-state units, eight actual CSV review cases,
+seven production command routes, eight Save-scope checks and six overflow tests.
+Earlier broader gate passed 62 without failures/errors/skips (03:39), including
+23 Import workflows and task lifecycle tests. Final source changes only refine
+Refresh retention; the final gate rechecks actual pending-edit retention, Apply/
+Cancel, multi-delete, native dropdowns, automatic five-field matching, stale
+references, real grey/bold/normal rendering, contextual Save and scrolling.
+Synthetic native screenshots were inspected. Word updates change four paragraphs
+only; all other package parts and paragraphs remain unchanged, preserving nine
+tables, two images, 80 bookmarks and 18 internal links. Render remains 31 pages;
+updated import instructions on pages 15/16 inspected. Specification links and
+diff whitespace pass. Final full clean verification and exact-head CI remain.
+Evidence: /workspace/p27-c15-evidence/. No user database or financial CSV touched.

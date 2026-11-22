@@ -32,12 +32,12 @@ final class ExchequerImportReviewPane extends BorderPane
     private final TextField informationReference = new TextField();
     private final TextField informationStatement = new TextField();
     private final TextField informationIncoming = new TextField();
-    private final ComboBox<TransactionLineEditorModel.Option> payee = new ComboBox<>();
-    private final ComboBox<TransactionLineEditorModel.Option> account = new ComboBox<>();
-    private final ComboBox<TransactionLineEditorModel.Option> fund = new ComboBox<>();
-    private final ComboBox<TransactionLineEditorModel.Option> budget = new ComboBox<>();
-    private final ComboBox<TransactionLineEditorModel.Option> activity = new ComboBox<>();
-    private final ComboBox<TransactionLineEditorModel.Option> merchant = new ComboBox<>();
+    private final SuggestedImportComboBox payee = new SuggestedImportComboBox(true, this::capture);
+    private final SuggestedImportComboBox account = new SuggestedImportComboBox(false, this::capture);
+    private final SuggestedImportComboBox fund = new SuggestedImportComboBox(false, this::capture);
+    private final SuggestedImportComboBox budget = new SuggestedImportComboBox(true, this::capture);
+    private final SuggestedImportComboBox activity = new SuggestedImportComboBox(true, this::capture);
+    private final SuggestedImportComboBox merchant = new SuggestedImportComboBox(true, this::capture);
     private final ComboBox<ExpenseFunction> function = new ComboBox<>();
     private final TextField debit = new TextField();
     private final TextField credit = new TextField();
@@ -48,8 +48,14 @@ final class ExchequerImportReviewPane extends BorderPane
     private final Label totals = new Label();
     private final Label selectedValidation = new Label();
     private final Button commit = new Button("Commit Reviewed Entries…");
+    private final Button applyEntry = new Button("Apply Entry Changes");
+    private final Button cancelEntry = new Button("Cancel Entry Changes");
+    private final Button deleteEntries = new Button("Delete Selected Entries");
+    private final Button refresh = new Button("Refresh Review");
     private final WorkPaneTabs pages = new WorkPaneTabs("exchequerReviewPages");
     private ExchequerImportService.Preview preview;
+    private TransactionLineEditorModel.ReferenceData currentChoices = new TransactionLineEditorModel.ReferenceData(
+            List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
     private EntryDraft selected;
     private LineDraft selectedLine;
     private boolean loading;
@@ -88,16 +94,39 @@ final class ExchequerImportReviewPane extends BorderPane
         reviewed.setMaxWidth(Double.MAX_VALUE);
         similar.setMaxWidth(Double.MAX_VALUE);
         similar.setTooltip(new Tooltip("Select only after reviewing existing Journal entries with the same date and amount. Exact source duplicates remain blocked."));
-        VBox header = new VBox(6, new FlowPane(8, 6, commit,
-                button("Refresh Choices", "refreshExchequerChoices", this::refreshChoices)), reviewed, similar, status);
+        refresh.setId("refreshExchequerChoices");
+        refresh.setOnAction(event -> refreshChoices());
+        refresh.setTooltip(new Tooltip("Reload available choices and revalidate. Applied edits stay accepted; valid updated rows return to normal text."));
+        VBox header = new VBox(6, new FlowPane(8, 6, commit, refresh), reviewed, similar, status);
         ScrollPane headerScroll = scroll(header);
         buildEntryTable();
         buildLineTable();
         Button edit = button("Edit Selected", "editExchequerEntry", () -> pages.getSelectionModel().select(1));
-        Button remove = button("Delete Proposed Entry", "deleteExchequerEntry", this::deleteSelected);
+        deleteEntries.setId("deleteExchequerEntry");
+        deleteEntries.setOnAction(event -> deleteSelected());
+        deleteEntries.setTooltip(new Tooltip("Remove selected proposals only. Use Ctrl/Cmd or Shift to select several entries; CSV and Journal are unchanged."));
         entries.setRowFactory(table ->
         {
-            TableRow<EntryDraft> row = new TableRow<>();
+            TableRow<EntryDraft> row = new TableRow<>()
+            {
+                @Override
+                protected void updateItem(EntryDraft item, boolean empty)
+                {
+                    super.updateItem(item, empty);
+                    getStyleClass().removeAll("import-entry-invalid", "import-entry-updated");
+                    if (!empty && item != null)
+                    {
+                        if (!validation(item).equals("Ready for review"))
+                        {
+                            getStyleClass().add("import-entry-invalid");
+                        }
+                        else if (item.updated)
+                        {
+                            getStyleClass().add("import-entry-updated");
+                        }
+                    }
+                }
+            };
             row.setOnMouseClicked(event ->
             {
                 if (event.getClickCount() == 2 && !row.isEmpty())
@@ -122,11 +151,14 @@ final class ExchequerImportReviewPane extends BorderPane
                 event.consume();
             }
         });
+        entries.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        entries.getSelectionModel().getSelectedItems().addListener(
+                (javafx.collections.ListChangeListener<EntryDraft>) change -> updateAvailability());
         entries.getSelectionModel().selectedItemProperty().addListener((o, a, b) -> selectEntry(b));
         lines.getSelectionModel().selectedItemProperty().addListener((o, a, b) -> selectLine(b));
         Button showSplits = button("Show Splits 1–4", "showExchequerSplits", () -> entries.getColumns().stream()
                 .filter(column -> "split-1".equals(column.getId())).findFirst().ifPresent(entries::scrollToColumn));
-        VBox list = new VBox(6, new FlowPane(8, 6, edit, remove, showSplits), entries);
+        VBox list = new VBox(6, new FlowPane(8, 6, edit, deleteEntries, showSplits), entries);
         VBox.setVgrow(entries, Priority.ALWAYS);
         pages.addPane("Proposed Entries", list);
         pages.addPane("Edit Entry", buildEditor());
@@ -134,6 +166,7 @@ final class ExchequerImportReviewPane extends BorderPane
         source.setEditable(false);
         source.setWrapText(false);
         pages.addPane("Original Source and Diagnostics", source);
+        pages.getSelectionModel().selectedIndexProperty().addListener((o, a, b) -> updateAvailability());
         SplitPane workspace = new SplitPane(headerScroll, pages);
         workspace.setId("exchequerReviewWorkspaceSplit");
         workspace.setOrientation(Orientation.VERTICAL);
@@ -194,9 +227,12 @@ final class ExchequerImportReviewPane extends BorderPane
         entries.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         entries.setMinSize(0, 0);
         typedColumn(entries, "Source line", row -> row.sourceLine, Object::toString, 100);
+        column(entries, "Review status", row -> row.unapplied ? "Unapplied edits"
+                : !validation(row).equals("Ready for review") ? "Needs attention" : row.updated ? "Updated" : "Ready", 160);
         typedColumn(entries, "Worksheet row", row -> row.source.worksheetRow(), value -> Objects.toString(value, ""), 110);
         typedColumn(entries, "Date", row -> format.parseDate(row.date), format::formatDate, 120);
         column(entries, "Memo / Payee", row -> row.memo, 310);
+        suggestionColumn(entries, "Payee", row -> row.payee, 220);
         column(entries, "Transfer ID / Check #", row -> row.informationReference, 180);
         typedColumn(entries, "Statement date (information)", row -> format.parseDate(row.informationStatement), format::formatDate, 160);
         typedColumn(entries, "Incoming date", row -> format.parseDate(row.informationIncoming), format::formatDate, 140);
@@ -209,7 +245,7 @@ final class ExchequerImportReviewPane extends BorderPane
         typedColumn(entries, "Proposed debit", row -> row.total(true), format::formatMoney, 130);
         typedColumn(entries, "Proposed credit", row -> row.total(false), format::formatMoney, 130);
         typedColumn(entries, "Debit minus credit", row -> row.total(true).subtract(row.total(false)), this::differenceText, 180);
-        column(entries, "Fund label", row -> row.source.fund(), 150);
+        column(entries, "CSV Fund label", row -> row.source.fund(), 150);
         column(entries, "Validation", this::validation, 430);
         entries.setPlaceholder(new Label("No proposed monetary entries."));
     }
@@ -221,13 +257,13 @@ final class ExchequerImportReviewPane extends BorderPane
         lines.setMinSize(0, 0);
         column(lines, "Source split", row -> row.sourceOrdinal == 0 ? "Bank / added line" : "Split " + row.sourceOrdinal, 120);
         column(lines, "Source label", row -> row.hint, 220);
-        column(lines, "Account", row -> label(row.account), 250);
-        column(lines, "Fund", row -> label(row.fund), 200);
+        suggestionColumn(lines, "Account", row -> row.account, 250);
+        suggestionColumn(lines, "Fund", row -> row.fund, 200);
         typedColumn(lines, "Debit", row -> format.parseMoney(row.debit), format::formatMoney, 120);
         typedColumn(lines, "Credit", row -> format.parseMoney(row.credit), format::formatMoney, 120);
-        column(lines, "Budget", row -> label(row.budget), 180);
-        column(lines, "Event", row -> label(row.activity), 180);
-        column(lines, "Merchant", row -> label(row.merchant), 180);
+        suggestionColumn(lines, "Budget", row -> row.budget, 180);
+        suggestionColumn(lines, "Event", row -> row.activity, 180);
+        suggestionColumn(lines, "Merchant", row -> row.merchant, 180);
         column(lines, "Expense function", row -> Objects.toString(row.function, ""), 150);
         column(lines, "Notes", row -> row.notes, 220);
     }
@@ -253,6 +289,10 @@ final class ExchequerImportReviewPane extends BorderPane
             });
             combo.setMaxWidth(Double.MAX_VALUE);
         }
+        payee.setId("exchequerEntryPayee");
+        budget.setId("exchequerLineBudget");
+        activity.setId("exchequerLineEvent");
+        merchant.setId("exchequerLineMerchant");
         account.setId("exchequerLineAccount");
         fund.setId("exchequerLineFund");
         debit.setId("exchequerLineDebit");
@@ -262,7 +302,7 @@ final class ExchequerImportReviewPane extends BorderPane
         GridPane form = new GridPane();
         form.setHgap(8);
         form.setVgap(6);
-        form.addRow(0, new Label("Date"), date, new Label("Payee (optional)"), payee);
+        form.addRow(0, new Label("Date"), date, new Label("Payee (optional)"), payee.field());
         form.addRow(1, new Label("Memo"), memo);
         GridPane.setColumnSpan(memo, 3);
         informationReference.setId("exchequerTransferCheckReference");
@@ -272,10 +312,10 @@ final class ExchequerImportReviewPane extends BorderPane
         form.addRow(2, new Label("Transfer ID / Check #"), informationReference,
                 new Label("Statement date (information)"), informationStatement);
         form.addRow(3, new Label("Incoming check / transfer date"), informationIncoming);
-        form.addRow(4, new Label("Account"), account, new Label("Fund"), fund);
+        form.addRow(4, new Label("Account"), account.field(), new Label("Fund"), fund.field());
         form.addRow(5, new Label("Debit"), debit, new Label("Credit"), credit);
-        form.addRow(6, new Label("Budget (optional)"), budget, new Label("Event (optional)"), activity);
-        form.addRow(7, new Label("Merchant (optional)"), merchant, new Label("Expense function"), function);
+        form.addRow(6, new Label("Budget (optional)"), budget.field(), new Label("Event (optional)"), activity.field());
+        form.addRow(7, new Label("Merchant (optional)"), merchant.field(), new Label("Expense function"), function);
         form.addRow(8, new Label("Line notes"), notes);
         GridPane.setColumnSpan(notes, 3);
         form.setMinWidth(Region.USE_PREF_SIZE);
@@ -299,10 +339,7 @@ final class ExchequerImportReviewPane extends BorderPane
                 capture();
             }
         });
-        for (var combo : List.of(account, fund, budget, activity, merchant, payee, function))
-        {
-            combo.valueProperty().addListener((o, a, b) -> capture());
-        }
+        function.valueProperty().addListener((o, a, b) -> capture());
         for (var field : List.of(debit, credit))
         {
             field.focusedProperty().addListener((o, a, b) ->
@@ -333,6 +370,7 @@ final class ExchequerImportReviewPane extends BorderPane
             {
                 LineDraft line = new LineDraft();
                 selected.lines.add(line);
+                selected.unapplied = true;
                 lines.getItems().add(line);
                 lines.getSelectionModel().select(line);
                 changed();
@@ -343,14 +381,23 @@ final class ExchequerImportReviewPane extends BorderPane
             if (selected != null && selectedLine != null)
             {
                 selected.lines.remove(selectedLine);
+                selected.unapplied = true;
                 lines.getItems().remove(selectedLine);
                 changed();
             }
         });
         Button map = button("Apply Mappings to Same Source Labels", "mapExchequerLabels", this::applyMatchingMappings);
-        map.setTooltip(new Tooltip("Apply this account to matching source bank/category labels and this fund to matching source fund labels across proposed entries."));
+        map.setTooltip(new Tooltip("Reuse resolved Account, Fund, Payee, Budget and Merchant choices or explicit clearing for the same nonblank source labels across proposed entries."));
         selectedValidation.setWrapText(true);
-        VBox editor = new VBox(6, form, new FlowPane(8, 6, add, remove, map), totals, selectedValidation);
+        applyEntry.setId("applyExchequerEntryChanges");
+        applyEntry.setOnAction(event -> applyEntryChanges());
+        applyEntry.setTooltip(new Tooltip("Validate and accept this whole entry into the proposed batch. Journal is written only by Commit Reviewed Entries."));
+        UiPermissionGate.gate(applyEntry, ApplicationPermission.BOOKKEEPING_WRITE, "Apply proposed entry changes");
+        cancelEntry.setId("cancelExchequerEntryChanges");
+        cancelEntry.setOnAction(event -> cancelEntryChanges());
+        cancelEntry.setTooltip(new Tooltip("Restore this entry's last applied proposal, including all lines, mappings and information."));
+        VBox editor = new VBox(6, new FlowPane(8, 6, applyEntry, cancelEntry), form,
+                new FlowPane(8, 6, add, remove, map), totals, selectedValidation);
         editor.setMinWidth(Region.USE_PREF_SIZE);
         SplitPane split = new SplitPane(scroll(editor), lines);
         split.setId("exchequerEntryEditorSplit");
@@ -366,19 +413,14 @@ final class ExchequerImportReviewPane extends BorderPane
         {
             return;
         }
+        selected.unapplied = true;
         selected.date = date.getText();
         selected.memo = memo.getText();
         selected.informationReference = informationReference.getText();
         selected.informationStatement = informationStatement.getText();
         selected.informationIncoming = informationIncoming.getText();
-        selected.payee = payee.getValue();
         if (selectedLine != null)
         {
-            selectedLine.account = account.getValue();
-            selectedLine.fund = fund.getValue();
-            selectedLine.budget = budget.getValue();
-            selectedLine.activity = activity.getValue();
-            selectedLine.merchant = merchant.getValue();
             selectedLine.function = function.getValue();
             // Keep exact raw numeric input; display normalization must not round stored precision.
             selectedLine.notes = notes.getText();
@@ -395,7 +437,7 @@ final class ExchequerImportReviewPane extends BorderPane
         informationReference.setText(entry == null ? "" : entry.informationReference);
         informationStatement.setText(entry == null ? "" : entry.informationStatement);
         informationIncoming.setText(entry == null ? "" : entry.informationIncoming);
-        payee.setValue(entry == null ? null : entry.payee);
+        payee.show(entry == null ? null : entry.payee);
         lines.getItems().setAll(entry == null ? List.of() : entry.lines);
         loading = false;
         lines.getSelectionModel().selectFirst();
@@ -404,17 +446,18 @@ final class ExchequerImportReviewPane extends BorderPane
             selectLine(null);
         }
         updateTotals();
+        updateAvailability();
     }
 
     private void selectLine(LineDraft line)
     {
         selectedLine = line;
         loading = true;
-        account.setValue(line == null ? null : line.account);
-        fund.setValue(line == null ? null : line.fund);
-        budget.setValue(line == null ? null : line.budget);
-        activity.setValue(line == null ? null : line.activity);
-        merchant.setValue(line == null ? null : line.merchant);
+        account.show(line == null ? null : line.account);
+        fund.show(line == null ? null : line.fund);
+        budget.show(line == null ? null : line.budget);
+        activity.show(line == null ? null : line.activity);
+        merchant.show(line == null ? null : line.merchant);
         function.setValue(line == null ? null : line.function);
         debit.setText(line == null ? "" : displayMoney(line.debit));
         credit.setText(line == null ? "" : displayMoney(line.credit));
@@ -430,28 +473,80 @@ final class ExchequerImportReviewPane extends BorderPane
         }
         for (var entry : entries.getItems())
         {
+            boolean modified = copySameSource(entry.payee, selected.payee);
             for (var line : entry.lines)
             {
-                if (!selectedLine.hint.equals("Added line") && line.hint.equals(selectedLine.hint) && selectedLine.account != null)
+                if (!selectedLine.hint.equals("Added line") && line.hint.equals(selectedLine.hint))
                 {
-                    line.account = selectedLine.account;
+                    modified |= line.account.copyResolvedChoice(selectedLine.account);
                 }
-                if (entry.source.fund().equals(selected.source.fund()) && selectedLine.fund != null)
-                {
-                    line.fund = selectedLine.fund;
-                }
+                modified |= copySameSource(line.fund, selectedLine.fund);
+                modified |= copySameSource(line.budget, selectedLine.budget);
+                modified |= copySameSource(line.merchant, selectedLine.merchant);
+            }
+            if (modified && !entry.unapplied)
+            {
+                entry.updated = true;
+                entry.baseline = entry.copy();
             }
         }
         changed();
     }
 
+    private static boolean copySameSource(ImportReferenceSuggestion target, ImportReferenceSuggestion from)
+    {
+        if (!from.sourceText().isBlank() && target.sourceText().equals(from.sourceText()))
+        {
+            return target.copyResolvedChoice(from);
+        }
+        return false;
+    }
+
+    private void applyEntryChanges()
+    {
+        if (selected == null || applyEntry.isDisabled())
+        {
+            return;
+        }
+        String problem = validation(selected, false);
+        if (!problem.equals("Ready for review"))
+        {
+            status.setText("Entry changes not applied: " + problem);
+            selectedValidation.setText(problem);
+            return;
+        }
+        selected.unapplied = false;
+        selected.updated = true;
+        selected.baseline = selected.copy();
+        changed();
+        pages.getSelectionModel().select(0);
+        status.setText("Entry changes accepted in the proposed batch. Bold marks the updated entry; Journal has not been written.");
+        resultListener.accept(new AppPanel.RunCommandResult(true, status.getText()));
+    }
+
+    private void cancelEntryChanges()
+    {
+        if (selected != null && selected.unapplied && !tasks.busyProperty().get() && !accepted)
+        {
+            selected.restoreBaseline();
+            selectEntry(selected);
+            changed();
+            status.setText("Entry changes cancelled; its last applied proposal is restored.");
+        }
+    }
+
     private void deleteSelected()
     {
-        if (!tasks.busyProperty().get() && !accepted && entries.getSelectionModel().getSelectedItem() != null)
+        if (!tasks.busyProperty().get() && !accepted)
         {
-            entries.getItems().remove(entries.getSelectionModel().getSelectedItem());
+            var removed = List.copyOf(entries.getSelectionModel().getSelectedItems());
+            entries.getItems().removeAll(removed);
+            if (entries.getSelectionModel().getSelectedItem() == null && !entries.getItems().isEmpty())
+            {
+                entries.getSelectionModel().selectFirst();
+            }
             changed();
-            status.setText("Proposed entry removed. The source CSV and existing journal entries are unchanged.");
+            status.setText("Removed " + removed.size() + " proposed entries. The source CSV and Journal are unchanged.");
         }
     }
 
@@ -482,11 +577,22 @@ final class ExchequerImportReviewPane extends BorderPane
         totals.setText("Debit: " + format.formatMoney(dr) + "   Credit: " + format.formatMoney(cr)
                 + "   Difference: " + differenceText(dr.subtract(cr)));
         totals.setWrapText(true);
-        selectedValidation.setText(selected == null ? "Select an entry to edit." : validation(selected));
+        String problem = selected == null ? "Select an entry to edit." : validation(selected, false);
+        selectedValidation.setText(selected != null && selected.unapplied && problem.equals("Ready for review")
+                ? "Ready to apply this entry's changes." : problem);
     }
 
     private String validation(EntryDraft entry)
     {
+        return validation(entry, true);
+    }
+
+    private String validation(EntryDraft entry, boolean includePending)
+    {
+        if (includePending && entry.unapplied)
+        {
+            return "Apply or cancel this entry's pending changes.";
+        }
         if (entry.imported)
         {
             return "Already imported — delete this proposal";
@@ -501,8 +607,19 @@ final class ExchequerImportReviewPane extends BorderPane
             {
                 return "Line notes must be at most 500 characters.";
             }
-            var result = ExchequerImportService.validateCandidate(entry.command());
-            return result.valid() ? "Ready for review" : String.join(" ", result.errors());
+            var errors = new ArrayList<String>();
+            errors.add(entry.payee.validation("Payee"));
+            for (int index = 0; index < entry.lines.size(); index++)
+            {
+                var line = entry.lines.get(index);
+                String prefix = "Line " + (index + 1) + " ";
+                errors.add(line.budget.validation(prefix + "Budget category"));
+                errors.add(line.activity.validation(prefix + "Event"));
+                errors.add(line.merchant.validation(prefix + "Merchant"));
+            }
+            errors.addAll(ExchequerImportService.validateCandidate(entry.command()).errors());
+            errors.removeIf(String::isBlank);
+            return errors.isEmpty() ? "Ready for review" : String.join(" ", errors);
         }
         catch (IllegalArgumentException ex)
         {
@@ -515,6 +632,14 @@ final class ExchequerImportReviewPane extends BorderPane
         boolean invalid = entries.getItems().stream().anyMatch(entry -> !validation(entry).equals("Ready for review"));
         commit.setDisable(preview == null || accepted || tasks.busyProperty().get() || invalid
                 || entries.getItems().isEmpty() || !reviewed.isSelected() || !scopeMatches.getAsBoolean());
+        boolean busy = tasks.busyProperty().get() || accepted;
+        applyEntry.setDisable(busy || selected == null || !selected.unapplied || !scopeMatches.getAsBoolean());
+        cancelEntry.setDisable(busy || selected == null || !selected.unapplied);
+        refresh.setDisable(busy || !scopeMatches.getAsBoolean());
+        refresh.setTooltip(new Tooltip("Reload choices without accepting or discarding unfinished edits. Applied changes remain accepted; recent-update markers clear."));
+        int count = entries.getSelectionModel().getSelectedItems().size();
+        deleteEntries.setDisable(busy || count == 0);
+        deleteEntries.setText("Delete Selected Entries (" + count + ")");
         capabilitiesChanged.run();
     }
 
@@ -574,6 +699,11 @@ final class ExchequerImportReviewPane extends BorderPane
         return commit;
     }
 
+    Button selectedSaveButton()
+    {
+        return pages.getSelectionModel().getSelectedIndex() == 1 ? applyEntry : commit;
+    }
+
     boolean hasUnsavedChanges()
     {
         return tasks.busyProperty().get() || preview != null && !accepted && !entries.getItems().isEmpty();
@@ -596,15 +726,34 @@ final class ExchequerImportReviewPane extends BorderPane
 
     private void refreshChoices()
     {
-        if (tasks.busyProperty().get() || accepted || !scopeMatches.getAsBoolean())
+        if (refresh.isDisabled())
         {
             return;
         }
         tasks.runPreview("exchequer-refresh", "Refresh mapping choices", references, refs ->
         {
             loading = true;
+            var retainedLine = selectedLine;
             replaceChoices(refs);
+            entries.getItems().forEach(entry ->
+            {
+                entry.updated = false;
+                if (entry.unapplied)
+                {
+                    entry.baseline.payee.refresh(refs.counterparties());
+                    entry.baseline.lines.forEach(LineDraft::refreshChoices);
+                    entry.baseline.updated = false;
+                }
+                else
+                {
+                    entry.baseline = entry.copy();
+                }
+            });
             selectEntry(selected);
+            if (selected != null && selected.lines.contains(retainedLine))
+            {
+                lines.getSelectionModel().select(retainedLine);
+            }
             loading = false;
             changed();
             status.setText("Choices refreshed; review the retained draft mappings before commit.");
@@ -613,14 +762,18 @@ final class ExchequerImportReviewPane extends BorderPane
 
     private void replaceChoices(TransactionLineEditorModel.ReferenceData refs)
     {
-        account.getItems().setAll(refs.accounts());
-        fund.getItems().setAll(refs.funds());
-        for (var pair : List.of(Map.entry(budget, refs.budgetCategories()), Map.entry(activity, refs.activities()),
-                Map.entry(merchant, refs.merchants()), Map.entry(payee, refs.counterparties())))
+        currentChoices = refs;
+        for (var entry : entries.getItems())
         {
-            pair.getKey().getItems().setAll(pair.getValue());
-            pair.getKey().getItems().add(0, null);
+            entry.payee.refresh(refs.counterparties());
+            entry.lines.forEach(LineDraft::refreshChoices);
         }
+        account.replaceChoices(refs.accounts());
+        fund.replaceChoices(refs.funds());
+        budget.replaceChoices(refs.budgetCategories());
+        activity.replaceChoices(refs.activities());
+        merchant.replaceChoices(refs.merchants());
+        payee.replaceChoices(refs.counterparties());
     }
 
     private static Button button(String text, String id, Runnable action)
@@ -641,6 +794,34 @@ final class ExchequerImportReviewPane extends BorderPane
         pane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         pane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         return pane;
+    }
+
+    private static <T> void suggestionColumn(TableView<T> table, String title,
+            Function<T, ImportReferenceSuggestion> value, double width)
+    {
+        TableColumn<T, String> column = new TableColumn<>(title);
+        column.setPrefWidth(width);
+        column.setId(title.toLowerCase(Locale.ROOT).replace(' ', '-'));
+        column.setCellValueFactory(cell -> new SimpleStringProperty(value.apply(cell.getValue()).displayText()));
+        column.setCellFactory(ignored -> new TableCell<>()
+        {
+            @Override
+            protected void updateItem(String text, boolean empty)
+            {
+                super.updateItem(text, empty);
+                setText(empty ? null : text);
+                getStyleClass().remove("import-source-suggestion");
+                var row = getTableRow() == null ? null : getTableRow().getItem();
+                boolean suggested = !empty && row != null && value.apply(row).suggested();
+                if (suggested)
+                {
+                    getStyleClass().add("import-source-suggestion");
+                }
+                setTooltip(empty || text == null || text.isBlank() ? null
+                        : new Tooltip((suggested ? "Unmapped CSV value: " : "") + text));
+            }
+        });
+        table.getColumns().add(column);
     }
 
     private static <T> void column(TableView<T> table, String title, Function<T, String> value, double width)
@@ -749,13 +930,18 @@ final class ExchequerImportReviewPane extends BorderPane
         private String informationReference;
         private String informationStatement;
         private String informationIncoming;
-        private TransactionLineEditorModel.Option payee;
+        private final ImportReferenceSuggestion payee;
+        private boolean unapplied;
+        private boolean updated;
+        private EntryDraft baseline;
 
         EntryDraft(ExchequerImportService.ProposedEntry proposal, ExchequerReportCsvDocument.Row source, boolean imported)
         {
             sourceLine = proposal.sourceLine();
             this.source = source;
             this.imported = imported;
+            payee = new ImportReferenceSuggestion(source.payee(), false);
+            payee.refresh(currentChoices.counterparties());
             date = format.formatDate(proposal.command().date());
             memo = proposal.command().memo();
             informationReference = Objects.toString(proposal.command().information().transferOrCheckReference(), "");
@@ -765,7 +951,9 @@ final class ExchequerImportReviewPane extends BorderPane
                     .map(org.nonprofitbookkeeping.interchange.exchequer.ExchequerReportCsvDocument.Split::ordinal).iterator();
             for (var line : proposal.command().lines())
             {
-                LineDraft draft = new LineDraft();
+                String accountHint = line.notes().startsWith("Bank:") ? source.bankAccount()
+                        : line.notes().startsWith("Category: ") ? line.notes().substring(10) : "";
+                LineDraft draft = new LineDraft(accountHint, source.fund(), source.budgetCategory(), source.merchant());
                 draft.hint = line.notes();
                 if (!line.notes().startsWith("Bank:") && ordinals.hasNext())
                 {
@@ -776,6 +964,41 @@ final class ExchequerImportReviewPane extends BorderPane
                 draft.credit = line.credit().toPlainString();
                 lines.add(draft);
             }
+            baseline = copy();
+        }
+
+        private EntryDraft(EntryDraft from)
+        {
+            sourceLine = from.sourceLine;
+            source = from.source;
+            imported = from.imported;
+            date = from.date;
+            memo = from.memo;
+            informationReference = from.informationReference;
+            informationStatement = from.informationStatement;
+            informationIncoming = from.informationIncoming;
+            payee = from.payee.copy();
+            from.lines.forEach(line -> lines.add(line.copy()));
+            updated = from.updated;
+        }
+
+        EntryDraft copy()
+        {
+            return new EntryDraft(this);
+        }
+
+        void restoreBaseline()
+        {
+            date = baseline.date;
+            memo = baseline.memo;
+            informationReference = baseline.informationReference;
+            informationStatement = baseline.informationStatement;
+            informationIncoming = baseline.informationIncoming;
+            payee.restore(baseline.payee);
+            lines.clear();
+            baseline.lines.forEach(line -> lines.add(line.copy()));
+            unapplied = false;
+            updated = baseline.updated;
         }
 
         BigDecimal total(boolean debit)
@@ -794,7 +1017,7 @@ final class ExchequerImportReviewPane extends BorderPane
                         ? "DR " + line.debit + " / CR " + line.credit
                         : dr.signum() != 0 ? "DR " + format.formatMoney(dr) : "CR " + format.formatMoney(cr);
                 String category = line.hint.startsWith("Category: ") ? line.hint.substring(10) : line.hint;
-                return amount + " — " + category + " — " + (line.account == null ? "Unmapped" : line.account.code());
+                return amount + " — " + category + " — " + (line.account.value() == null ? "Unmapped" : line.account.value().code());
             }).collect(java.util.stream.Collectors.joining("; "));
         }
 
@@ -804,7 +1027,7 @@ final class ExchequerImportReviewPane extends BorderPane
             {
                 throw new IllegalArgumentException("Enter a valid transaction date.");
             }
-            return new TransactionCommand(format.parseDate(date), id(payee), memo, null,
+            return new TransactionCommand(format.parseDate(date), id(payee.value()), memo, null,
                     lines.stream().map(LineDraft::command).toList(), List.of(),
                     new org.nonprofitbookkeeping.model.TransactionInformation(informationReference,
                             optionalDate(informationStatement, "statement date"), optionalDate(informationIncoming, "incoming date")));
@@ -818,7 +1041,51 @@ final class ExchequerImportReviewPane extends BorderPane
         private String debit = "0";
         private String credit = "0";
         private String notes = "";
-        private TransactionLineEditorModel.Option account, fund, budget, activity, merchant;
+        private final ImportReferenceSuggestion account, fund, budget, activity, merchant;
+
+        LineDraft()
+        {
+            this("", "", "", "");
+        }
+
+        LineDraft(String accountHint, String fundHint, String budgetHint, String merchantHint)
+        {
+            account = new ImportReferenceSuggestion(accountHint, true);
+            fund = new ImportReferenceSuggestion(fundHint, true);
+            budget = new ImportReferenceSuggestion(budgetHint, false);
+            activity = new ImportReferenceSuggestion("", false);
+            merchant = new ImportReferenceSuggestion(merchantHint, false);
+            refreshChoices();
+        }
+
+        private LineDraft(LineDraft from)
+        {
+            hint = from.hint;
+            sourceOrdinal = from.sourceOrdinal;
+            debit = from.debit;
+            credit = from.credit;
+            notes = from.notes;
+            function = from.function;
+            account = from.account.copy();
+            fund = from.fund.copy();
+            budget = from.budget.copy();
+            activity = from.activity.copy();
+            merchant = from.merchant.copy();
+        }
+
+        LineDraft copy()
+        {
+            return new LineDraft(this);
+        }
+
+        void refreshChoices()
+        {
+            account.refresh(currentChoices.accounts());
+            fund.refresh(currentChoices.funds());
+            budget.refresh(currentChoices.budgetCategories());
+            activity.refresh(currentChoices.activities());
+            merchant.refresh(currentChoices.merchants());
+        }
         private ExpenseFunction function;
 
         TransactionLineCommand command()
@@ -829,7 +1096,7 @@ final class ExchequerImportReviewPane extends BorderPane
             {
                 throw new IllegalArgumentException("Enter valid debit and credit amounts.");
             }
-            return new TransactionLineCommand(id(account), id(fund), id(budget), id(activity), id(merchant),
+            return new TransactionLineCommand(id(account.value()), id(fund.value()), id(budget.value()), id(activity.value()), id(merchant.value()),
                     dr, cr, false, notes, null, function);
         }
     }

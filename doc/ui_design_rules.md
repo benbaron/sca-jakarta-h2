@@ -208,3 +208,17 @@ saved/updated/blocked/failed outcome. Entry shows validation failures without
 requiring navigation to a hidden Journal header. Background list refresh must
 not overwrite completed command feedback. Footer text/tooltips belong to the
 current workspace; late results from an obsolete owner cannot replace them.
+
+
+## P27-C15 import source suggestions
+
+Exchequer lookup hints and their final values share the same native combo field.
+Grey source text is not a selection or a fabricated ID. Resolve unique exact
+matches only among eligible active references, preserve explicit choices/clearing,
+and invalidate stale IDs on refresh. Supplied optional hints require a choice or
+Clear. Whole-record Apply accepts into the transient batch; Cancel restores its
+last applied draft. Unapplied edits survive refresh without acceptance and block commit. Proposed rows have
+textual status plus normal/grey/bold rendering; Refresh reloads/revalidates and
+removes the update marker without another acceptance. Selection highlights retain
+readable contrast. Multi-select proposal deletion leaves source and Journal intact.
+No extra window/pane. See [C15](P27-C15-import-suggestions.md).
