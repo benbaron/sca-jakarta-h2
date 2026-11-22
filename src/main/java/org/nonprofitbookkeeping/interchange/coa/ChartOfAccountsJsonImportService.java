@@ -169,11 +169,12 @@ public final class ChartOfAccountsJsonImportService
                 {
                     CoaPreviewItem item = entry.getKey();
                     Account account = entry.getValue();
+                    // Codes are chart-local. Scope new receipts without rewriting legacy aliases.
                     identityService.record(
                             em,
                             company,
                             InterchangeFormat.COA_JSON,
-                            sourceSystem,
+                            sourceSystem + "/chart/" + targetChart.getPortableId(),
                             "ACCOUNT",
                             item.account().sourceCode(),
                             normalizedAccountHash(item, sourceToTarget),

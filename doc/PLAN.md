@@ -1,15 +1,49 @@
 ---
 plan_version: 521
 active_phase: P28
-active_slice: P28-C1
+active_slice: P28-C3
 active_status: VERIFYING
-active_branch: codex/P28-C1-user-manual
-active_pull_request: null
+active_branch: codex/P28-C3-manual-procedure-tests
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/440
 active_head: 45cba4ae05b80d1ae56a37538aea385914225bfa
-next_action: "Write first task-based user manual and Word review copy, including company setup/management, databases, imports/exports and reporting; verify procedures and document rendering, run checks and publish focused PR. Do not merge."
+next_action: "P28-C3 final focused gate passes 33 tests. Finish local clean verification and inspect final published-head CI for PR 440. Keep VERIFYING until owner merge. C2/#439 remains open; the user-selected Word manual is authoritative."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P28-C3 Executable manual procedures — owner request
+
+Publication: [draft PR #440](https://github.com/benbaron/sca-jakarta-h2/pull/440),
+implementation **15f87277c3a3f052f9a36d7327238487ee1ebf59**, tree
+**9178453aced64f7f96a99e45c00df2fcb95a7b4b**. Current main remains ef1006f7;
+new branch was confirmed absent and published by ordinary push. Native remote
+and PR read-back match. This following documentation-only receipt requires its
+resulting final head to receive exact-head CI. Local clean verification is
+running; no final success or merge is claimed.
+
+VERIFYING on codex/P28-C3-manual-procedure-tests from current main ef1006f7.
+[Contract](P28-C3-manual-procedure-tests.md): derive behavioral unit/integration
+scenarios from the authoritative [Word manual](user-manual.docx) and map all
+chapters to existing/new tests. No Word content changes. One narrow chart-import identity correction is included after the new tests reproduced a documented-procedure failure.
+C1/#438 is confirmed merged and DONE. C2/[#439](https://github.com/benbaron/sca-jakarta-h2/pull/439)
+remains open, ready and VERIFYING at dadd715c with green CI 44978869793;
+its local final receipt b94bf080 remains on the owning branch. This independent
+test slice does not duplicate or merge that documentation PR. Latest owner
+Word-primary direction applies even before C2 merges.
+
+Read AGENTS, manual paragraphs/tables and current setup/Journal/import/banking/
+report/recovery tests/services. Baseline compile passes (24.5s); focused existing Journal/banking baseline passes
+10 tests, zero failures/errors/skips (01:13). New Journal rules, setup/Journal/
+bank/report, CSV review and recovery/handover scenarios are written, with an
+[18-chapter test map](user-manual-procedure-tests.md). The first run found a real
+second-chart JSON account-receipt collision: account codes were company-wide
+identity keys. New account-receipt namespaces are scoped by target chart portable UUID, keeping the source code as external ID;
+legacy aliases remain unchanged, with no schema or accounting change. This small
+prerequisite correction directly unblocks a manual procedure; the JSON contract
+and fresh/legacy receipt tests document it. One header-versus-instrument reference
+test assumption was corrected to match the manual. First corrected focused gate
+passes 27 tests (01:15); expanded gate passes 33 (01:19), all zero failures/errors/skips.
+The final namespace form retains Unicode code capacity; final focused gate passes 33 tests, zero failures/errors/skips (01:24). Final diff/links/test-map references pass; Word bytes are unchanged. New tests: 13 pure unit plus 10 service/file integration cases. Remaining: final local clean verification and exact-final-head Linux/Windows CI. No automatic merge.
 
 ### P28-C1 User manual first working draft — owner request
 
