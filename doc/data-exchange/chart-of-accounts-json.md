@@ -146,6 +146,18 @@ An identical second import MUST make no account changes. Matching is by normaliz
 
 All account and hierarchy writes occur in one caller-owned JPA transaction. Parent accounts are persisted before children, and durable interchange identities are written inside the same transaction. Any late failure rolls back the chart, accounts, hierarchy, and identity records together. Preview and validation perform no writes.
 
+Account codes are unique within a chart, not across all retained company charts.
+New COA_JSON account identity receipts append `/chart/<target-chart-portable-UUID>`
+to their source family/version/mode namespace; the external ID remains the source
+account code. This applies to all import modes and prevents two named charts
+with account code 1000 from claiming the same account receipt. Keeping the chart
+scope in the namespace preserves the external-ID capacity for Unicode codes.
+The chart receipt remains unchanged. Previously
+stored unscoped account receipts are retained without rewriting their keys,
+local record links, hashes or timestamps; new imports use the scoped identities.
+No schema or file-format version changes. This correction is covered by the
+[manual procedure tests](../user-manual-procedure-tests.md).
+
 Absent source accounts never delete or deactivate local accounts. A separate explicit administrative action is required for deactivation or deletion under current account-history protections.
 
 ## 9. Results and warnings
