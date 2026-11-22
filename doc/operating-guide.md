@@ -1,6 +1,6 @@
 # SCA Bookkeeping operating guide
 
-This guide describes the current production workspace. Use the active company and accounting period shown in the top chrome. Commands are permission-gated; a disabled command explains the missing role, selection, preview or other prerequisite.
+This guide is a quick reference to the current production workspace. For task-based procedures, use the [user manual](user-manual.md) or its [Word review copy](user-manual.docx). Verify the active company in the toolbar; select accounting defaults in Period Close. Commands are permission-gated; a disabled command explains the missing role, selection, preview or other prerequisite.
 
 ## Company setup and master data
 
@@ -26,7 +26,7 @@ Open **Banking** under **ACCOUNTING**. One shared bank/account selector controls
 
 Enter payment references in Journal or edit an eligible instrument in **Bank journal**. Its cleared flag/date describe this bank account only. A transfer's other bank account clears independently. **Open complete journal entry** opens the canonical entry for permitted corrections.
 
-In **Reconcile**, import OFX/QFX or CSV, or enter a statement header and lines manually. Imported dates and ending balance are offered for explicit review. For the first statement, confirm a known opening amount/date and review the starting journal position and outstanding items; the application does not assume zero or create an opening entry. Later statements inherit the preceding completed closing statement balance for that account. Beginning book balance is shown separately.
+In **Reconcile → Statement setup**, import OFX/QFX or CSV, or enter a statement header and lines manually. Enter statement manually reveals inline fields with Save statement entry / Cancel entry. Use **Match entries** for the paired tables. Imported dates and ending balance are offered for explicit review. For the first statement, confirm a known opening amount/date and review the starting journal position and outstanding items; the application does not assume zero or create an opening entry. Later statements inherit the preceding completed closing statement balance for that account. Beginning book balance is shown separately.
 
 Select equal-amount statement and bank-journal items, then **Match and clear**. One instrument's Fund allocations match together; normal journal and bank dates can differ. **Unmatch** restores the prior clearing facts. Outstanding checks carry forward. **Save progress** retains unfinished work; **Complete reconciliation** requires a known opening, zero difference, all statement items accounted for and no unresolved source errors. Completed history is read-only. Erroneous unlinked manual statement rows can be removed with their source/audit history retained; ledger corrections use Journal.
 
