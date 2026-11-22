@@ -1,17 +1,27 @@
 ---
-plan_version: 520
-active_phase: P27
-active_slice: P27-C14
+plan_version: 521
+active_phase: P28
+active_slice: P28-C1
 active_status: VERIFYING
-active_branch: codex/P27-C14-inline-bank-statement
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/437
-active_head: 347ac8af8dbbc5d9fa3c4aae17ad2f068cd5b3b3
-next_action: "Owner review and merge ready PR 437 at accepted head 347ac8af; all required gates passed. After confirmed merge, fetch main and select the earliest unfinished unblocked slice. Do not merge automatically."
+active_branch: codex/P28-C1-user-manual
+active_pull_request: null
+active_head: 45cba4ae05b80d1ae56a37538aea385914225bfa
+next_action: "Write first task-based user manual and Word review copy, including company setup/management, databases, imports/exports and reporting; verify procedures and document rendering, run checks and publish focused PR. Do not merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
+### P28-C1 User manual first working draft — owner request
+
+Owner requests a user manual and explicitly adds company setup/management, database handling, file import/export and reports/reporting. The selected reader format is Word (option 2); keep editable Markdown source with the repository and generate a matching Word review copy. This is a documentation-only correction to P28 release guidance. PR #437 is confirmed merged into main 45cba4ae; P27-C14 is DONE. Fresh codex/P28-C1-user-manual preserves its final local receipt as 8f399067. Existing ReleaseOperatingGuideTest baseline passes 2 tests (26.9s).
+
+[Manual contract](P28-C1-user-manual.md) governs this slice. Required reading: operating guide, panel guide, P28 release contract, interface operation matrix, UI/editor rules, Banking C12–C14 contract, report-library and interchange/recovery contracts. Required inspection: current company/security/database/chart/import/export/report/Banking/period-close controls and service guards. Write for volunteer bookkeepers with task-based steps, real labels, prerequisites, expected results and concrete troubleshooting. Explain database/company/chart/account/Fund/statement/reconciliation distinctions, optional NMR policy references and deliberate ownership repair. Core requested chapters must be usable, not an outline. Other established workflows receive concise introductions; further worked examples can follow owner review.
+
+Deliver doc/user-manual.md, generated doc/user-manual.docx, synthetic native Banking illustrations and concise generation/verification instructions. Link the manual from existing operating and panel guides; correct obsolete global-period wording. No application/schema/dependency change, no private source files or real user data in examples. Check source links, Word content/bookmarks/media and rendered pagination; run relevant existing guide checks, final clean verification and exact-head CI. Native application behavior was verified in the merged C14 checks; this slice does not require inventing a new app behavior or owner acceptance. The source and Word draft contain approximately 9,100 words across 18 task-based chapters, nine comparison/reference tables and two actual synthetic Banking illustrations. The corrected review render has 31 pages; selected layout/content pages and internal navigation were checked. Existing changed-guide checks pass two tests (36.5s). Word generation is documented in the contract and scripts/build-user-manual.py. Final Word integrity/navigation/media checks and changed-guide local links pass; the final render is 31 pages. Clean verification, publication and exact-head CI remain pending. Status VERIFYING; publication pending.
+
 ### P27-C14 Inline manual bank statement entry — owner correction
+
+Closeout: DONE. PR #437 merged into current main 45cba4ae05b80d1ae56a37538aea385914225bfa; accepted source 347ac8af and exact-head CI 44862154852 passed. The receipt below is historical. P28-C1 owns the subsequent user-manual request.
 
 Manual bank statement entry is implemented inline in Reconcile → Statement setup, with bank date, reference/check/deposit number, description and signed amount plus Save statement entry / Cancel entry. It shares the existing single-pane viewport and creates no entry window or extra split. Global Save targets the active inline entry; successful saving closes/clears that editor. Rejected input and unfinished edits stay scoped to company/database/account/reconciliation and restore on return. Cancel discards only that current entry; pending entries must be saved or cancelled before completing their reconciliation. Service validation/audit, permissions and the approved pane limit remain authoritative. No accounting, schema or unrelated dialog behavior changed.
 
