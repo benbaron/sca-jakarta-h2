@@ -52,3 +52,9 @@ claim a new editor/import feature. Local links and diff whitespace pass. LibreOf
 render remains 31 pages; cover/final page visually inspected. Changed-guide check
 passes two tests, zero failures/errors/skips (29.6s). Evidence is
 /workspace/p28-c2-evidence/. Final clean verification and exact-head CI pending.
+
+Published [draft PR #439](https://github.com/benbaron/sca-jakarta-h2/pull/439),
+implementation e33827c6a97993194fb6440f241d20d065423273, tree
+2e67bafda860d69ddaa8f8d91bf01255eb7e326e. Normal new-branch push and PR
+read-back match. This publication receipt changes documentation only; final
+clean verification is running and exact-final-head CI remains pending.

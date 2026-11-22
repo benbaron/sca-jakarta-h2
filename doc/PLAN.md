@@ -4,18 +4,20 @@ active_phase: P28
 active_slice: P28-C2
 active_status: VERIFYING
 active_branch: codex/P28-C2-word-primary
-active_pull_request: null
-active_head: 2421f514 (carried receipt; implementation pending)
-next_action: "P28-C2 document/guide checks passed; run final clean verification, publish a fresh PR and inspect exact-head CI. Edit the manual directly in Word; never regenerate it from Markdown."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/439
+active_head: e33827c6a97993194fb6440f241d20d065423273 (implementation; publication receipt follows)
+next_action: "P28-C2 document/guide checks passed; finish local clean verification and inspect final published-head CI for PR 439. Keep VERIFYING until owner review/merge. Edit the manual directly in Word; never regenerate it from Markdown."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P28-C2 Word as primary manual — owner correction
 
+Publication: [draft PR #439](https://github.com/benbaron/sca-jakarta-h2/pull/439), implementation e33827c6a97993194fb6440f241d20d065423273, tree 2e67bafda860d69ddaa8f8d91bf01255eb7e326e. New branch published by ordinary push after confirming it absent; native remote and PR metadata match. This following commit changes only publication documentation; inspect CI on its resulting final head, not the earlier implementation head. Local clean verification is running.
+
 VERIFYING on codex/P28-C2-word-primary, fresh from main ef1006f7495b069aa64a5b28d7c01f8ad5358433 after confirmed #438 merge. Prior local receipt is carried as 2421f514. The owner's explicit Word-primary instruction supersedes C1's Markdown-source workflow. [C2 contract](P28-C2-word-manual-authority.md) governs direct editing of [the authoritative Word manual](user-manual.docx), preservation of comments/tracked changes/formatting/media, a Markdown landing page only and removal of the old generator. Engineering specifications retain their own authority. No application/schema/accounting behavior changes.
 
-Required reading/inspection: AGENTS, current PLAN, C1 manual contract, both manuals, existing generator and operating/panel guide references; C1 is merged and DONE. Baseline ReleaseOperatingGuideTest passes two tests, zero failures/errors/skips (39.6s). Delivered: Word authority notices, Markdown landing page, retired generator and updated active instructions. All ZIP parts except word/document.xml are byte-identical; all original paragraphs except the final review notice are intact. Nine tables, two images, 18 valid Contents links and all 80 bookmarks remain; review annotation counts are unchanged. Local links pass; LibreOffice render remains 31 pages, cover/final page visually inspected. Changed-guide check passes two tests, zero failures/errors/skips (29.6s). Evidence: /workspace/p28-c2-evidence/. Remaining: final clean verification, fresh PR publication and exact-head Linux/Windows CI. Keep VERIFYING until owner merge; no automatic merge.
+Required reading/inspection: AGENTS, current PLAN, C1 manual contract, both manuals, existing generator and operating/panel guide references; C1 is merged and DONE. Baseline ReleaseOperatingGuideTest passes two tests, zero failures/errors/skips (39.6s). Delivered: Word authority notices, Markdown landing page, retired generator and updated active instructions. All ZIP parts except word/document.xml are byte-identical; all original paragraphs except the final review notice are intact. Nine tables, two images, 18 valid Contents links and all 80 bookmarks remain; review annotation counts are unchanged. Local links pass; LibreOffice render remains 31 pages, cover/final page visually inspected. Changed-guide check passes two tests, zero failures/errors/skips (29.6s). Evidence: /workspace/p28-c2-evidence/. Remaining: final local clean verification and final-published-head Linux/Windows CI. Keep VERIFYING until owner merge; no automatic merge.
 
 ### P28-C1 User manual first working draft — owner request
 
