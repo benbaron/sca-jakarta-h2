@@ -1,5 +1,13 @@
 # P27-C15 — CSV suggestions in import lookup fields
 
+Status: **DONE**. On 2026-11-22 America/Denver, the owner explicitly authorized
+merging [PR #441](https://github.com/benbaron/sca-jakarta-h2/pull/441). GitHub
+confirmed merge 17fa56aef67b9983b35827b2453b9f384f40bc4e and native fetch
+confirmed current main. Accepted source 7b310aca and workflow 45068903655 were
+rechecked before merge. The final validation receipt below remains valid;
+earlier open/unmerged/pending instructions are historical. [PLAN](PLAN.md)
+records the next-slice audit; no further unblocked adopted coding slice exists.
+
 The owner requests grey proposed source values in the same combo fields used for
 final choices. Clarifications adopt automatic unique exact matches, all applicable
 lookup fields and mandatory selection or explicit clearing of unmatched optional

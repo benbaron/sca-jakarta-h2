@@ -1,15 +1,60 @@
 ---
-plan_version: 529
+plan_version: 530
 active_phase: P27
 active_slice: P27-C15
-active_status: VERIFYING
-active_branch: codex/P27-C15-import-suggestions
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/441
-active_head: 7b310acaea1c1f1011e4682c8b3403cc77b348dd
-next_action: "Owner review the CSV suggestions, whole-entry Apply/Cancel, row states and multi-delete in ready PR 441 at accepted head 7b310aca; all local/display/document and Linux/Windows CI gates passed. Keep VERIFYING until confirmed merge; no automatic merge."
+active_status: DONE
+active_branch: null
+active_pull_request: null
+active_head: 17fa56aef67b9983b35827b2453b9f384f40bc4e
+next_action: "No adopted unblocked implementation slice remains after confirmed #441 merge. Retain unrecorded native owner acceptance as such; P27-S5 requires an explicit scope amendment. Resume from the next concrete owner request without reimplementing completed slices."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### Confirmed merge and next-slice audit — 2026-11-22 America/Denver
+
+Owner explicitly instructed “Merge PR #441 and continue.” GitHub merged
+[PR #441](https://github.com/benbaron/sca-jakarta-h2/pull/441) at
+**17fa56aef67b9983b35827b2453b9f384f40bc4e** after rechecking accepted head
+7b310aca and successful exact-head workflow 45068903655. Native fetch confirms
+that merge as current origin/main. **P27-C15 is DONE.** Its local final receipt
+d42885bd is preserved on fresh `codex/P27-C15-merge-closeout` as 69881900;
+no merged task branch is reused.
+
+**P28-C2 is also DONE:** GitHub confirms #439 merged through its normal integration
+7d5422cb, now reachable from main through #441. Word remains the primary manual.
+The C2 final verification receipt is preserved in its contract. Earlier open-PR,
+pending-check and implementation checkpoints below are historical.
+
+The next-slice audit checked the current phase index, adopted slice table,
+P23–P28 closure contract, native-backup contracts and fetched merge history:
+
+- The P27-C2 IN_PROGRESS index entry was stale. C2/#424, its C5/#427 follow-up,
+  and the final C6/C7 repair/#430 are merged. #430's accepted head bd1cb19d passed
+  workflow 43804474947, combined clean/repeat/display, packaged-JAR and unchanged
+  native snapshot regressions. The technical prerequisite is resolved; invalid
+  frozen archives remain evidence and are not repaired by this closeout.
+- P23–P28 adopted functional baseline slices, including S4D3, P28-S1 and P28-S2,
+  are already DONE. Later requested corrections through C15 are merged.
+- P17-C13, P25-S4B/S4C and P29 retain unrecorded native owner acceptance. These
+  are acceptance evidence gaps, not unimplemented coding slices. Automated tests
+  and the current merge instruction do not supply human per-scenario acceptance.
+- Conditional P27-S5 attachments/approvals is not adopted and remains BLOCKED
+  pending explicit scope amendment. It is not a prerequisite for completed work.
+
+**No adopted unfinished, unblocked coding slice remains.** Do not invent a new
+feature or restart a completed phase in response to “continue.” The owner's
+previous instruction to move past the blocked acceptance list remains in effect;
+no consolidated acceptance session is imposed. Next work requires a concrete new
+request or owner-provided acceptance evidence.
+
+This is a documentation-only merge closeout. No app/test/style/Word/database or
+frozen-evidence bytes change. Validation passes: eight required merge ancestors,
+current-main/active-status checks, all 190 local links in the five changed
+documents, and diff whitespace. The successful implementation gates recorded
+below remain the code validation; no tests were rerun for this receipt. This
+local closeout can be carried into the next authorized task, following the
+established final-receipt convention; it is not a new implementation PR.
 
 ### P27-C15 CSV source suggestions in lookup fields — owner request
 
@@ -779,9 +824,9 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | DONE through owner-merged PR #386; final published head passed clean/repeat/JavaFX CI |
-| P27 | Generic accounting packet, evidence, complete portability | Baseline DONE through #401; corrective P27-C2 IN_PROGRESS for reproduced native backup integrity defect |
-| P28 | End-to-end acceptance and release | Baseline DONE through #403; renewed recovery acceptance depends on P27-C2 |
-| P29 | Owner-directed desktop UI corrections | Implemented through merged #423; native owner evidence and recovery-dependent final gates remain |
+| P27 | Generic accounting packet, evidence, complete portability | Baseline DONE through #401; backup prerequisite resolved through merged #430; owner corrections DONE through C15 / #441 |
+| P28 | End-to-end acceptance and release | Baseline DONE through #403; manual/procedure corrections DONE through #441 (including #439/#440); native owner acceptance remains unrecorded |
+| P29 | Owner-directed desktop UI corrections | Implemented through merged #423; technical recovery prerequisite resolved through #430; native owner evidence remains unrecorded |
 
 ## 3. Established product decisions
 
@@ -1467,7 +1512,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P27-C1 | Reconciliation WARN_ONLY matching correction | DONE | [Contract](P27-C1-reconciliation-warn-only.md); PR #401 merged at `c79d9f50`; accepted head `2022289b` passed workflow `41271225555` |
 | P28-S1 | Run the complete runbook acceptance matrix | DONE | [Acceptance contract](P28-S1-runbook-acceptance.md); PR #402 merged at `c1ba1774`, accepted head `ca66658b` passed workflow `41274251144` |
 | P28-S2 | Release and close the correction program | DONE | [Release contract](P28-S2-release-close.md); #403 merged at `da54b6c2`, accepted head `99c5752c` passed workflow `41354367929` |
-| P27-C2 | Native online backup integrity correction | IN_PROGRESS | [Contract](P27-C2-online-backup-integrity.md); independent correction after merged #423, before renewed recovery acceptance |
+| P27-C2 | Native online backup integrity correction | DONE | [Contract](P27-C2-online-backup-integrity.md); merged #424, superseded by merged C5/#427 and final C7/#430; native owner acceptance remains separate |
 | P27-S5 (conditional) | Internal attachments and approvals | BLOCKED | Not adopted; explicit scope amendment and separate specifications required; not a prerequisite for baseline P28 |
 
 P27-S1 consolidates earlier template/policy collection. Its position does not defer unresolved applicable D02–D07 decisions before their affected code slices. D03's former mandatory external-policy-input gate is resolved by the S4D scope correction; do not request those policies before NMR accounting development.

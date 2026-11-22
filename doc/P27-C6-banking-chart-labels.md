@@ -1,5 +1,15 @@
 # P27-C6 — Banking chart identity
 
+Status: **DONE** through [PR #430](https://github.com/benbaron/sca-jakarta-h2/pull/430),
+confirmed merged at 0a8334b613c833929f1cfa990a2191342a71ff19 in current main.
+Accepted head bd1cb19d passed [workflow 43804474947](https://github.com/benbaron/sca-jakarta-h2/actions/runs/43804474947).
+The combined clean/repeat gates passed 1,225 tests each; displayed gate passed
+26 without failures/errors/skips. Packaged-JAR/startup checks and both unchanged
+50-run native batches passed (4,400 snapshots total). This resolves the technical
+backup blocker; broad native owner acceptance remains unrecorded. Earlier
+pending/blocker checkpoints below are historical. Reconfirmed during the
+2026-11-22 [plan closeout](PLAN.md); no new runtime or data changes.
+
 Banking's Existing account selector and configured account list must distinguish identical account codes/names from different owned charts. Show chart name/version/ID and account ID. The configured list has a separate Chart of Accounts column beside Chart account. A selected-account detail label wraps within the form; popup choices wrap and retain full-text tooltips. Preserve table horizontal overflow. Load chart metadata before closing JPA sessions. Suppress chart names for invalid foreign-company configured links; account lookup remains company scoped. This extends the existing production query/UI path rather than importing donor persistence or introducing another model.
 
 Do not change which accounts qualify, permissions, selected ledger IDs, active chart, bank configuration or accounting history. Labels explain the actual existing link; they do not fix it automatically. Empty/null linkage remains readable.
