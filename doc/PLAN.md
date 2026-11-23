@@ -1,15 +1,48 @@
 ---
-plan_version: 530
+plan_version: 531
 active_phase: P27
-active_slice: P27-C15
-active_status: DONE
-active_branch: null
+active_slice: P27-C16
+active_status: READY
+active_branch: codex/P27-C16-import-review
 active_pull_request: null
-active_head: 17fa56aef67b9983b35827b2453b9f384f40bc4e
-next_action: "No adopted unblocked implementation slice remains after confirmed #441 merge. Retain unrecorded native owner acceptance as such; P27-S5 requires an explicit scope amendment. Resume from the next concrete owner request without reimplementing completed slices."
+active_head: 1bd2e37151fe1a2fcf6d3bd1b46788ae8f4c747f
+next_action: "Owner review confirmed C16 grey-text defect. Correction is READY: preserve semantic import grey in the production contrast path and add integrated native regressions. Current request was review-only; no runtime patch or new PR has been made."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C16 owner review of missing import grey styling
+
+Review complete; corrective implementation READY, not implemented. Owner reports
+missing grey highlights and asks whether #441 contains all agreed changes.
+Fresh `codex/P27-C16-import-review` starts from fetched main 17fa56ae and carries
+the local final/merge receipts as 0d113c3a and 1bd2e371. GitHub confirms #441
+merged at that main. [C16 review and requirement audit](P27-C16-import-review.md)
+records one confirmed P2 integration defect: production post-layout contrast
+writes inline black/white foregrounds over C15 grey on combo value cells,
+unresolved line cells and invalid proposal rows, including unselected rows.
+The standalone C15 tests do not install this production routine.
+
+Baseline compile passes. Original focused tests pass 16, zero failures/errors/
+skips. Production-theme/enforcer diagnostic runs ten: seven pass and three grey
+checks expose black text (Surefire records three CompletionException-wrapped
+AssertionFailedErrors as errors, not database errors; combined 26/0 failures/
+3 errors/0 skips, 02:07). Separate production Apply/Cancel/refresh/bold workflow
+passes one case, zero failures/errors/skips (00:44). Both native black-text
+screenshots were inspected. All other agreed controls/state/commit protections
+are present in code and focused checks. The requested feature uses grey text;
+no grey background fill was specified. No user financial file/database used.
+
+Temporary diagnostic source/reports/screenshots remain outside the repository in
+/workspace/p27-c16-review-evidence/; temporary source/compiled classes are removed.
+No application/test/style/Word/schema bytes change in this review. No full clean
+verification or CI was run or claimed for this documentation-only review.
+Next correction must preserve semantic grey, including painted Text descendants
+and row reuse, while retaining general contrast safety, and exercise production
+light/dark/selection/refresh paths before full verification and exact-head CI.
+This review creates no runtime patch or PR. Whitespace and scope checks pass;
+all 196 local links in the 6 changed/carried documents resolve. No owner
+runtime-fix instruction is assumed from a request to review.
 
 ### Confirmed merge and next-slice audit — 2026-11-22 America/Denver
 
