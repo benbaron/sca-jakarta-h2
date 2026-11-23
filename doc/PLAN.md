@@ -1,17 +1,29 @@
 ---
-plan_version: 532
+plan_version: 533
 active_phase: P27
 active_slice: P27-C16
 active_status: VERIFYING
 active_branch: codex/P27-C16-import-grey-contrast
-active_pull_request: null
-active_head: 785ce4a8
-next_action: "C16 implemented; 38 focused/display checks pass. Finish final import/contrast/overflow check, full clean verification, publication and exact-head CI. Remain VERIFYING until confirmed merge; no automatic merge."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/442
+active_head: 7c2ae920d16751b93a03fdb9a87c2bbce305a975
+next_action: "PR 442 published; final native gate passes 19 tests. Run full clean verification and inspect Linux/Windows CI on the final published head. Keep C16 VERIFYING until confirmed merge; no automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C16 authorized implementation
+
+Publication: [draft PR #442](https://github.com/benbaron/sca-jakarta-h2/pull/442),
+implementation **7c2ae920d16751b93a03fdb9a87c2bbce305a975**, tree
+**33fffe7d16f4f94ce091047938a328b939d86189**. New absent branch was published
+normally; PR read-back matches. This publication successor changes only
+PLAN/C16 and records the final **19 tests, zero failures/errors/skips (01:34)**
+for production import, theme contrast and overflow, including fixture cleanup.
+Earlier 38-test focused gate passed (02:48). All four final synthetic screenshot
+states were inspected; 248 changed-document local links and whitespace pass.
+Full clean verification and exact-final-head CI remain pending. Verify the
+published successor's native head/tree; do not use earlier-head CI. No merge.
+
 
 Candidate implementation is VERIFYING. First focused/native gate passes **38
 tests, zero failures/errors/skips (02:48)**: nine CSV review cases, four theme/

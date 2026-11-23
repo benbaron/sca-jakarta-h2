@@ -144,3 +144,16 @@ lookup fields, selected/unselected grey, painted skin text, bound styles and
 resolution/reuse are exercised. Grey editor/list and Updated/Ready screenshots
 were inspected. Final import/contrast/overflow check is running after adding
 fixture theme cleanup; full clean verification and exact-head CI remain.
+
+## Publication and final native validation
+
+Published [draft PR #442](https://github.com/benbaron/sca-jakarta-h2/pull/442),
+implementation 7c2ae920d16751b93a03fdb9a87c2bbce305a975, tree
+33fffe7d16f4f94ce091047938a328b939d86189. New-branch push and PR read-back match.
+The final production import/contrast/overflow gate passes **19 tests, zero
+failures/errors/skips (01:34)** after fixture cleanup. Earlier focused gate passes
+38 (02:48). Four native editor/list/Updated/Ready screenshot states were inspected;
+all 248 changed-document local links and whitespace pass. This publication
+receipt changes documentation only. Full clean verification and exact final-head
+Linux/Windows CI remain pending; keep VERIFYING and do not merge automatically.
+Evidence is retained in /workspace/p27-c16-evidence/.
