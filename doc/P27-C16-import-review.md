@@ -1,6 +1,7 @@
-# P27-C16 — Review of import suggestions after #441
+# P27-C16 — Import grey review and production correction
 
-Status: review complete; corrective implementation **READY**, not implemented.
+Status: owner-authorized corrective implementation **VERIFYING**.
+The preceding review evidence remains historical and reproducible.
 
 ## Scope and source
 
@@ -97,3 +98,49 @@ Update the governing contrast exception deliberately, then run focused/native,
 full clean verification and exact-head CI for the corrective implementation.
 The current review creates no patch or PR and does not claim this correction is
 implemented. [PLAN](PLAN.md) owns the exact next action.
+
+## Authorized implementation
+
+The owner now instructs “Apply the changes.” Fresh branch
+`codex/P27-C16-import-grey-contrast` begins at fetched main 17fa56ae with the
+previous review and merge receipts preserved. Baseline Java-17 compile passes.
+No new donor design, persistence or accounting behavior is required.
+
+The production contrast traversal now propagates the two existing import grey
+roles into skin/painted Text descendants. It retains a readable dark/light grey
+against each actual composed surface; selection colors are handled by contrast
+rather than erasing the semantic distinction. Quantized RGB adjustment keeps
+body-text contrast at least 4.5:1 even after CSS painting. Removing a role or
+reusing a resolved cell returns to the ordinary black/white rule; bound skin
+styles remain bound and unrelated styles/fonts are retained.
+
+The existing CSV review tests now install the production theme and contrast
+routine. A new real CSV case supplies all five unresolved lookup dimensions,
+checks all eight supported themes, selected/unselected proposal and line cells,
+painted foregrounds, real selections, explicit Clear and Cancel with reused
+controls. A general contrast case covers bound skins/dynamic roles across the
+same themes and runs in the existing Windows contrast suite. A pure color gate
+checks 256 neutral surfaces and representative selection colors. Both selected
+before-fix native regressions fail as expected (two wrapped foreground assertion
+errors, zero skips, 01:01), while candidate validation is running.
+
+The existing Word instructions already describe the intended grey behavior;
+there is no procedure change, so the authoritative Word package is unchanged.
+No schema, service, source CSV or user data changes. No extra panes or dialogs.
+
+User checks on a disposable import: unresolved source labels appear grey in
+Account/Fund/Budget/Merchant/Payee value fields and line cells; invalid proposals
+remain grey when selected and when another row is selected. Choose saved records
+or Clear optional fields, Apply the whole entry and see a bold Updated row.
+Refresh returns valid updated rows to normal; Cancel restores unresolved grey.
+Change the theme and resize/scroll; status text, IDs and commit protection remain.
+Only final Commit writes Journal. Publication, full verification and exact-head
+CI remain pending; no automatic merge.
+
+First focused/native candidate gate passes 38 tests, zero failures/errors/skips
+(02:48): nine CSV review, four theme contrast, seven command routing, eight Save,
+two pure contrast and eight suggestion-state cases. All eight themes, all five
+lookup fields, selected/unselected grey, painted skin text, bound styles and
+resolution/reuse are exercised. Grey editor/list and Updated/Ready screenshots
+were inspected. Final import/contrast/overflow check is running after adding
+fixture theme cleanup; full clean verification and exact-head CI remain.

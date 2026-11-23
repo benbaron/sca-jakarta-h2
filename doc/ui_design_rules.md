@@ -24,6 +24,14 @@ Ordinary workspace foreground rules must not override that pairing.
 
 Production exposes the Java-17-compatible AtlantaFX 2.0.1 theme set: Primer, Nord and Cupertino in light/dark variants plus Dracula, alongside JavaFX System Default. Application shell CSS uses AtlantaFX palette variables for surfaces and controls. Ordinary workspace text uses exact black or white according to the effective painted background, choosing the greater WCAG contrast. White/pastel reports retain black text even inside dark themes; dark surfaces use white text. Transparent backgrounds inherit the composed ancestor surface. Enforcement runs after CSS/layout, covers dynamically created controls and never modifies a skin during its construction. The native Windows title bar remains operating-system controlled. Existing persisted Light/Dark settings map to Primer Light/Primer Dark. Theme changes apply immediately and must preserve readable menus, toolbar controls, forms, tabs, navigation, work panes, tables and lists.
 
+Unresolved Exchequer import text is an explicit semantic exception to the
+ordinary black/white rule: `import-source-suggestion` value cells and
+`import-entry-invalid` rows retain grey after the production contrast pass.
+Their painted Text descendants share that role. Use dark grey on light surfaces
+and light grey on dark surfaces, adapting to selection backgrounds to maintain
+at least 4.5:1 body-text contrast. Resolved/reused cells return to ordinary text;
+valid Updated rows retain bold until Refresh. See [C16](P27-C16-import-review.md).
+
 ## Windows rendering compatibility
 
 The desktop launcher selects JavaFX software rendering (`prism.order=sw`) on Windows before starting the toolkit. Owner testing confirmed that software rendering restores controls when the accelerated pipeline produces a blank client area without an exception. This is a process startup default, not a saved theme or accounting preference. An explicit `-Dprism.order` is preserved; Linux and macOS keep their platform defaults. Software rendering can use more CPU. For deliberate hardware testing in Git Bash use `JAVA_TOOL_OPTIONS='-Dprism.order=d3d,sw' mvn -Pui clean compile javafx:run`.

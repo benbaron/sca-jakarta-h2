@@ -277,3 +277,8 @@ Unapplied changes survive refresh but block that commit; Cancel restores the las
 applied record. Grey source suggestions require real eligible IDs or explicit
 optional clearing; exact unique matches may auto-resolve. Multi-select Delete
 removes only selected transient proposals. See [C15](P27-C15-import-suggestions.md).
+
+P27-C16 preserves grey import hints and invalid proposal rows through the
+production text-contrast pass, including painted skin text and selected/reused
+cells. This is presentation only; command routing and canonical writes remain
+as specified above. See [C16](P27-C16-import-review.md).

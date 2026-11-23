@@ -1,15 +1,41 @@
 ---
-plan_version: 531
+plan_version: 532
 active_phase: P27
 active_slice: P27-C16
-active_status: READY
-active_branch: codex/P27-C16-import-review
+active_status: VERIFYING
+active_branch: codex/P27-C16-import-grey-contrast
 active_pull_request: null
-active_head: 1bd2e37151fe1a2fcf6d3bd1b46788ae8f4c747f
-next_action: "Owner review confirmed C16 grey-text defect. Correction is READY: preserve semantic import grey in the production contrast path and add integrated native regressions. Current request was review-only; no runtime patch or new PR has been made."
+active_head: 785ce4a8
+next_action: "C16 implemented; 38 focused/display checks pass. Finish final import/contrast/overflow check, full clean verification, publication and exact-head CI. Remain VERIFYING until confirmed merge; no automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C16 authorized implementation
+
+Candidate implementation is VERIFYING. First focused/native gate passes **38
+tests, zero failures/errors/skips (02:48)**: nine CSV review cases, four theme/
+contrast cases, seven production command routes, eight Save-scope, two pure color
+and eight suggestion/state cases. The two before-fix production regressions fail
+with the original foreground assertions (01:01). Grey editor/proposal screenshots
+and Updated/Ready screenshots were visually inspected. Selected/unselected rows
+stay grey; correct values become normal and valid Updated stays bold. A final
+19-case import/contrast/overflow gate follows the test fixture's theme cleanup;
+full clean verification, publication and exact-head CI remain. No app/service/
+Word/schema/data changes beyond the single production contrast helper.
+
+
+Owner now says “Apply the changes.” Resume C16 as IN_PROGRESS on fresh
+`codex/P27-C16-import-grey-contrast` from fetched main 17fa56ae, carrying prior
+review/final receipts as ea67023c, 79545fe2 and 785ce4a8. This direction supersedes
+the earlier review-only scope. Baseline compile passes. Preserve explicit import
+semantic grey through the production contrast traversal, including painted text,
+with at least 4.5:1 contrast against the actual surface; ordinary text retains its
+black/white rule. Exercise real CSV review under that traversal, all supplied
+lookups, selection, themes, resolution, Cancel/Refresh and reused cells. No
+accounting/schema/manual procedure changes. Update C16 and UI contracts, then
+focused/native/full local verification, publication and exact-head CI. No merge
+is authorized for the new correction PR.
 
 ### P27-C16 owner review of missing import grey styling
 

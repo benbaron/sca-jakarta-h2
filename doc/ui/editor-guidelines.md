@@ -195,3 +195,9 @@ Apply; Proposed Entries Save is the batch commit. Ready rows are normal, invalid
 or unapplied rows grey, and valid Updated rows bold until Refresh Review reloads
 choices and clears the marker. Accepted changes remain. Multi-select Delete acts
 only on selected proposals. See [C15](../P27-C15-import-suggestions.md).
+
+C16 makes these grey states survive the production post-layout contrast pass,
+including combo skins, line cells, selected/unselected rows and reused controls.
+Grey adapts to the actual surface for at least 4.5:1 contrast. Reference IDs,
+validation, Apply/Cancel, refresh and final commit semantics are unchanged.
+See [C16](../P27-C16-import-review.md).
