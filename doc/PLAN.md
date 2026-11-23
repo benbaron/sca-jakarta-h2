@@ -4,14 +4,22 @@ active_phase: P27
 active_slice: P27-C18
 active_status: VERIFYING
 active_branch: codex/P27-C18-category-list-return
-active_pull_request: null
-active_head: b9e8e394
-next_action: "C18 implemented; finish final native regressions, publish, run clean verify and exact-head CI. No automatic merge."
+active_pull_request: 444
+active_head: bee2e1c64c61326d897826e3ce645308739d3cad
+next_action: "C18 PR #444 published; run full clean verify and require exact-final-head Linux/Windows CI before review. Record accepted head/tree in final receipt. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C18 Budget Categories list and return — owner correction
+
+Publication: [draft PR #444](https://github.com/benbaron/sca-jakarta-h2/pull/444)
+contains implementation **bee2e1c64c61326d897826e3ce645308739d3cad**, tree
+**2c4d1f1dea329ceb153d7bdf7e4cbf8ca111a904**. New branch was absent and
+published with a normal push; PR read-back matches. This publication receipt
+successor changes only PLAN/C18. Full clean verification and exact-final-head
+Linux/Windows CI remain pending. No runtime/test/Word edits are pending.
+
 
 Candidate VERIFYING. Broad native gate passes **47 tests, zero failures/errors/
 skips (04:28)**. Final tests add a load-error recovery case and strengthen the

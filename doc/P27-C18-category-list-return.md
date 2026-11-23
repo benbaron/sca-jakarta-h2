@@ -87,3 +87,12 @@ bookmarks and links remain. Render stays 31 pages; changed pages 15/25 inspected
 
 No actual owner database was available: this fixes verified controller paths,
 not missing records in an uninspected desktop database. No automatic merge.
+
+## Publication
+
+Draft [PR #444](https://github.com/benbaron/sca-jakarta-h2/pull/444) on
+`codex/P27-C18-category-list-return` contains implementation
+bee2e1c64c61326d897826e3ce645308739d3cad, tree
+2c4d1f1dea329ceb153d7bdf7e4cbf8ca111a904. New remote branch was absent,
+normal push succeeded and PR read-back matches. This receipt successor changes
+only PLAN/C18. Full clean verify and exact-final-head CI pending; no automatic merge.
