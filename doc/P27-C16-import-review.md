@@ -157,3 +157,25 @@ all 248 changed-document local links and whitespace pass. This publication
 receipt changes documentation only. Full clean verification and exact final-head
 Linux/Windows CI remain pending; keep VERIFYING and do not merge automatically.
 Evidence is retained in /workspace/p27-c16-evidence/.
+
+## Final local verification receipt
+
+Accepted remote head 4720d406ac82e54bb0210f722cd57a9fd4cc3257, tree
+379f0b209b01e88273d50c8477d7eb4705a27577, matches native ref and PR read-back.
+Full local clean verification passes **1,332 tests, zero failures/errors and
+166 expected headless display skips (11:06)**. Explicit native gates pass 38
+and 19 with no skips, as above. No production/test/style/Word bytes changed
+since that source. No final local gate failed.
+
+Exact-head [CI 45091082559](https://github.com/benbaron/sca-jakarta-h2/actions/runs/45091082559)
+passes Windows job 137420593475: 24 actual display tests across seven required
+suites without failures/errors/skips; actual log totals inspected. Linux job 137420593221 passed rendering, clean/repeated verification, Period
+Close, overflow, imports, Journal/SCLX feedback and production JavaFX routes.
+Final run and both jobs completed success. Individual step metadata and actual
+Windows log totals were inspected. The large Linux job log request returned a
+transport error; complete successful job/step metadata is retained separately.
+No final executed gate failed. [PR #442](https://github.com/benbaron/sca-jakarta-h2/pull/442)
+is ready, open and unmerged at the accepted head above. This documentation-only
+final receipt stays local to retain that checked head. Earlier pending-check
+notes are historical. Keep VERIFYING until confirmed merge; no automatic merge.
+Evidence and screenshots are under /workspace/p27-c16-evidence/.

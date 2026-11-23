@@ -1,17 +1,40 @@
 ---
-plan_version: 533
+plan_version: 535
 active_phase: P27
 active_slice: P27-C16
 active_status: VERIFYING
 active_branch: codex/P27-C16-import-grey-contrast
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/442
-active_head: 7c2ae920d16751b93a03fdb9a87c2bbce305a975
-next_action: "PR 442 published; final native gate passes 19 tests. Run full clean verification and inspect Linux/Windows CI on the final published head. Keep C16 VERIFYING until confirmed merge; no automatic merge."
+active_head: 4720d406ac82e54bb0210f722cd57a9fd4cc3257
+next_action: "Owner review/merge ready PR 442 at accepted head 4720d406; all local/display/Linux/Windows gates passed. Keep C16 VERIFYING until confirmed merge, then fetch main and follow the next owner request. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C16 authorized implementation
+
+Final local receipt: accepted remote head **4720d406ac82e54bb0210f722cd57a9fd4cc3257**,
+tree **379f0b209b01e88273d50c8477d7eb4705a27577**; native ref/PR match. Full local
+`clean verify` passes **1,332 tests, zero failures/errors, 166 expected headless
+display skips (11:06)**, exit 0. First focused display gate passes 38 (02:48),
+final import/contrast/overflow passes 19 (01:34), both without failures/errors/
+skips; all four final screenshot states were inspected. Production/test/style/
+Word bytes remain identical to the checked remote source. This final receipt
+stays local to preserve its checks.
+
+[Exact-head CI 45091082559](https://github.com/benbaron/sca-jakarta-h2/actions/runs/45091082559):
+Windows job 137420593475 passes **24 displayed tests across seven suites, zero
+failures/errors/skips**; actual totals inspected and retained in
+/workspace/p27-c16-evidence/windows-test-summary.log. Linux job 137420593221 passed rendered theme checks, full clean/repeated
+verification, Period Close, overflow, imports, Journal/SCLX feedback and final
+production JavaFX routes. The final run and both jobs completed **success**;
+individual step metadata and actual Windows totals were inspected. The large
+Linux log request returned a transport error; its final success/step metadata is
+retained in /workspace/p27-c16-evidence/github-final-checks.json. No final executed
+gate failed. Ready-for-review PR #442 is open, unmerged and no longer draft,
+with the same accepted head. Earlier pending-check notes below are historical.
+Status VERIFYING until confirmed owner merge; no automatic merge.
+
 
 Publication: [draft PR #442](https://github.com/benbaron/sca-jakarta-h2/pull/442),
 implementation **7c2ae920d16751b93a03fdb9a87c2bbce305a975**, tree
