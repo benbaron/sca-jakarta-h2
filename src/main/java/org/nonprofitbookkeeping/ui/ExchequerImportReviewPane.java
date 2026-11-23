@@ -60,6 +60,7 @@ final class ExchequerImportReviewPane extends BorderPane
     private LineDraft selectedLine;
     private boolean loading;
     private boolean accepted;
+    private boolean reloadAfterLookupNavigation;
     private final javafx.beans.value.ChangeListener<Boolean> permissionListener = (o, a, b) -> updateAvailability();
     private Runnable capabilitiesChanged = () -> { };
     private Consumer<AppPanel.RunCommandResult> resultListener = ignored -> { };
@@ -295,6 +296,12 @@ final class ExchequerImportReviewPane extends BorderPane
         merchant.setId("exchequerLineMerchant");
         account.setId("exchequerLineAccount");
         fund.setId("exchequerLineFund");
+        configureLookupAdd(account, AppPanelId.CHART_OF_ACCOUNTS, "Chart of Accounts");
+        configureLookupAdd(fund, AppPanelId.FUNDS, "Funds");
+        configureLookupAdd(budget, AppPanelId.BUDGET_CATEGORIES, "Budget Categories");
+        configureLookupAdd(activity, AppPanelId.ACTIVITIES, "Events / Activities");
+        configureLookupAdd(merchant, AppPanelId.MERCHANTS, "Merchants");
+        configureLookupAdd(payee, AppPanelId.COUNTERPARTIES, "Payees / Counterparties");
         debit.setId("exchequerLineDebit");
         credit.setId("exchequerLineCredit");
         function.getItems().add(null);
@@ -405,6 +412,22 @@ final class ExchequerImportReviewPane extends BorderPane
         split.setDividerPositions(0.58);
         CompanySplitPaneStateBinder.bind(split, "exchequer-entry-editor", 0.58);
         return split;
+    }
+
+    private void configureLookupAdd(SuggestedImportComboBox combo, AppPanelId destination, String title)
+    {
+        combo.configureAdd(title, () ->
+        {
+            if (accepted || tasks.busyProperty().get() || !scopeMatches.getAsBoolean()
+                    || selected == null || combo != payee && selectedLine == null
+                    || !UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE))
+            {
+                return;
+            }
+            reloadAfterLookupNavigation = true;
+            status.setText("Open " + title + " and use New/Save there. Return to the Import tab to reload choices; entry edits are retained.");
+            DrillThroughCoordinator.openPanelWithContext(destination, "");
+        });
     }
 
     private void capture()
@@ -636,6 +659,11 @@ final class ExchequerImportReviewPane extends BorderPane
         applyEntry.setDisable(busy || selected == null || !selected.unapplied || !scopeMatches.getAsBoolean());
         cancelEntry.setDisable(busy || selected == null || !selected.unapplied);
         refresh.setDisable(busy || !scopeMatches.getAsBoolean());
+        payee.setAddUnavailable(busy || selected == null || !scopeMatches.getAsBoolean());
+        for (var combo : List.of(account, fund, budget, activity, merchant))
+        {
+            combo.setAddUnavailable(busy || selected == null || selectedLine == null || !scopeMatches.getAsBoolean());
+        }
         refresh.setTooltip(new Tooltip("Reload choices without accepting or discarding unfinished edits. Applied changes remain accepted; recent-update markers clear."));
         int count = entries.getSelectionModel().getSelectedItems().size();
         deleteEntries.setDisable(busy || count == 0);
@@ -687,6 +715,11 @@ final class ExchequerImportReviewPane extends BorderPane
             status.setText("This review belongs to another company or database. Choose another CSV for the current company, or return to the original company/database.");
         }
         updateAvailability();
+        if (scopeMatches.getAsBoolean() && reloadAfterLookupNavigation && !refresh.isDisabled())
+        {
+            reloadAfterLookupNavigation = false;
+            refreshChoices(false);
+        }
     }
 
     String statusMessage()
@@ -726,6 +759,11 @@ final class ExchequerImportReviewPane extends BorderPane
 
     private void refreshChoices()
     {
+        refreshChoices(true);
+    }
+
+    private void refreshChoices(boolean clearUpdateMarkers)
+    {
         if (refresh.isDisabled())
         {
             return;
@@ -737,12 +775,18 @@ final class ExchequerImportReviewPane extends BorderPane
             replaceChoices(refs);
             entries.getItems().forEach(entry ->
             {
-                entry.updated = false;
+                if (clearUpdateMarkers)
+                {
+                    entry.updated = false;
+                }
                 if (entry.unapplied)
                 {
                     entry.baseline.payee.refresh(refs.counterparties());
                     entry.baseline.lines.forEach(LineDraft::refreshChoices);
-                    entry.baseline.updated = false;
+                    if (clearUpdateMarkers)
+                    {
+                        entry.baseline.updated = false;
+                    }
                 }
                 else
                 {
@@ -756,7 +800,9 @@ final class ExchequerImportReviewPane extends BorderPane
             }
             loading = false;
             changed();
-            status.setText("Choices refreshed; review the retained draft mappings before commit.");
+            status.setText(clearUpdateMarkers
+                    ? "Choices refreshed; review the retained draft mappings before commit."
+                    : "Choices reloaded after Add; entry edits and update markers are retained. Review mappings before commit.");
         }, this::failed, () -> { });
     }
 

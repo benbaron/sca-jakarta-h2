@@ -282,3 +282,10 @@ P27-C16 preserves grey import hints and invalid proposal rows through the
 production text-contrast pass, including painted skin text and selected/reused
 cells. This is presentation only; command routing and canonical writes remain
 as specified above. See [C16](P27-C16-import-review.md).
+
+P27-C17 CSV review Add links open existing Chart of Accounts, Funds, Budget
+Categories, Events / Activities, Merchants or Payees tabs. They perform navigation,
+not record writes or New against an existing target draft. Source edits survive;
+returning reloads references in the original company/database while preserving
+Updated markers. Existing target New/Save retains service/permission authority.
+See [C17](P27-C17-lookup-add-navigation.md).

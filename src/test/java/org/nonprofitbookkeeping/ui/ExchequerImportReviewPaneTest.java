@@ -86,6 +86,12 @@ class ExchequerImportReviewPaneTest
                 stage.close();
                 javafx.application.Application.setUserAgentStylesheet(javafx.application.Application.STYLESHEET_MODENA);
             }
+            DrillThroughCoordinator.configureOpener(null);
+            for (var id : List.of(AppPanelId.CHART_OF_ACCOUNTS, AppPanelId.FUNDS, AppPanelId.BUDGET_CATEGORIES,
+                    AppPanelId.ACTIVITIES, AppPanelId.MERCHANTS, AppPanelId.COUNTERPARTIES))
+            {
+                DrillThroughCoordinator.consumeContext(id);
+            }
             var session = MainWindow.sharedSessionState();
             session.setDatabaseSelection(previousDatabase);
             session.setMultiCompany(previousCompany);
@@ -559,6 +565,158 @@ class ExchequerImportReviewPaneTest
             assertMuted(suggestion("exchequerLineAccount").getButtonCell());
             assertMuted(suggestion("exchequerEntryPayee").getButtonCell());
             assertTrue(button("commitExchequerEntries").isDisabled());
+            return null;
+        });
+    }
+
+    @Test
+    void addLinksRouteEveryMaintainedLookupAndRespectPermissionAndScope() throws Exception
+    {
+        var destinations = new java.util.ArrayList<AppPanelId>();
+        FxTestSupport.onFx(() ->
+        {
+            DrillThroughCoordinator.configureOpener(destinations::add);
+            button("editExchequerEntry").fire();
+            ((TextArea) panel.root().lookup("#exchequerEntryMemo")).setText("Keep this pending import edit");
+            var routes = java.util.Map.of(
+                    "exchequerLineAccountAdd", AppPanelId.CHART_OF_ACCOUNTS,
+                    "exchequerLineFundAdd", AppPanelId.FUNDS,
+                    "exchequerLineBudgetAdd", AppPanelId.BUDGET_CATEGORIES,
+                    "exchequerLineEventAdd", AppPanelId.ACTIVITIES,
+                    "exchequerLineMerchantAdd", AppPanelId.MERCHANTS,
+                    "exchequerEntryPayeeAdd", AppPanelId.COUNTERPARTIES);
+            for (var route : routes.entrySet())
+            {
+                assertFalse(button(route.getKey()).isDisabled());
+                button(route.getKey()).fire();
+                assertEquals(route.getValue(), destinations.get(destinations.size() - 1));
+            }
+            assertEquals(6, destinations.size());
+            MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.viewer());
+            for (var id : routes.keySet())
+            {
+                assertTrue(button(id).isDisabled());
+                assertTrue(button(id).getTooltip().getText().contains("BOOKKEEPING_WRITE"));
+                button(id).fire();
+            }
+            assertEquals(6, destinations.size());
+            MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.manager());
+            MainWindow.sharedSessionState().setMultiCompany(new MultiCompanyState("OTHER", List.of("DEFAULT", "OTHER")));
+            panel.onPanelShown();
+            assertTrue(button("exchequerLineBudgetAdd").isDisabled());
+            button("exchequerLineBudgetAdd").fire();
+            assertEquals(6, destinations.size());
+            MainWindow.sharedSessionState().setMultiCompany(new MultiCompanyState("DEFAULT", List.of("DEFAULT")));
+            var reviewedDatabase = MainWindow.sharedSessionState().databaseSelection();
+            MainWindow.sharedSessionState().setDatabaseSelection(new DatabaseSelectionState(
+                    directory.resolve("another-database").toString(), List.of(directory.resolve("another-database").toString())));
+            panel.onPanelShown();
+            assertTrue(button("exchequerLineBudgetAdd").isDisabled());
+            button("exchequerLineBudgetAdd").fire();
+            assertEquals(6, destinations.size());
+            MainWindow.sharedSessionState().setDatabaseSelection(reviewedDatabase);
+            panel.onPanelShown();
+            return null;
+        });
+        await(() -> ((Label) panel.root().lookup("#exchequerReviewStatus")).getText().startsWith("Choices reloaded after Add"));
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals("Keep this pending import edit", ((TextArea) panel.root().lookup("#exchequerEntryMemo")).getText());
+            assertEquals("Unapplied edits", reviewStatus(0));
+            assertTrue(button("commitExchequerEntries").isDisabled());
+            assertEquals(1, UiServiceRegistry.transactionEntry().search(null, null, "", 100).size());
+            return null;
+        });
+    }
+
+    @Test
+    void addBudgetUsesRealMaintenanceTabPreservesBothDraftsAndReloadsSavedRecord() throws Exception
+    {
+        PanelHost host = FxTestSupport.onFx(() ->
+        {
+            stage.getScene().setRoot(new javafx.scene.layout.VBox());
+            var value = new PanelHost();
+            value.getStyleClass().addAll("production-workspace", "theme-light", "theme-atlantafx");
+            WorkspaceTextContrastEnforcer.install(value);
+            WorkspaceTextContrastEnforcer.apply(value, false);
+            value.showReplacement(AppPanelId.IMPORT_PREVIEW, panel);
+            stage.getScene().setRoot(value);
+            DrillThroughCoordinator.configureOpener(value::show);
+            value.show(AppPanelId.BUDGET_CATEGORIES);
+            layout();
+            ((TextField) value.lookup("#budgetCategoriesCode")).setText("C17");
+            ((TextField) value.lookup("#budgetCategoriesName")).setText("Preserve existing category draft");
+            value.show(AppPanelId.IMPORT_PREVIEW);
+            button("editExchequerEntry").fire();
+            table("exchequerProposedLines").getSelectionModel().select(1);
+            ((TextArea) panel.root().lookup("#exchequerEntryMemo")).setText("Retain import header");
+            ((TextField) panel.root().lookup("#exchequerLineDebit")).setText("invalid raw amount");
+            button("exchequerLineBudgetAdd").fire();
+            assertEquals(AppPanelId.BUDGET_CATEGORIES, value.activePanelId());
+            assertTrue(value.isOpen(AppPanelId.IMPORT_PREVIEW));
+            layout();
+            assertEquals("Preserve existing category draft", ((TextField) value.lookup("#budgetCategoriesName")).getText());
+            ((TextField) value.lookup("#budgetCategoriesName")).setText("Created from Import");
+            value.saveActive();
+            value.show(AppPanelId.IMPORT_PREVIEW);
+            return value;
+        });
+        await(() -> ((Label) panel.root().lookup("#exchequerReviewStatus")).getText().startsWith("Choices reloaded after Add"));
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals(AppPanelId.IMPORT_PREVIEW, host.activePanelId());
+            assertEquals("Retain import header", ((TextArea) panel.root().lookup("#exchequerEntryMemo")).getText());
+            assertEquals("invalid raw amount", ((TextField) panel.root().lookup("#exchequerLineDebit")).getText());
+            assertEquals(1, table("exchequerProposedLines").getSelectionModel().getSelectedIndex());
+            var created = suggestion("exchequerLineBudget").getItems().stream()
+                    .filter(option -> option.name().equals("Created from Import")).findFirst().orElseThrow();
+            assertNotNull(created.id());
+            assertNull(suggestion("exchequerLineBudget").getValue(), "A blank source does not guess the new record");
+            choose("exchequerLineBudget", created.id());
+            layout();
+            assertNormal(suggestion("exchequerLineBudget").getButtonCell());
+            assertTrue(button("commitExchequerEntries").isDisabled());
+            saveScreenshot("sca.importLookupAddScreenshot");
+            button("cancelExchequerEntryChanges").fire();
+            assertFalse(((TextArea) panel.root().lookup("#exchequerEntryMemo")).getText().equals("Retain import header"));
+            assertEquals(1, UiServiceRegistry.transactionEntry().search(null, null, "", 100).size());
+            return null;
+        });
+        assertTrue(UiServiceRegistry.budgetCategoryLookup().listForMaintenance().stream()
+                .anyMatch(category -> "C17".equals(category.code()) && "Created from Import".equals(category.name())));
+    }
+
+    @Test
+    void returningFromAddRetainsAppliedUpdatedMarker() throws Exception
+    {
+        FxTestSupport.onFx(() ->
+        {
+            DrillThroughCoordinator.configureOpener(id -> { });
+            button("editExchequerEntry").fire();
+            choose("exchequerLineAccount", fixture.bank());
+            choose("exchequerLineFund", fixture.source());
+            button("exchequerEntryPayeeClear").fire();
+            table("exchequerProposedLines").getSelectionModel().select(1);
+            choose("exchequerLineAccount", fixture.income());
+            choose("exchequerLineFund", fixture.source());
+            button("applyExchequerEntryChanges").fire();
+            assertEquals("Updated", reviewStatus(0));
+            button("editExchequerEntry").fire();
+            button("exchequerLineFundAdd").fire();
+            panel.onPanelShown();
+            return null;
+        });
+        await(() -> ((Label) panel.root().lookup("#exchequerReviewStatus")).getText().startsWith("Choices reloaded after Add"));
+        FxTestSupport.onFx(() ->
+        {
+            layout();
+            assertEquals("Updated", reviewStatus(0));
+            assertEquals(1, table("exchequerProposedLines").getSelectionModel().getSelectedIndex());
+            assertEquals(fixture.income(), suggestion("exchequerLineAccount").getValue().id());
+            assertEquals("None", suggestion("exchequerEntryPayee").getButtonCell().getText());
+            ((TabPane) panel.root().lookup("#exchequerReviewPages")).getSelectionModel().select(0);
+            layout();
+            assertTrue(proposalRow(0).getStyleClass().contains("import-entry-updated"));
             return null;
         });
     }

@@ -1,5 +1,10 @@
 # P27-C16 — Import grey review and production correction
 
+Closeout: **DONE** through confirmed merged #442 at
+b976ebe9e2c2d3a7f10eeb11141355a9b9f6398f. Accepted head 4720d406 passed
+CI 45091082559. The new owner request belongs to C17; earlier VERIFYING/open
+checkpoints below are historical.
+
 Status: owner-authorized corrective implementation **VERIFYING**.
 The preceding review evidence remains historical and reproducible.
 
