@@ -37,7 +37,10 @@ public class PanelHost extends TabPane
             AppPanel panel = activeId == null ? null : panels.get(activeId);
             if (panel != null)
             {
-                panel.onPanelShown();
+                AppPanelId origin = oldTab == null ? null : panelIdFor(oldTab);
+                AppPanel previous = origin == null ? null : panels.get(origin);
+                String originTitle = previous != null ? previous.title() : oldTab == null ? "" : oldTab.getText();
+                panel.onPanelShownFrom(origin, originTitle);
             }
             commandCapabilitiesChangedListener.run();
         });

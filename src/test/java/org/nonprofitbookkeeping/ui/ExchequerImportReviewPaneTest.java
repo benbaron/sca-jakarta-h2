@@ -632,6 +632,7 @@ class ExchequerImportReviewPaneTest
     @Test
     void addBudgetUsesRealMaintenanceTabPreservesBothDraftsAndReloadsSavedRecord() throws Exception
     {
+        UiServiceRegistry.budgetCategoryAdmin().save(new BudgetCategoryCommand(null, "RETIRED", "Retired category", false, null, null, ""));
         PanelHost host = FxTestSupport.onFx(() ->
         {
             stage.getScene().setRoot(new javafx.scene.layout.VBox());
@@ -658,7 +659,14 @@ class ExchequerImportReviewPaneTest
             assertEquals("Preserve existing category draft", ((TextField) value.lookup("#budgetCategoriesName")).getText());
             ((TextField) value.lookup("#budgetCategoriesName")).setText("Created from Import");
             value.saveActive();
-            value.show(AppPanelId.IMPORT_PREVIEW);
+            var back = (Button) value.lookup("#budgetCategoriesJournal");
+            assertEquals("Return to Import", back.getText());
+            @SuppressWarnings("unchecked")
+            var visibleCategories = (TableView<BudgetCategoryView>) value.lookup("#budgetCategoriesTable");
+            assertTrue(visibleCategories.getItems().stream().anyMatch(category -> "RETIRED".equals(category.code()) && !category.active()));
+            saveScreenshot("sca.budgetCategoriesCallerScreenshot");
+            back.fire();
+            assertEquals(AppPanelId.IMPORT_PREVIEW, value.activePanelId());
             return value;
         });
         await(() -> ((Label) panel.root().lookup("#exchequerReviewStatus")).getText().startsWith("Choices reloaded after Add"));

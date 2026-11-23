@@ -241,3 +241,14 @@ New/Save commands. Returning to Import reloads eligible choices in the original
 company/database without applying an entry or clearing Updated markers. Explicit
 Refresh Review retains its marker-clearing meaning. Both-axis overflow and
 permission explanations remain available. See [C17](P27-C17-lookup-add-navigation.md).
+
+## P27-C18 Budget Categories list and return
+
+Budget Categories opens with every active and inactive category owned by the
+selected company. Show All clears search and reloads; Refresh retains the search.
+Both retain unsaved editor fields. Save clears a stale search and selects the
+saved category. Display the visible/total count and distinguish no company
+categories, a search miss and a load failure. Do not expose another company's
+categories to populate an empty list. The Return button names and opens the
+actual caller, including Import or Journal, without saving/discarding the draft.
+Same-tab reselection retains that destination. See [C18](P27-C18-category-list-return.md).

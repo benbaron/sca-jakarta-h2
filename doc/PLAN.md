@@ -1,15 +1,51 @@
 ---
-plan_version: 540
+plan_version: 541
 active_phase: P27
-active_slice: P27-C17
+active_slice: P27-C18
 active_status: VERIFYING
-active_branch: codex/P27-C17-lookup-add-navigation
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/443
-active_head: 31802a92a6e3400bddad170e9655fcc0a88532f3
-next_action: "Owner review/merge ready PR 443 at accepted head 31802a92; all local/native/Word/Linux/Windows gates passed. Keep C17 VERIFYING until confirmed merge, then fetch main and follow the next owner request. No automatic merge."
+active_branch: codex/P27-C18-category-list-return
+active_pull_request: null
+active_head: b9e8e394
+next_action: "C18 implemented; finish final native regressions, publish, run clean verify and exact-head CI. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C18 Budget Categories list and return — owner correction
+
+Candidate VERIFYING. Broad native gate passes **47 tests, zero failures/errors/
+skips (04:28)**. Final tests add a load-error recovery case and strengthen the
+actual Import/Add/Save/Return journey with inactive-category visibility. Retained
+search, dirty refresh, save visibility, ownership and caller navigation regressions
+are covered. The original retained-search and actual Return-to-Journal defects
+were reproduced; initial new-test fixture/layout errors were corrected separately.
+Word changes only paragraphs 301/488 in document.xml; all other parts/paragraphs/
+review/media/links are preserved. Its 31-page render and changed pages 15/25 were
+visually inspected. Final native gate passes **22/0/0/0 (02:40)** on final source/test bytes;
+actual native screenshot and 252 local links inspected. Publication, full local
+verification and exact-head CI remain.
+
+
+Owner reports an always-empty category list and Return to Journal despite entry
+from Import. C17/#443 is confirmed merged at current main
+**54c4cdefcc2c5a2625bb7c01d2b2faa5616fb6be**; accepted head 31802a92 passed CI
+45104932605. C17 is DONE. Fresh `codex/P27-C18-category-list-return` carries its
+final receipt as b9e8e394. Baseline compile passes. [C18 contract](P27-C18-category-list-return.md).
+
+Inspection: maintenance query already returns all current-company active/inactive
+categories; registry supplies the current company. The reused panel retains search
+filters and refuses list refresh while its editor is dirty; saving a new category
+also retains a search that can hide it. Do not weaken company ownership or invent
+master data. Show all current-company categories on activation, provide Show All,
+retain dirty fields while refreshing the list, and distinguish empty company,
+search misses and load errors. Return must use the actual previous workspace,
+including Import, while preserving both drafts. Use the existing PanelHost
+activation boundary, defaulting existing panels to their current onShown behavior.
+Read C17, UI/editor/operation rules and actual BudgetCategories/lookup/host tests.
+Add before-fix regressions, real Import return, ordinary Journal return, filtering,
+inactive/foreign ownership, dirty-list refresh and save visibility tests. Update
+Word directly, then focused/native/full checks and exact-head CI. No auto merge.
+
 
 ### P27-C17 lookup Add navigation — owner request
 

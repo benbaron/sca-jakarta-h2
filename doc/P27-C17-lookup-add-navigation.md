@@ -1,6 +1,12 @@
 # P27-C17 — Add missing lookup records through maintenance navigation
 
-Status: VERIFYING. Owner requests Add alongside Clear/dropdown selection.
+Status: DONE. PR #443 merged into main at
+54c4cdefcc2c5a2625bb7c01d2b2faa5616fb6be; accepted source head 31802a92
+passed exact-head CI 45104932605 and full local verification. Earlier pending
+status notes below are historical. C18 supplies the later caller-aware Budget
+Categories return.
+
+Owner requests Add alongside Clear/dropdown selection.
 After an optional scope question and ample opportunity to reply, proceed with
 the six CSV review record selectors in the current discussion. Application-wide
 selectors are not silently included. Fixed enums are not maintained records.

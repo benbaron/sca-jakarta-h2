@@ -211,3 +211,14 @@ retaining raw header/amount/line edits, selected line, explicit clearing and
 Updated markers. No Apply or Journal write occurs. Account/Fund remain required;
 fixed Expense Function classifications remain a dropdown. See
 [C17](../P27-C17-lookup-add-navigation.md).
+
+## P27-C18 Budget Category maintenance from Import
+
+The maintenance list includes active and inactive categories for the selected
+company. Activation and Show All clear search; Refresh reloads the current filter.
+List refresh preserves dirty category fields, and successful Save reveals the
+saved record. Distinct empty/filter/error messages and counts explain visibility.
+Return to Import returns to the original Import controller and reloads eligible
+choices without applying the entry or clearing either draft. Journal and other
+callers receive their own named Return action. This changes navigation, not the
+active-only import choice eligibility. See [C18](../P27-C18-category-list-return.md).
