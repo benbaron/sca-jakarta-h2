@@ -93,3 +93,14 @@ Fund and Payee Add actions fit the normal-width viewport; reduced windows retain
 local scrolling. The real Add/return screenshot was inspected after this final
 change. Earlier sizing-gate notes are historical. No further runtime changes
 are pending; publication, clean verification and exact-head CI remain.
+
+## Publication
+
+Published [draft PR #443](https://github.com/benbaron/sca-jakarta-h2/pull/443),
+implementation 5ca6ec66586184726955f20bb756ac24ac49cf79 and final native sized
+head a00965b783a4b3ce13cd357592d8bd020b4116f0, tree
+fc19682189b0c4b23251d7b09637b922a9d81bb6. Normal new-branch push and PR
+read-back match. This publication successor changes documentation only.
+Full clean verification and exact-final-head Linux/Windows CI remain pending.
+Keep VERIFYING until confirmed merge; no automatic merge. Evidence and native/
+Word render artifacts are under /workspace/p27-c17-evidence/.

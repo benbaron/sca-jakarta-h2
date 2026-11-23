@@ -1,17 +1,27 @@
 ---
-plan_version: 537
+plan_version: 538
 active_phase: P27
 active_slice: P27-C17
 active_status: VERIFYING
 active_branch: codex/P27-C17-lookup-add-navigation
-active_pull_request: null
-active_head: e3773062
-next_action: "Implement C17 lookup Add navigation and draft-preserving return refresh, regressions and direct Word instructions; confirm scope clarification, then native/full verification and publication. No automatic merge."
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/443
+active_head: a00965b783a4b3ce13cd357592d8bd020b4116f0
+next_action: "PR 443 published; native 49/18 gates and Word checks pass. Run full clean verification and inspect Linux/Windows CI on the final published head. Keep C17 VERIFYING until confirmed merge; no automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C17 lookup Add navigation — owner request
+
+Publication: [draft PR #443](https://github.com/benbaron/sca-jakarta-h2/pull/443),
+implementation **5ca6ec66586184726955f20bb756ac24ac49cf79**, final sized native
+head **a00965b783a4b3ce13cd357592d8bd020b4116f0**, tree
+**fc19682189b0c4b23251d7b09637b922a9d81bb6**. New absent branch published
+normally and PR read-back matches. This following publication successor changes
+only PLAN/C17. Full clean verification and exact-final-head CI remain pending;
+verify native final head/tree and require its checks, not an earlier commit.
+No automatic merge.
+
 
 Latest final action-geometry gate passes **18 tests, zero failures/errors/skips
 (02:00)** on the final preferred sizing, including direct bounds checks that
