@@ -15,6 +15,7 @@ final class SuggestedImportComboBox extends ComboBox<TransactionLineEditorModel.
     private final boolean optional;
     private final Runnable changed;
     private final Button clear = new Button("Clear");
+    private final Button add = new Button("Add…");
     private final ListCell<TransactionLineEditorModel.Option> display;
     private ImportReferenceSuggestion suggestion;
     private boolean updating;
@@ -24,6 +25,8 @@ final class SuggestedImportComboBox extends ComboBox<TransactionLineEditorModel.
         this.optional = optional;
         this.changed = changed;
         getStyleClass().add("import-reference-combo");
+        setPrefWidth(140);
+        setMinWidth(0);
         setCellFactory(ignored -> new ListCell<>()
         {
             @Override
@@ -68,14 +71,25 @@ final class SuggestedImportComboBox extends ComboBox<TransactionLineEditorModel.
 
     Node field()
     {
-        if (!optional)
-        {
-            return this;
-        }
         clear.setId(getId() + "Clear");
-        HBox box = new HBox(5, this, clear);
+        add.setId(getId() + "Add");
+        HBox box = optional ? new HBox(5, this, clear, add) : new HBox(5, this, add);
         HBox.setHgrow(this, Priority.ALWAYS);
         return box;
+    }
+
+    void configureAdd(String destination, Runnable action)
+    {
+        add.setTooltip(new Tooltip("Open " + destination + " to add a saved record. Return to Import to reload choices; this draft stays here. Available for a selected, editable draft in its original company while no operation is running."));
+        add.setAccessibleText("Add a record in " + destination);
+        add.setOnAction(event -> action.run());
+        UiPermissionGate.gate(add, org.nonprofitbookkeeping.service.ApplicationPermission.BOOKKEEPING_WRITE,
+                "Add a record in " + destination);
+    }
+
+    void setAddUnavailable(boolean unavailable)
+    {
+        add.setDisable(unavailable);
     }
 
     void show(ImportReferenceSuggestion value)

@@ -1,17 +1,104 @@
 ---
-plan_version: 533
+plan_version: 538
 active_phase: P27
-active_slice: P27-C16
+active_slice: P27-C17
 active_status: VERIFYING
-active_branch: codex/P27-C16-import-grey-contrast
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/442
-active_head: 7c2ae920d16751b93a03fdb9a87c2bbce305a975
-next_action: "PR 442 published; final native gate passes 19 tests. Run full clean verification and inspect Linux/Windows CI on the final published head. Keep C16 VERIFYING until confirmed merge; no automatic merge."
+active_branch: codex/P27-C17-lookup-add-navigation
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/443
+active_head: a00965b783a4b3ce13cd357592d8bd020b4116f0
+next_action: "PR 443 published; native 49/18 gates and Word checks pass. Run full clean verification and inspect Linux/Windows CI on the final published head. Keep C17 VERIFYING until confirmed merge; no automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
+### P27-C17 lookup Add navigation — owner request
+
+Publication: [draft PR #443](https://github.com/benbaron/sca-jakarta-h2/pull/443),
+implementation **5ca6ec66586184726955f20bb756ac24ac49cf79**, final sized native
+head **a00965b783a4b3ce13cd357592d8bd020b4116f0**, tree
+**fc19682189b0c4b23251d7b09637b922a9d81bb6**. New absent branch published
+normally and PR read-back matches. This following publication successor changes
+only PLAN/C17. Full clean verification and exact-final-head CI remain pending;
+verify native final head/tree and require its checks, not an earlier commit.
+No automatic merge.
+
+
+Latest final action-geometry gate passes **18 tests, zero failures/errors/skips
+(02:00)** on the final preferred sizing, including direct bounds checks that
+Account/Fund/Payee Add buttons fit the normal-width editor viewport. Smaller
+windows retain independently tested both-axis scrolling. The final screenshot
+was inspected; previous sizing-gate notes below are historical. Broad gate 49
+passes as above. Publish the reviewed branch, run clean verification and inspect
+exact-head CI; no further runtime changes are pending.
+
+
+Final native/sizing gate passes **18 tests, zero failures/errors/skips (02:06)**,
+including all 12 import scenarios and six overflow cases on the final product
+bytes. The broad 49-case gate passes (03:12). The actual Add/maintenance tab/
+save/return screenshot and 31-page Word render were inspected; 249 local links
+and whitespace pass. New toolbar-size defaults keep dropdown, Add and optional
+Clear reachable at normal width; forms retain local both-axis overflow. No
+unresolved final local failure remains. Full clean verification, publication
+and exact-head CI remain pending.
+
+
+Candidate VERIFYING. Broad production gate passes **49 tests, zero failures/
+errors/skips (03:12)**: 12 import cases, eight suggestion/state, two pure contrast,
+four native theme, seven command routes, eight Save, six overflow and two guide
+checks. The first 33-case gate exposed one stale disabled-state return defect;
+it is fixed with company/database regression retained. A final 18-case import/
+overflow check validates the bounded preferred field sizing. Direct Word change
+is one paragraph/one ZIP part, all other paragraphs/parts/review/media/links
+preserved; render remains 31 pages with changed pages inspected. Full clean
+verification, publication and exact-head CI remain.
+
+
+Owner requests Add alongside Clear/dropdown lookup selection, drilling to the
+appropriate maintenance panel. GitHub and native fetch confirm C16/#442 merged
+at **b976ebe9e2c2d3a7f10eeb11141355a9b9f6398f**; C16 is DONE with accepted-head
+CI 45091082559 passed. Fresh `codex/P27-C17-lookup-add-navigation` carries the
+C16 final receipt as e3773062. Baseline compile passes. The optional scope question received no answer after ample opportunity; proceed
+with the six CSV lookup fields from the current discussion. Broader application-
+wide selector changes are not assumed. See [C17](P27-C17-lookup-add-navigation.md).
+Account routes to Chart of Accounts, Fund to Funds, Budget to Budget Categories,
+Event to Events/Activities, Merchant to Merchants and Payee to Payees. Fixed
+Expense Function classifications have no record-maintenance destination.
+
+Preserve the source import draft and existing destination drafts; navigation
+must not clear a target form or write a record. On return reload eligible choices
+in the original scope, retaining unfinished/applied edits and recent-update
+markers. Required reading: C15/C16, UI/editor/operation rules, master maintenance
+panels and authoritative permission/service boundaries. Inspect SuggestedImportComboBox,
+ExchequerImportReviewPane, ImportPreviewPanel, DrillThroughCoordinator, PanelHost
+and real navigation/editor tests. Native routes, return/create/eligibility,
+permissions, scope changes, overflow, manual ZIP preservation, full clean verify
+and exact-head CI are required before handoff. No automatic merge.
+
+
 ### P27-C16 authorized implementation
+
+Final local receipt: accepted remote head **4720d406ac82e54bb0210f722cd57a9fd4cc3257**,
+tree **379f0b209b01e88273d50c8477d7eb4705a27577**; native ref/PR match. Full local
+`clean verify` passes **1,332 tests, zero failures/errors, 166 expected headless
+display skips (11:06)**, exit 0. First focused display gate passes 38 (02:48),
+final import/contrast/overflow passes 19 (01:34), both without failures/errors/
+skips; all four final screenshot states were inspected. Production/test/style/
+Word bytes remain identical to the checked remote source. This final receipt
+stays local to preserve its checks.
+
+[Exact-head CI 45091082559](https://github.com/benbaron/sca-jakarta-h2/actions/runs/45091082559):
+Windows job 137420593475 passes **24 displayed tests across seven suites, zero
+failures/errors/skips**; actual totals inspected and retained in
+/workspace/p27-c16-evidence/windows-test-summary.log. Linux job 137420593221 passed rendered theme checks, full clean/repeated
+verification, Period Close, overflow, imports, Journal/SCLX feedback and final
+production JavaFX routes. The final run and both jobs completed **success**;
+individual step metadata and actual Windows totals were inspected. The large
+Linux log request returned a transport error; its final success/step metadata is
+retained in /workspace/p27-c16-evidence/github-final-checks.json. No final executed
+gate failed. Ready-for-review PR #442 is open, unmerged and no longer draft,
+with the same accepted head. Earlier pending-check notes below are historical.
+Status VERIFYING until confirmed owner merge; no automatic merge.
+
 
 Publication: [draft PR #442](https://github.com/benbaron/sca-jakarta-h2/pull/442),
 implementation **7c2ae920d16751b93a03fdb9a87c2bbce305a975**, tree
@@ -895,7 +982,7 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | DONE through owner-merged PR #386; final published head passed clean/repeat/JavaFX CI |
-| P27 | Generic accounting packet, evidence, complete portability | Baseline DONE through #401; backup prerequisite resolved through merged #430; owner corrections DONE through C15 / #441 |
+| P27 | Generic accounting packet, evidence, complete portability | Baseline DONE through #401; backup prerequisite resolved through #430; owner corrections DONE through C16 / #442; C17 active |
 | P28 | End-to-end acceptance and release | Baseline DONE through #403; manual/procedure corrections DONE through #441 (including #439/#440); native owner acceptance remains unrecorded |
 | P29 | Owner-directed desktop UI corrections | Implemented through merged #423; technical recovery prerequisite resolved through #430; native owner evidence remains unrecorded |
 

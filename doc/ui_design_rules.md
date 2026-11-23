@@ -230,3 +230,14 @@ textual status plus normal/grey/bold rendering; Refresh reloads/revalidates and
 removes the update marker without another acceptance. Selection highlights retain
 readable contrast. Multi-select proposal deletion leaves source and Journal intact.
 No extra window/pane. See [C15](P27-C15-import-suggestions.md).
+
+## P27-C17 import lookup maintenance links
+
+CSV review record selectors offer Add beside the native dropdown and optional
+Clear: Account, Fund, Budget Category, Event, Merchant and Payee open their
+existing maintenance tabs. Fixed Expense Function choices have no Add action.
+Opening a destination preserves source and destination drafts; use its existing
+New/Save commands. Returning to Import reloads eligible choices in the original
+company/database without applying an entry or clearing Updated markers. Explicit
+Refresh Review retains its marker-clearing meaning. Both-axis overflow and
+permission explanations remain available. See [C17](P27-C17-lookup-add-navigation.md).

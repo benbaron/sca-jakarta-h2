@@ -201,3 +201,13 @@ including combo skins, line cells, selected/unselected rows and reused controls.
 Grey adapts to the actual surface for at least 4.5:1 contrast. Reference IDs,
 validation, Apply/Cancel, refresh and final commit semantics are unchanged.
 See [C16](../P27-C16-import-review.md).
+
+## P27-C17 Add missing import lookup records
+
+Each CSV review record selector has an Add action opening its existing maintenance
+tab (Budget means Budget Categories). Existing destination drafts are retained;
+New/Save there creates the record. Return to Import to reload eligible choices,
+retaining raw header/amount/line edits, selected line, explicit clearing and
+Updated markers. No Apply or Journal write occurs. Account/Fund remain required;
+fixed Expense Function classifications remain a dropdown. See
+[C17](../P27-C17-lookup-add-navigation.md).
