@@ -86,3 +86,10 @@ cases. Earlier broader gate passes 49 (03:12). The updated native Add/return
 screenshot and 31-page Word render were inspected. All 249 changed-document
 local links and whitespace pass. Full clean verification, publication and
 exact-head CI remain pending.
+
+Final action-geometry gate passes **18 tests, zero failures/errors/skips (02:00)**
+on the final preferred sizing. Direct bounds checks confirm the visible Account,
+Fund and Payee Add actions fit the normal-width viewport; reduced windows retain
+local scrolling. The real Add/return screenshot was inspected after this final
+change. Earlier sizing-gate notes are historical. No further runtime changes
+are pending; publication, clean verification and exact-head CI remain.

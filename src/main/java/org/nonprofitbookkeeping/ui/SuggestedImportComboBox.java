@@ -25,7 +25,7 @@ final class SuggestedImportComboBox extends ComboBox<TransactionLineEditorModel.
         this.optional = optional;
         this.changed = changed;
         getStyleClass().add("import-reference-combo");
-        setPrefWidth(180);
+        setPrefWidth(140);
         setMinWidth(0);
         setCellFactory(ignored -> new ListCell<>()
         {

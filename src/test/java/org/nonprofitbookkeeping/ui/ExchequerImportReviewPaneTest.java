@@ -803,6 +803,17 @@ class ExchequerImportReviewPaneTest
             assertTrue(table.lookupAll(".scroll-bar").stream().filter(ScrollBar.class::isInstance)
                     .map(ScrollBar.class::cast).anyMatch(bar -> bar.getOrientation() == Orientation.HORIZONTAL && bar.isVisible()));
             button("editExchequerEntry").fire();
+            layout();
+            SplitPane editor = (SplitPane) panel.root().lookup("#exchequerEntryEditorSplit");
+            ScrollPane editorForm = (ScrollPane) editor.getItems().get(0);
+            var viewport = editorForm.lookup(".viewport");
+            double rightEdge = viewport.localToScene(viewport.getBoundsInLocal()).getMaxX();
+            for (String id : List.of("exchequerLineAccountAdd", "exchequerLineFundAdd", "exchequerEntryPayeeAdd"))
+            {
+                var action = button(id);
+                assertTrue(action.localToScene(action.getBoundsInLocal()).getMaxX() <= rightEdge + 1,
+                        id + " fits the normal-width editor viewport");
+            }
             stage.setWidth(520);
             return null;
         });

@@ -1,5 +1,5 @@
 ---
-plan_version: 536
+plan_version: 537
 active_phase: P27
 active_slice: P27-C17
 active_status: VERIFYING
@@ -12,6 +12,15 @@ next_action: "Implement C17 lookup Add navigation and draft-preserving return re
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C17 lookup Add navigation — owner request
+
+Latest final action-geometry gate passes **18 tests, zero failures/errors/skips
+(02:00)** on the final preferred sizing, including direct bounds checks that
+Account/Fund/Payee Add buttons fit the normal-width editor viewport. Smaller
+windows retain independently tested both-axis scrolling. The final screenshot
+was inspected; previous sizing-gate notes below are historical. Broad gate 49
+passes as above. Publish the reviewed branch, run clean verification and inspect
+exact-head CI; no further runtime changes are pending.
+
 
 Final native/sizing gate passes **18 tests, zero failures/errors/skips (02:06)**,
 including all 12 import scenarios and six overflow cases on the final product
