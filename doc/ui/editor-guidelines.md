@@ -222,3 +222,13 @@ Return to Import returns to the original Import controller and reloads eligible
 choices without applying the entry or clearing either draft. Journal and other
 callers receive their own named Return action. This changes navigation, not the
 active-only import choice eligibility. See [C18](../P27-C18-category-list-return.md).
+
+The C18 contract extends to all six Import Add maintenance panels (Account, Fund,
+Budget, Event, Merchant and Payee). Show All reloads existing-scope active/inactive
+rows and clears any search; ordinary Refresh retains the search. Neither accepts
+or discards editor changes. Save reveals/selects its saved record. Asynchronous
+list callbacks must not overwrite fields edited after the request. Named Return
+uses the actual caller; the Chart interchange wrapper forwards activation.
+Import return retains pending/applied edits, explicit clearing and Updated
+markers, while reloading eligible choices. Show All in Chart of Accounts keeps
+the selected chart and its read-only/activation rules.

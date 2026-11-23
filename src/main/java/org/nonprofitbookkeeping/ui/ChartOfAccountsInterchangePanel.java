@@ -596,6 +596,12 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         delegate.onPanelShown();
     }
 
+    @Override
+    public void onPanelShownFrom(AppPanelId origin, String originTitle)
+    {
+        delegate.onPanelShownFrom(origin, originTitle);
+    }
+
     Button importJsonButtonForTests()
     {
         return importJson;

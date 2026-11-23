@@ -298,3 +298,14 @@ All reset search, Refresh preserves search, all list reloads retain dirty editor
 fields, and Save reveals the saved row. Empty/filter/load-error states differ.
 Import retains its existing reference reload and draft/Updated-marker behavior.
 See [C18](P27-C18-category-list-return.md).
+
+C18 also applies caller-aware Return and draft-safe list refresh to the remaining
+Import Add destinations: Chart of Accounts (through its interchange wrapper),
+Funds, Events / Activities, Merchants and Payees / Counterparties. Small shared
+UI helpers own return-button presentation and list feedback only; existing tab
+activation, company-scoped services and record IDs retain all authority. Search
+resets on entry/Show All/Save; Refresh retains search. Asynchronous loads retain
+newer editor changes and ignore superseded results. Chart selection is retained;
+no chart activation, New, Apply or Journal write occurs on navigation/refresh.
+Maintenance includes inactive records while Import's eligible choice rules stay
+authoritative. See [C18](P27-C18-category-list-return.md).

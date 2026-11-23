@@ -1,7 +1,81 @@
-# P27-C18 — Budget Categories visibility and caller return
+# P27-C18 — Import lookup maintenance visibility and caller return
 
-Status: VERIFYING. Owner reports No matching Budget Categories on the list and
+Status: IN_PROGRESS. Owner reports No matching Budget Categories on the list and
 an incorrect Return to Journal action when arriving from Import.
+
+## Owner extension — all Import Add destinations
+
+Extension final native gate passes **15/0/0/0 (01:57)** after the Chart header
+correction, including all five real Import journeys, actual Return/Show All
+viewport bounds, chart selection and overflow. Expanded gate passes
+**72/0/0/0 (05:47)**; initial gate passes **17/0/0/0 (02:28)**. All five native
+maintenance screenshots were inspected, including the corrected Chart header.
+251 local links, whitespace and final Word preservation checks pass. No further
+source/test/Word edits are pending. Publish this extension and require a new
+full local clean verify and exact-final-head CI before marking #444 ready.
+
+
+The owner extends C18 to Account, Fund, Event, Merchant and Payee maintenance,
+as well as Budget. Continue the open #444 branch; do not merge or stack a new
+architecture. The Budget-only final receipt below is historical for this
+extension. Baseline compile passes at eb2628dc.
+
+Required inspection: ChartOfAccountsPanel and its interchange wrapper, FundsPanel,
+ActivitiesPanel, CounterpartiesPanel, MerchantsPanel, their company-scoped lookup/
+admin services and existing native editor tests. Applicable donor adaptation is
+the same native maintenance/tab infrastructure already used by C17/C18.
+No schema, new persistence model or widened ownership query is needed.
+
+Every destination gets a named caller-aware Return (default Journal), using the
+existing activation hook; the Chart wrapper must forward it. Searchable panes
+clear filters on activation/Show All and after Save. Unfiltered Fund/Account lists
+reload all records in their existing company/chart scope. Retain selected chart
+while browsing; Show All means accounts within that chart, never a chart switch.
+List refresh never accepts/discards editor changes; asynchronous callbacks must
+not overwrite edits made during a request. Counts and empty/filter/load-error
+feedback distinguish missing master data from hidden/failed lists. Maintenance
+includes inactive rows; Import choices retain existing active/eligible filtering.
+
+Validate every real Add/Save/Return route, source and target draft retention,
+filter reset, inactive visibility, saved-row selection, ordinary callers,
+permissions, chart browsing and local overflow. Update Word directly, preserving
+review/parts/media/links; run focused/native/full and exact-head GitHub checks.
+
+## Extension implementation and validation
+
+All five additional maintenance destinations use small UI-only helpers for
+caller Return and list feedback. The Chart interchange wrapper forwards the
+existing activation hook. Searchable lists reset on activation/Show All/Save;
+Refresh retains the filter. Funds and Chart lists already have no search, so
+Show All simply reloads all records in the existing company/viewed-chart scope.
+Selection callbacks are suppressed during list replacement/reselection. Dirty
+forms are retained; Fund/Chart callbacks also compare the requested form revision/
+snapshot and ignore superseded loads. Existing Activity guards remain.
+The anonymous Chart table-state key is deliberately unchanged. No maintenance
+query, schema, Import eligibility or Save service authority changes.
+
+Baseline and candidate compile pass. Initial native gate passes **17/0/0/0
+(02:28)**, including five actual Import Add/Save/Return journeys plus existing
+Counterparty, Merchant, Event and Chart tests. Expanded native gate adds empty/error/recovery journeys for all five
+destinations and existing Budget, host, Save, route, table-state, guide and
+overflow checks. All 22 Import cases pass. Visual inspection found the new
+Chart actions below its default header viewport; move that action row directly
+below the title and assert Return/Show All fit the actual local viewport in
+every normal-size maintenance route. Expanded native gate passes **72/0/0/0 (05:47)**. Final header geometry
+gate, full clean verification and new exact-head CI remain pending.
+
+Word extension changes only paragraph 301/document.xml; all other parts,
+paragraphs, annotations, tables, drawings, bookmarks and links remain identical.
+Render remains 31 pages; changed pages 15/16 were visually inspected.
+
+Extension user checks: for every Import Add lookup, create a record through its
+existing maintenance pane, use Show All after a search miss, refresh while a
+draft is unfinished, Save and verify the row becomes visible/selected. Use
+Return to Import; unfinished source fields/line selection and Updated markers
+remain and new eligible choices reload. Inactive maintenance rows remain
+unavailable for new import selection. Open each pane from Journal and verify
+Return to Journal; ordinary same-tab refresh retains the caller. In Chart of
+Accounts, Show All/Refresh retains the viewed chart and its read-only rules.
 
 ## Final validation and handoff
 

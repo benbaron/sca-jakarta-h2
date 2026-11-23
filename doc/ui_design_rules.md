@@ -252,3 +252,14 @@ categories, a search miss and a load failure. Do not expose another company's
 categories to populate an empty list. The Return button names and opens the
 actual caller, including Import or Journal, without saving/discarding the draft.
 Same-tab reselection retains that destination. See [C18](P27-C18-category-list-return.md).
+
+C18 applies the same contract to every Import Add destination: Chart of Accounts,
+Funds, Events / Activities, Merchants and Payees / Counterparties, as well as
+Budget Categories. Maintenance includes inactive records in the existing company
+(or viewed chart) scope. Searchable lists clear search on entry/Show All/Save;
+Refresh keeps the filter. Unfiltered lists reload all records. Every reload
+preserves editor drafts, including edits during asynchronous requests. Counts
+and distinct empty/search/load-error messages explain visibility. Return names
+the actual caller and only navigates; same-tab reselection keeps that caller.
+Chart browsing/activation, saved table-state keys and Import's active/eligible
+choices retain their existing scope. See [C18](P27-C18-category-list-return.md).

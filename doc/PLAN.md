@@ -1,17 +1,52 @@
 ---
-plan_version: 542
+plan_version: 543
 active_phase: P27
 active_slice: P27-C18
 active_status: VERIFYING
 active_branch: codex/P27-C18-category-list-return
 active_pull_request: 444
-active_head: e97bb2464a8788b3e1f7c6b0e216aba373b110db
-next_action: "PR #444 ready for owner review/merge; full local and exact-head Linux/Windows CI pass at e97bb246. Confirm merge before marking C18 DONE or selecting the next unfinished unblocked slice. No automatic merge. No automatic merge."
+active_head: eb2628dc
+next_action: "Extend open PR #444/C18 to all six Import Add maintenance destinations; finish final header geometry, publish the five-panel extension and require new full verification/exact-head CI. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
-### P27-C18 Budget Categories list and return — owner correction
+### P27-C18 Import lookup maintenance list and return — owner correction
+
+Extension final native gate passes **15/0/0/0 (01:57)** after the Chart header
+correction, including all five real Import journeys, actual Return/Show All
+viewport bounds, chart selection and overflow. Expanded gate passes
+**72/0/0/0 (05:47)**; initial gate passes **17/0/0/0 (02:28)**. All five native
+maintenance screenshots were inspected, including the corrected Chart header.
+251 local links, whitespace and final Word preservation checks pass. No further
+source/test/Word edits are pending. Publish this extension and require a new
+full local clean verify and exact-final-head CI before marking #444 ready.
+
+
+Extension candidate: all five additional routes implemented; initial native gate
+**17/0/0/0 (02:28)** passes. Expanded native gate passes **72/0/0/0 (05:47)**, including
+all **22 Import cases** with
+real create/return and empty/failure/recovery for every additional destination.
+Native review found Chart actions below its header viewport; action row moved
+below the title with actual viewport bounds assertions added for Return/Show All.
+Final geometry, full local and exact-head CI remain. Word extension changes only
+paragraph 301/document.xml, preserves all other parts/review/media/links and
+renders to 31 pages; changed pages 15/16 inspected. 251 local links pass.
+
+Owner extension VERIFYING: apply the same behavior to every record destination
+with Import Add: Account, Fund, Event, Merchant and Payee, alongside Budget.
+PR #444 is still open at e97bb246 and is returned to draft; current main remains
+54c4cdef. Extend this same slice/PR, retaining its local final receipt eb2628dc.
+Earlier acceptance below applies only to the Budget-only revision. Baseline
+compile passes. Inspect each actual maintenance panel and the Chart interchange
+wrapper. Reuse existing company/chart ownership, service boundaries and tab
+activation. Preserve draft fields through filtering/reload and asynchronous
+completion. Retain explicit chart browsing/activation and Import eligibility.
+Show all maintenance records including inactive within existing scope, explain
+empty/search/load errors, reveal saved records, and Return to the actual caller.
+Add native real Import journeys for all destinations; update Word directly and
+UI/operation rules; finish focused/full/exact-head CI before review.
+
 
 Final local receipt: accepted remote head
 **e97bb2464a8788b3e1f7c6b0e216aba373b110db**, tree
