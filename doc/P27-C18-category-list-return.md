@@ -5,6 +5,15 @@ an incorrect Return to Journal action when arriving from Import.
 
 ## Owner extension — all Import Add destinations
 
+Extension publication candidate for existing [PR #444](https://github.com/benbaron/sca-jakarta-h2/pull/444):
+implementation **e85f3e1fa5a96c7320dde6d4976ab7cabca483ff**, tree
+**1540b41741fe7f727739b0d7461e54a979c79ffa**. Remote was checked at expected
+parent e97bb246; retain local receipt eb2628dc and use a normal fast-forward push.
+This following receipt changes only PLAN/C18. Require full local clean verify
+and exact-final-head Linux/Windows CI on the published successor. Previous
+Budget-only CI does not validate this extension. No automatic merge.
+
+
 Extension final native gate passes **15/0/0/0 (01:57)** after the Chart header
 correction, including all five real Import journeys, actual Return/Show All
 viewport bounds, chart selection and overflow. Expanded gate passes

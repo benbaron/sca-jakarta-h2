@@ -1,17 +1,26 @@
 ---
-plan_version: 543
+plan_version: 544
 active_phase: P27
 active_slice: P27-C18
 active_status: VERIFYING
 active_branch: codex/P27-C18-category-list-return
 active_pull_request: 444
-active_head: eb2628dc
-next_action: "Extend open PR #444/C18 to all six Import Add maintenance destinations; finish final header geometry, publish the five-panel extension and require new full verification/exact-head CI. No automatic merge."
+active_head: e85f3e1fa5a96c7320dde6d4976ab7cabca483ff
+next_action: "Publish the reviewed C18 extension to #444; run full clean verify and inspect exact-final-head Linux/Windows CI. All native gates pass. Record accepted head/tree; no automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C18 Import lookup maintenance list and return — owner correction
+
+Extension publication candidate for existing [PR #444](https://github.com/benbaron/sca-jakarta-h2/pull/444):
+implementation **e85f3e1fa5a96c7320dde6d4976ab7cabca483ff**, tree
+**1540b41741fe7f727739b0d7461e54a979c79ffa**. Remote was checked at expected
+parent e97bb246; retain local receipt eb2628dc and use a normal fast-forward push.
+This following receipt changes only PLAN/C18. Require full local clean verify
+and exact-final-head Linux/Windows CI on the published successor. Previous
+Budget-only CI does not validate this extension. No automatic merge.
+
 
 Extension final native gate passes **15/0/0/0 (01:57)** after the Chart header
 correction, including all five real Import journeys, actual Return/Show All
