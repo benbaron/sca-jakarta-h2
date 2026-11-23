@@ -1,5 +1,13 @@
 # P27-C15 — CSV suggestions in import lookup fields
 
+Status: **DONE**. On 2026-11-22 America/Denver, the owner explicitly authorized
+merging [PR #441](https://github.com/benbaron/sca-jakarta-h2/pull/441). GitHub
+confirmed merge 17fa56aef67b9983b35827b2453b9f384f40bc4e and native fetch
+confirmed current main. Accepted source 7b310aca and workflow 45068903655 were
+rechecked before merge. The final validation receipt below remains valid;
+earlier open/unmerged/pending instructions are historical. [PLAN](PLAN.md)
+records the next-slice audit; no further unblocked adopted coding slice exists.
+
 The owner requests grey proposed source values in the same combo fields used for
 final choices. Clarifications adopt automatic unique exact matches, all applicable
 lookup fields and mandatory selection or explicit clearing of unmatched optional
@@ -110,3 +118,34 @@ implementation 71b19b860d8c6237b7bec385a9df1d33ea3c9460, tree
 published normally; native ref/PR match. This receipt changes documentation
 only; accept CI on its resulting final head. Local clean verification is running;
 exact-head CI remains pending. No automatic merge.
+
+## Final verification and handoff
+
+Ready-for-review [PR #441](https://github.com/benbaron/sca-jakarta-h2/pull/441),
+accepted remote head 7b310acaea1c1f1011e4682c8b3403cc77b348dd, tree
+93ac445b443c42964c76743c02c8ef2aab21c515, open/unmerged. Native ref/PR match.
+This final local-only receipt preserves the checked remote head; PR records actual
+results. Earlier pending notes are historical. No product/test/style/Word bytes
+changed after final validation.
+
+Local clean verify passes **1,330 tests, zero failures/errors, 165 expected
+headless display skips (10:11)**. Final focused/display gate passes 37, no
+failures/errors/skips (02:11); prior broad gate 62 (03:39). Native grey hints,
+real dropdowns, five-field exact matches, explicit clearing, whole-record Apply/
+Cancel, contextual Save, normal/grey/bold rendering, multi-delete, stale identities
+and pending-edit refresh retention are exercised. Synthetic screenshots were
+visually inspected. Word changes four paragraphs only; all other parts/paragraphs,
+review counts, tables/images/bookmarks/links remain preserved. Final render has
+31 pages; updated import instructions inspected. Local links/whitespace pass.
+
+[Exact-head CI 45068903655](https://github.com/benbaron/sca-jakarta-h2/actions/runs/45068903655)
+passes: Linux 137351198238 passes rendering, clean/repeat, Period Close, overflow,
+imports, Journal/SCLX feedback and production routes; Windows 137351198067 passes
+all 23 display tests across seven required suites without failures/errors/skips.
+Actual Windows log totals and final run/job/step success metadata inspected.
+No final executed gate failed. Evidence: /workspace/p27-c15-evidence/.
+
+Remaining: owner review/merge of #441, including authorized C2 Word-primary
+changes. No automatic merge. Keep VERIFYING until confirmed merge; review the
+user-check workflow above using disposable source data. No user financial data,
+database, schema or accounting-service changes.

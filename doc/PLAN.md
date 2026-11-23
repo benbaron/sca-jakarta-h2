@@ -1,17 +1,166 @@
 ---
-plan_version: 528
+plan_version: 533
 active_phase: P27
-active_slice: P27-C15
+active_slice: P27-C16
 active_status: VERIFYING
-active_branch: codex/P27-C15-import-suggestions
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/441
-active_head: 71b19b860d8c6237b7bec385a9df1d33ea3c9460 (implementation; publication receipt follows)
-next_action: "Finish local clean verification and final published-head Linux/Windows CI for PR 441. C15 focused/display and document checks pass. Keep VERIFYING until owner review/merge; no automatic merge."
+active_branch: codex/P27-C16-import-grey-contrast
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/442
+active_head: 7c2ae920d16751b93a03fdb9a87c2bbce305a975
+next_action: "PR 442 published; final native gate passes 19 tests. Run full clean verification and inspect Linux/Windows CI on the final published head. Keep C16 VERIFYING until confirmed merge; no automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
+### P27-C16 authorized implementation
+
+Publication: [draft PR #442](https://github.com/benbaron/sca-jakarta-h2/pull/442),
+implementation **7c2ae920d16751b93a03fdb9a87c2bbce305a975**, tree
+**33fffe7d16f4f94ce091047938a328b939d86189**. New absent branch was published
+normally; PR read-back matches. This publication successor changes only
+PLAN/C16 and records the final **19 tests, zero failures/errors/skips (01:34)**
+for production import, theme contrast and overflow, including fixture cleanup.
+Earlier 38-test focused gate passed (02:48). All four final synthetic screenshot
+states were inspected; 248 changed-document local links and whitespace pass.
+Full clean verification and exact-final-head CI remain pending. Verify the
+published successor's native head/tree; do not use earlier-head CI. No merge.
+
+
+Candidate implementation is VERIFYING. First focused/native gate passes **38
+tests, zero failures/errors/skips (02:48)**: nine CSV review cases, four theme/
+contrast cases, seven production command routes, eight Save-scope, two pure color
+and eight suggestion/state cases. The two before-fix production regressions fail
+with the original foreground assertions (01:01). Grey editor/proposal screenshots
+and Updated/Ready screenshots were visually inspected. Selected/unselected rows
+stay grey; correct values become normal and valid Updated stays bold. A final
+19-case import/contrast/overflow gate follows the test fixture's theme cleanup;
+full clean verification, publication and exact-head CI remain. No app/service/
+Word/schema/data changes beyond the single production contrast helper.
+
+
+Owner now says “Apply the changes.” Resume C16 as IN_PROGRESS on fresh
+`codex/P27-C16-import-grey-contrast` from fetched main 17fa56ae, carrying prior
+review/final receipts as ea67023c, 79545fe2 and 785ce4a8. This direction supersedes
+the earlier review-only scope. Baseline compile passes. Preserve explicit import
+semantic grey through the production contrast traversal, including painted text,
+with at least 4.5:1 contrast against the actual surface; ordinary text retains its
+black/white rule. Exercise real CSV review under that traversal, all supplied
+lookups, selection, themes, resolution, Cancel/Refresh and reused cells. No
+accounting/schema/manual procedure changes. Update C16 and UI contracts, then
+focused/native/full local verification, publication and exact-head CI. No merge
+is authorized for the new correction PR.
+
+### P27-C16 owner review of missing import grey styling
+
+Review complete; corrective implementation READY, not implemented. Owner reports
+missing grey highlights and asks whether #441 contains all agreed changes.
+Fresh `codex/P27-C16-import-review` starts from fetched main 17fa56ae and carries
+the local final/merge receipts as 0d113c3a and 1bd2e371. GitHub confirms #441
+merged at that main. [C16 review and requirement audit](P27-C16-import-review.md)
+records one confirmed P2 integration defect: production post-layout contrast
+writes inline black/white foregrounds over C15 grey on combo value cells,
+unresolved line cells and invalid proposal rows, including unselected rows.
+The standalone C15 tests do not install this production routine.
+
+Baseline compile passes. Original focused tests pass 16, zero failures/errors/
+skips. Production-theme/enforcer diagnostic runs ten: seven pass and three grey
+checks expose black text (Surefire records three CompletionException-wrapped
+AssertionFailedErrors as errors, not database errors; combined 26/0 failures/
+3 errors/0 skips, 02:07). Separate production Apply/Cancel/refresh/bold workflow
+passes one case, zero failures/errors/skips (00:44). Both native black-text
+screenshots were inspected. All other agreed controls/state/commit protections
+are present in code and focused checks. The requested feature uses grey text;
+no grey background fill was specified. No user financial file/database used.
+
+Temporary diagnostic source/reports/screenshots remain outside the repository in
+/workspace/p27-c16-review-evidence/; temporary source/compiled classes are removed.
+No application/test/style/Word/schema bytes change in this review. No full clean
+verification or CI was run or claimed for this documentation-only review.
+Next correction must preserve semantic grey, including painted Text descendants
+and row reuse, while retaining general contrast safety, and exercise production
+light/dark/selection/refresh paths before full verification and exact-head CI.
+This review creates no runtime patch or PR. Whitespace and scope checks pass;
+all 196 local links in the 6 changed/carried documents resolve. No owner
+runtime-fix instruction is assumed from a request to review.
+
+### Confirmed merge and next-slice audit — 2026-11-22 America/Denver
+
+Owner explicitly instructed “Merge PR #441 and continue.” GitHub merged
+[PR #441](https://github.com/benbaron/sca-jakarta-h2/pull/441) at
+**17fa56aef67b9983b35827b2453b9f384f40bc4e** after rechecking accepted head
+7b310aca and successful exact-head workflow 45068903655. Native fetch confirms
+that merge as current origin/main. **P27-C15 is DONE.** Its local final receipt
+d42885bd is preserved on fresh `codex/P27-C15-merge-closeout` as 69881900;
+no merged task branch is reused.
+
+**P28-C2 is also DONE:** GitHub confirms #439 merged through its normal integration
+7d5422cb, now reachable from main through #441. Word remains the primary manual.
+The C2 final verification receipt is preserved in its contract. Earlier open-PR,
+pending-check and implementation checkpoints below are historical.
+
+The next-slice audit checked the current phase index, adopted slice table,
+P23–P28 closure contract, native-backup contracts and fetched merge history:
+
+- The P27-C2 IN_PROGRESS index entry was stale. C2/#424, its C5/#427 follow-up,
+  and the final C6/C7 repair/#430 are merged. #430's accepted head bd1cb19d passed
+  workflow 43804474947, combined clean/repeat/display, packaged-JAR and unchanged
+  native snapshot regressions. The technical prerequisite is resolved; invalid
+  frozen archives remain evidence and are not repaired by this closeout.
+- P23–P28 adopted functional baseline slices, including S4D3, P28-S1 and P28-S2,
+  are already DONE. Later requested corrections through C15 are merged.
+- P17-C13, P25-S4B/S4C and P29 retain unrecorded native owner acceptance. These
+  are acceptance evidence gaps, not unimplemented coding slices. Automated tests
+  and the current merge instruction do not supply human per-scenario acceptance.
+- Conditional P27-S5 attachments/approvals is not adopted and remains BLOCKED
+  pending explicit scope amendment. It is not a prerequisite for completed work.
+
+**No adopted unfinished, unblocked coding slice remains.** Do not invent a new
+feature or restart a completed phase in response to “continue.” The owner's
+previous instruction to move past the blocked acceptance list remains in effect;
+no consolidated acceptance session is imposed. Next work requires a concrete new
+request or owner-provided acceptance evidence.
+
+This is a documentation-only merge closeout. No app/test/style/Word/database or
+frozen-evidence bytes change. Validation passes: eight required merge ancestors,
+current-main/active-status checks, all 190 local links in the five changed
+documents, and diff whitespace. The successful implementation gates recorded
+below remain the code validation; no tests were rerun for this receipt. This
+local closeout can be carried into the next authorized task, following the
+established final-receipt convention; it is not a new implementation PR.
+
 ### P27-C15 CSV source suggestions in lookup fields — owner request
+
+Final receipt: [PR #441](https://github.com/benbaron/sca-jakarta-h2/pull/441) is ready
+for review, open and unmerged. Accepted remote head
+**7b310acaea1c1f1011e4682c8b3403cc77b348dd**, tree
+**93ac445b443c42964c76743c02c8ef2aab21c515**, matches published native ref/PR read-back.
+**Local clean verify passes 1,330 tests, zero failures/errors and 165 expected
+headless display skips (10:11)**. Final actual-display/focused gate passes 37,
+zero failures/errors/skips (02:11); earlier broad gate 62 (03:39). All eight
+CSV display scenarios and eight pure matching/state tests pass. Synthetic native
+Updated/Ready/grey-editor screenshots were inspected, including computed grey
+color, bold-to-normal fonts and actual dropdown behavior. Word package checks
+preserve every other part/paragraph; final render remains 31 pages and its updated
+import text was inspected. Links and whitespace pass. No user database/private
+CSV, schema or accounting-service changes.
+
+[Exact-head CI 45068903655](https://github.com/benbaron/sca-jakarta-h2/actions/runs/45068903655)
+completed success. Linux job 137351198238 passed rendering, clean/repeat,
+Period Close, overflow, imports, Journal/SCLX feedback and production JavaFX routes.
+Windows job 137351198067 passed 23 actual display tests across seven suites,
+without failures/errors/skips. Final job/step metadata and actual Windows log
+totals were inspected. No final executed gate failed. Evidence and screenshots:
+/workspace/p27-c15-evidence/.
+
+This final documentation-only receipt stays local to preserve the green remote
+head; PR description carries actual results. No app/test/style/Word bytes changed
+after final validation. Earlier pending-check notes below are historical.
+Remaining: owner review and merge, including the integrated Word-primary changes
+from C2/#439. No PR is automatically merged. Apply accepts a whole record into
+the transient batch; only final Commit writes Journal. Refresh preserves unfinished
+edits and accepted values, clears update markers and revalidates references;
+it is not another acceptance. Use Ctrl/Cmd/Shift and Delete Selected Entries (N)
+for multi-delete. Keep C15 VERIFYING until merge; then fetch main and follow the
+latest owner instruction/earliest unfinished unblocked slice.
 
 Publication: [draft PR #441](https://github.com/benbaron/sca-jakarta-h2/pull/441),
 implementation **71b19b860d8c6237b7bec385a9df1d33ea3c9460**, tree
@@ -22,7 +171,7 @@ preserved. Final focused/display gate passes 37/zero failures/errors/skips (02:1
 prior broad gate 62 (03:39); native screenshots and direct Word package/render
 checks pass. Local clean verification is running. This publication-only receipt
 requires its resulting head to receive exact-head CI; no final success or merge
-is claimed. No application/test/Word bytes change in this receipt.
+is claimed by that earlier note; final results are above. No application/test/Word bytes change in this receipt.
 
 Owner further specifies whole-entry acceptance, row validity styling and multi-
 delete. Clarification selects immediate acceptance by Apply Entry Changes;
@@ -746,9 +895,9 @@ A slice is `DONE` only when the behavior is merged into current `main`, the gove
 | P24 | Named events and usable entry workflows | DONE through P24-S4C / PR #361 |
 | P25 | Transfers, payment references, reporting classification | DONE through reviewed/merged MR #378 — S4D merged in MR #371; S4E DONE through MR #372; S4F DONE through MR #373; S4G DONE through MR #374; S4H DONE through MR #375; S4I DONE through approved/merged MR #376; S4 financial scope DONE; S5A DONE through MR #377; S5B DONE through MR #378; D07 adopted; S4C MR #370 merged/final-head CI passed, native evidence unrecorded; S1/S2/S3/S4A DONE; external operating-policy gate removed |
 | P26 | Property, planning, recognition, conversion | DONE through owner-merged PR #386; final published head passed clean/repeat/JavaFX CI |
-| P27 | Generic accounting packet, evidence, complete portability | Baseline DONE through #401; corrective P27-C2 IN_PROGRESS for reproduced native backup integrity defect |
-| P28 | End-to-end acceptance and release | Baseline DONE through #403; renewed recovery acceptance depends on P27-C2 |
-| P29 | Owner-directed desktop UI corrections | Implemented through merged #423; native owner evidence and recovery-dependent final gates remain |
+| P27 | Generic accounting packet, evidence, complete portability | Baseline DONE through #401; backup prerequisite resolved through merged #430; owner corrections DONE through C15 / #441 |
+| P28 | End-to-end acceptance and release | Baseline DONE through #403; manual/procedure corrections DONE through #441 (including #439/#440); native owner acceptance remains unrecorded |
+| P29 | Owner-directed desktop UI corrections | Implemented through merged #423; technical recovery prerequisite resolved through #430; native owner evidence remains unrecorded |
 
 ## 3. Established product decisions
 
@@ -1434,7 +1583,7 @@ The adopted program owns each slice's deliverables and acceptance criteria. The 
 | P27-C1 | Reconciliation WARN_ONLY matching correction | DONE | [Contract](P27-C1-reconciliation-warn-only.md); PR #401 merged at `c79d9f50`; accepted head `2022289b` passed workflow `41271225555` |
 | P28-S1 | Run the complete runbook acceptance matrix | DONE | [Acceptance contract](P28-S1-runbook-acceptance.md); PR #402 merged at `c1ba1774`, accepted head `ca66658b` passed workflow `41274251144` |
 | P28-S2 | Release and close the correction program | DONE | [Release contract](P28-S2-release-close.md); #403 merged at `da54b6c2`, accepted head `99c5752c` passed workflow `41354367929` |
-| P27-C2 | Native online backup integrity correction | IN_PROGRESS | [Contract](P27-C2-online-backup-integrity.md); independent correction after merged #423, before renewed recovery acceptance |
+| P27-C2 | Native online backup integrity correction | DONE | [Contract](P27-C2-online-backup-integrity.md); merged #424, superseded by merged C5/#427 and final C7/#430; native owner acceptance remains separate |
 | P27-S5 (conditional) | Internal attachments and approvals | BLOCKED | Not adopted; explicit scope amendment and separate specifications required; not a prerequisite for baseline P28 |
 
 P27-S1 consolidates earlier template/policy collection. Its position does not defer unresolved applicable D02–D07 decisions before their affected code slices. D03's former mandatory external-policy-input gate is resolved by the S4D scope correction; do not request those policies before NMR accounting development.

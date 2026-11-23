@@ -10,12 +10,14 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 
-/** Chooses black or white from the rendered surface after CSS and layout complete. */
+/** Enforces surface contrast after layout, retaining semantic grey for unresolved import text. */
 final class WorkspaceTextContrastEnforcer
 {
     private static final Object INSTALLED = new Object();
     private static final Object DARK = new Object();
     private static final Object BOUND_PAINT = new Object();
+    private static final Color IMPORT_GREY_LIGHT = Color.web("#5f6b7a");
+    private static final Color IMPORT_GREY_DARK = Color.web("#b6beca");
 
     private WorkspaceTextContrastEnforcer()
     {
@@ -63,15 +65,18 @@ final class WorkspaceTextContrastEnforcer
         {
             ancestors.add(parent);
         }
+        boolean mutedImport = false;
         for (int index = ancestors.size() - 1; index >= 0; index--)
         {
             fallback = surface(ancestors.get(index), fallback);
+            mutedImport |= hasImportGreyRole(ancestors.get(index));
         }
-        refresh(root, fallback);
+        refresh(root, fallback, mutedImport);
     }
 
-    private static void refresh(Node node, Color inherited)
+    private static void refresh(Node node, Color inherited, boolean inheritedImportGrey)
     {
+        boolean mutedImport = inheritedImportGrey || hasImportGreyRole(node);
         Color background = surface(node, inherited);
         Color textBackground = background;
         if (node instanceof TextInputControl input)
@@ -87,8 +92,11 @@ final class WorkspaceTextContrastEnforcer
                 textBackground = surface(path.get(index), textBackground);
             }
         }
-        Color foreground = contrastingText(textBackground);
-        String color = foreground.equals(Color.BLACK) ? "#000000" : "#ffffff";
+        Color foreground = mutedImport ? mutedText(textBackground) : contrastingText(textBackground);
+        String color = foreground.equals(Color.BLACK) ? "#000000" : foreground.equals(Color.WHITE) ? "#ffffff"
+                : String.format(java.util.Locale.ROOT, "#%02x%02x%02x",
+                Math.round(foreground.getRed() * 255), Math.round(foreground.getGreen() * 255),
+                Math.round(foreground.getBlue() * 255));
         if (node instanceof Labeled || node instanceof TextInputControl)
         {
             // Skin-owned styles stay bound. Their Text children are handled
@@ -117,7 +125,7 @@ final class WorkspaceTextContrastEnforcer
             // Snapshot protects traversal from skin changes caused by CSS.
             for (Node child : java.util.List.copyOf(parent.getChildrenUnmodifiable()))
             {
-                refresh(child, background);
+                refresh(child, background, mutedImport);
             }
         }
     }
@@ -143,13 +151,63 @@ final class WorkspaceTextContrastEnforcer
         }
     }
 
+    private static boolean hasImportGreyRole(Node node)
+    {
+        return node.getStyleClass().contains("import-source-suggestion")
+                || node.getStyleClass().contains("import-entry-invalid");
+    }
+
     static Color contrastingText(Color background)
     {
-        double luminance = 0.2126 * linear(background.getRed())
-                + 0.7152 * linear(background.getGreen())
-                + 0.0722 * linear(background.getBlue());
+        double luminance = luminance(background);
         return (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05)
                 ? Color.BLACK : Color.WHITE;
+    }
+
+    /** Retains the import grey, darkening/lightening only as needed for body-text contrast. */
+    static Color mutedText(Color background)
+    {
+        Color normal = contrastingText(background);
+        Color grey = normal.equals(Color.BLACK) ? IMPORT_GREY_LIGHT : IMPORT_GREY_DARK;
+        if (contrast(grey, background) >= 4.5)
+        {
+            return grey;
+        }
+        // Search quantized CSS colors so the painted RGB value also meets the threshold.
+        int low = 0;
+        int high = 255;
+        while (high - low > 1)
+        {
+            int middle = (low + high) / 2;
+            if (contrast(blend(grey, normal, middle), background) >= 4.5)
+            {
+                high = middle;
+            }
+            else
+            {
+                low = middle;
+            }
+        }
+        return blend(grey, normal, high);
+    }
+
+    private static Color blend(Color grey, Color normal, int fraction)
+    {
+        Color mixed = grey.interpolate(normal, fraction / 255.0);
+        return Color.rgb((int) Math.round(mixed.getRed() * 255), (int) Math.round(mixed.getGreen() * 255),
+                (int) Math.round(mixed.getBlue() * 255));
+    }
+
+    private static double contrast(Color foreground, Color background)
+    {
+        double first = luminance(foreground);
+        double second = luminance(background);
+        return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+    }
+
+    private static double luminance(Color color)
+    {
+        return 0.2126 * linear(color.getRed()) + 0.7152 * linear(color.getGreen()) + 0.0722 * linear(color.getBlue());
     }
 
     private static double linear(double component)

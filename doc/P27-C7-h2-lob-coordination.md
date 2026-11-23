@@ -1,5 +1,15 @@
 # P27-C7 — Coherent H2 LOB checkpoints
 
+Status: **DONE** through [PR #430](https://github.com/benbaron/sca-jakarta-h2/pull/430),
+confirmed merged at 0a8334b613c833929f1cfa990a2191342a71ff19 in current main.
+Accepted head bd1cb19d passed [workflow 43804474947](https://github.com/benbaron/sca-jakarta-h2/actions/runs/43804474947).
+The combined clean/repeat gates passed 1,225 tests each; displayed gate passed
+26 without failures/errors/skips. Packaged-JAR/startup checks and both unchanged
+50-run native batches passed (4,400 snapshots total). This resolves the technical
+backup blocker; broad native owner acceptance remains unrecorded. Earlier
+pending/blocker checkpoints below are historical. Reconfirmed during the
+2026-11-22 [plan closeout](PLAN.md); no new runtime or data changes.
+
 The owner authorizes repairing the native-storage prerequisite and updating existing PR #430. C7 is developed from main, then normally merged into C6 for combined validation; the earlier separate-prerequisite-merge requirement is superseded by that explicit instruction.
 
 Frozen archive 14 contains temp LOB 95 without the corresponding lobRef record, established by opening independent extracted copies with read-only MVStore and public native map types. The first 14 archives do not have this dangling reference. H2 2.4.240 writes LOB data, metadata and reference maps in separate operations. MVStore's physical-write lock does not exclude these in-memory mutations, so merely draining it can capture half an operation. A newer-engine-only diagnostic (2.5.252) fails on its first run with Chunk 7 not found, so an engine upgrade alone is rejected. No original evidence was reopened or changed.

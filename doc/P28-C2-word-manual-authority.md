@@ -1,5 +1,12 @@
 # P28-C2 — Word as the authoritative user manual
 
+Status: **DONE**. GitHub confirms [PR #439](https://github.com/benbaron/sca-jakarta-h2/pull/439)
+merged through integration 7d5422cb, reachable from current main after the
+owner-authorized #441 merge at 17fa56ae on 2026-11-22 America/Denver. The final
+receipt from local commit b94bf080 is preserved below; earlier open/unmerged
+and pending-check instructions describe historical checkpoints. Word remains
+the authoritative user manual; this closeout does not modify the Word file.
+
 ## Owner scope and editing contract
 
 The owner explicitly selected Word as the primary source. This supersedes the
@@ -58,3 +65,23 @@ implementation e33827c6a97993194fb6440f241d20d065423273, tree
 2e67bafda860d69ddaa8f8d91bf01255eb7e326e. Normal new-branch push and PR
 read-back match. This publication receipt changes documentation only; final
 clean verification is running and exact-final-head CI remains pending.
+
+## Final verification receipt
+
+Ready-for-review [PR #439](https://github.com/benbaron/sca-jakarta-h2/pull/439),
+accepted remote head dadd715ccec2d4e3d4098484d3d56fb8ed693290, tree
+08b8dee6d8b4ffb336ffeec7878dbda17ef2026c, open/unmerged. This final receipt
+stays local to preserve that checked remote head; PR description records results.
+
+Final local clean verify passes **1,294 tests, zero failures/errors, 160 expected
+headless display skips (13:22)**. [Exact-head CI 44978869793](https://github.com/benbaron/sca-jakarta-h2/actions/runs/44978869793)
+passes both Linux and Windows. Linux job 137074789971 passes rendering, clean,
+repeat, Period Close, overflow, import workflows, Journal/SCLX feedback and
+production routes. Windows job 137074789789 passes 23 displayed tests across
+seven suites with no failures/errors/skips; actual log totals were inspected.
+Final run/job/step metadata is retained with document/guide/local logs under
+/workspace/p28-c2-evidence/. No final executed gate failed.
+
+Remaining: owner review/edit/comment directly in the Word manual, then review
+and merge the PR. Keep VERIFYING until confirmed merge. Do not regenerate Word
+from Markdown or automatically merge. Earlier pending-check notes are historical.

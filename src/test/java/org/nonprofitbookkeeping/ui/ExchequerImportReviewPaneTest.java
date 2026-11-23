@@ -61,6 +61,10 @@ class ExchequerImportReviewPaneTest
             stage.setScene(new Scene((javafx.scene.Parent) panel.root(), 950, 750));
             stage.getScene().getStylesheets().add(getClass().getResource("/ui/styles.css").toExternalForm());
             stage.getScene().getRoot().setStyle("-fx-font-family: 'DejaVu Sans'; -fx-font-size: 12px;");
+            var workspace = stage.getScene().getRoot();
+            workspace.getStyleClass().add("production-workspace");
+            WorkspaceTextContrastEnforcer.install(workspace);
+            applyTheme(UiThemePreference.LIGHT);
             stage.show();
             button("previewExchequerCsvButton").fire();
             return null;
@@ -80,6 +84,7 @@ class ExchequerImportReviewPaneTest
             if (stage != null)
             {
                 stage.close();
+                javafx.application.Application.setUserAgentStylesheet(javafx.application.Application.STYLESHEET_MODENA);
             }
             var session = MainWindow.sharedSessionState();
             session.setDatabaseSelection(previousDatabase);
@@ -469,10 +474,129 @@ class ExchequerImportReviewPaneTest
         });
     }
 
+    @Test
+    void productionGreySurvivesAllThemesSelectionAndLookupResolution() throws Exception
+    {
+        var records = ExchequerCsvFixture.header();
+        for (int ordinal = 1; ordinal <= 3; ordinal++)
+        {
+            var row = ExchequerCsvFixture.row(ordinal, "3/" + ordinal + "/2026", "10");
+            row.set(7, "Unmapped payee");
+            row.set(11, "Unmapped budget");
+            row.set(14, "Unmapped merchant");
+            ExchequerCsvFixture.split(row, 0, "10", "Example Income", "");
+            records.add(row);
+        }
+        java.nio.file.Files.writeString(csvFile, ExchequerCsvFixture.csv(records));
+        FxTestSupport.onFx(() ->
+        {
+            Platform.runLater(ExchequerImportReviewPaneTest::acceptConfirmation);
+            panel.root().lookupAll(".button").stream().filter(Button.class::isInstance).map(Button.class::cast)
+                    .filter(b -> b.getText().startsWith("Choose Another Exchequer")).findFirst().orElseThrow().fire();
+            return null;
+        });
+        await(() -> table("exchequerProposedEntries").getItems().size() == 3);
+        FxTestSupport.onFx(() ->
+        {
+            for (var theme : UiThemePreference.values())
+            {
+                applyTheme(theme);
+                table("exchequerProposedEntries").getSelectionModel().clearAndSelect(0);
+                button("editExchequerEntry").fire();
+                table("exchequerProposedLines").getSelectionModel().select(1);
+                layout();
+                for (String id : List.of("exchequerLineAccount", "exchequerLineFund", "exchequerLineBudget",
+                        "exchequerLineMerchant", "exchequerEntryPayee"))
+                {
+                    var combo = suggestion(id);
+                    assertNull(combo.getValue(), theme + " unresolved " + id);
+                    assertMuted(combo.getButtonCell());
+                }
+                for (String text : List.of("Checking", "Example Income"))
+                {
+                    var cell = table("exchequerProposedLines").lookupAll(".table-cell").stream()
+                            .filter(TableCell.class::isInstance).map(TableCell.class::cast)
+                            .filter(c -> c.getStyleClass().contains("import-source-suggestion") && text.equals(c.getText()))
+                            .findFirst().orElseThrow();
+                    assertMuted(cell);
+                }
+                if (theme == UiThemePreference.LIGHT)
+                {
+                    saveScreenshot("sca.importContrastEditorScreenshot");
+                }
+                ((TabPane) panel.root().lookup("#exchequerReviewPages")).getSelectionModel().select(0);
+                table("exchequerProposedEntries").getSelectionModel().selectIndices(0, 1);
+                layout();
+                for (int index : new int[] {0, 2})
+                {
+                    var cell = proposalRow(index).lookupAll(".table-cell").stream()
+                            .filter(TableCell.class::isInstance).map(TableCell.class::cast)
+                            .filter(c -> "Needs attention".equals(c.getText())).findFirst().orElseThrow();
+                    assertMuted(cell);
+                }
+                if (theme == UiThemePreference.LIGHT)
+                {
+                    saveScreenshot("sca.importContrastRowsScreenshot");
+                }
+            }
+            applyTheme(UiThemePreference.LIGHT);
+            table("exchequerProposedEntries").getSelectionModel().clearAndSelect(0);
+            button("editExchequerEntry").fire();
+            table("exchequerProposedLines").getSelectionModel().select(0);
+            choose("exchequerLineAccount", fixture.bank());
+            button("exchequerEntryPayeeClear").fire();
+            layout();
+            assertNormal(suggestion("exchequerLineAccount").getButtonCell());
+            assertNormal(suggestion("exchequerEntryPayee").getButtonCell());
+            table("exchequerProposedLines").getSelectionModel().select(1);
+            layout();
+            assertMuted(suggestion("exchequerLineAccount").getButtonCell());
+            table("exchequerProposedLines").getSelectionModel().select(0);
+            layout();
+            assertNormal(suggestion("exchequerLineAccount").getButtonCell());
+            button("cancelExchequerEntryChanges").fire();
+            layout();
+            assertMuted(suggestion("exchequerLineAccount").getButtonCell());
+            assertMuted(suggestion("exchequerEntryPayee").getButtonCell());
+            assertTrue(button("commitExchequerEntries").isDisabled());
+            return null;
+        });
+    }
+
+    private void applyTheme(UiThemePreference theme)
+    {
+        AtlantaFxThemeManager.apply(theme);
+        var root = stage.getScene().getRoot();
+        root.getStyleClass().removeAll("theme-light", "theme-dark", "theme-system", "theme-atlantafx");
+        root.getStyleClass().add(AtlantaFxThemeManager.isDark(theme) ? "theme-dark" : "theme-light");
+        root.getStyleClass().add(theme == UiThemePreference.SYSTEM_DEFAULT ? "theme-system" : "theme-atlantafx");
+        WorkspaceTextContrastEnforcer.apply(root, AtlantaFxThemeManager.isDark(theme));
+    }
+
+    private static void assertMuted(Labeled label)
+    {
+        assertNotEquals(javafx.scene.paint.Color.BLACK, label.getTextFill(), label.getText());
+        assertNotEquals(javafx.scene.paint.Color.WHITE, label.getTextFill(), label.getText());
+        assertPaintedAndReadable(label);
+    }
+
+    private static void assertNormal(Labeled label)
+    {
+        assertEquals(javafx.scene.paint.Color.BLACK, label.getTextFill(), label.getText());
+        assertPaintedAndReadable(label);
+    }
+
+    private static void assertPaintedAndReadable(Labeled label)
+    {
+        var text = (javafx.scene.text.Text) label.lookup(".text");
+        assertNotNull(text, label.getText());
+        assertEquals(label.getTextFill(), text.getFill(), label.getText() + " painted foreground");
+        SurfaceContrastAssertions.assertReadable(label);
+    }
+
     private void layout()
     {
-        stage.getScene().getRoot().applyCss();
-        stage.getScene().getRoot().layout();
+        ThemeTextContrastFxTest.settle(stage.getScene().getRoot());
     }
 
     private SuggestedImportComboBox suggestion(String id)

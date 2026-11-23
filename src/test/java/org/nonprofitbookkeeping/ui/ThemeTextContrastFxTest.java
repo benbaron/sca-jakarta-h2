@@ -18,6 +18,7 @@ import org.nonprofitbookkeeping.model.UiThemePreference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class ThemeTextContrastFxTest
 {
@@ -45,6 +46,70 @@ class ThemeTextContrastFxTest
             assertComputedForeground(preference, Color.BLACK);
             assertComputedForeground(preference, Color.WHITE);
         }
+    }
+
+    @Test
+    void semanticImportGreySurvivesPaintedTextAndReusedBoundSkinAcrossThemes()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            javafx.application.Platform.setImplicitExit(false);
+            Label hint = new Label("Unmapped CSV value");
+            hint.styleProperty().bind(new javafx.beans.property.SimpleStringProperty("-fx-font-size: 13px;"));
+            Label rowText = new Label("Needs attention");
+            VBox reusedRow = new VBox(rowText);
+            VBox workspace = new VBox(hint, reusedRow);
+            workspace.getStyleClass().add("production-workspace");
+            WorkspaceTextContrastEnforcer.install(workspace);
+            Scene scene = new Scene(workspace, 400, 200);
+            scene.getStylesheets().add(getClass().getResource("/ui/styles.css").toExternalForm());
+            Stage stage = new Stage();
+            try
+            {
+                stage.setScene(scene);
+                stage.show();
+                for (UiThemePreference theme : UiThemePreference.values())
+                {
+                    AtlantaFxThemeManager.apply(theme);
+                    boolean dark = AtlantaFxThemeManager.isDark(theme);
+                    workspace.setStyle("-fx-background-color: " + (dark ? "#24292f" : "white") + ";");
+                    WorkspaceTextContrastEnforcer.apply(workspace, dark);
+                    for (boolean unresolved : new boolean[] { true, false, true })
+                    {
+                        hint.getStyleClass().remove("import-source-suggestion");
+                        reusedRow.getStyleClass().remove("import-entry-invalid");
+                        if (unresolved)
+                        {
+                            hint.getStyleClass().add("import-source-suggestion");
+                            reusedRow.getStyleClass().add("import-entry-invalid");
+                        }
+                        settle(workspace);
+                        for (Label label : new Label[] {hint, rowText})
+                        {
+                            if (unresolved)
+                            {
+                                assertNotEquals(Color.BLACK, label.getTextFill(), theme + " semantic grey");
+                                assertNotEquals(Color.WHITE, label.getTextFill(), theme + " semantic grey");
+                            }
+                            else
+                            {
+                                assertEquals(dark ? Color.WHITE : Color.BLACK, label.getTextFill(),
+                                        theme + " resolved text returns to normal");
+                            }
+                            Text painted = (Text) label.lookup(".text");
+                            assertNotNull(painted);
+                            assertEquals(label.getTextFill(), painted.getFill(), theme + " painted semantic foreground");
+                            SurfaceContrastAssertions.assertReadable(label);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                stage.close();
+            }
+            return null;
+        });
     }
 
     @Test
