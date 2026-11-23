@@ -1,17 +1,41 @@
 ---
-plan_version: 538
+plan_version: 540
 active_phase: P27
 active_slice: P27-C17
 active_status: VERIFYING
 active_branch: codex/P27-C17-lookup-add-navigation
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/443
-active_head: a00965b783a4b3ce13cd357592d8bd020b4116f0
-next_action: "PR 443 published; native 49/18 gates and Word checks pass. Run full clean verification and inspect Linux/Windows CI on the final published head. Keep C17 VERIFYING until confirmed merge; no automatic merge."
+active_head: 31802a92a6e3400bddad170e9655fcc0a88532f3
+next_action: "Owner review/merge ready PR 443 at accepted head 31802a92; all local/native/Word/Linux/Windows gates passed. Keep C17 VERIFYING until confirmed merge, then fetch main and follow the next owner request. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C17 lookup Add navigation — owner request
+
+Final local receipt: accepted remote head **31802a92a6e3400bddad170e9655fcc0a88532f3**,
+tree **f4a7a14cf047b11f0dfbabbeb4a811040bb36eaa**; native ref/PR match. Full local
+`clean verify` passes **1,335 tests, zero failures/errors, 169 expected headless
+display skips (10:59)**, exit 0. Broad native gate passes 49 (03:12); final native
+geometry/import/overflow passes 18 (02:00), both with zero failures/errors/skips.
+Native Add/return screenshot and Word pages 15/16 were inspected. Word changes
+only paragraph 301 in document.xml; every other paragraph/part, nine tables,
+two drawings, 80 bookmarks, 18 links and review annotations remain preserved;
+render stays 31 pages. Production/test/Word bytes remain unchanged after final
+validation. This documentation-only final receipt stays local to preserve checks.
+
+[Exact-head CI 45104932605](https://github.com/benbaron/sca-jakarta-h2/actions/runs/45104932605):
+Windows job 137463968961 passes **24 displayed tests across seven suites, zero
+failures/errors/skips**; actual log totals retained in
+/workspace/p27-c17-evidence/windows-test-summary.log. Linux job 137463969282 passed rendered theme checks, clean/repeated verification,
+Period Close, overflow, imports, Journal/SCLX feedback and final production
+JavaFX routes. Final run and both jobs completed **success**. Individual step
+metadata and actual Windows totals were inspected; retained final metadata is
+/workspace/p27-c17-evidence/github-final-checks.json. No final executed gate
+failed. PR #443 is ready for review, open and unmerged at the accepted head.
+Earlier initial failure, sizing and pending-check notes below are historical.
+Keep VERIFYING until confirmed merge; no automatic merge.
+
 
 Publication: [draft PR #443](https://github.com/benbaron/sca-jakarta-h2/pull/443),
 implementation **5ca6ec66586184726955f20bb756ac24ac49cf79**, final sized native
