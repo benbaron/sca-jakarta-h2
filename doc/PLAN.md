@@ -1,17 +1,43 @@
 ---
-plan_version: 541
+plan_version: 542
 active_phase: P27
 active_slice: P27-C18
 active_status: VERIFYING
 active_branch: codex/P27-C18-category-list-return
 active_pull_request: 444
-active_head: bee2e1c64c61326d897826e3ce645308739d3cad
-next_action: "C18 PR #444 published; run full clean verify and require exact-final-head Linux/Windows CI before review. Record accepted head/tree in final receipt. No automatic merge."
+active_head: e97bb2464a8788b3e1f7c6b0e216aba373b110db
+next_action: "PR #444 ready for owner review/merge; full local and exact-head Linux/Windows CI pass at e97bb246. Confirm merge before marking C18 DONE or selecting the next unfinished unblocked slice. No automatic merge. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C18 Budget Categories list and return — owner correction
+
+Final local receipt: accepted remote head
+**e97bb2464a8788b3e1f7c6b0e216aba373b110db**, tree
+**41a9b9d2c7a4f372a2933ff969d18765756572ba**; native fetch and PR read-back
+match. Full local `clean verify` passes **1,339 tests, zero failures/errors,
+173 expected headless display skips (12:18)**, exit 0. Broad native gate passes
+47 (04:28); final category/Import/host gate passes 22 (02:40), both zero failures/
+errors/skips. Final source/test/Word bytes are unchanged after verification.
+The real Return to Import screenshot and Word pages 15/25 were inspected; Word
+changes only paragraphs 301/488 in document.xml, preserving all other parts,
+paragraphs, tables, media, links and annotations. Render remains 31 pages.
+252 local document links and whitespace pass.
+
+[Exact-head CI 45112712948](https://github.com/benbaron/sca-jakarta-h2/actions/runs/45112712948)
+completed **success**. Windows job 137488523204 passes **24 displayed tests
+across seven suites, zero failures/errors/skips**; actual log summary retained
+in /workspace/p27-c18-evidence/windows-test-summary.log. Linux job 137488523627
+passes rendered theme, clean/repeated verification, Period Close, overflow,
+Import, Journal/export feedback and production JavaFX routes. Final run/job/step
+metadata is retained in /workspace/p27-c18-evidence/github-final-checks.json.
+No final executed gate failed. PR #444 is ready for review, open and unmerged
+at the accepted head. This final receipt changes only PLAN/C18 and stays local
+to preserve the checked remote head. Earlier pending notes below are historical.
+Keep VERIFYING until confirmed merge; no automatic merge. Owner review/merge
+is the only remaining delivery action.
+
 
 Publication: [draft PR #444](https://github.com/benbaron/sca-jakarta-h2/pull/444)
 contains implementation **bee2e1c64c61326d897826e3ce645308739d3cad**, tree
