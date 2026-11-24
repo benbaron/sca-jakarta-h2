@@ -57,6 +57,10 @@ public class ChartOfAccountsPanel implements AppPanel
     private Button refresh;
     private final Button add = new Button("+ Add");
     private final Button save = new Button("Save");
+    private final MaintenanceReturn returnAction = new MaintenanceReturn(AppPanelId.CHART_OF_ACCOUNTS, "chartOfAccountsReturn");
+    private final MaintenanceListFeedback listFeedback = new MaintenanceListFeedback("chartOfAccounts", "posting accounts", "the selected chart", "+ Add");
+    private long loadGeneration;
+
     private final ComboBox<CompanyChartView> chartSelection = new ComboBox<>();
     private final Button makeActiveChart = new Button("Make Active Chart");
     private final Label chartStatus = new Label();
@@ -113,9 +117,14 @@ public class ChartOfAccountsPanel implements AppPanel
         UiPermissionGate.gate(save, ApplicationPermission.BOOKKEEPING_WRITE, "Save an account");
 
         refresh = new Button("Refresh");
-        refresh.setOnAction(e -> reloadWithDiscardProtection());
+        refresh.setId("chartOfAccountsRefresh");
+        refresh.setOnAction(e -> reload(editingAccountId));
+        Button showAll = new Button("Show All");
+        showAll.setId("chartOfAccountsShowAll");
+        showAll.setTooltip(new javafx.scene.control.Tooltip("Reload active and inactive accounts in the viewed chart without discarding editor changes."));
+        showAll.setOnAction(e -> reload(editingAccountId));
 
-        FlowPane actions = new FlowPane(8, 6, add, save, refresh);
+        FlowPane actions = new FlowPane(8, 6, add, save, refresh, showAll, returnAction.button());
         chartSelection.setId("chartOfAccountsSelection");
         chartSelection.setPromptText("Select a Chart of Accounts");
         chartSelection.setMaxWidth(Double.MAX_VALUE);
@@ -132,7 +141,7 @@ public class ChartOfAccountsPanel implements AppPanel
                 new FlowPane(8, 6, makeActiveChart));
         Node editorForm = buildEditorForm();
         accountEditor = editorForm;
-        VBox header = new VBox(6, title, chartActionsBar, chartStatus, lifecycle, actions, status, new Separator());
+        VBox header = new VBox(6, title, actions, chartActionsBar, chartStatus, lifecycle, listFeedback.summary(), status, new Separator());
 
         root.setTop(header);
         dirtyState = new FormDirtyTracker(this::formSnapshot);
@@ -163,7 +172,7 @@ public class ChartOfAccountsPanel implements AppPanel
         active.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().isActive() ? "Y" : "N"));
 
         table.getColumns().addAll(code, name, type, function, normalBalance, subtype, parentCode, active);
-        table.setPlaceholder(new Label("No accounts found. Use the form above to create a posting account."));
+        table.setPlaceholder(listFeedback.placeholder());
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldRow, newRow) -> {
             if (suppressSelection || newRow == null)
             {
@@ -246,6 +255,11 @@ public class ChartOfAccountsPanel implements AppPanel
 
     private Node buildEditorForm()
     {
+        codeField.setId("chartOfAccountsCode");
+        nameField.setId("chartOfAccountsName");
+        typeField.setId("chartOfAccountsType");
+        balanceField.setId("chartOfAccountsBalance");
+        activeField.setId("chartOfAccountsActive");
         typeField.getItems().setAll(AccountType.values());
         functionField.getItems().setAll(functionChoices());
         balanceField.getItems().setAll(NormalBalance.values());
@@ -453,6 +467,9 @@ public class ChartOfAccountsPanel implements AppPanel
 
     private void reload(Long reselectId)
     {
+        long generation = ++loadGeneration;
+        FormState requestedForm = formSnapshot();
+        listFeedback.loading();
         Long selectedId = chartSelection.getValue() == null ? null : chartSelection.getValue().id();
         loadingCharts = true;
         updateChartState();
@@ -464,6 +481,11 @@ public class ChartOfAccountsPanel implements AppPanel
         status.setText(formatStatus("Loading accounts..."));
         UiAsync.run("coa-load", chartActions::load, data ->
         {
+            if (generation != loadGeneration)
+            {
+                return;
+            }
+            boolean keepDraft = dirtyState.isDirty() || !Objects.equals(requestedForm, formSnapshot());
             companyId = data.companyId();
             companyAccounts = List.copyOf(data.accounts());
             changingCharts = true;
@@ -477,11 +499,29 @@ public class ChartOfAccountsPanel implements AppPanel
             showChartAccounts();
             if (reselectId != null)
             {
-                table.getItems().stream().filter(row -> Objects.equals(row.getId(), reselectId))
-                        .findFirst().ifPresent(table.getSelectionModel()::select);
+                suppressSelection = true;
+                try
+                {
+                    table.getItems().stream().filter(row -> Objects.equals(row.getId(), reselectId)).findFirst().ifPresent(row ->
+                    {
+                        table.getSelectionModel().select(row);
+                        if (!keepDraft)
+                        {
+                            loadRowIntoForm(row);
+                        }
+                    });
+                }
+                finally
+                {
+                    suppressSelection = false;
+                }
             }
         }, ex ->
         {
+            if (generation != loadGeneration)
+            {
+                return;
+            }
             loadingCharts = false;
             companyId = null;
             companyAccounts = List.of();
@@ -491,6 +531,7 @@ public class ChartOfAccountsPanel implements AppPanel
             changingCharts = false;
             table.getItems().clear();
             updateChartState();
+            listFeedback.failed();
             status.setText(formatStatus("Failed to load accounts: " + UiErrors.safeMessage(ex)));
         });
     }
@@ -548,11 +589,22 @@ public class ChartOfAccountsPanel implements AppPanel
     private void showChartAccounts()
     {
         CompanyChartView selected = chartSelection.getValue();
-        table.getItems().setAll(companyAccounts.stream()
-                .filter(account -> selected != null && account.getChart() != null
-                        && Objects.equals(account.getChart().getId(), selected.id())).toList());
+        boolean priorSuppression = suppressSelection;
+        suppressSelection = true;
+        try
+        {
+            table.getItems().setAll(companyAccounts.stream()
+                    .filter(account -> selected != null && account.getChart() != null
+                            && Objects.equals(account.getChart().getId(), selected.id())).toList());
+        }
+        finally
+        {
+            suppressSelection = priorSuppression;
+        }
         updateChartState();
-        status.setText(formatStatus("Loaded " + table.getItems().size() + " posting account(s) (active + inactive)."));
+        listFeedback.loaded(table.getItems().size(), table.getItems().size());
+        status.setText(formatStatus("Loaded " + table.getItems().size() + " posting account(s) (active + inactive)."
+                + (dirtyState.isDirty() ? " Unsaved editor changes retained." : "")));
     }
 
     private void activateChart()
@@ -611,15 +663,6 @@ public class ChartOfAccountsPanel implements AppPanel
         return readFormStateForTests();
     }
 
-    private void reloadWithDiscardProtection()
-    {
-        if (!dirtyState.isDirty() || confirmDiscard())
-        {
-            clearFormForNew();
-            reload(null);
-        }
-    }
-
     private boolean confirmDiscard()
     {
         if (discardConfirmation != null)
@@ -647,11 +690,17 @@ public class ChartOfAccountsPanel implements AppPanel
     @Override
     public void onPanelShown()
     {
-        if (!loadingCharts && !dirtyState.isDirty())
+        if (!loadingCharts)
         {
-            clearFormForNew();
-            reload(null);
+            reload(editingAccountId);
         }
+    }
+
+    @Override
+    public void onPanelShownFrom(AppPanelId origin, String originTitle)
+    {
+        returnAction.shownFrom(origin, originTitle);
+        onPanelShown();
     }
 
     @Override

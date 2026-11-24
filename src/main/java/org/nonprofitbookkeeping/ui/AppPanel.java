@@ -97,6 +97,13 @@ public interface AppPanel
 
     default void onPanelShown() {}
 
+    /** Activates this panel with the previous workspace's identity and visible title. */
+    default void onPanelShownFrom(AppPanelId origin, String originTitle)
+    {
+        onPanelShown();
+    }
+
+
     default boolean hasUnsavedChanges()
     {
         return false;

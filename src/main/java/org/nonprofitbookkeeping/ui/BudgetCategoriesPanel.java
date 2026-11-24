@@ -19,6 +19,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -51,6 +52,11 @@ public final class BudgetCategoriesPanel implements AppPanel
     private final Label lifecycle = new Label();
     private final Button save = new Button("Save");
     private final Button refresh = new Button("Refresh");
+    private final Button returnToCaller = new Button("Return to Journal");
+    private final Label listSummary = new Label();
+    private final Label emptyList = new Label();
+    private AppPanelId returnDestination = AppPanelId.JOURNAL_PANE;
+    private String loadFailure;
     private final BooleanSupplier discardConfirmation;
     private Long editingId;
     private boolean populating;
@@ -84,9 +90,15 @@ public final class BudgetCategoriesPanel implements AppPanel
         save.setOnAction(event -> saveForm());
         refresh.setId("budgetCategoriesRefresh");
         refresh.setOnAction(event -> refreshForm());
-        Button journal = new Button("Return to Journal");
-        journal.setId("budgetCategoriesJournal");
-        journal.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.JOURNAL_PANE, ""));
+        // Retain the existing control ID for automation and table/workspace compatibility.
+        returnToCaller.setId("budgetCategoriesJournal");
+        returnToCaller.setTooltip(new Tooltip("Return to Journal without saving or discarding category edits."));
+        returnToCaller.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(returnDestination, ""));
+        Button showAll = new Button("Show All");
+        showAll.setId("budgetCategoriesShowAll");
+        showAll.setTooltip(new Tooltip("Clear search and reload every category for the selected company, including inactive categories. Unsaved editor fields are retained."));
+        showAll.setOnAction(event -> showAllCategories());
+        listSummary.setId("budgetCategoriesListSummary");
         UiPermissionGate.gate(newCategory, ApplicationPermission.BOOKKEEPING_WRITE, "Create a Budget Category");
         UiPermissionGate.gate(save, ApplicationPermission.BOOKKEEPING_WRITE, "Save a Budget Category");
         UiPermissionGate.gate(code, ApplicationPermission.BOOKKEEPING_WRITE, "Edit a Budget Category code");
@@ -98,7 +110,7 @@ public final class BudgetCategoriesPanel implements AppPanel
         search.setId("budgetCategoriesSearch");
         search.setPromptText("Search code or name");
         search.textProperty().addListener((observable, oldValue, newValue) -> applyFilter());
-        VBox header = new VBox(6, title, new javafx.scene.layout.FlowPane(8, 6, newCategory, save, refresh, journal), search, status, lifecycle);
+        VBox header = new VBox(6, title, new javafx.scene.layout.FlowPane(8, 6, newCategory, save, refresh, showAll, returnToCaller), search, listSummary, status, lifecycle);
         ScrollPane headerScroll = new ScrollPane(header);
         headerScroll.setId("budgetCategoriesHeaderScroll");
         headerScroll.setFitToWidth(true);
@@ -133,7 +145,8 @@ public final class BudgetCategoriesPanel implements AppPanel
         table.setId("budgetCategoriesTable");
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         table.setItems(filtered);
-        table.setPlaceholder(new Label("No matching Budget Categories."));
+        emptyList.setWrapText(true);
+        table.setPlaceholder(emptyList);
         addColumn("code", "Code", row -> row.code(), 150);
         addColumn("name", "Name", row -> row.name(), 280);
         addColumn("active", "Active", row -> row.active() ? "Yes" : "No", 90);
@@ -251,30 +264,100 @@ public final class BudgetCategoriesPanel implements AppPanel
         try
         {
             BudgetCategoryView saved = UiServiceRegistry.budgetCategoryAdmin().save(new BudgetCategoryCommand(editingId, code.getText(), name.getText(), active.isSelected(), effectiveFrom.getValue(), effectiveTo.getValue(), description.getText()));
-            dirty = false; editingId = saved.id(); status.setText("Saved Budget Category " + saved.code() + "."); reload(saved.id());
+            dirty = false;
+            editingId = saved.id();
+            clearSearch();
+            reload(saved.id());
+            status.setText("Saved Budget Category " + saved.code() + "."
+                    + (loadFailure == null ? "" : " List refresh failed: " + loadFailure));
         }
         catch (RuntimeException ex) { status.setText("Could not save Budget Category: " + UiErrors.safeMessage(ex)); }
     }
 
     private void reload(Long selectId)
     {
+        boolean keepDraft = dirty;
         try
         {
             List<BudgetCategoryView> values = UiServiceRegistry.budgetCategoryLookup().listForMaintenance();
-            categories.setAll(values); applyFilter();
-            if (selectId != null) filtered.stream().filter(row -> selectId.equals(row.id())).findFirst().ifPresent(row -> { table.getSelectionModel().select(row); loadForm(row); });
+            suppressSelection = true;
+            try
+            {
+                categories.setAll(values);
+                loadFailure = null;
+                applyFilter();
+                table.getSelectionModel().clearSelection();
+                if (selectId != null)
+                {
+                    filtered.stream().filter(row -> selectId.equals(row.id())).findFirst().ifPresent(row ->
+                    {
+                        table.getSelectionModel().select(row);
+                        if (!keepDraft)
+                        {
+                            loadForm(row);
+                        }
+                    });
+                }
+            }
+            finally
+            {
+                suppressSelection = false;
+            }
         }
-        catch (RuntimeException ex) { status.setText("Could not load Budget Categories: " + UiErrors.safeMessage(ex)); }
+        catch (RuntimeException ex)
+        {
+            loadFailure = UiErrors.safeMessage(ex);
+            status.setText("Could not load Budget Categories: " + loadFailure);
+            updateListStatus();
+        }
+    }
+
+    private void clearSearch()
+    {
+        suppressSelection = true;
+        try
+        {
+            search.clear();
+        }
+        finally
+        {
+            suppressSelection = false;
+        }
+    }
+
+    private void showAllCategories()
+    {
+        clearSearch();
+        refreshForm();
     }
 
     private void refreshForm()
     {
-        if (dirty)
-        {
-            status.setText("Unsaved category changes remain; save or choose New Category before refreshing.");
-            return;
-        }
+        boolean keepDraft = dirty;
         reload(editingId);
+        if (loadFailure == null && keepDraft)
+        {
+            status.setText("Category list refreshed; unsaved editor changes are retained.");
+        }
+    }
+
+    private void updateListStatus()
+    {
+        if (loadFailure != null)
+        {
+            listSummary.setText("Category list could not be refreshed.");
+            emptyList.setText("Could not load Budget Categories. See the message above.");
+        }
+        else if (categories.isEmpty())
+        {
+            listSummary.setText("0 categories for the selected company.");
+            emptyList.setText("No Budget Categories have been created for the selected company. Use New Category and Save to add one.");
+        }
+        else
+        {
+            listSummary.setText(filtered.size() + " of " + categories.size() + " categories shown (including inactive).");
+            emptyList.setText("No matching Budget Categories. Choose Show All or clear the search.");
+        }
     }
 
     private boolean confirmDiscard()
@@ -295,6 +378,7 @@ public final class BudgetCategoriesPanel implements AppPanel
     {
         String needle = search.getText() == null ? "" : search.getText().trim().toLowerCase(Locale.ROOT);
         filtered.setPredicate(row -> needle.isBlank() || row.code().toLowerCase(Locale.ROOT).contains(needle) || row.name().toLowerCase(Locale.ROOT).contains(needle));
+        updateListStatus();
     }
 
     private static String date(LocalDate value) { return value == null ? "" : value.toString(); }
@@ -318,7 +402,19 @@ public final class BudgetCategoriesPanel implements AppPanel
         }
     }
     @Override public void onSave() { saveForm(); }
-    @Override public void onPanelShown() { refreshForm(); }
+    @Override public void onPanelShown() { showAllCategories(); }
+    @Override
+    public void onPanelShownFrom(AppPanelId origin, String originTitle)
+    {
+        if (origin != null && AppPanelId.canonical(origin) != AppPanelId.BUDGET_CATEGORIES)
+        {
+            returnDestination = AppPanelId.canonical(origin);
+            String title = originTitle == null || originTitle.isBlank() ? "previous workspace" : originTitle;
+            returnToCaller.setText("Return to " + title);
+            returnToCaller.setTooltip(new Tooltip("Return to " + title + " without saving or discarding category edits."));
+        }
+        onPanelShown();
+    }
     @Override public String commandResultMessage(AppCommand command) { return status.getText(); }
     @Override public boolean hasUnsavedChanges() { return dirty; }
 }

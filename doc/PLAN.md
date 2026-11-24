@@ -1,17 +1,155 @@
 ---
-plan_version: 538
+plan_version: 544
 active_phase: P27
-active_slice: P27-C17
+active_slice: P27-C18
 active_status: VERIFYING
-active_branch: codex/P27-C17-lookup-add-navigation
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/443
-active_head: a00965b783a4b3ce13cd357592d8bd020b4116f0
-next_action: "PR 443 published; native 49/18 gates and Word checks pass. Run full clean verification and inspect Linux/Windows CI on the final published head. Keep C17 VERIFYING until confirmed merge; no automatic merge."
+active_branch: codex/P27-C18-category-list-return
+active_pull_request: 444
+active_head: e85f3e1fa5a96c7320dde6d4976ab7cabca483ff
+next_action: "Publish the reviewed C18 extension to #444; run full clean verify and inspect exact-final-head Linux/Windows CI. All native gates pass. Record accepted head/tree; no automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
+### P27-C18 Import lookup maintenance list and return — owner correction
+
+Extension publication candidate for existing [PR #444](https://github.com/benbaron/sca-jakarta-h2/pull/444):
+implementation **e85f3e1fa5a96c7320dde6d4976ab7cabca483ff**, tree
+**1540b41741fe7f727739b0d7461e54a979c79ffa**. Remote was checked at expected
+parent e97bb246; retain local receipt eb2628dc and use a normal fast-forward push.
+This following receipt changes only PLAN/C18. Require full local clean verify
+and exact-final-head Linux/Windows CI on the published successor. Previous
+Budget-only CI does not validate this extension. No automatic merge.
+
+
+Extension final native gate passes **15/0/0/0 (01:57)** after the Chart header
+correction, including all five real Import journeys, actual Return/Show All
+viewport bounds, chart selection and overflow. Expanded gate passes
+**72/0/0/0 (05:47)**; initial gate passes **17/0/0/0 (02:28)**. All five native
+maintenance screenshots were inspected, including the corrected Chart header.
+251 local links, whitespace and final Word preservation checks pass. No further
+source/test/Word edits are pending. Publish this extension and require a new
+full local clean verify and exact-final-head CI before marking #444 ready.
+
+
+Extension candidate: all five additional routes implemented; initial native gate
+**17/0/0/0 (02:28)** passes. Expanded native gate passes **72/0/0/0 (05:47)**, including
+all **22 Import cases** with
+real create/return and empty/failure/recovery for every additional destination.
+Native review found Chart actions below its header viewport; action row moved
+below the title with actual viewport bounds assertions added for Return/Show All.
+Final geometry, full local and exact-head CI remain. Word extension changes only
+paragraph 301/document.xml, preserves all other parts/review/media/links and
+renders to 31 pages; changed pages 15/16 inspected. 251 local links pass.
+
+Owner extension VERIFYING: apply the same behavior to every record destination
+with Import Add: Account, Fund, Event, Merchant and Payee, alongside Budget.
+PR #444 is still open at e97bb246 and is returned to draft; current main remains
+54c4cdef. Extend this same slice/PR, retaining its local final receipt eb2628dc.
+Earlier acceptance below applies only to the Budget-only revision. Baseline
+compile passes. Inspect each actual maintenance panel and the Chart interchange
+wrapper. Reuse existing company/chart ownership, service boundaries and tab
+activation. Preserve draft fields through filtering/reload and asynchronous
+completion. Retain explicit chart browsing/activation and Import eligibility.
+Show all maintenance records including inactive within existing scope, explain
+empty/search/load errors, reveal saved records, and Return to the actual caller.
+Add native real Import journeys for all destinations; update Word directly and
+UI/operation rules; finish focused/full/exact-head CI before review.
+
+
+Final local receipt: accepted remote head
+**e97bb2464a8788b3e1f7c6b0e216aba373b110db**, tree
+**41a9b9d2c7a4f372a2933ff969d18765756572ba**; native fetch and PR read-back
+match. Full local `clean verify` passes **1,339 tests, zero failures/errors,
+173 expected headless display skips (12:18)**, exit 0. Broad native gate passes
+47 (04:28); final category/Import/host gate passes 22 (02:40), both zero failures/
+errors/skips. Final source/test/Word bytes are unchanged after verification.
+The real Return to Import screenshot and Word pages 15/25 were inspected; Word
+changes only paragraphs 301/488 in document.xml, preserving all other parts,
+paragraphs, tables, media, links and annotations. Render remains 31 pages.
+252 local document links and whitespace pass.
+
+[Exact-head CI 45112712948](https://github.com/benbaron/sca-jakarta-h2/actions/runs/45112712948)
+completed **success**. Windows job 137488523204 passes **24 displayed tests
+across seven suites, zero failures/errors/skips**; actual log summary retained
+in /workspace/p27-c18-evidence/windows-test-summary.log. Linux job 137488523627
+passes rendered theme, clean/repeated verification, Period Close, overflow,
+Import, Journal/export feedback and production JavaFX routes. Final run/job/step
+metadata is retained in /workspace/p27-c18-evidence/github-final-checks.json.
+No final executed gate failed. PR #444 is ready for review, open and unmerged
+at the accepted head. This final receipt changes only PLAN/C18 and stays local
+to preserve the checked remote head. Earlier pending notes below are historical.
+Keep VERIFYING until confirmed merge; no automatic merge. Owner review/merge
+is the only remaining delivery action.
+
+
+Publication: [draft PR #444](https://github.com/benbaron/sca-jakarta-h2/pull/444)
+contains implementation **bee2e1c64c61326d897826e3ce645308739d3cad**, tree
+**2c4d1f1dea329ceb153d7bdf7e4cbf8ca111a904**. New branch was absent and
+published with a normal push; PR read-back matches. This publication receipt
+successor changes only PLAN/C18. Full clean verification and exact-final-head
+Linux/Windows CI remain pending. No runtime/test/Word edits are pending.
+
+
+Candidate VERIFYING. Broad native gate passes **47 tests, zero failures/errors/
+skips (04:28)**. Final tests add a load-error recovery case and strengthen the
+actual Import/Add/Save/Return journey with inactive-category visibility. Retained
+search, dirty refresh, save visibility, ownership and caller navigation regressions
+are covered. The original retained-search and actual Return-to-Journal defects
+were reproduced; initial new-test fixture/layout errors were corrected separately.
+Word changes only paragraphs 301/488 in document.xml; all other parts/paragraphs/
+review/media/links are preserved. Its 31-page render and changed pages 15/25 were
+visually inspected. Final native gate passes **22/0/0/0 (02:40)** on final source/test bytes;
+actual native screenshot and 252 local links inspected. Publication, full local
+verification and exact-head CI remain.
+
+
+Owner reports an always-empty category list and Return to Journal despite entry
+from Import. C17/#443 is confirmed merged at current main
+**54c4cdefcc2c5a2625bb7c01d2b2faa5616fb6be**; accepted head 31802a92 passed CI
+45104932605. C17 is DONE. Fresh `codex/P27-C18-category-list-return` carries its
+final receipt as b9e8e394. Baseline compile passes. [C18 contract](P27-C18-category-list-return.md).
+
+Inspection: maintenance query already returns all current-company active/inactive
+categories; registry supplies the current company. The reused panel retains search
+filters and refuses list refresh while its editor is dirty; saving a new category
+also retains a search that can hide it. Do not weaken company ownership or invent
+master data. Show all current-company categories on activation, provide Show All,
+retain dirty fields while refreshing the list, and distinguish empty company,
+search misses and load errors. Return must use the actual previous workspace,
+including Import, while preserving both drafts. Use the existing PanelHost
+activation boundary, defaulting existing panels to their current onShown behavior.
+Read C17, UI/editor/operation rules and actual BudgetCategories/lookup/host tests.
+Add before-fix regressions, real Import return, ordinary Journal return, filtering,
+inactive/foreign ownership, dirty-list refresh and save visibility tests. Update
+Word directly, then focused/native/full checks and exact-head CI. No auto merge.
+
+
 ### P27-C17 lookup Add navigation — owner request
+
+Final local receipt: accepted remote head **31802a92a6e3400bddad170e9655fcc0a88532f3**,
+tree **f4a7a14cf047b11f0dfbabbeb4a811040bb36eaa**; native ref/PR match. Full local
+`clean verify` passes **1,335 tests, zero failures/errors, 169 expected headless
+display skips (10:59)**, exit 0. Broad native gate passes 49 (03:12); final native
+geometry/import/overflow passes 18 (02:00), both with zero failures/errors/skips.
+Native Add/return screenshot and Word pages 15/16 were inspected. Word changes
+only paragraph 301 in document.xml; every other paragraph/part, nine tables,
+two drawings, 80 bookmarks, 18 links and review annotations remain preserved;
+render stays 31 pages. Production/test/Word bytes remain unchanged after final
+validation. This documentation-only final receipt stays local to preserve checks.
+
+[Exact-head CI 45104932605](https://github.com/benbaron/sca-jakarta-h2/actions/runs/45104932605):
+Windows job 137463968961 passes **24 displayed tests across seven suites, zero
+failures/errors/skips**; actual log totals retained in
+/workspace/p27-c17-evidence/windows-test-summary.log. Linux job 137463969282 passed rendered theme checks, clean/repeated verification,
+Period Close, overflow, imports, Journal/SCLX feedback and final production
+JavaFX routes. Final run and both jobs completed **success**. Individual step
+metadata and actual Windows totals were inspected; retained final metadata is
+/workspace/p27-c17-evidence/github-final-checks.json. No final executed gate
+failed. PR #443 is ready for review, open and unmerged at the accepted head.
+Earlier initial failure, sizing and pending-check notes below are historical.
+Keep VERIFYING until confirmed merge; no automatic merge.
+
 
 Publication: [draft PR #443](https://github.com/benbaron/sca-jakarta-h2/pull/443),
 implementation **5ca6ec66586184726955f20bb756ac24ac49cf79**, final sized native

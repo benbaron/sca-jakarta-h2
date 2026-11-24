@@ -55,6 +55,9 @@ public final class CounterpartiesPanel implements AppPanel
     private final Label lifecycle = new Label();
     private final Button save = new Button("Save");
     private final Button refresh = new Button("Refresh");
+    private final MaintenanceReturn returnAction = new MaintenanceReturn(AppPanelId.COUNTERPARTIES, "counterpartiesJournal");
+    private final MaintenanceListFeedback listFeedback = new MaintenanceListFeedback("counterparties", "Payees / Counterparties", "the selected company", "New Payee");
+    private boolean listLoadFailed;
     private final BooleanSupplier discardConfirmation;
     private final SplitPane workspace = new SplitPane();
     private final PauseTransition layoutDelay = new PauseTransition(Duration.millis(250));
@@ -90,9 +93,10 @@ public final class CounterpartiesPanel implements AppPanel
         save.setOnAction(event -> saveForm());
         refresh.setId("counterpartiesRefresh");
         refresh.setOnAction(event -> refreshForm());
-        Button journal = new Button("Return to Journal");
-        journal.setId("counterpartiesJournal");
-        journal.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.JOURNAL_PANE, ""));
+        Button showAll = new Button("Show All");
+        showAll.setId("counterpartiesShowAll");
+        showAll.setTooltip(new javafx.scene.control.Tooltip("Clear search and reload all payees for the selected company, including inactive payees. Unsaved editor changes are retained."));
+        showAll.setOnAction(event -> showAllRecords());
         UiPermissionGate.gate(newCounterparty, ApplicationPermission.BOOKKEEPING_WRITE, "Create a Counterparty");
         UiPermissionGate.gate(save, ApplicationPermission.BOOKKEEPING_WRITE, "Save a Counterparty");
         UiPermissionGate.gate(name, ApplicationPermission.BOOKKEEPING_WRITE, "Edit a Counterparty name");
@@ -114,7 +118,7 @@ public final class CounterpartiesPanel implements AppPanel
                 loadForm(row);
             }
         });
-        VBox header = new VBox(6, title, new javafx.scene.layout.FlowPane(8, 6, newCounterparty, edit, save, refresh, journal), search, status, lifecycle);
+        VBox header = new VBox(6, title, new javafx.scene.layout.FlowPane(8, 6, newCounterparty, edit, save, refresh, showAll, returnAction.button()), search, listFeedback.summary(), status, lifecycle);
         ScrollPane headerScroll = new ScrollPane(header);
         headerScroll.setId("counterpartiesHeaderScroll");
         headerScroll.setFitToWidth(true);
@@ -175,7 +179,7 @@ public final class CounterpartiesPanel implements AppPanel
         sorted.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sorted);
         table.setMinSize(0, 0);
-        table.setPlaceholder(new Label("No matching Payees / Counterparties."));
+        table.setPlaceholder(listFeedback.placeholder());
         addColumn("name", "Name", row -> row.name(), 280);
         addColumn("active", "Active", row -> row.active() ? "Yes" : "No", 90);
         addColumn("kind", "Kind", row -> row.kind().name(), 100);
@@ -326,8 +330,9 @@ public final class CounterpartiesPanel implements AppPanel
                     editingId, name.getText(), kind.getValue(), email.getText(), phone.getText(), notes.getText(),
                     active.isSelected()));
             loadForm(saved);
+            clearSearch();
             reload(saved.id());
-            status.setText("Saved Counterparty " + saved.name() + ".");
+            status.setText("Saved Counterparty " + saved.name() + "." + (listLoadFailed ? " " + status.getText() : ""));
         }
         catch (RuntimeException ex)
         {
@@ -337,6 +342,7 @@ public final class CounterpartiesPanel implements AppPanel
 
     private void reload(Long selectId)
     {
+        boolean keepDraft = dirty;
         try
         {
             List<CounterpartyView> values = UiServiceRegistry.counterpartyAdmin().listForMaintenance();
@@ -344,35 +350,52 @@ public final class CounterpartiesPanel implements AppPanel
             try
             {
                 parties.setAll(values);
+                listLoadFailed = false;
+                applyFilter();
+                table.getSelectionModel().clearSelection();
+                if (selectId != null)
+                {
+                    filtered.stream().filter(row -> selectId.equals(row.id())).findFirst().ifPresent(row ->
+                    {
+                        table.getSelectionModel().select(row);
+                        if (!keepDraft)
+                        {
+                            loadForm(row);
+                        }
+                    });
+                }
             }
             finally
             {
                 suppressSelection = false;
             }
-            applyFilter();
-            if (selectId != null)
-            {
-                values.stream().filter(row -> selectId.equals(row.id())).findFirst().ifPresent(row ->
-                {
-                    table.getSelectionModel().select(row);
-                    loadForm(row);
-                });
-            }
         }
         catch (RuntimeException ex)
         {
+            listLoadFailed = true;
             status.setText("Could not load Payees / Counterparties: " + UiErrors.safeMessage(ex));
+            listFeedback.failed();
         }
+    }
+
+    private void clearSearch()
+    {
+        search.clear();
+    }
+
+    private void showAllRecords()
+    {
+        clearSearch();
+        refreshForm();
     }
 
     private void refreshForm()
     {
-        if (dirty)
-        {
-            status.setText("Unsaved party changes remain; save or choose New Payee before refreshing.");
-            return;
-        }
         reload(editingId);
+        if (!listLoadFailed)
+        {
+            status.setText(dirty ? "List refreshed; unsaved editor changes are retained." : "List refreshed.");
+        }
     }
 
     private boolean confirmDiscard()
@@ -392,6 +415,7 @@ public final class CounterpartiesPanel implements AppPanel
     private void applyFilter()
     {
         String needle = search.getText() == null ? "" : search.getText().trim().toLowerCase(Locale.ROOT);
+        boolean priorSuppression = suppressSelection;
         suppressSelection = true;
         try
         {
@@ -400,7 +424,11 @@ public final class CounterpartiesPanel implements AppPanel
         }
         finally
         {
-            suppressSelection = false;
+            suppressSelection = priorSuppression;
+        }
+        if (!listLoadFailed)
+        {
+            listFeedback.loaded(parties.size(), filtered.size());
         }
     }
 
@@ -470,7 +498,14 @@ public final class CounterpartiesPanel implements AppPanel
     @Override
     public void onPanelShown()
     {
-        refreshForm();
+        showAllRecords();
+    }
+
+    @Override
+    public void onPanelShownFrom(AppPanelId origin, String originTitle)
+    {
+        returnAction.shownFrom(origin, originTitle);
+        onPanelShown();
     }
     @Override
     public String commandResultMessage(AppCommand command)

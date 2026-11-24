@@ -1,6 +1,12 @@
 # P27-C17 — Add missing lookup records through maintenance navigation
 
-Status: VERIFYING. Owner requests Add alongside Clear/dropdown selection.
+Status: DONE. PR #443 merged into main at
+54c4cdefcc2c5a2625bb7c01d2b2faa5616fb6be; accepted source head 31802a92
+passed exact-head CI 45104932605 and full local verification. Earlier pending
+status notes below are historical. C18 supplies the later caller-aware Budget
+Categories return.
+
+Owner requests Add alongside Clear/dropdown selection.
 After an optional scope question and ample opportunity to reply, proceed with
 the six CSV review record selectors in the current discussion. Application-wide
 selectors are not silently included. Fixed enums are not maintained records.
@@ -104,3 +110,26 @@ read-back match. This publication successor changes documentation only.
 Full clean verification and exact-final-head Linux/Windows CI remain pending.
 Keep VERIFYING until confirmed merge; no automatic merge. Evidence and native/
 Word render artifacts are under /workspace/p27-c17-evidence/.
+
+## Final local verification receipt
+
+Accepted remote head 31802a92a6e3400bddad170e9655fcc0a88532f3, tree
+f4a7a14cf047b11f0dfbabbeb4a811040bb36eaa, matches native branch and PR read-back.
+Local clean verification passes **1,335 tests, zero failures/errors and 169
+expected headless display skips (10:59)**. Native 49/18 gates pass without skips,
+with final screenshot and direct action bounds inspected. Word ZIP proof retains
+all parts/paragraphs except the intended paragraph 301; nine tables, two drawings,
+80 bookmarks, 18 hyperlinks and review counts are unchanged. Render stays 31 pages.
+No product/test/Word bytes changed after final validation; this final receipt
+stays local to preserve the checked remote head.
+
+Exact-head [CI 45104932605](https://github.com/benbaron/sca-jakarta-h2/actions/runs/45104932605)
+passes Windows job 137463968961: 24 display tests across seven suites without
+failures/errors/skips; actual totals inspected. Linux job 137463969282 passed rendered theme checks, clean/repeated verification,
+Period Close, overflow, imports, Journal/SCLX feedback and production JavaFX routes.
+The final run and both jobs completed success. Actual Windows totals and final
+run/job/individual-step metadata were inspected. No final executed gate failed.
+[PR #443](https://github.com/benbaron/sca-jakarta-h2/pull/443) is ready, open and
+unmerged at the accepted head. Earlier pending/sizing/initial failure notes are
+historical. Keep VERIFYING until confirmed merge; no automatic merge. Evidence
+and final metadata are under /workspace/p27-c17-evidence/.

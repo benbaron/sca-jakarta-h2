@@ -23,7 +23,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
@@ -62,6 +62,11 @@ public class FundsPanel implements AppPanel
     private final CheckBox activeField = new CheckBox("Active");
     private final Button deleteUnused = new Button("Delete Unused");
     private final Button refresh = new Button("Refresh");
+    private final MaintenanceReturn returnAction = new MaintenanceReturn(AppPanelId.FUNDS, "fundsReturn");
+    private final MaintenanceListFeedback listFeedback = new MaintenanceListFeedback("funds", "Funds", "the selected company", "New");
+    private long formRevision;
+    private long loadGeneration;
+
     private final SplitPane split = new SplitPane();
     private final PauseTransition stateSaveDelay = new PauseTransition(Duration.millis(350));
 
@@ -109,13 +114,18 @@ public class FundsPanel implements AppPanel
         UiPermissionGate.gate(deleteUnused, ApplicationPermission.BOOKKEEPING_WRITE, "Delete an unused fund");
         deleteUnused.setDisable(true);
         deleteUnused.setOnAction(event -> deleteUnusedFund());
+        refresh.setId("fundsRefresh");
         refresh.setOnAction(event -> reload(editingFundId));
+        Button showAll = new Button("Show All");
+        showAll.setId("fundsShowAll");
+        showAll.setTooltip(new javafx.scene.control.Tooltip("Reload every fund for the selected company, including inactive funds. Unsaved editor changes are retained."));
+        showAll.setOnAction(event -> reload(editingFundId));
 
         Button transfers = new Button("Fund Transfers");
         transfers.setId("fundsTransfers");
         transfers.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.FUND_TRANSFERS, ""));
-        HBox actions = new HBox(8, add, save, deleteUnused, refresh, transfers);
-        root.setTop(new VBox(6, title, actions, status));
+        FlowPane actions = new FlowPane(8, 6, add, save, deleteUnused, refresh, showAll, transfers, returnAction.button());
+        root.setTop(new VBox(6, title, actions, listFeedback.summary(), status));
 
         configureTable();
         Node editor = buildEditor();
@@ -146,7 +156,7 @@ public class FundsPanel implements AppPanel
         table.setId("fundsTable");
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         CompanyTableStateBinder.markCompanyStateOwned(table);
-        table.setPlaceholder(new Label("No funds found. Choose New to create a fund."));
+        table.setPlaceholder(listFeedback.placeholder());
 
         addColumn("code", "Code", Fund::getCode, 125);
         addColumn("name", "Name", Fund::getName, 210);
@@ -192,6 +202,10 @@ public class FundsPanel implements AppPanel
 
     private Node buildEditor()
     {
+        codeField.setId("fundsCode");
+        nameField.setId("fundsName");
+        typeField.setId("fundsType");
+        activeField.setId("fundsActive");
         typeField.getItems().setAll(FundType.values());
         parentField.setConverter(new StringConverter<>()
         {
@@ -263,6 +277,7 @@ public class FundsPanel implements AppPanel
         if (!populating)
         {
             dirty = true;
+            formRevision++;
         }
     }
 
@@ -297,6 +312,7 @@ public class FundsPanel implements AppPanel
 
     private void clearFormForNew(boolean announce)
     {
+        formRevision++;
         populating = true;
         try
         {
@@ -394,34 +410,61 @@ public class FundsPanel implements AppPanel
 
     private void reload(Long reselectId)
     {
+        long revision = formRevision;
+        long generation = ++loadGeneration;
         refresh.setDisable(true);
+        listFeedback.loading();
         String incomingContext = DrillThroughCoordinator.consumeContext(AppPanelId.FUNDS);
         if (!incomingContext.isBlank())
         {
             pendingDrillContext = incomingContext;
         }
         status.setText(formatStatus("Loading funds..."));
-
         UiAsync.run("fund-load",
                 () -> UiServiceRegistry.fundLookup().listAllFunds(),
-                rows -> {
-                    table.setItems(FXCollections.observableArrayList(rows));
-                    rebuildParentOptions(rows, reselectId);
-                    if (reselectId != null)
+                rows ->
+                {
+                    if (generation != loadGeneration)
                     {
-                        rows.stream()
-                                .filter(row -> Objects.equals(row.getId(), reselectId))
-                                .findFirst()
-                                .ifPresent(table.getSelectionModel()::select);
+                        return;
                     }
-                    else if (editingFundId == null)
+                    boolean keepDraft = dirty || revision != formRevision;
+                    suppressSelection = true;
+                    try
                     {
-                        dirty = false;
+                        table.setItems(FXCollections.observableArrayList(rows));
+                        if (!keepDraft)
+                        {
+                            rebuildParentOptions(rows, reselectId);
+                        }
+                        if (reselectId != null)
+                        {
+                            rows.stream().filter(row -> Objects.equals(row.getId(), reselectId)).findFirst().ifPresent(row ->
+                            {
+                                table.getSelectionModel().select(row);
+                                if (!keepDraft)
+                                {
+                                    loadRowIntoForm(row);
+                                }
+                            });
+                        }
                     }
-                    status.setText(formatStatus("Loaded " + rows.size() + " fund(s), including inactive funds."));
+                    finally
+                    {
+                        suppressSelection = false;
+                    }
+                    listFeedback.loaded(rows.size(), rows.size());
+                    status.setText(formatStatus("Loaded " + rows.size() + " fund(s), including inactive funds."
+                            + (keepDraft ? " Unsaved editor changes retained." : "")));
                     refresh.setDisable(false);
                 },
-                ex -> {
+                ex ->
+                {
+                    if (generation != loadGeneration)
+                    {
+                        return;
+                    }
+                    listFeedback.failed();
                     status.setText(formatStatus("Failed to load funds: " + UiErrors.safeMessage(ex)));
                     refresh.setDisable(false);
                 });
@@ -662,6 +705,19 @@ public class FundsPanel implements AppPanel
     public String commandResultMessage(AppCommand command)
     {
         return status.getText();
+    }
+
+    @Override
+    public void onPanelShown()
+    {
+        reload(editingFundId);
+    }
+
+    @Override
+    public void onPanelShownFrom(AppPanelId origin, String originTitle)
+    {
+        returnAction.shownFrom(origin, originTitle);
+        onPanelShown();
     }
 
     @Override

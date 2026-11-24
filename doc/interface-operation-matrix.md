@@ -8,7 +8,7 @@ Status: reconciled to current production architecture through P20-S3 JavaFX perm
 - `ApplicationSessionContext` / `UiSessionState` own shared desktop session facts used by current production.
 - `AppPanelId.JOURNAL_PANE` is the one canonical Journal destination. `LEDGER_REGISTER` and `TXN_EDITOR` remain compatibility aliases only and normalize to the same Journal tab.
 - The former top-level Schedules panel/destination and the generic Import/Export Jobs destination are eliminated. Their historical schema/compatibility data is not itself a production destination.
-- `PanelHost` owns reusable canonical tabs and calls `onPanelShown()` when an existing destination is reselected so current H2 data is refreshed.
+- `PanelHost` owns reusable canonical tabs. On a tab change it calls `onPanelShownFrom(origin, title)`, whose default delegates to `onPanelShown()`; same-tab reselection calls `onPanelShown()`. Existing panels retain their activation behavior.
 - `PanelFactory` applies shared production UI compliance, including company-owned table state, while panels with richer existing binders retain their single authoritative state owner.
 - `UiServiceRegistry` supplies current service authorities. Compatibility repositories/services may remain only where a current production or interchange path still consumes them.
 
@@ -289,3 +289,23 @@ not record writes or New against an existing target draft. Source edits survive;
 returning reloads references in the original company/database while preserving
 Updated markers. Existing target New/Save retains service/permission authority.
 See [C17](P27-C17-lookup-add-navigation.md).
+
+P27-C18 Budget Categories uses that activation boundary for caller-aware Return
+(Import, Journal or the actual preceding workspace). Return only navigates; no
+Save/discard or parallel navigation history is introduced. Its existing
+company-scoped maintenance query includes active/inactive rows; activation/Show
+All reset search, Refresh preserves search, all list reloads retain dirty editor
+fields, and Save reveals the saved row. Empty/filter/load-error states differ.
+Import retains its existing reference reload and draft/Updated-marker behavior.
+See [C18](P27-C18-category-list-return.md).
+
+C18 also applies caller-aware Return and draft-safe list refresh to the remaining
+Import Add destinations: Chart of Accounts (through its interchange wrapper),
+Funds, Events / Activities, Merchants and Payees / Counterparties. Small shared
+UI helpers own return-button presentation and list feedback only; existing tab
+activation, company-scoped services and record IDs retain all authority. Search
+resets on entry/Show All/Save; Refresh retains search. Asynchronous loads retain
+newer editor changes and ignore superseded results. Chart selection is retained;
+no chart activation, New, Apply or Journal write occurs on navigation/refresh.
+Maintenance includes inactive records while Import's eligible choice rules stay
+authoritative. See [C18](P27-C18-category-list-return.md).

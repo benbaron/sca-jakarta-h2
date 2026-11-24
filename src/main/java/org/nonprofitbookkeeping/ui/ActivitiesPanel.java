@@ -58,6 +58,10 @@ public class ActivitiesPanel implements AppPanel
     private final CheckBox activeField = new CheckBox("Active");
     private final Button deleteUnused = new Button("Delete Unused");
     private final Button refresh = new Button("Refresh");
+    private final MaintenanceReturn returnAction = new MaintenanceReturn(AppPanelId.ACTIVITIES, "activitiesReturn");
+    private final MaintenanceListFeedback listFeedback = new MaintenanceListFeedback("activities", "Events / Activities", "the selected company", "New Event");
+    private boolean listLoadFailed;
+
     private final SplitPane split = new SplitPane();
     private final PauseTransition stateSaveDelay = new PauseTransition(Duration.millis(350));
 
@@ -111,15 +115,12 @@ public class ActivitiesPanel implements AppPanel
         save.setOnAction(event -> saveForm());
         deleteUnused.setDisable(true);
         deleteUnused.setOnAction(event -> deleteUnusedActivity());
-        refresh.setOnAction(event ->
-        {
-            if (!dirty || confirmDiscard())
-            {
-                Long selectedId = editingActivityId;
-                clearFormForNew(false);
-                reload(selectedId);
-            }
-        });
+        refresh.setId("activitiesRefresh");
+        refresh.setOnAction(event -> reload(editingActivityId));
+        Button showAll = new Button("Show All");
+        showAll.setId("activitiesShowAll");
+        showAll.setTooltip(new javafx.scene.control.Tooltip("Clear search and reload all events for the selected company, including inactive events. Unsaved editor changes are retained."));
+        showAll.setOnAction(event -> showAllRecords());
 
         UiPermissionGate.gate(add, ApplicationPermission.BOOKKEEPING_WRITE, "Create an Activity");
         UiPermissionGate.gate(edit, ApplicationPermission.BOOKKEEPING_WRITE, "Edit an event");
@@ -129,12 +130,12 @@ public class ActivitiesPanel implements AppPanel
         UiPermissionGate.gate(nameField, ApplicationPermission.BOOKKEEPING_WRITE, "Edit an Activity name");
         UiPermissionGate.gate(activeField, ApplicationPermission.BOOKKEEPING_WRITE, "Change Activity lifecycle state");
 
-        FlowPane actions = new FlowPane(8, 6, add, edit, save, deleteUnused, refresh);
+        FlowPane actions = new FlowPane(8, 6, add, edit, save, deleteUnused, refresh, showAll, returnAction.button());
         search.setId("activitiesSearch");
         search.setPromptText("Search event name or code");
         search.setAccessibleText("Search Events / Activities by name or code");
         search.textProperty().addListener((obs, before, after) -> applySearch());
-        VBox header = new VBox(6, title, actions, search, status, lifecycleStatus);
+        VBox header = new VBox(6, title, actions, search, listFeedback.summary(), status, lifecycleStatus);
         ScrollPane headerScroll = new ScrollPane(header);
         headerScroll.setId("activitiesHeaderScroll");
         headerScroll.setFitToWidth(true);
@@ -176,7 +177,7 @@ public class ActivitiesPanel implements AppPanel
         table.setId("activitiesTable");
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         CompanyTableStateBinder.markCompanyStateOwned(table);
-        table.setPlaceholder(new Label("No matching events. Clear search or choose New Event."));
+        table.setPlaceholder(listFeedback.placeholder());
         SortedList<ActivityView> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sorted);
@@ -420,6 +421,7 @@ public class ActivitiesPanel implements AppPanel
     private void applySearch()
     {
         String query = search.getText().strip().toLowerCase(Locale.ROOT);
+        boolean priorSuppression = suppressSelection;
         suppressSelection = true;
         try
         {
@@ -428,9 +430,19 @@ public class ActivitiesPanel implements AppPanel
         }
         finally
         {
-            suppressSelection = false;
+            suppressSelection = priorSuppression;
+        }
+        if (!listLoadFailed)
+        {
+            listFeedback.loaded(activities.size(), filtered.size());
         }
         // Filtering changes the list only; the current unsaved editor remains intact.
+    }
+
+    private void showAllRecords()
+    {
+        search.clear();
+        reload(editingActivityId);
     }
 
     private void reload(Long reselectId)
@@ -439,6 +451,7 @@ public class ActivitiesPanel implements AppPanel
         long generation = ++loadGeneration;
         refresh.setDisable(true);
         status.setText("Loading Events / Activities...");
+        listFeedback.loading();
         UiAsync.run("activity-load",
                 () -> UiServiceRegistry.activityLookup().listAllActivities(),
                 rows ->
@@ -451,6 +464,8 @@ public class ActivitiesPanel implements AppPanel
                     try
                     {
                         activities.setAll(rows);
+                        listLoadFailed = false;
+                        listFeedback.loaded(activities.size(), filtered.size());
                     }
                     finally
                     {
@@ -473,6 +488,8 @@ public class ActivitiesPanel implements AppPanel
                     {
                         return;
                     }
+                    listLoadFailed = true;
+                    listFeedback.failed();
                     status.setText("Failed to load Events / Activities: " + UiErrors.safeMessage(ex));
                     refresh.setDisable(false);
                 });
@@ -676,6 +693,19 @@ public class ActivitiesPanel implements AppPanel
     public String commandResultMessage(AppCommand command)
     {
         return status.getText();
+    }
+
+    @Override
+    public void onPanelShown()
+    {
+        showAllRecords();
+    }
+
+    @Override
+    public void onPanelShownFrom(AppPanelId origin, String originTitle)
+    {
+        returnAction.shownFrom(origin, originTitle);
+        onPanelShown();
     }
 
     @Override

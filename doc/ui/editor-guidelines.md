@@ -211,3 +211,24 @@ retaining raw header/amount/line edits, selected line, explicit clearing and
 Updated markers. No Apply or Journal write occurs. Account/Fund remain required;
 fixed Expense Function classifications remain a dropdown. See
 [C17](../P27-C17-lookup-add-navigation.md).
+
+## P27-C18 Budget Category maintenance from Import
+
+The maintenance list includes active and inactive categories for the selected
+company. Activation and Show All clear search; Refresh reloads the current filter.
+List refresh preserves dirty category fields, and successful Save reveals the
+saved record. Distinct empty/filter/error messages and counts explain visibility.
+Return to Import returns to the original Import controller and reloads eligible
+choices without applying the entry or clearing either draft. Journal and other
+callers receive their own named Return action. This changes navigation, not the
+active-only import choice eligibility. See [C18](../P27-C18-category-list-return.md).
+
+The C18 contract extends to all six Import Add maintenance panels (Account, Fund,
+Budget, Event, Merchant and Payee). Show All reloads existing-scope active/inactive
+rows and clears any search; ordinary Refresh retains the search. Neither accepts
+or discards editor changes. Save reveals/selects its saved record. Asynchronous
+list callbacks must not overwrite fields edited after the request. Named Return
+uses the actual caller; the Chart interchange wrapper forwards activation.
+Import return retains pending/applied edits, explicit clearing and Updated
+markers, while reloading eligible choices. Show All in Chart of Accounts keeps
+the selected chart and its read-only/activation rules.

@@ -6,6 +6,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.nonprofitbookkeeping.interchange.exchequer.ExchequerCsvFixture;
@@ -632,6 +634,7 @@ class ExchequerImportReviewPaneTest
     @Test
     void addBudgetUsesRealMaintenanceTabPreservesBothDraftsAndReloadsSavedRecord() throws Exception
     {
+        UiServiceRegistry.budgetCategoryAdmin().save(new BudgetCategoryCommand(null, "RETIRED", "Retired category", false, null, null, ""));
         PanelHost host = FxTestSupport.onFx(() ->
         {
             stage.getScene().setRoot(new javafx.scene.layout.VBox());
@@ -658,7 +661,14 @@ class ExchequerImportReviewPaneTest
             assertEquals("Preserve existing category draft", ((TextField) value.lookup("#budgetCategoriesName")).getText());
             ((TextField) value.lookup("#budgetCategoriesName")).setText("Created from Import");
             value.saveActive();
-            value.show(AppPanelId.IMPORT_PREVIEW);
+            var back = (Button) value.lookup("#budgetCategoriesJournal");
+            assertEquals("Return to Import", back.getText());
+            @SuppressWarnings("unchecked")
+            var visibleCategories = (TableView<BudgetCategoryView>) value.lookup("#budgetCategoriesTable");
+            assertTrue(visibleCategories.getItems().stream().anyMatch(category -> "RETIRED".equals(category.code()) && !category.active()));
+            saveScreenshot("sca.budgetCategoriesCallerScreenshot");
+            back.fire();
+            assertEquals(AppPanelId.IMPORT_PREVIEW, value.activePanelId());
             return value;
         });
         await(() -> ((Label) panel.root().lookup("#exchequerReviewStatus")).getText().startsWith("Choices reloaded after Add"));
@@ -684,6 +694,261 @@ class ExchequerImportReviewPaneTest
         });
         assertTrue(UiServiceRegistry.budgetCategoryLookup().listForMaintenance().stream()
                 .anyMatch(category -> "C17".equals(category.code()) && "Created from Import".equals(category.name())));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AppPanelId.class, names = {"CHART_OF_ACCOUNTS", "FUNDS", "ACTIVITIES", "MERCHANTS", "COUNTERPARTIES"})
+    void everyAddDestinationRefreshesAllRowsRetainsDraftsAndReturnsToImport(AppPanelId destination) throws Exception
+    {
+        MaintenanceRoute route = maintenanceRoute(destination);
+        long retiredId = seedRetiredMaintenanceRecord(destination);
+        int journalCount = UiServiceRegistry.transactionEntry().search(null, null, "", 100).size();
+        PanelHost host = FxTestSupport.onFx(() ->
+        {
+            stage.getScene().setRoot(new javafx.scene.layout.VBox());
+            var value = new PanelHost();
+            value.getStyleClass().addAll("production-workspace", "theme-light", "theme-atlantafx");
+            WorkspaceTextContrastEnforcer.install(value);
+            value.showReplacement(AppPanelId.IMPORT_PREVIEW, panel);
+            stage.getScene().setRoot(value);
+            DrillThroughCoordinator.configureOpener(value::show);
+            value.show(destination);
+            return value;
+        });
+        await(() -> maintenanceReady(host, route));
+        FxTestSupport.onFx(() ->
+        {
+            layout();
+            assertTrue(maintenanceTable(host, route).getItems().stream().anyMatch(row -> maintenanceId(row) == retiredId));
+            ((TextField) host.lookup("#" + route.prefix() + "Name")).setText("Retain destination draft");
+            if (destination == AppPanelId.CHART_OF_ACCOUNTS)
+            {
+                ((TextField) host.lookup("#chartOfAccountsCode")).setText("1998");
+                maintenanceCombo(host, "chartOfAccountsType").setValue(AccountType.ASSET);
+                maintenanceCombo(host, "chartOfAccountsBalance").setValue(NormalBalance.DEBIT);
+            }
+            else if (destination == AppPanelId.FUNDS)
+            {
+                ((TextField) host.lookup("#fundsCode")).setText("C18NEW");
+                maintenanceCombo(host, "fundsType").setValue(FundType.UNRESTRICTED);
+            }
+            else if (destination == AppPanelId.ACTIVITIES)
+            {
+                ((TextField) host.lookup("#activitiesCode")).setText("C18NEW");
+            }
+            if (route.searchable())
+            {
+                ((TextField) host.lookup("#" + route.prefix() + "Search")).setText("missing category");
+                assertTrue(maintenanceTable(host, route).getItems().isEmpty());
+                assertTrue(((Label) maintenanceTable(host, route).getPlaceholder()).getText().contains("No matching"));
+            }
+            host.show(AppPanelId.IMPORT_PREVIEW);
+            button("editExchequerEntry").fire();
+            table("exchequerProposedLines").getSelectionModel().select(1);
+            ((TextArea) panel.root().lookup("#exchequerEntryMemo")).setText("Keep source header");
+            ((TextField) panel.root().lookup("#exchequerLineDebit")).setText("raw pending amount");
+            button(route.lookup() + "Add").fire();
+            assertEquals(destination, host.activePanelId());
+            return null;
+        });
+        await(() -> maintenanceReady(host, route));
+        FxTestSupport.onFx(() ->
+        {
+            layout();
+            assertEquals("Return to Import", ((Button) host.lookup("#" + route.returnId())).getText());
+            assertEquals("Retain destination draft", ((TextField) host.lookup("#" + route.prefix() + "Name")).getText());
+            if (route.searchable()) assertEquals("", ((TextField) host.lookup("#" + route.prefix() + "Search")).getText());
+            assertTrue(maintenanceTable(host, route).getItems().stream().anyMatch(row -> maintenanceId(row) == retiredId));
+            ((Button) host.lookup("#" + route.prefix() + "Refresh")).fire();
+            // Simulate typing while the real asynchronous load is in flight as well.
+            ((TextField) host.lookup("#" + route.prefix() + "Name")).setText("Created through Import");
+            return null;
+        });
+        await(() -> maintenanceReady(host, route));
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals("Created through Import", ((TextField) host.lookup("#" + route.prefix() + "Name")).getText());
+            if (route.searchable()) ((TextField) host.lookup("#" + route.prefix() + "Search")).setText("missing again");
+            ((Button) host.lookup("#" + route.prefix() + "ShowAll")).fire();
+            return null;
+        });
+        await(() -> maintenanceReady(host, route));
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals("Created through Import", ((TextField) host.lookup("#" + route.prefix() + "Name")).getText());
+            if (route.searchable()) ((TextField) host.lookup("#" + route.prefix() + "Search")).setText("hide new record");
+            host.saveActive();
+            return null;
+        });
+        await(() -> maintenanceReady(host, route));
+        long savedId = FxTestSupport.onFx(() ->
+        {
+            var saved = maintenanceTable(host, route).getSelectionModel().getSelectedItem();
+            assertNotNull(saved, "Save reveals and selects its record");
+            assertEquals("Created through Import", maintenanceName(saved));
+            if (route.searchable()) assertEquals("", ((TextField) host.lookup("#" + route.prefix() + "Search")).getText());
+            layout();
+            assertMaintenanceActionVisible(host, route.returnId());
+            assertMaintenanceActionVisible(host, route.prefix() + "ShowAll");
+            saveScreenshot("sca.maintenanceScreenshot." + destination.name());
+            ((Button) host.lookup("#" + route.returnId())).fire();
+            assertEquals(AppPanelId.IMPORT_PREVIEW, host.activePanelId());
+            return maintenanceId(saved);
+        });
+        await(() -> ((Label) panel.root().lookup("#exchequerReviewStatus")).getText().startsWith("Choices reloaded after Add"));
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals("Keep source header", ((TextArea) panel.root().lookup("#exchequerEntryMemo")).getText());
+            assertEquals("raw pending amount", ((TextField) panel.root().lookup("#exchequerLineDebit")).getText());
+            assertEquals(1, table("exchequerProposedLines").getSelectionModel().getSelectedIndex());
+            assertTrue(suggestion(route.lookup()).getItems().stream().anyMatch(option -> option.id() != null && option.id() == savedId));
+            assertTrue(suggestion(route.lookup()).getItems().stream().noneMatch(option -> option.id() != null && option.id() == retiredId));
+            // Changing callers changes the same button; reselecting the same tab does not.
+            host.showReplacement(AppPanelId.JOURNAL_PANE, new AppPanel()
+            {
+                private final javafx.scene.layout.VBox content = new javafx.scene.layout.VBox();
+                @Override public String title() { return "Journal"; }
+                @Override public javafx.scene.Node root() { return content; }
+            });
+            host.show(destination);
+            host.show(destination);
+            layout();
+            assertEquals("Return to Journal", ((Button) host.lookup("#" + route.returnId())).getText());
+            ((Button) host.lookup("#" + route.returnId())).fire();
+            assertEquals(AppPanelId.JOURNAL_PANE, host.activePanelId());
+            return null;
+        });
+        assertEquals(journalCount, UiServiceRegistry.transactionEntry().search(null, null, "", 100).size());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AppPanelId.class, names = {"CHART_OF_ACCOUNTS", "FUNDS", "ACTIVITIES", "MERCHANTS", "COUNTERPARTIES"})
+    void maintenanceLoadFailuresAreDistinctAndRecoveryRetainsEditor(AppPanelId destination) throws Exception
+    {
+        MaintenanceRoute route = maintenanceRoute(destination);
+        PanelHost host = FxTestSupport.onFx(() ->
+        {
+            stage.getScene().setRoot(new javafx.scene.layout.VBox());
+            var value = new PanelHost();
+            value.showReplacement(AppPanelId.IMPORT_PREVIEW, panel);
+            stage.getScene().setRoot(value);
+            value.show(destination);
+            return value;
+        });
+        await(() -> maintenanceReady(host, route));
+        FxTestSupport.onFx(() ->
+        {
+            layout();
+            if (route.searchable())
+            {
+                assertTrue(maintenanceTable(host, route).getItems().isEmpty());
+                assertTrue(((Label) maintenanceTable(host, route).getPlaceholder()).getText().contains("have been created"));
+            }
+            ((TextField) host.lookup("#" + route.prefix() + "Name")).setText("Keep during recovery");
+            MainWindow.sharedSessionState().setMultiCompany(new MultiCompanyState("MISSING", List.of("DEFAULT", "MISSING")));
+            host.show(destination);
+            return null;
+        });
+        await(() -> maintenanceReady(host, route));
+        FxTestSupport.onFx(() ->
+        {
+            assertTrue(((Label) maintenanceTable(host, route).getPlaceholder()).getText().contains("Could not load"));
+            assertEquals("Keep during recovery", ((TextField) host.lookup("#" + route.prefix() + "Name")).getText());
+            MainWindow.sharedSessionState().setMultiCompany(new MultiCompanyState("DEFAULT", List.of("DEFAULT")));
+            host.show(destination);
+            return null;
+        });
+        await(() -> maintenanceReady(host, route));
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals("Keep during recovery", ((TextField) host.lookup("#" + route.prefix() + "Name")).getText());
+            assertFalse(((Label) maintenanceTable(host, route).getPlaceholder()).getText().contains("Could not load"));
+            if (route.searchable()) assertTrue(((Label) maintenanceTable(host, route).getPlaceholder()).getText().contains("have been created"));
+            return null;
+        });
+        assertEquals(1, UiServiceRegistry.transactionEntry().search(null, null, "", 100).size());
+    }
+
+    private record MaintenanceRoute(String prefix, String lookup, String returnId, boolean searchable) {}
+
+    private static MaintenanceRoute maintenanceRoute(AppPanelId destination)
+    {
+        return switch (destination)
+        {
+            case CHART_OF_ACCOUNTS -> new MaintenanceRoute("chartOfAccounts", "exchequerLineAccount", "chartOfAccountsReturn", false);
+            case FUNDS -> new MaintenanceRoute("funds", "exchequerLineFund", "fundsReturn", false);
+            case ACTIVITIES -> new MaintenanceRoute("activities", "exchequerLineEvent", "activitiesReturn", true);
+            case MERCHANTS -> new MaintenanceRoute("merchants", "exchequerLineMerchant", "merchantsJournal", true);
+            case COUNTERPARTIES -> new MaintenanceRoute("counterparties", "exchequerEntryPayee", "counterpartiesJournal", true);
+            default -> throw new IllegalArgumentException("Not an additional Import maintenance destination");
+        };
+    }
+
+    private static long seedRetiredMaintenanceRecord(AppPanelId destination)
+    {
+        return switch (destination)
+        {
+            case CHART_OF_ACCOUNTS -> UiServiceRegistry.accountAdmin().save(new AccountCommand(null, "1999", "Retired choice", AccountType.ASSET, null, NormalBalance.DEBIT, null, "", false)).getId();
+            case FUNDS -> UiServiceRegistry.fundAdmin().save(new FundCommand(null, "C18OLD", "Retired choice", FundType.UNRESTRICTED, false, null, null, null, "")).getId();
+            case ACTIVITIES -> UiServiceRegistry.activityAdmin().save(new ActivityCommand(null, "C18OLD", "Retired choice", false)).id();
+            case MERCHANTS -> UiServiceRegistry.merchantAdmin().save(new MerchantCommand(null, "Retired choice", "", false)).id();
+            case COUNTERPARTIES -> UiServiceRegistry.counterpartyAdmin().save(new CounterpartyCommand(null, "Retired choice", CounterpartyKind.ORG, "", "", "", false)).id();
+            default -> throw new IllegalArgumentException();
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ComboBox<Object> maintenanceCombo(PanelHost host, String id)
+    {
+        return (ComboBox<Object>) host.lookup("#" + id);
+    }
+
+    private static boolean maintenanceReady(PanelHost host, MaintenanceRoute route)
+    {
+        var refresh = host.lookup("#" + route.prefix() + "Refresh");
+        return refresh instanceof Button button && !button.isDisabled();
+    }
+
+    private static TableView<?> maintenanceTable(PanelHost host, MaintenanceRoute route)
+    {
+        if ("chartOfAccounts".equals(route.prefix()))
+        {
+            // Keep the existing anonymous company table-state key unchanged.
+            return (TableView<?>) host.lookup("#chartOfAccountsWorkspaceSplit").lookup(".table-view");
+        }
+        return (TableView<?>) host.lookup("#" + route.prefix() + "Table");
+    }
+
+    private static void assertMaintenanceActionVisible(PanelHost host, String controlId)
+    {
+        var action = host.lookup("#" + controlId);
+        javafx.scene.Node ancestor = action.getParent();
+        while (ancestor != null && !(ancestor instanceof ScrollPane)) ancestor = ancestor.getParent();
+        assertNotNull(ancestor, "Maintenance tools retain a local overflow viewport");
+        var viewport = ancestor.lookup(".viewport");
+        assertNotNull(viewport);
+        var visible = viewport.localToScene(viewport.getBoundsInLocal());
+        var bounds = action.localToScene(action.getBoundsInLocal());
+        assertTrue(bounds.getMinX() >= visible.getMinX() - 1 && bounds.getMaxX() <= visible.getMaxX() + 1, controlId + " fits the header width");
+        assertTrue(bounds.getMinY() >= visible.getMinY() - 1 && bounds.getMaxY() <= visible.getMaxY() + 1, controlId + " is visible without scrolling the normal-size header");
+    }
+
+    private static long maintenanceId(Object record)
+    {
+        if (record instanceof Account value) return value.getId();
+        if (record instanceof Fund value) return value.getId();
+        if (record instanceof ActivityView value) return value.id();
+        if (record instanceof MerchantView value) return value.id();
+        return ((CounterpartyView) record).id();
+    }
+
+    private static String maintenanceName(Object record)
+    {
+        if (record instanceof Account value) return value.getName();
+        if (record instanceof Fund value) return value.getName();
+        if (record instanceof ActivityView value) return value.name();
+        if (record instanceof MerchantView value) return value.name();
+        return ((CounterpartyView) record).name();
     }
 
     @Test
