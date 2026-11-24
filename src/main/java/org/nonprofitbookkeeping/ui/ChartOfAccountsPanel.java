@@ -46,6 +46,7 @@ public class ChartOfAccountsPanel implements AppPanel
     private final BorderPane root = new BorderPane();
     private final TableView<Account> table = new TableView<>();
     private final Label status = new Label();
+    private final ImportAddPrefill importPrefill = new ImportAddPrefill("chartOfAccounts");
     private final TextField codeField = new TextField();
     private final TextField nameField = new TextField();
     private final ComboBox<AccountType> typeField = new ComboBox<>();
@@ -141,7 +142,7 @@ public class ChartOfAccountsPanel implements AppPanel
                 new FlowPane(8, 6, makeActiveChart));
         Node editorForm = buildEditorForm();
         accountEditor = editorForm;
-        VBox header = new VBox(6, title, actions, chartActionsBar, chartStatus, lifecycle, listFeedback.summary(), status, new Separator());
+        VBox header = new VBox(6, title, actions, chartActionsBar, chartStatus, lifecycle, listFeedback.summary(), status, importPrefill.notice(), new Separator());
 
         root.setTop(header);
         dirtyState = new FormDirtyTracker(this::formSnapshot);
@@ -239,6 +240,7 @@ public class ChartOfAccountsPanel implements AppPanel
         if (!dirtyState.isDirty() || confirmDiscard())
         {
             clearFormForNew();
+            importPrefill.applyIfReady(true, this::startImportDraft);
             status.setText("Create mode: enter account details and click Save.");
         }
         else
@@ -516,6 +518,7 @@ public class ChartOfAccountsPanel implements AppPanel
                     suppressSelection = false;
                 }
             }
+            importPrefill.applyWhenReady(!dirtyState.isDirty(), this::startImportDraft);
         }, ex ->
         {
             if (generation != loadGeneration)
@@ -713,6 +716,31 @@ public class ChartOfAccountsPanel implements AppPanel
     public void onSave()
     {
         saveForm();
+    }
+
+    @Override
+    public void onImportAddSuggestion(ImportAddSuggestion suggestion)
+    {
+        importPrefill.offer(suggestion, dirtyState.isDirty(), !loadingCharts, this::startImportDraft);
+    }
+
+    private void startImportDraft(String literalName)
+    {
+        CompanyChartView current = chartSelection.getItems().stream()
+                .filter(CompanyChartView::activeForCompany).findFirst().orElse(null);
+        changingCharts = true;
+        try
+        {
+            chartSelection.setValue(current);
+        }
+        finally
+        {
+            changingCharts = false;
+        }
+        clearFormForNew();
+        showChartAccounts();
+        nameField.setText(literalName);
+        status.setText("New record: Name copied literally from Import. Enter remaining required details and choose Save.");
     }
 
     @Override

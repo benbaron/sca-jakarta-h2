@@ -45,6 +45,7 @@ public class ActivitiesPanel implements AppPanel
     private final VBox root = new VBox(6);
     private final TableView<ActivityView> table = new TableView<>();
     private final Label status = new Label("Ready.");
+    private final ImportAddPrefill importPrefill = new ImportAddPrefill("activities");
     private final Label lifecycleStatus = new Label("Select an existing Activity to review deletion eligibility.");
     private final Label editMode = new Label("New Event");
     private final TextField search = new TextField();
@@ -135,7 +136,7 @@ public class ActivitiesPanel implements AppPanel
         search.setPromptText("Search event name or code");
         search.setAccessibleText("Search Events / Activities by name or code");
         search.textProperty().addListener((obs, before, after) -> applySearch());
-        VBox header = new VBox(6, title, actions, search, listFeedback.summary(), status, lifecycleStatus);
+        VBox header = new VBox(6, title, actions, search, listFeedback.summary(), status, importPrefill.notice(), lifecycleStatus);
         ScrollPane headerScroll = new ScrollPane(header);
         headerScroll.setId("activitiesHeaderScroll");
         headerScroll.setFitToWidth(true);
@@ -676,6 +677,7 @@ public class ActivitiesPanel implements AppPanel
         if (!dirty || confirmDiscard())
         {
             clearFormForNew(true);
+            importPrefill.applyIfReady(true, this::startImportDraft);
         }
         else
         {
@@ -706,6 +708,19 @@ public class ActivitiesPanel implements AppPanel
     {
         returnAction.shownFrom(origin, originTitle);
         onPanelShown();
+    }
+
+    @Override
+    public void onImportAddSuggestion(ImportAddSuggestion suggestion)
+    {
+        importPrefill.offer(suggestion, dirty, true, this::startImportDraft);
+    }
+
+    private void startImportDraft(String literalName)
+    {
+        clearFormForNew(false);
+        nameField.setText(literalName);
+        status.setText("New record: Name copied literally from Import. Enter remaining required details and choose Save.");
     }
 
     @Override

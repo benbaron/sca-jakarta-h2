@@ -76,6 +76,11 @@ public class PanelHost extends TabPane
         {
             panel.onPanelShown();
         }
+        ImportAddSuggestion suggestion = DrillThroughCoordinator.consumeImportAdd(id);
+        if (panel != null && suggestion != null)
+        {
+            panel.onImportAddSuggestion(suggestion);
+        }
         commandCapabilitiesChangedListener.run();
     }
 

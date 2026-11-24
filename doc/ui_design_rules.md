@@ -263,3 +263,21 @@ and distinct empty/search/load-error messages explain visibility. Return names
 the actual caller and only navigates; same-tab reselection keeps that caller.
 Chart browsing/activation, saved table-state keys and Import's active/eligible
 choices retain their existing scope. See [C18](P27-C18-category-list-return.md).
+
+## P27-C19 Import Add literal Name prefill
+
+Add copies only the displayed unresolved Import suggestion into Name in a new
+maintenance draft for Account, Fund, Budget Category, Event, Merchant or Payee.
+Preserve literal case and punctuation; leave Code blank and classifications
+manual. Existing/cleared/blank choices have no missing-name hint to copy. No
+master or Journal write occurs until the existing explicit Save/commit.
+
+The existing DrillThroughCoordinator/PanelHost carries a one-time transient
+database/company-scoped handoff to the real AppPanel; the Chart wrapper forwards
+it. Clean targets with an unresolved hint start a distinct New record. Dirty targets retain all fields
+and show the queued suggestion in their existing header; the existing New action
+applies it after the user resolves that draft. Save/Refresh of the prior draft
+does not accept a queued suggestion. Guard permission, scope, async completion
+and single consumption. Chart creation views the already-active company chart
+without activating another chart. Both-axis overflow and return-draft behavior
+remain in force. See [C19](P27-C19-import-add-prefill.md).

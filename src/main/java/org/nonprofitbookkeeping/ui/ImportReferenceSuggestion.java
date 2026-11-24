@@ -42,6 +42,11 @@ final class ImportReferenceSuggestion
         return value != null ? value.label() : ignored ? "" : hint;
     }
 
+    String nameForNewRecord()
+    {
+        return suggested() ? displayText() : "";
+    }
+
     void choose(TransactionLineEditorModel.Option choice)
     {
         if (choice != null && choice.id() == null)

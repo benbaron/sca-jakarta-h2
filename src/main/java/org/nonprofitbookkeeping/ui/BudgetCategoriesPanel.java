@@ -49,6 +49,7 @@ public final class BudgetCategoriesPanel implements AppPanel
     private final CheckBox active = new CheckBox("Active");
     private final Label mode = new Label("New Budget Category");
     private final Label status = new Label("Ready.");
+    private final ImportAddPrefill importPrefill = new ImportAddPrefill("budgetCategories");
     private final Label lifecycle = new Label();
     private final Button save = new Button("Save");
     private final Button refresh = new Button("Refresh");
@@ -110,7 +111,7 @@ public final class BudgetCategoriesPanel implements AppPanel
         search.setId("budgetCategoriesSearch");
         search.setPromptText("Search code or name");
         search.textProperty().addListener((observable, oldValue, newValue) -> applyFilter());
-        VBox header = new VBox(6, title, new javafx.scene.layout.FlowPane(8, 6, newCategory, save, refresh, showAll, returnToCaller), search, listSummary, status, lifecycle);
+        VBox header = new VBox(6, title, new javafx.scene.layout.FlowPane(8, 6, newCategory, save, refresh, showAll, returnToCaller), search, listSummary, status, importPrefill.notice(), lifecycle);
         ScrollPane headerScroll = new ScrollPane(header);
         headerScroll.setId("budgetCategoriesHeaderScroll");
         headerScroll.setFitToWidth(true);
@@ -395,6 +396,7 @@ public final class BudgetCategoriesPanel implements AppPanel
         if (!dirty || confirmDiscard())
         {
             clearForm(true);
+            importPrefill.applyIfReady(true, this::startImportDraft);
         }
         else
         {
@@ -416,5 +418,18 @@ public final class BudgetCategoriesPanel implements AppPanel
         onPanelShown();
     }
     @Override public String commandResultMessage(AppCommand command) { return status.getText(); }
+    @Override
+    public void onImportAddSuggestion(ImportAddSuggestion suggestion)
+    {
+        importPrefill.offer(suggestion, dirty, true, this::startImportDraft);
+    }
+
+    private void startImportDraft(String literalName)
+    {
+        clearForm(false);
+        name.setText(literalName);
+        status.setText("New record: Name copied literally from Import. Enter remaining required details and choose Save.");
+    }
+
     @Override public boolean hasUnsavedChanges() { return dirty; }
 }

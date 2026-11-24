@@ -10,6 +10,7 @@ final class DrillThroughCoordinator
 {
     private static final AtomicReference<String> CONTEXT = new AtomicReference<>();
     private static final Map<AppPanelId, String> PANEL_CONTEXT = new ConcurrentHashMap<>();
+    private static final Map<AppPanelId, ImportAddSuggestion> IMPORT_ADD_CONTEXT = new ConcurrentHashMap<>();
     private static volatile Consumer<AppPanelId> opener = id -> {};
 
     private DrillThroughCoordinator()
@@ -19,6 +20,10 @@ final class DrillThroughCoordinator
     static void configureOpener(Consumer<AppPanelId> panelOpener)
     {
         opener = panelOpener == null ? (id -> {}) : panelOpener;
+        if (panelOpener == null)
+        {
+            IMPORT_ADD_CONTEXT.clear();
+        }
         debug("Configured opener: " + (panelOpener == null ? "no-op" : panelOpener));
     }
 
@@ -35,6 +40,11 @@ final class DrillThroughCoordinator
     }
 
     static void openPanelWithContext(AppPanelId requestedPanelId, String context)
+    {
+        openPanelWithContext(requestedPanelId, context, null);
+    }
+
+    private static void openPanelWithContext(AppPanelId requestedPanelId, String context, ImportAddSuggestion suggestion)
     {
         if (requestedPanelId == null)
         {
@@ -54,6 +64,14 @@ final class DrillThroughCoordinator
             normalizedContext = normalizedContext.toLowerCase(java.util.Locale.ROOT).contains("review")
                     ? "banking:statements" : "banking:journal";
         }
+        if (suggestion == null)
+        {
+            IMPORT_ADD_CONTEXT.remove(panelId);
+        }
+        else
+        {
+            IMPORT_ADD_CONTEXT.put(panelId, suggestion);
+        }
         PANEL_CONTEXT.put(panelId, normalizedContext);
         debug("Opening " + panelId + " with context '" + safeContext(normalizedContext) + "'.");
         opener.accept(panelId);
@@ -70,6 +88,17 @@ final class DrillThroughCoordinator
         String context = PANEL_CONTEXT.remove(panelId);
         debug("Consumed context for " + panelId + ": '" + safeContext(context) + "'.");
         return context == null ? "" : context;
+    }
+
+    static void openForImportAdd(AppPanelId destination, String literalName)
+    {
+        AppPanelId id = AppPanelId.canonical(destination);
+        openPanelWithContext(id, "", ImportAddSuggestion.capture(literalName));
+    }
+
+    static ImportAddSuggestion consumeImportAdd(AppPanelId destination)
+    {
+        return IMPORT_ADD_CONTEXT.remove(AppPanelId.canonical(destination));
     }
 
     static String consumeContext()

@@ -1,17 +1,113 @@
 ---
-plan_version: 544
+plan_version: 547
 active_phase: P27
-active_slice: P27-C18
+active_slice: P27-C19
 active_status: VERIFYING
-active_branch: codex/P27-C18-category-list-return
-active_pull_request: 444
-active_head: e85f3e1fa5a96c7320dde6d4976ab7cabca483ff
-next_action: "Publish the reviewed C18 extension to #444; run full clean verify and inspect exact-final-head Linux/Windows CI. All native gates pass. Record accepted head/tree; no automatic merge."
+active_branch: codex/P27-C19-import-add-prefill
+active_pull_request: 445
+active_head: b1080040c366f3da872ed1d87267dd2d4f92b94e
+next_action: "C19 PR #445 published; run full clean verify and inspect exact-final-head Linux/Windows CI. Native gates 96/18 pass. Record accepted head/tree and mark ready only after checks. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
+### P27-C19 literal Import Add prefill — owner request
+
+Publication: [draft PR #445](https://github.com/benbaron/sca-jakarta-h2/pull/445)
+contains implementation **b1080040c366f3da872ed1d87267dd2d4f92b94e**, tree
+**026f97b6644a386be73057224acdd7df1d1c4365**. The new branch was absent, normal
+push succeeded and PR read-back matches. This publication receipt successor
+changes only PLAN/C19. Require full local clean verify and exact-final-head
+Linux/Windows CI on the published successor; no source/test/Word edits remain.
+No automatic merge.
+
+
+Final native gate passes **18/0/0/0 (02:04)** on final source/test bytes: six
+panel routes, the actual CSV Budget suggestion, scoped permission protection
+and active-chart browsing without activation or inferred classification. Broad
+gate passes **96/0/0/0 (06:39)**. Initial new-test layout error is resolved.
+All six prefill screenshots and final Budget/Account status were inspected.
+259 local links, whitespace and Word preservation pass; Word still renders to
+31 pages, changed pages 15/16 inspected. No further source/test/Word changes
+are pending. Publish the new branch, require full clean verify and exact-head
+Linux/Windows CI, and record the actual publication/validation receipt.
+
+
+Broad native gate passes **96/0/0/0 (06:39)**, including all 35 Import scenarios.
+The earlier new-test layout error is resolved; initial timing notes below are
+historical. Final targeted native gate is running after the stale status fix
+and added active-chart/no-inferred-classification assertion. All six native
+images inspected; Name is literal and Code blank. Word render/ZIP preservation
+and 259 local links pass. Full verification, publication and exact-head CI remain.
+
+
+Candidate VERIFYING. Literal Name-only prefill and scoped one-time dispatch are
+implemented for all six routes, with dirty-draft queue/New protection and async
+Chart/Fund guards. Initial 28-case gate passes 27 with one new actual-CSV test
+layout lookup error; that fixture now waits for the target field. No product
+assertion was weakened. Broad native gate and new active-chart test pending;
+then full clean verify/publication/exact-head CI. Word direct edit changes only
+paragraph 301/document.xml, preserves all other parts/review/media/links, and
+renders to 31 pages; changed pages 15/16 inspected. 259 local links pass.
+
+
+C18/#444 is confirmed merged at current main **e7c69354ab210e2e0e1e7ab11b594c1e9dcd2cc3**;
+its accepted source passed CI 45118201494. C18 is DONE. Fresh
+`codex/P27-C19-import-add-prefill` carries its local receipt as 851b5088.
+Baseline compile passes. [C19 contract](P27-C19-import-add-prefill.md).
+
+Owner wants the grey Import lookup suggestion copied into the corresponding
+maintenance new-record form for all six Add destinations. The owner's final
+clarification overrides the earlier code-generation preference: copy Name
+literally and leave Code blank. No generated code, parsing, classification,
+implicit Save or Journal commit. Required codes/classifications stay explicit.
+Use existing DrillThroughCoordinator/PanelHost one-time navigation context,
+default-compatible AppPanel dispatch and the Chart interchange wrapper.
+Scope the transient handoff to the original database/company and respect write
+permission. Preserve Import source edits and existing maintenance dirty drafts;
+if the target is dirty, retain the suggestion visibly for its existing New
+action after the user resolves that draft. Clean targets start a distinct New
+record, never overwrite a selected saved record. Guard asynchronous reloads
+and consume each handoff once. Read C18, UI/editor/operation rules and actual
+Import/master/host tests; inspect suggestion identity and all six real routes.
+Update Word directly; native/full/exact-head CI required before handoff.
+
+
 ### P27-C18 Import lookup maintenance list and return — owner correction
+
+Extension final receipt: accepted remote head
+**a4f119e502d80c44ca99bbb9c20e833881abc6dc**, tree
+**cdc2f83839c3573f034a4f7a0cd55978587781fa**; native fetch and final PR read-back
+match. Normal fast-forward publication succeeded. Full local `clean verify`
+passes **1,349 tests, zero failures/errors, 183 expected headless display skips
+(11:46)**, exit 0. Initial native gate passes **17/0/0/0 (02:28)**, expanded
+gate **72/0/0/0 (05:47)** and final geometry gate **15/0/0/0 (01:57)**. The final
+gate checks real Return/Show All viewport bounds in all five additional routes
+after the Chart action-row correction. All five maintenance screenshots and
+the corrected Chart header were inspected. Source/test/Word bytes are unchanged
+after final verification.
+
+[Exact-head CI 45118201494](https://github.com/benbaron/sca-jakarta-h2/actions/runs/45118201494)
+completed **success**, with both jobs successful. Windows job 137505763411
+passes **24 displayed tests across seven suites, zero failures/errors/skips**;
+actual log summary is retained in
+/workspace/p27-c18-extension-evidence/windows-test-summary.log. Linux job
+137505763120 passes rendered theme, clean/repeated verification, Period Close,
+overflow, all Import workflows, Journal/export feedback and production JavaFX
+routes. Final run/job/step metadata is retained in
+/workspace/p27-c18-extension-evidence/github-final-checks.json. No final gate
+failed; no unresolved implementation deliverable remains.
+
+The Word extension changes only paragraph 301/document.xml; all other parts,
+paragraphs, review annotations, tables, drawings, bookmarks and links are
+preserved. Its render remains 31 pages; changed pages 15/16 inspected. 251
+extension-document local links and whitespace pass. The final PR description
+records actual validation. PR #444 is ready for review, open and unmerged at
+the accepted head. This documentation-only receipt stays local to preserve the
+checked remote head; earlier pending/Budget-only receipts below are historical.
+Keep C18 VERIFYING until confirmed merge. Owner review/merge is the only
+remaining delivery action; no automatic merge.
+
 
 Extension publication candidate for existing [PR #444](https://github.com/benbaron/sca-jakarta-h2/pull/444):
 implementation **e85f3e1fa5a96c7320dde6d4976ab7cabca483ff**, tree

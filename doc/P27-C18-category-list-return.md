@@ -1,9 +1,47 @@
 # P27-C18 — Import lookup maintenance visibility and caller return
 
-Status: IN_PROGRESS. Owner reports No matching Budget Categories on the list and
+Status: DONE. PR #444 merged at e7c69354ab210e2e0e1e7ab11b594c1e9dcd2cc3.
+Accepted source a4f119e5 passed exact-head CI 45118201494 and full local
+verification. Earlier pending states below are historical.
+
+Original request: Owner reports No matching Budget Categories on the list and
 an incorrect Return to Journal action when arriving from Import.
 
 ## Owner extension — all Import Add destinations
+
+Extension final receipt: accepted remote head
+**a4f119e502d80c44ca99bbb9c20e833881abc6dc**, tree
+**cdc2f83839c3573f034a4f7a0cd55978587781fa**; native fetch and final PR read-back
+match. Normal fast-forward publication succeeded. Full local `clean verify`
+passes **1,349 tests, zero failures/errors, 183 expected headless display skips
+(11:46)**, exit 0. Initial native gate passes **17/0/0/0 (02:28)**, expanded
+gate **72/0/0/0 (05:47)** and final geometry gate **15/0/0/0 (01:57)**. The final
+gate checks real Return/Show All viewport bounds in all five additional routes
+after the Chart action-row correction. All five maintenance screenshots and
+the corrected Chart header were inspected. Source/test/Word bytes are unchanged
+after final verification.
+
+[Exact-head CI 45118201494](https://github.com/benbaron/sca-jakarta-h2/actions/runs/45118201494)
+completed **success**, with both jobs successful. Windows job 137505763411
+passes **24 displayed tests across seven suites, zero failures/errors/skips**;
+actual log summary is retained in
+/workspace/p27-c18-extension-evidence/windows-test-summary.log. Linux job
+137505763120 passes rendered theme, clean/repeated verification, Period Close,
+overflow, all Import workflows, Journal/export feedback and production JavaFX
+routes. Final run/job/step metadata is retained in
+/workspace/p27-c18-extension-evidence/github-final-checks.json. No final gate
+failed; no unresolved implementation deliverable remains.
+
+The Word extension changes only paragraph 301/document.xml; all other parts,
+paragraphs, review annotations, tables, drawings, bookmarks and links are
+preserved. Its render remains 31 pages; changed pages 15/16 inspected. 251
+extension-document local links and whitespace pass. The final PR description
+records actual validation. PR #444 is ready for review, open and unmerged at
+the accepted head. This documentation-only receipt stays local to preserve the
+checked remote head; earlier pending/Budget-only receipts below are historical.
+Keep C18 VERIFYING until confirmed merge. Owner review/merge is the only
+remaining delivery action; no automatic merge.
+
 
 Extension publication candidate for existing [PR #444](https://github.com/benbaron/sca-jakarta-h2/pull/444):
 implementation **e85f3e1fa5a96c7320dde6d4976ab7cabca483ff**, tree

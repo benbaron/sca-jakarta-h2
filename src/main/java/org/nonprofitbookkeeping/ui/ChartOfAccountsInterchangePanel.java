@@ -602,6 +602,12 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         delegate.onPanelShownFrom(origin, originTitle);
     }
 
+    @Override
+    public void onImportAddSuggestion(ImportAddSuggestion suggestion)
+    {
+        delegate.onImportAddSuggestion(suggestion);
+    }
+
     Button importJsonButtonForTests()
     {
         return importJson;
