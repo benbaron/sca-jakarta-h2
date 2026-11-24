@@ -35,6 +35,15 @@ schema or accounting authority changes are needed.
 
 ## Validation and handoff
 
+Publication: [draft PR #445](https://github.com/benbaron/sca-jakarta-h2/pull/445)
+contains implementation **b1080040c366f3da872ed1d87267dd2d4f92b94e**, tree
+**026f97b6644a386be73057224acdd7df1d1c4365**. The new branch was absent, normal
+push succeeded and PR read-back matches. This publication receipt successor
+changes only PLAN/C19. Require full local clean verify and exact-final-head
+Linux/Windows CI on the published successor; no source/test/Word edits remain.
+No automatic merge.
+
+
 Final native gate passes **18/0/0/0 (02:04)** on final source/test bytes: six
 panel routes, the actual CSV Budget suggestion, scoped permission protection
 and active-chart browsing without activation or inferred classification. Broad

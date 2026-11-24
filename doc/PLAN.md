@@ -1,17 +1,26 @@
 ---
-plan_version: 546
+plan_version: 547
 active_phase: P27
 active_slice: P27-C19
 active_status: VERIFYING
 active_branch: codex/P27-C19-import-add-prefill
-active_pull_request: null
-active_head: 851b5088
-next_action: "Implement C19 literal Name prefill from every Import Add lookup; leave Code blank, preserve existing drafts, then native/full/Word/exact-head CI validation. No automatic merge."
+active_pull_request: 445
+active_head: b1080040c366f3da872ed1d87267dd2d4f92b94e
+next_action: "C19 PR #445 published; run full clean verify and inspect exact-final-head Linux/Windows CI. Native gates 96/18 pass. Record accepted head/tree and mark ready only after checks. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C19 literal Import Add prefill — owner request
+
+Publication: [draft PR #445](https://github.com/benbaron/sca-jakarta-h2/pull/445)
+contains implementation **b1080040c366f3da872ed1d87267dd2d4f92b94e**, tree
+**026f97b6644a386be73057224acdd7df1d1c4365**. The new branch was absent, normal
+push succeeded and PR read-back matches. This publication receipt successor
+changes only PLAN/C19. Require full local clean verify and exact-final-head
+Linux/Windows CI on the published successor; no source/test/Word edits remain.
+No automatic merge.
+
 
 Final native gate passes **18/0/0/0 (02:04)** on final source/test bytes: six
 panel routes, the actual CSV Budget suggestion, scoped permission protection
