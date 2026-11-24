@@ -425,8 +425,8 @@ final class ExchequerImportReviewPane extends BorderPane
                 return;
             }
             reloadAfterLookupNavigation = true;
-            status.setText("Open " + title + " and use New/Save there. Return to the Import tab to reload choices; entry edits are retained.");
-            DrillThroughCoordinator.openPanelWithContext(destination, "");
+            status.setText("Open " + title + " to review the suggested Name and remaining details, then Save. Return to Import to reload choices; entry edits are retained.");
+            DrillThroughCoordinator.openForImportAdd(destination, combo.nameForNewRecord());
         });
     }
 

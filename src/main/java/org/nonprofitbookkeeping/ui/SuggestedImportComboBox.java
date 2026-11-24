@@ -80,7 +80,7 @@ final class SuggestedImportComboBox extends ComboBox<TransactionLineEditorModel.
 
     void configureAdd(String destination, Runnable action)
     {
-        add.setTooltip(new Tooltip("Open " + destination + " to add a saved record. Return to Import to reload choices; this draft stays here. Available for a selected, editable draft in its original company while no operation is running."));
+        add.setTooltip(new Tooltip("Open " + destination + " with the unresolved suggestion copied literally into Name. Code and other required details remain manual. Existing unsaved destination edits are retained. Return to Import to reload choices; this draft stays here. Available for a selected, editable draft in its original company while no operation is running."));
         add.setAccessibleText("Add a record in " + destination);
         add.setOnAction(event -> action.run());
         UiPermissionGate.gate(add, org.nonprofitbookkeeping.service.ApplicationPermission.BOOKKEEPING_WRITE,
@@ -90,6 +90,11 @@ final class SuggestedImportComboBox extends ComboBox<TransactionLineEditorModel.
     void setAddUnavailable(boolean unavailable)
     {
         add.setDisable(unavailable);
+    }
+
+    String nameForNewRecord()
+    {
+        return suggestion == null ? "" : suggestion.nameForNewRecord();
     }
 
     void show(ImportReferenceSuggestion value)

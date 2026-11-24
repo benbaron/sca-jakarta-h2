@@ -1,15 +1,68 @@
 ---
-plan_version: 545
+plan_version: 546
 active_phase: P27
-active_slice: P27-C18
+active_slice: P27-C19
 active_status: VERIFYING
-active_branch: codex/P27-C18-category-list-return
-active_pull_request: 444
-active_head: a4f119e502d80c44ca99bbb9c20e833881abc6dc
-next_action: "PR #444 all-lookup extension ready for owner review/merge; full local and exact-head Linux/Windows CI pass at a4f119e5. Confirm merge before marking C18 DONE or selecting the next unfinished unblocked slice. No automatic merge."
+active_branch: codex/P27-C19-import-add-prefill
+active_pull_request: null
+active_head: 851b5088
+next_action: "Implement C19 literal Name prefill from every Import Add lookup; leave Code blank, preserve existing drafts, then native/full/Word/exact-head CI validation. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C19 literal Import Add prefill — owner request
+
+Final native gate passes **18/0/0/0 (02:04)** on final source/test bytes: six
+panel routes, the actual CSV Budget suggestion, scoped permission protection
+and active-chart browsing without activation or inferred classification. Broad
+gate passes **96/0/0/0 (06:39)**. Initial new-test layout error is resolved.
+All six prefill screenshots and final Budget/Account status were inspected.
+259 local links, whitespace and Word preservation pass; Word still renders to
+31 pages, changed pages 15/16 inspected. No further source/test/Word changes
+are pending. Publish the new branch, require full clean verify and exact-head
+Linux/Windows CI, and record the actual publication/validation receipt.
+
+
+Broad native gate passes **96/0/0/0 (06:39)**, including all 35 Import scenarios.
+The earlier new-test layout error is resolved; initial timing notes below are
+historical. Final targeted native gate is running after the stale status fix
+and added active-chart/no-inferred-classification assertion. All six native
+images inspected; Name is literal and Code blank. Word render/ZIP preservation
+and 259 local links pass. Full verification, publication and exact-head CI remain.
+
+
+Candidate VERIFYING. Literal Name-only prefill and scoped one-time dispatch are
+implemented for all six routes, with dirty-draft queue/New protection and async
+Chart/Fund guards. Initial 28-case gate passes 27 with one new actual-CSV test
+layout lookup error; that fixture now waits for the target field. No product
+assertion was weakened. Broad native gate and new active-chart test pending;
+then full clean verify/publication/exact-head CI. Word direct edit changes only
+paragraph 301/document.xml, preserves all other parts/review/media/links, and
+renders to 31 pages; changed pages 15/16 inspected. 259 local links pass.
+
+
+C18/#444 is confirmed merged at current main **e7c69354ab210e2e0e1e7ab11b594c1e9dcd2cc3**;
+its accepted source passed CI 45118201494. C18 is DONE. Fresh
+`codex/P27-C19-import-add-prefill` carries its local receipt as 851b5088.
+Baseline compile passes. [C19 contract](P27-C19-import-add-prefill.md).
+
+Owner wants the grey Import lookup suggestion copied into the corresponding
+maintenance new-record form for all six Add destinations. The owner's final
+clarification overrides the earlier code-generation preference: copy Name
+literally and leave Code blank. No generated code, parsing, classification,
+implicit Save or Journal commit. Required codes/classifications stay explicit.
+Use existing DrillThroughCoordinator/PanelHost one-time navigation context,
+default-compatible AppPanel dispatch and the Chart interchange wrapper.
+Scope the transient handoff to the original database/company and respect write
+permission. Preserve Import source edits and existing maintenance dirty drafts;
+if the target is dirty, retain the suggestion visibly for its existing New
+action after the user resolves that draft. Clean targets start a distinct New
+record, never overwrite a selected saved record. Guard asynchronous reloads
+and consume each handoff once. Read C18, UI/editor/operation rules and actual
+Import/master/host tests; inspect suggestion identity and all six real routes.
+Update Word directly; native/full/exact-head CI required before handoff.
+
 
 ### P27-C18 Import lookup maintenance list and return — owner correction
 

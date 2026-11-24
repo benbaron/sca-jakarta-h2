@@ -51,6 +51,7 @@ public class FundsPanel implements AppPanel
     private final BorderPane root = new BorderPane();
     private final TableView<Fund> table = new TableView<>();
     private final Label status = new Label("Ready.");
+    private final ImportAddPrefill importPrefill = new ImportAddPrefill("funds");
     private final Label editMode = new Label("New fund");
     private final TextField codeField = new TextField();
     private final TextField nameField = new TextField();
@@ -125,7 +126,7 @@ public class FundsPanel implements AppPanel
         transfers.setId("fundsTransfers");
         transfers.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.FUND_TRANSFERS, ""));
         FlowPane actions = new FlowPane(8, 6, add, save, deleteUnused, refresh, showAll, transfers, returnAction.button());
-        root.setTop(new VBox(6, title, actions, listFeedback.summary(), status));
+        root.setTop(new VBox(6, title, actions, listFeedback.summary(), status, importPrefill.notice()));
 
         configureTable();
         Node editor = buildEditor();
@@ -437,7 +438,7 @@ public class FundsPanel implements AppPanel
                         {
                             rebuildParentOptions(rows, reselectId);
                         }
-                        if (reselectId != null)
+                        if (reselectId != null && Objects.equals(editingFundId, reselectId))
                         {
                             rows.stream().filter(row -> Objects.equals(row.getId(), reselectId)).findFirst().ifPresent(row ->
                             {
@@ -688,6 +689,7 @@ public class FundsPanel implements AppPanel
         if (!dirty || confirmDiscard())
         {
             clearFormForNew(true);
+            importPrefill.applyIfReady(true, this::startImportDraft);
         }
         else
         {
@@ -718,6 +720,19 @@ public class FundsPanel implements AppPanel
     {
         returnAction.shownFrom(origin, originTitle);
         onPanelShown();
+    }
+
+    @Override
+    public void onImportAddSuggestion(ImportAddSuggestion suggestion)
+    {
+        importPrefill.offer(suggestion, dirty, true, this::startImportDraft);
+    }
+
+    private void startImportDraft(String literalName)
+    {
+        clearFormForNew(false);
+        nameField.setText(literalName);
+        status.setText("New record: Name copied literally from Import. Enter remaining required details and choose Save.");
     }
 
     @Override

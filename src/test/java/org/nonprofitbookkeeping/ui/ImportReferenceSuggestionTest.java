@@ -7,6 +7,23 @@ import static org.junit.jupiter.api.Assertions.*;
 class ImportReferenceSuggestionTest
 {
     @Test
+    void addReceivesOnlyTheLiteralUnresolvedNameAndNeverAnExistingOrClearedIdentity()
+    {
+        String literal = "January's Coronation / MiXeD & café #2";
+        var hint = new ImportReferenceSuggestion(literal, false);
+        assertEquals(literal, hint.nameForNewRecord());
+        hint.choose(option(7, "CODE", "Saved choice"));
+        assertEquals("", hint.nameForNewRecord(), "A saved choice is not a missing record to duplicate");
+        hint.clear();
+        assertEquals("", hint.nameForNewRecord(), "An explicitly cleared suggestion is not restored by Add");
+        assertEquals("", new ImportReferenceSuggestion("", true).nameForNewRecord());
+        var stale = new ImportReferenceSuggestion("", false);
+        stale.choose(option(12, "OLD", "Retired name"));
+        stale.refresh(List.of());
+        assertEquals(stale.displayText(), stale.nameForNewRecord(), "Copy exactly the unresolved text the user sees");
+    }
+
+    @Test
     void uniqueExactCodeOrNameResolvesButSimilarTextAndAmbiguityStayUnmapped()
     {
         var checking = option(1, "1000", "Operating Checking");

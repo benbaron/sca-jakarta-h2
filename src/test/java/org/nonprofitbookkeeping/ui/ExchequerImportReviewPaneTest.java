@@ -869,12 +869,244 @@ class ExchequerImportReviewPaneTest
         assertEquals(1, UiServiceRegistry.transactionEntry().search(null, null, "", 100).size());
     }
 
+    @ParameterizedTest
+    @EnumSource(value = AppPanelId.class, names = {"CHART_OF_ACCOUNTS", "FUNDS", "BUDGET_CATEGORIES", "ACTIVITIES", "MERCHANTS", "COUNTERPARTIES"})
+    void addPrefillsLiteralNameInADistinctNewRecordWithoutGeneratingCodesOrSaving(AppPanelId destination) throws Exception
+    {
+        MaintenanceRoute route = maintenanceRoute(destination);
+        long oldId = seedRetiredMaintenanceRecord(destination);
+        int before = maintenanceRecords(destination).size();
+        String literal = "January's Coronation / MiXeD & café #2";
+        PanelHost host = mountImportForPrefill();
+        FxTestSupport.onFx(() -> { host.show(destination); return null; });
+        await(() -> maintenanceReady(host, route));
+        FxTestSupport.onFx(() ->
+        {
+            selectMaintenanceRecord(host, route, oldId);
+            assertEquals("Retired choice", ((TextField) host.lookup("#" + route.prefix() + "Name")).getText());
+            showImportHintAndAdd(host, route, destination, literal);
+            return null;
+        });
+        await(() -> maintenanceReady(host, route));
+        FxTestSupport.onFx(() ->
+        {
+            assertLiteralNewDraft(host, route, literal);
+            assertNull(maintenanceTable(host, route).getSelectionModel().getSelectedItem(), "New draft is not the previously selected record");
+            assertEquals(before, maintenanceRecords(destination).size(), "Add does not save master data");
+            assertEquals("Retired choice", maintenanceRecords(destination).stream().filter(row -> maintenanceId(row) == oldId).map(ExchequerImportReviewPaneTest::maintenanceName).findFirst().orElseThrow());
+            saveScreenshot("sca.importPrefillScreenshot." + destination.name());
+            enterRequiredMaintenanceFields(host, route, destination);
+            host.saveActive();
+            return null;
+        });
+        await(() -> maintenanceReady(host, route));
+        long newId = FxTestSupport.onFx(() ->
+        {
+            var saved = maintenanceTable(host, route).getSelectionModel().getSelectedItem();
+            assertNotNull(saved);
+            assertEquals(literal, maintenanceName(saved));
+            assertNotEquals(oldId, maintenanceId(saved), "Explicit Save creates a distinct stable ID");
+            ((Button) host.lookup("#" + route.returnId())).fire();
+            return maintenanceId(saved);
+        });
+        await(() -> ((Label) panel.root().lookup("#exchequerReviewStatus")).getText().startsWith("Choices reloaded after Add"));
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals("Retain source while adding", ((TextArea) panel.root().lookup("#exchequerEntryMemo")).getText());
+            assertEquals("raw pending amount", ((TextField) panel.root().lookup("#exchequerLineDebit")).getText());
+            assertTrue(suggestion(route.lookup()).getItems().stream().anyMatch(option -> option.id() != null && option.id() == newId));
+            return null;
+        });
+        assertEquals(before + 1, maintenanceRecords(destination).size());
+        assertEquals(1, UiServiceRegistry.transactionEntry().search(null, null, "", 100).size());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AppPanelId.class, names = {"CHART_OF_ACCOUNTS", "FUNDS", "BUDGET_CATEGORIES", "ACTIVITIES", "MERCHANTS", "COUNTERPARTIES"})
+    void addPreservesDirtyMasterAndQueuesItsLiteralNameForExplicitNew(AppPanelId destination) throws Exception
+    {
+        MaintenanceRoute route = maintenanceRoute(destination);
+        long oldId = seedRetiredMaintenanceRecord(destination);
+        int before = maintenanceRecords(destination).size();
+        String literal = "Unchanged Literal / Second suggestion";
+        PanelHost host = mountImportForPrefill();
+        FxTestSupport.onFx(() -> { host.show(destination); return null; });
+        await(() -> maintenanceReady(host, route));
+        FxTestSupport.onFx(() ->
+        {
+            selectMaintenanceRecord(host, route, oldId);
+            ((TextField) host.lookup("#" + route.prefix() + "Name")).setText("Keep unsaved master");
+            showImportHintAndAdd(host, route, destination, literal);
+            return null;
+        });
+        await(() -> maintenanceReady(host, route));
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals("Keep unsaved master", ((TextField) host.lookup("#" + route.prefix() + "Name")).getText());
+            var notice = (Label) host.lookup("#" + route.prefix() + "ImportSuggestion");
+            assertTrue(notice.isVisible());
+            assertTrue(notice.getText().contains(literal));
+            assertEquals(before, maintenanceRecords(destination).size());
+            host.saveActive();
+            return null;
+        });
+        await(() -> maintenanceReady(host, route));
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals("Keep unsaved master", ((TextField) host.lookup("#" + route.prefix() + "Name")).getText(), "Saving/refreshing the old draft never accepts the queued suggestion");
+            assertTrue(host.newItemActive().handled());
+            assertLiteralNewDraft(host, route, literal);
+            assertFalse(host.lookup("#" + route.prefix() + "ImportSuggestion").isVisible());
+            ((TextField) host.lookup("#" + route.prefix() + "Name")).setText("User revised the literal Name");
+            ((Button) host.lookup("#" + route.prefix() + "Refresh")).fire();
+            return null;
+        });
+        await(() -> maintenanceReady(host, route));
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals("User revised the literal Name", ((TextField) host.lookup("#" + route.prefix() + "Name")).getText(), "A consumed hint never reapplies over user edits");
+            return null;
+        });
+        assertEquals(before, maintenanceRecords(destination).size(), "Queued New is still an unsaved draft");
+        assertEquals(1, UiServiceRegistry.transactionEntry().search(null, null, "", 100).size());
+    }
+
+    @Test
+    void budgetNameComesFromTheActualCsvSuggestionAndResolvesOnlyAfterExplicitSave() throws Exception
+    {
+        String literal = "January Coronation / MiXeD & café #2";
+        var records = ExchequerCsvFixture.header();
+        var row = ExchequerCsvFixture.row(1, "3/1/2026", "10");
+        row.set(11, literal);
+        ExchequerCsvFixture.split(row, 0, "10", "Example Income", "");
+        records.add(row);
+        java.nio.file.Files.writeString(csvFile, ExchequerCsvFixture.csv(records));
+        byte[] original = java.nio.file.Files.readAllBytes(csvFile);
+        FxTestSupport.onFx(() ->
+        {
+            Platform.runLater(ExchequerImportReviewPaneTest::acceptConfirmation);
+            panel.root().lookupAll(".button").stream().filter(Button.class::isInstance).map(Button.class::cast)
+                    .filter(button -> button.getText().startsWith("Choose Another Exchequer")).findFirst().orElseThrow().fire();
+            return null;
+        });
+        await(() -> table("exchequerProposedEntries").getItems().size() == 1);
+        PanelHost host = mountImportForPrefill();
+        FxTestSupport.onFx(() ->
+        {
+            button("editExchequerEntry").fire();
+            table("exchequerProposedLines").getSelectionModel().select(0);
+            assertEquals(literal, suggestion("exchequerLineBudget").nameForNewRecord());
+            button("exchequerLineBudgetAdd").fire();
+            return null;
+        });
+        await(() -> host.lookup("#budgetCategoriesName") != null);
+        FxTestSupport.onFx(() ->
+        {
+            assertLiteralNewDraft(host, maintenanceRoute(AppPanelId.BUDGET_CATEGORIES), literal);
+            assertTrue(UiServiceRegistry.budgetCategoryLookup().listForMaintenance().isEmpty());
+            ((TextField) host.lookup("#budgetCategoriesCode")).setText("JAN-CORONATION");
+            host.saveActive();
+            ((Button) host.lookup("#budgetCategoriesJournal")).fire();
+            return null;
+        });
+        await(() -> ((Label) panel.root().lookup("#exchequerReviewStatus")).getText().startsWith("Choices reloaded after Add"));
+        FxTestSupport.onFx(() ->
+        {
+            assertNotNull(suggestion("exchequerLineBudget").getValue());
+            assertEquals(literal, suggestion("exchequerLineBudget").getValue().name());
+            return null;
+        });
+        assertArrayEquals(original, java.nio.file.Files.readAllBytes(csvFile));
+        assertEquals(1, UiServiceRegistry.transactionEntry().search(null, null, "", 100).size());
+    }
+
+    private PanelHost mountImportForPrefill()
+    {
+        return FxTestSupport.onFx(() ->
+        {
+            stage.getScene().setRoot(new javafx.scene.layout.VBox());
+            var host = new PanelHost();
+            host.getStyleClass().addAll("production-workspace", "theme-light", "theme-atlantafx");
+            WorkspaceTextContrastEnforcer.install(host);
+            host.showReplacement(AppPanelId.IMPORT_PREVIEW, panel);
+            stage.getScene().setRoot(host);
+            DrillThroughCoordinator.configureOpener(host::show);
+            return host;
+        });
+    }
+
+    private void showImportHintAndAdd(PanelHost host, MaintenanceRoute route, AppPanelId destination, String literal)
+    {
+        host.show(AppPanelId.IMPORT_PREVIEW);
+        button("editExchequerEntry").fire();
+        table("exchequerProposedLines").getSelectionModel().select(1);
+        ((TextArea) panel.root().lookup("#exchequerEntryMemo")).setText("Retain source while adding");
+        ((TextField) panel.root().lookup("#exchequerLineDebit")).setText("raw pending amount");
+        suggestion(route.lookup()).show(new ImportReferenceSuggestion(literal,
+                destination == AppPanelId.CHART_OF_ACCOUNTS || destination == AppPanelId.FUNDS));
+        button(route.lookup() + "Add").fire();
+        assertEquals(destination, host.activePanelId());
+    }
+
+    private static void selectMaintenanceRecord(PanelHost host, MaintenanceRoute route, long id)
+    {
+        var table = maintenanceTable(host, route);
+        for (int i = 0; i < table.getItems().size(); i++)
+        {
+            if (maintenanceId(table.getItems().get(i)) == id)
+            {
+                table.getSelectionModel().select(i);
+                return;
+            }
+        }
+        fail("Missing seeded maintenance record");
+    }
+
+    private static void assertLiteralNewDraft(PanelHost host, MaintenanceRoute route, String literal)
+    {
+        assertEquals(literal, ((TextField) host.lookup("#" + route.prefix() + "Name")).getText());
+        if (host.lookup("#" + route.prefix() + "Code") instanceof TextField code)
+        {
+            assertEquals("", code.getText(), "Only Name is copied; Code is never generated");
+        }
+        assertTrue(((CheckBox) host.lookup("#" + route.prefix() + "Active")).isSelected(), "A clean New draft does not inherit an inactive saved record");
+    }
+
+    private static void enterRequiredMaintenanceFields(PanelHost host, MaintenanceRoute route, AppPanelId destination)
+    {
+        if (host.lookup("#" + route.prefix() + "Code") instanceof TextField code)
+        {
+            code.setText(destination == AppPanelId.CHART_OF_ACCOUNTS ? "1998" : "C19NEW");
+        }
+        if (destination == AppPanelId.CHART_OF_ACCOUNTS)
+        {
+            maintenanceCombo(host, "chartOfAccountsType").setValue(AccountType.ASSET);
+            maintenanceCombo(host, "chartOfAccountsBalance").setValue(NormalBalance.DEBIT);
+        }
+        if (destination == AppPanelId.FUNDS) maintenanceCombo(host, "fundsType").setValue(FundType.UNRESTRICTED);
+    }
+
+    private static java.util.List<?> maintenanceRecords(AppPanelId destination)
+    {
+        return switch (destination)
+        {
+            case CHART_OF_ACCOUNTS -> UiServiceRegistry.accountLookup().listPostingAccountsIncludingInactive();
+            case FUNDS -> UiServiceRegistry.fundLookup().listAllFunds();
+            case BUDGET_CATEGORIES -> UiServiceRegistry.budgetCategoryLookup().listForMaintenance();
+            case ACTIVITIES -> UiServiceRegistry.activityLookup().listAllActivities();
+            case MERCHANTS -> UiServiceRegistry.merchantAdmin().listForMaintenance();
+            case COUNTERPARTIES -> UiServiceRegistry.counterpartyAdmin().listForMaintenance();
+            default -> throw new IllegalArgumentException();
+        };
+    }
+
     private record MaintenanceRoute(String prefix, String lookup, String returnId, boolean searchable) {}
 
     private static MaintenanceRoute maintenanceRoute(AppPanelId destination)
     {
         return switch (destination)
         {
+            case BUDGET_CATEGORIES -> new MaintenanceRoute("budgetCategories", "exchequerLineBudget", "budgetCategoriesJournal", true);
             case CHART_OF_ACCOUNTS -> new MaintenanceRoute("chartOfAccounts", "exchequerLineAccount", "chartOfAccountsReturn", false);
             case FUNDS -> new MaintenanceRoute("funds", "exchequerLineFund", "fundsReturn", false);
             case ACTIVITIES -> new MaintenanceRoute("activities", "exchequerLineEvent", "activitiesReturn", true);
@@ -888,6 +1120,7 @@ class ExchequerImportReviewPaneTest
     {
         return switch (destination)
         {
+            case BUDGET_CATEGORIES -> UiServiceRegistry.budgetCategoryAdmin().save(new BudgetCategoryCommand(null, "C18OLD", "Retired choice", false, null, null, "")).id();
             case CHART_OF_ACCOUNTS -> UiServiceRegistry.accountAdmin().save(new AccountCommand(null, "1999", "Retired choice", AccountType.ASSET, null, NormalBalance.DEBIT, null, "", false)).getId();
             case FUNDS -> UiServiceRegistry.fundAdmin().save(new FundCommand(null, "C18OLD", "Retired choice", FundType.UNRESTRICTED, false, null, null, null, "")).getId();
             case ACTIVITIES -> UiServiceRegistry.activityAdmin().save(new ActivityCommand(null, "C18OLD", "Retired choice", false)).id();
@@ -935,6 +1168,7 @@ class ExchequerImportReviewPaneTest
 
     private static long maintenanceId(Object record)
     {
+        if (record instanceof BudgetCategoryView value) return value.id();
         if (record instanceof Account value) return value.getId();
         if (record instanceof Fund value) return value.getId();
         if (record instanceof ActivityView value) return value.id();
@@ -944,6 +1178,7 @@ class ExchequerImportReviewPaneTest
 
     private static String maintenanceName(Object record)
     {
+        if (record instanceof BudgetCategoryView value) return value.name();
         if (record instanceof Account value) return value.getName();
         if (record instanceof Fund value) return value.getName();
         if (record instanceof ActivityView value) return value.name();

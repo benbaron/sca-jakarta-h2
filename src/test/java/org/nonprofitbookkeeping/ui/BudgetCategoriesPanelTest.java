@@ -83,6 +83,37 @@ class BudgetCategoriesPanelTest
     }
 
     @Test
+    void staleOrUnauthorizedImportSuggestionsDoNotChangeTheEditor()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            panel = new BudgetCategoriesPanel(() -> false);
+            stage = new Stage(); stage.setScene(new Scene((VBox) panel.root(), 900, 650)); stage.show();
+            var session = MainWindow.sharedSessionState();
+            var request = ImportAddSuggestion.capture("Literal / MiXeD name");
+            var currentDatabase = session.databaseSelection();
+            session.setAuthenticatedUser(UiPermissionTestSessions.viewer());
+            panel.onImportAddSuggestion(request);
+            assertEquals("", field("budgetCategoriesName").getText());
+            session.setAuthenticatedUser(UiPermissionTestSessions.manager());
+            session.setMultiCompany(new MultiCompanyState("OTHER", List.of("OTHER")));
+            panel.onImportAddSuggestion(request);
+            assertEquals("", field("budgetCategoriesName").getText());
+            session.setMultiCompany(new MultiCompanyState("DEFAULT", List.of("DEFAULT")));
+            session.setDatabaseSelection(new DatabaseSelectionState("other-database", List.of("other-database")));
+            panel.onImportAddSuggestion(request);
+            assertEquals("", field("budgetCategoriesName").getText());
+            session.setDatabaseSelection(currentDatabase);
+            panel.onImportAddSuggestion(request);
+            assertEquals("Literal / MiXeD name", field("budgetCategoriesName").getText());
+            assertEquals("", field("budgetCategoriesCode").getText());
+            assertTrue(panel.hasUnsavedChanges());
+            assertTrue(UiServiceRegistry.budgetCategoryLookup().listForMaintenance().isEmpty());
+            return null;
+        });
+    }
+
+    @Test
     void stableIdEditDeactivationRefreshAndLayoutRemainUsable()
     {
         BudgetCategoryView initial = UiServiceRegistry.budgetCategoryAdmin().save(

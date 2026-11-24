@@ -47,6 +47,7 @@ public final class MerchantsPanel implements AppPanel
     private final CheckBox active = new CheckBox("Active");
     private final Label mode = new Label("New Merchant");
     private final Label status = new Label("Ready.");
+    private final ImportAddPrefill importPrefill = new ImportAddPrefill("merchants");
     private final Label lifecycle = new Label();
     private final Button save = new Button("Save");
     private final Button refresh = new Button("Refresh");
@@ -110,7 +111,7 @@ public final class MerchantsPanel implements AppPanel
                 loadForm(row);
             }
         });
-        VBox header = new VBox(6, title, new javafx.scene.layout.FlowPane(8, 6, newMerchant, edit, save, refresh, showAll, returnAction.button()), search, listFeedback.summary(), status, lifecycle);
+        VBox header = new VBox(6, title, new javafx.scene.layout.FlowPane(8, 6, newMerchant, edit, save, refresh, showAll, returnAction.button()), search, listFeedback.summary(), status, importPrefill.notice(), lifecycle);
         ScrollPane headerScroll = new ScrollPane(header);
         headerScroll.setId("merchantsHeaderScroll");
         headerScroll.setFitToWidth(true);
@@ -453,6 +454,7 @@ public final class MerchantsPanel implements AppPanel
         if (!dirty || confirmDiscard())
         {
             clearForm(true);
+            importPrefill.applyIfReady(true, this::startImportDraft);
         }
         else
         {
@@ -481,6 +483,19 @@ public final class MerchantsPanel implements AppPanel
     {
         return status.getText();
     }
+    @Override
+    public void onImportAddSuggestion(ImportAddSuggestion suggestion)
+    {
+        importPrefill.offer(suggestion, dirty, true, this::startImportDraft);
+    }
+
+    private void startImportDraft(String literalName)
+    {
+        clearForm(false);
+        name.setText(literalName);
+        status.setText("New record: Name copied literally from Import. Enter remaining required details and choose Save.");
+    }
+
     @Override
     public boolean hasUnsavedChanges()
     {

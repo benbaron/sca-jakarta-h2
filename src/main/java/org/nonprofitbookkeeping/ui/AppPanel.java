@@ -103,6 +103,9 @@ public interface AppPanel
         onPanelShown();
     }
 
+    /** Offers a one-time literal Name for a new maintenance draft, without saving. */
+    default void onImportAddSuggestion(ImportAddSuggestion suggestion) {}
+
 
     default boolean hasUnsavedChanges()
     {

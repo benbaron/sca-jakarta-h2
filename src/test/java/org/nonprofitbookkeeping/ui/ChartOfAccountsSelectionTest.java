@@ -66,6 +66,34 @@ class ChartOfAccountsSelectionTest
     }
 
     @Test
+    void importPrefillViewsTheAlreadyActiveChartAndStartsOnlyALiteralNameDraft() throws Exception
+    {
+        Actions actions = new Actions();
+        ChartOfAccountsPanel panel = open(actions, new AtomicBoolean(true));
+        await(() -> !selector(panel).isDisabled());
+        FxTestSupport.onFx(() ->
+        {
+            selector(panel).getSelectionModel().select(1);
+            assertFalse(selector(panel).getValue().activeForCompany());
+            table(panel).getSelectionModel().select(actions.newAccount);
+            String oldName = actions.newAccount.getName();
+            String literal = "Literal / MiXeD account name";
+            panel.onImportAddSuggestion(ImportAddSuggestion.capture(literal));
+            assertEquals(1L, selector(panel).getValue().id());
+            assertTrue(selector(panel).getValue().activeForCompany());
+            assertEquals(0, actions.activations, "Prefill browses the active chart; it never activates another chart");
+            assertNull(panel.readFormStateForTests().accountId());
+            assertEquals("", panel.readFormStateForTests().code());
+            assertEquals(literal, panel.readFormStateForTests().name());
+            assertNull(panel.readFormStateForTests().accountType());
+            assertNull(panel.readFormStateForTests().normalBalance());
+            assertTrue(panel.hasUnsavedChanges());
+            assertEquals(oldName, actions.newAccount.getName(), "The selected saved record is unchanged");
+            return null;
+        });
+    }
+
+    @Test
     void browsingSameCodesFiltersByChartAndActivationRefreshesCurrentWithoutMovingRows() throws Exception
     {
         Actions actions = new Actions();

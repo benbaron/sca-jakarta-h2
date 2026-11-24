@@ -1,6 +1,10 @@
 # P27-C18 — Import lookup maintenance visibility and caller return
 
-Status: VERIFYING. Owner reports No matching Budget Categories on the list and
+Status: DONE. PR #444 merged at e7c69354ab210e2e0e1e7ab11b594c1e9dcd2cc3.
+Accepted source a4f119e5 passed exact-head CI 45118201494 and full local
+verification. Earlier pending states below are historical.
+
+Original request: Owner reports No matching Budget Categories on the list and
 an incorrect Return to Journal action when arriving from Import.
 
 ## Owner extension — all Import Add destinations
