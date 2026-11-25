@@ -5,13 +5,23 @@ active_slice: P27-C20
 active_status: VERIFYING
 active_branch: codex/P27-C20-coa-import-review
 active_pull_request: 446
-active_head: 2c87ad8fc0f9cbd7f8d3bc1af59de67a6739ceb7
-next_action: "Finish final C20 native regression gate, inspect final image and run full clean verify plus exact-final-head Linux/Windows CI for PR #446. No automatic merge."
+active_head: 22376cfa940be3916cbcd94b115b25d8495b102e
+next_action: "Verify the C20 copied-database regression and final native/services, then full clean verify and exact-final-head Linux/Windows CI for PR #446. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C20 Chart of Accounts JSON review editor — owner request
+
+Final UI gate passes **15/0/0/0 (02:11)**, including all seven new review
+journeys and actual painted grey lookup/row text. Final narrow image inspected;
+banner wraps and form/header scroll independently. A final scope audit adds the
+database connection identity to the hashed destination snapshot, so an identical
+copied database with the same IDs cannot accept another file's review. Added a
+real closed-file copy/reopen regression; focused revalidation is running. The
+preliminary full run/CI on 22376cfa are superseded; local full verification was
+stopped before concurrent builds and must run again on this successor. No Word
+or UI changes after the successful final native gate. No automatic merge.
 
 Published [draft PR #446](https://github.com/benbaron/sca-jakarta-h2/pull/446):
 implementation **2c87ad8fc0f9cbd7f8d3bc1af59de67a6739ceb7**, tree

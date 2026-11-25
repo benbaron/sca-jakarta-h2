@@ -210,7 +210,7 @@ public final class ChartOfAccountsJsonService
         {
             Company company = ownership.requireCompany(em, companyCodeSupplier.get());
             TargetContext target = targetContext(em, company, request, messages);
-            CoaImportScope scope = scope(company, target);
+            CoaImportScope scope = scope(em, company, target);
             if (request.reviewEdits() != null && !request.reviewEdits().scope().equals(scope))
             {
                 throw new IllegalStateException("The company or target chart changed after review. Start a new review before importing.");
@@ -263,9 +263,11 @@ public final class ChartOfAccountsJsonService
         return source.jsonText();
     }
 
-    private CoaImportScope scope(Company company, TargetContext target)
+    private CoaImportScope scope(EntityManager em, Company company, TargetContext target)
     {
         ObjectNode state = mapper.createObjectNode();
+        state.put("database", Objects.toString(
+                em.getEntityManagerFactory().getProperties().get("jakarta.persistence.jdbc.url"), ""));
         state.put("company", company.getId());
         state.put("currency", company.getDefaultCurrency());
         if (target.chart() != null)

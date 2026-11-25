@@ -221,6 +221,28 @@ class ChartOfAccountsJsonReviewTest
         }
     }
 
+    @Test
+    void identicalCopiedDatabaseCannotReuseAnotherDatabasesReview() throws Exception
+    {
+        CoaImportPreview reviewed;
+        CoaImportReviewDraft draft;
+        try (Jpa original = database())
+        {
+            var json = json(original);
+            draft = new CoaImportReviewDraft(json.preview(request(source(), CoaImportMode.MERGE_BY_CODE)));
+            correctSubtype(draft);
+            reviewed = json.preview(draft.request(false));
+            assertFalse(reviewed.hasBlockingErrors());
+        }
+        Files.copy(directory.resolve("review.mv.db"), directory.resolve("copy.mv.db"));
+        try (Jpa copy = new Jpa(directory.resolve("copy")))
+        {
+            assertThrows(IllegalStateException.class, () -> json(copy).preview(draft.request(false)));
+            assertThrows(IllegalStateException.class, () -> new ChartOfAccountsJsonImportService(copy, () -> "REVIEW").commit(reviewed));
+            assertEquals(0, count(copy, "Account"));
+        }
+    }
+
     private Jpa database()
     {
         Jpa jpa = new Jpa(directory.resolve("review"));

@@ -27,7 +27,7 @@ file mutation. Codes/parents/history protections remain authoritative.
 
 Extend existing request/preview/commit with immutable reviewed replacements and
 exclusions keyed by original source ordinal, bound to original SHA-256 and a
-company/chart target snapshot. Re-read the original source and revalidate reviewed
+database/company/chart target snapshot. Re-read the original source and revalidate reviewed
 fields before commit; target drift requires fresh review. Unknown metadata cannot
 be silently discarded. Existing CREATE_NEW_CHART/MERGE_BY_CODE/MAP_CODES and atomic
 identity behavior stay; no extra audit mechanism is introduced. Review is transient;
@@ -45,6 +45,16 @@ render. Finish focused/native/full and exact-head CI. No owner financial file or
 database is required; no automatic merge.
 
 ## Implementation and verification
+
+Final UI gate passes **15/0/0/0 (02:11)**, including all seven review journeys,
+real painted grey lookup/row text and bold applied rows. Final narrow rendering
+inspected: banner wraps, header and form have independent scrolling and the
+divider moves. Final scope audit adds the database connection identity to the
+hash so matching IDs in an identical copied database cannot reuse a review.
+An actual closed-file copy/reopen regression is added. Focused revalidation is
+running; the preliminary full/CI runs on 22376cfa are superseded. Local full
+verification was deliberately stopped to rerun on this final scope successor.
+No subsequent Word/UI edits. Require exact-final-head full/CI before readiness.
 
 Published [draft PR #446](https://github.com/benbaron/sca-jakarta-h2/pull/446),
 implementation **2c87ad8fc0f9cbd7f8d3bc1af59de67a6739ceb7**, tree

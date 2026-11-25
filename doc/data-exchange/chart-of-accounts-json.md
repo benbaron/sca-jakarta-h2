@@ -251,7 +251,9 @@ also explain the state. This is review acceptance, not a formal approval queue.
 
 Source identity and unsupported metadata remain read-only. Replacements/exclusions
 use original source ordinals and immutable DTOs, bound to the original SHA-256 and
-company/chart/account fingerprint. Parsing the original source still enforces
+database/company/chart/account fingerprint (including the database connection
+identity, so identical IDs in a copied file cannot satisfy another file's review).
+Parsing the original source still enforces
 syntax, versions, strict limits and compatibility warnings. Editable definitions
 then pass existing code, hierarchy, classification, date, currency, precision and
 history checks. Diagnostics rebase to retained rows after exclusions. There is no
