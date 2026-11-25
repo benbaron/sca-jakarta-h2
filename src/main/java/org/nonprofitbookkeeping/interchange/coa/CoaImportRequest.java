@@ -10,8 +10,15 @@ public record CoaImportRequest(
         String targetChartName,
         String targetChartVersion,
         Map<String, String> codeMappings,
-        boolean confirmOpeningBalances)
+        boolean confirmOpeningBalances,
+        CoaReviewEdits reviewEdits)
 {
+    public CoaImportRequest(Path sourceFile, CoaImportMode mode, String targetChartName,
+            String targetChartVersion, Map<String, String> codeMappings, boolean confirmOpeningBalances)
+    {
+        this(sourceFile, mode, targetChartName, targetChartVersion, codeMappings, confirmOpeningBalances, null);
+    }
+
     public CoaImportRequest
     {
         if (sourceFile == null)

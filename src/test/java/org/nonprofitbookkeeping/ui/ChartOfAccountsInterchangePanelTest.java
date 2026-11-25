@@ -33,13 +33,15 @@ class ChartOfAccountsInterchangePanelTest
                 "src/main/java/org/nonprofitbookkeeping/ui/PanelFactory.java"));
         String panel = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/ui/ChartOfAccountsInterchangePanel.java"));
+        String review = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/ui/CoaJsonReviewPane.java"));
 
         assertTrue(factory.contains(
                 "factories.put(AppPanelId.CHART_OF_ACCOUNTS, ChartOfAccountsInterchangePanel::new)"));
         assertTrue(panel.contains("coaImportJsonButton"));
         assertTrue(panel.contains("coaExportJsonButton"));
-        assertTrue(panel.contains("coaJsonPreviewTable"));
-        assertTrue(panel.contains("UiServiceRegistry.coaJsonImport().commit(confirmed)"));
+        assertTrue(review.contains("coaJsonPreviewTable"));
+        assertTrue(panel.contains("UiServiceRegistry.coaJsonImport().commit(approved)"));
         assertTrue(panel.contains("delegate.onPanelShown()"));
         assertTrue(panel.contains("UiAsync.run"));
     }

@@ -218,8 +218,8 @@ Owner desktop verification for this slice:
 6. Confirm a local account omitted from a merge remains active and unchanged.
 7. Confirm `MAP_CODES` blocks unmapped or colliding mappings and displays the effective source and target codes.
 8. Confirm a nonzero opening balance requires the explicit preview confirmation before Import is enabled.
-9. Cancel from the options and preview dialogs and confirm H2 is unchanged.
-10. At laptop width, confirm the interchange toolbar, preview table, validation list, and dialogs remain readable and scrollable.
+9. Leave the inline review without importing and confirm H2 is unchanged.
+10. At laptop width, confirm the interchange toolbar, proposal table, editor and validation pages remain readable, resizable and scrollable.
 
 Final automated verification passed in GitHub Actions run `30141967625`: proxy-free `mvn clean verify`, the repeated normal Maven test suite, and the focused JavaFX route-compliance suite all completed successfully on clean-verification head `555206c60009410fe0a51afe9a1fff6957572cd6`.
 
@@ -229,3 +229,45 @@ The owner confirmed the desktop verification checklist, and PR #197 merged to `m
 ## P20-S3 runtime authorization
 
 Production Chart of Accounts JSON import commits require `BOOKKEEPING_WRITE` at `ChartOfAccountsJsonImportService.commit(...)` before ordinary commit validation. The production JavaFX wrapper obtains that guarded service from `UiServiceRegistry`; JSON preview remains non-mutating. The **Import JSON…** control reflects `BOOKKEEPING_WRITE`, while **Export JSON…** reflects `EXPORT`. UI disabling is explanatory only; direct service calls remain the authoritative authorization boundary.
+
+## P27-C20 inline reviewed proposals
+
+**Import JSON…** opens an inline review inside the Chart workspace. Import Setup
+preserves the three modes and explicit mappings; Start New Review deliberately
+replaces the proposed batch. Setup/source changes require that action again.
+Proposed Accounts provides Edit Selected/double-click and multi-select Delete
+Selected Proposals. Deletion omits source rows only, never saved accounts.
+Original Source and Diagnostics has validation/original-JSON tabs; the review's
+header and body have a persistent draggable divider and both-axis scrolling.
+
+Edit Account supports code, name, type, function, optional subtype, normal balance,
+parent, posting/active, effective dates, opening-balance field, currency and description.
+Apply Account Changes accepts parsable edits into the transient review and reruns
+whole-graph validation; Cancel restores the last applied proposal. Raw invalid date/
+money text stays in the editor on failure. Refresh revalidates and clears update
+markers, retaining unapplied editor values. Commit stays blocked until Apply/Cancel.
+Needs attention is grey, Ready is black and Updated — ready is bold; text statuses
+also explain the state. This is review acceptance, not a formal approval queue.
+
+Source identity and unsupported metadata remain read-only. Replacements/exclusions
+use original source ordinals and immutable DTOs, bound to the original SHA-256 and
+database/company/chart/account fingerprint (including the database connection
+identity, so identical IDs in a copied file cannot satisfy another file's review).
+Parsing the original source still enforces
+syntax, versions, strict limits and compatibility warnings. Editable definitions
+then pass existing code, hierarchy, classification, date, currency, precision and
+history checks. Diagnostics rebase to retained rows after exclusions. There is no
+error override and no source-file write. Malformed source must be fixed externally.
+
+After all blocking errors are resolved, review acknowledgment and any opening-balance
+acknowledgment enable Import Reviewed Accounts. Global Save applies while editing
+and imports on proposal/diagnostic pages when ready. The guarded service freezes
+the company, rechecks source/target before writing and again under the company
+transaction lock, then uses the existing atomic account/chart/identity transaction.
+Changed source, company or target requires fresh review; failure retains the draft
+and blocks stale commit, with no partial writes. New charts remain DRAFT. Opening
+values create no journal transactions. No schema, parallel persistence or extra
+audit mechanism is introduced. Back to Accounts and Import JSON… preserve pending
+JSON and single-account drafts; Import Add reaches the established maintenance editor.
+Drafts do not survive application restart. See [C20 contract](../P27-C20-coa-import-review.md)
+and the primary Word manual for user steps.
