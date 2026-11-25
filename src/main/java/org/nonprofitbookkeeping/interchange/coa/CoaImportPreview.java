@@ -18,7 +18,9 @@ public record CoaImportPreview(
         List<CoaPreviewItem> items,
         List<InterchangeValidationMessage> messages,
         List<InterchangeConfirmation> confirmations,
-        InterchangeOperationCounts counts)
+        InterchangeOperationCounts counts,
+        CoaImportScope scope,
+        CoaChartData originalChart)
 {
     public CoaImportPreview
     {

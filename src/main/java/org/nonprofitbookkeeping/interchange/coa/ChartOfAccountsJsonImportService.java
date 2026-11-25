@@ -1,6 +1,7 @@
 package org.nonprofitbookkeeping.interchange.coa;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.nonprofitbookkeeping.interchange.InterchangeFormat;
 import org.nonprofitbookkeeping.interchange.InterchangeMessageSeverity;
 import org.nonprofitbookkeeping.interchange.InterchangeOperationCounts;
@@ -38,7 +39,6 @@ public final class ChartOfAccountsJsonImportService
 {
     private final Jpa jpa;
     private final Supplier<String> companyCodeSupplier;
-    private final ChartOfAccountsJsonService jsonService;
     private final CompanyOwnershipService ownership;
     private final InterchangeIdentityService identityService;
     private final IntConsumer afterAccountWrite;
@@ -75,7 +75,6 @@ public final class ChartOfAccountsJsonImportService
         this.companyCodeSupplier = Objects.requireNonNull(companyCodeSupplier, "companyCodeSupplier");
         this.afterAccountWrite = Objects.requireNonNull(afterAccountWrite, "afterAccountWrite");
         this.authorizationGuard = authorizationGuard;
-        this.jsonService = new ChartOfAccountsJsonService(jpa, companyCodeSupplier);
         this.ownership = new CompanyOwnershipService(jpa);
         this.identityService = new InterchangeIdentityService(jpa, ownership);
     }
@@ -86,15 +85,21 @@ public final class ChartOfAccountsJsonImportService
      */
     public CoaImportResult commit(CoaImportPreview approvedPreview)
     {
+        String frozenCompany = companyCodeSupplier.get();
         if (authorizationGuard != null)
         {
             authorizationGuard.require(
                     ApplicationPermission.BOOKKEEPING_WRITE,
-                    companyCodeSupplier.get(),
+                    frozenCompany,
                     "commit Chart of Accounts JSON import");
         }
         Objects.requireNonNull(approvedPreview, "approvedPreview");
-        CoaImportPreview current = jsonService.preview(approvedPreview.request());
+        ChartOfAccountsJsonService fixedJson = new ChartOfAccountsJsonService(jpa, () -> frozenCompany);
+        CoaImportPreview current = fixedJson.preview(approvedPreview.request());
+        if (!Objects.equals(approvedPreview.scope(), current.scope()))
+        {
+            throw new IllegalStateException("The company or target chart changed after preview; review it again.");
+        }
         if (!approvedPreview.sourceSha256().equals(current.sourceSha256()))
         {
             throw new IllegalStateException(
@@ -115,7 +120,15 @@ public final class ChartOfAccountsJsonImportService
             em.getTransaction().begin();
             try
             {
-                Company company = ownership.requireCompany(em, companyCodeSupplier.get());
+                Company company = ownership.requireCompany(em, frozenCompany);
+                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
+                CoaImportPreview locked = fixedJson.preview(approvedPreview.request());
+                if (!approvedPreview.sourceSha256().equals(locked.sourceSha256())
+                        || !Objects.equals(approvedPreview.scope(), locked.scope())
+                        || locked.hasBlockingErrors() || !locked.confirmationsSatisfied())
+                {
+                    throw new IllegalStateException("Source or target changed before import; start a new review.");
+                }
                 ChartOfAccounts targetChart = resolveTargetChart(em, company, current);
                 Map<String, Account> accountsByCode = loadAccounts(em, targetChart);
                 Map<String, String> sourceToTarget = sourceToTarget(current.items());

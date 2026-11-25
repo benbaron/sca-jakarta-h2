@@ -1,5 +1,13 @@
 # UI design rules
 
+P27-C20 Chart JSON review uses inline named pages and a persistent header/body
+divider with local horizontal/vertical scrolling. Validation and original JSON
+use alternative tabs to avoid a third visible section. Needs attention, Ready and
+Updated — ready provide non-color state labels alongside grey/black/bold rows.
+Apply/Cancel handles whole-account edits; source identities and unsupported facts
+remain read-only. Routine import review errors/results stay inline. The native
+file chooser remains the only import selection dialog.
+
 This document records cross-cutting UI display and interaction rules for the production SCA bookkeeping application. It applies to every production pane unless a more specific governing document narrows the behavior for a particular domain.
 
 ## Work panes and overflow access

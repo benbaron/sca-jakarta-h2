@@ -1,15 +1,47 @@
 ---
-plan_version: 547
+plan_version: 548
 active_phase: P27
-active_slice: P27-C19
+active_slice: P27-C20
 active_status: VERIFYING
-active_branch: codex/P27-C19-import-add-prefill
-active_pull_request: 445
-active_head: b1080040c366f3da872ed1d87267dd2d4f92b94e
-next_action: "C19 PR #445 published; run full clean verify and inspect exact-final-head Linux/Windows CI. Native gates 96/18 pass. Record accepted head/tree and mark ready only after checks. No automatic merge."
+active_branch: codex/P27-C20-coa-import-review
+active_pull_request: null
+active_head: 2934f37a3473572eb269a37c9150cbec0882c717
+next_action: "Finish final C20 native regression gate, inspect final image, publish draft PR and run full clean verify plus exact-head Linux/Windows CI. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
+
+### P27-C20 Chart of Accounts JSON review editor — owner request
+
+Candidate implemented; VERIFYING. Existing 10 service tests and 8 new reviewed
+service cases pass. Initial native gate passes 5; broad 79-case run passes 77
+(all 35 CSV cases pass) and finds a wrapper unavailable-command explanation and
+a new-test maintenance status lookup issue. Both corrected; final expanded
+native gate is running, including actual painted grey/bold state, scope, sorted
+diagnostic navigation and independent form overflow. Word updated directly,
+other parts/reviews/400 paragraphs preserved, 31-page render inspected on 9/10;
+260 local links/whitespace pass. Full clean verify, publication and exact-head
+CI remain; no automatic merge. [Detailed receipt](P27-C20-coa-import-review.md).
+
+C19/#445 is confirmed merged at current main **2934f37a3473572eb269a37c9150cbec0882c717**;
+its accepted head 63d4af2b passed exact-head CI 45324843732. C19 is DONE. Fresh
+`codex/P27-C20-coa-import-review` starts there. Baseline compile passes.
+[C20 contract](P27-C20-coa-import-review.md). The preview currently shows an
+incompatible subtype but provides no editor. Replace routine import options/
+preview dialogs with inline Setup, Proposed Accounts, Edit Account and Original
+Source/Diagnostics pages. Support Apply/Cancel, multi-delete, visible status and
+review acknowledgment before one explicit atomic import. Changes are transient;
+source JSON and saved accounts remain unchanged before commit. Extend existing
+JSON DTO/service validation to carry immutable reviewed edits/removals bound to
+source hash and company/chart snapshot. Revalidate full graph/history, reject
+source/scope/target drift and rollback every write on failure. Preserve three
+import modes, mapping and opening-balance confirmation, existing master drafts,
+permissions, company formatting/state and both-axis scrolling. No formal approval
+queue, alternate account persistence or error bypass. Read JSON/shared operation
+contracts and UI/editor/operation rules; inspect current parser/commit/wrapper
+and actual Journal review patterns/tests. Update Word directly, service/native/
+full tests and exact-head CI before review. No automatic merge.
+
 
 ### P27-C19 literal Import Add prefill — owner request
 

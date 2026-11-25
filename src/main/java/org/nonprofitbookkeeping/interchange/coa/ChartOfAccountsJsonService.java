@@ -204,10 +204,17 @@ public final class ChartOfAccountsJsonService
                             + " accounts; the supported maximum is " + MAX_ACCOUNT_COUNT + "."));
         }
 
+        CoaChartData originalChart = parsed;
+        parsed = applyReview(parsed, request.reviewEdits(), source.sha256(), messages);
         try (EntityManager em = jpa.em())
         {
             Company company = ownership.requireCompany(em, companyCodeSupplier.get());
             TargetContext target = targetContext(em, company, request, messages);
+            CoaImportScope scope = scope(company, target);
+            if (request.reviewEdits() != null && !request.reviewEdits().scope().equals(scope))
+            {
+                throw new IllegalStateException("The company or target chart changed after review. Start a new review before importing.");
+            }
             List<CoaPreviewItem> items = validateAndClassify(
                     em, company, target, parsed, request, messages);
             List<InterchangeConfirmation> confirmations = confirmations(items, request);
@@ -239,8 +246,104 @@ public final class ChartOfAccountsJsonService
                     items,
                     messages,
                     confirmations,
-                    counts);
+                    counts,
+                    scope,
+                    originalChart);
         }
+    }
+
+    /** Returns the original evidence only while it still matches the reviewed file. */
+    public String sourceText(CoaImportPreview preview)
+    {
+        SourceBytes source = readSource(preview.sourceFile());
+        if (!source.sha256().equals(preview.sourceSha256()))
+        {
+            throw new IllegalStateException("Chart of Accounts JSON changed after preview; start a new review.");
+        }
+        return source.jsonText();
+    }
+
+    private CoaImportScope scope(Company company, TargetContext target)
+    {
+        ObjectNode state = mapper.createObjectNode();
+        state.put("company", company.getId());
+        state.put("currency", company.getDefaultCurrency());
+        if (target.chart() != null)
+        {
+            state.put("chart", target.chart().getId());
+            state.put("name", target.chart().getName());
+            state.put("version", target.chart().getVersion());
+            state.put("status", String.valueOf(target.chart().getStatus()));
+        }
+        state.set("accounts", mapper.valueToTree(new java.util.TreeMap<>(target.existingAccounts())));
+        try
+        {
+            return new CoaImportScope(company.getId(), target.chart() == null ? null : target.chart().getId(),
+                    sha256(mapper.writeValueAsBytes(state)));
+        }
+        catch (IOException ex)
+        {
+            throw new IllegalStateException("Could not fingerprint the reviewed chart", ex);
+        }
+    }
+
+    private CoaChartData applyReview(CoaChartData original, CoaReviewEdits edits, String sourceHash,
+            List<InterchangeValidationMessage> messages)
+    {
+        if (edits == null) return original;
+        if (!sourceHash.equals(edits.sourceSha256()))
+        {
+            throw new IllegalStateException("Chart of Accounts JSON changed after preview; start a new review.");
+        }
+        int size = original.accounts().size();
+        Set<Integer> referenced = new HashSet<>(edits.replacements().keySet());
+        referenced.addAll(edits.excludedRows());
+        for (int row : referenced)
+        {
+            if (row < 0 || row >= size) throw new IllegalArgumentException("Unknown reviewed source row: " + row);
+        }
+        List<CoaAccountData> accounts = new ArrayList<>();
+        Map<Integer, Integer> retained = new HashMap<>();
+        for (int row = 0; row < size; row++)
+        {
+            if (edits.excludedRows().contains(row)) continue;
+            CoaAccountData source = original.accounts().get(row);
+            CoaAccountData replacement = edits.replacements().getOrDefault(row, source);
+            if (!source.sourceCode().equals(replacement.sourceCode())
+                    || !source.associatedFundIds().equals(replacement.associatedFundIds())
+                    || !source.supplementalLineKinds().equals(replacement.supplementalLineKinds())
+                    || !source.unsupportedFields().equals(replacement.unsupportedFields()))
+            {
+                throw new IllegalArgumentException("Source identity and unsupported metadata are read-only in reviewed row " + row);
+            }
+            retained.put(row, accounts.size());
+            accounts.add(replacement);
+        }
+        List<InterchangeValidationMessage> rebased = new ArrayList<>();
+        var pathPattern = java.util.regex.Pattern.compile("^(\\$\\.(?:accounts|chartOfAccounts)\\[)([0-9]+)(\\].*)$");
+        for (var message : messages)
+        {
+            var match = pathPattern.matcher(message.path());
+            if (match.matches())
+            {
+                Integer newRow = retained.get(Integer.parseInt(match.group(2)));
+                if (newRow == null) continue;
+                rebased.add(new InterchangeValidationMessage(message.severity(), message.code(),
+                        match.group(1) + newRow + match.group(3), message.message(), message.blocking()));
+            }
+            else rebased.add(message);
+        }
+        messages.clear();
+        messages.addAll(rebased);
+        if (accounts.isEmpty()) messages.add(error("COA_REVIEW_EMPTY", "$.accounts", "No proposed accounts remain to import."));
+        Set<String> sourceCodes = new HashSet<>();
+        for (int row = 0; row < accounts.size(); row++)
+        {
+            if (!sourceCodes.add(accounts.get(row).sourceCode()))
+                messages.add(error("COA_DUPLICATE_SOURCE_CODE", "$.accounts[" + row + "]", "Duplicate original source code; remove the duplicate or correct the source file."));
+        }
+        return new CoaChartData(original.sourceFamily(), original.sourceVersion(), original.name(), original.chartVersion(),
+                original.status(), original.currency(), accounts);
     }
 
     private CoaChartData parseDocument(ObjectNode root, List<InterchangeValidationMessage> messages)
@@ -861,6 +964,10 @@ public final class ChartOfAccountsJsonService
                     "COA_DESCRIPTION_LENGTH",
                     path + ".description",
                     "Account description exceeds the 1 MiB input limit."));
+        }
+        if (account.function() == AccountFunction.BANK && account.type() != AccountType.ASSET)
+        {
+            messages.add(error("COA_FUNCTION_INCOMPATIBLE", path + ".function", "BANK function requires an ASSET account."));
         }
         if (account.type() == null)
         {

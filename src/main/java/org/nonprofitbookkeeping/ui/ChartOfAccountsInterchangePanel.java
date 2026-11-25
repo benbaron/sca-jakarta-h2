@@ -1,56 +1,24 @@
 package org.nonprofitbookkeeping.ui;
 
-import org.nonprofitbookkeeping.service.ApplicationPermission;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.Separator;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
-import org.nonprofitbookkeeping.interchange.InterchangeConfirmation;
-import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
-import org.nonprofitbookkeeping.interchange.coa.ChartOfAccountsJsonService;
-import org.nonprofitbookkeeping.interchange.coa.CoaExportResult;
-import org.nonprofitbookkeeping.interchange.coa.CoaImportMode;
-import org.nonprofitbookkeeping.interchange.coa.CoaImportPreview;
-import org.nonprofitbookkeeping.interchange.coa.CoaImportRequest;
-import org.nonprofitbookkeeping.interchange.coa.CoaImportResult;
-import org.nonprofitbookkeeping.interchange.coa.CoaPreviewItem;
+import org.nonprofitbookkeeping.interchange.coa.*;
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 import org.nonprofitbookkeeping.persistence.Jpa;
+import org.nonprofitbookkeeping.service.ApplicationPermission;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Function;
+import java.nio.file.*;
+import java.util.*;
+import java.util.function.*;
 
-/** Adds governed Chart of Accounts JSON operations around the existing H2-backed editor. */
+/** Chart maintenance and its inline JSON proposal review share one workspace tab. */
 public final class ChartOfAccountsInterchangePanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
@@ -60,33 +28,100 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     private final ProgressIndicator progress = new ProgressIndicator();
     private final Label interchangeStatus = new Label("Chart of Accounts JSON is separate from SCLX and database backup.");
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
+    private final CoaJsonReviewPane review;
+    private final BiFunction<FileChooser, Window, File> chooser;
+    private boolean reviewing;
+    private Runnable capabilitiesChanged = () ->
+    {
+    };
 
     public ChartOfAccountsInterchangePanel()
     {
         this(new ChartOfAccountsPanel());
     }
-
     ChartOfAccountsInterchangePanel(ChartOfAccountsPanel delegate)
     {
-        this.delegate = Objects.requireNonNull(delegate, "delegate");
+        this(delegate,(fileChooser,owner) -> fileChooser.showOpenDialog(owner));
+    }
+    ChartOfAccountsInterchangePanel(ChartOfAccountsPanel delegate, BiFunction<FileChooser,Window,File> chooser)
+    {
+        this.delegate = Objects.requireNonNull(delegate);
+        this.chooser = chooser;
+        review = new CoaJsonReviewPane(new CoaJsonReviewPane.Operations()
+        {
+            @Override
+            public CoaImportPreview preview(CoaImportRequest request, CoaJsonReviewPane.Scope scope)
+            {
+                return scoped(scope,jpa -> new ChartOfAccountsJsonService(jpa,scope::company).preview(request));
+            }
+            @Override
+            public String sourceText(CoaImportPreview preview, CoaJsonReviewPane.Scope scope)
+            {
+                return scoped(scope,jpa -> new ChartOfAccountsJsonService(jpa,scope::company).sourceText(preview));
+            }
+            @Override
+            public CoaImportResult commit(CoaImportPreview approved, CoaJsonReviewPane.Scope scope)
+            {
+                if (!scope.currentScope()) throw new IllegalStateException("Return to the original company/database before importing.");
+                return UiServiceRegistry.coaJsonImport().commit(approved);
+            }
+        },this::chooseImportFile,this::showAccounts,CompanyUiFormat.activeCompany());
+        review.setCommandCapabilitiesChangedListener(this::changed);
+        delegate.setCommandCapabilitiesChangedListener(this::changed);
+        busy.addListener((o,a,b) -> changed());
         importJson.setId("coaImportJsonButton");
         exportJson.setId("coaExportJsonButton");
-        progress.setId("coaJsonProgress");
-        progress.setMaxSize(18.0, 18.0);
-        progress.visibleProperty().bind(busy);
-        progress.managedProperty().bind(progress.visibleProperty());
-        importJson.disableProperty().bind(
-                busy.or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
-        exportJson.disableProperty().bind(
-                busy.or(UiPermissionGate.deniedProperty(ApplicationPermission.EXPORT)));
+        UiPermissionGate.gate(importJson,ApplicationPermission.BOOKKEEPING_WRITE,"Review Chart JSON import");
+        UiPermissionGate.gate(exportJson,ApplicationPermission.EXPORT,"Export Chart JSON");
         importJson.setOnAction(event -> requestImport());
         exportJson.setOnAction(event -> requestExport());
-
-        HBox toolbar = new HBox(8, importJson, exportJson, progress, interchangeStatus);
+        interchangeStatus.setWrapText(true);
+        progress.setMaxSize(18,18);
+        FlowPane toolbar = new FlowPane(8,6,importJson,exportJson,progress,interchangeStatus);
         toolbar.setPadding(new Insets(8));
-        HBox.setHgrow(interchangeStatus, Priority.ALWAYS);
-        root.setTop(new VBox(toolbar, new Separator()));
+        toolbar.setMinWidth(0);
+        root.setMinSize(0,0);
+        interchangeStatus.prefWidthProperty().bind(root.widthProperty().subtract(24));
+        root.setTop(new VBox(toolbar,new Separator()));
         root.setCenter(delegate.root());
+        changed();
+    }
+
+    private <T> T scoped(CoaJsonReviewPane.Scope scope, Function<Jpa,T> operation)
+    {
+        try (Jpa jpa = new Jpa(DatabaseLocationService.resolveDatabasePath(scope.database())))
+        {
+            return operation.apply(jpa);
+        }
+    }
+
+    private void requestImport()
+    {
+        if (busy.get() || review.busy() || !UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE)) return;
+        reviewing = true;
+        root.setCenter(review);
+        changed();
+        if (!review.hasUnsavedChanges()) review.chooseSource();
+    }
+
+    private void showAccounts()
+    {
+        if (busy.get() || review.busy()) return;
+        reviewing = false;
+        root.setCenter(delegate.root());
+        delegate.onPanelShown();
+        changed();
+    }
+
+    private void changed()
+    {
+        boolean working = busy.get() || review.busy();
+        importJson.setDisable(working);
+        exportJson.setDisable(working);
+        progress.setVisible(working);
+        progress.setManaged(working);
+        delegate.root().setDisable(working);
+        capabilitiesChanged.run();
     }
 
     private void requestExport()
@@ -100,279 +135,30 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         if (Files.exists(target))
         {
             showError(
-                    "Chart of Accounts JSON not exported",
-                    "A file already exists at " + target.toAbsolutePath()
-                            + ". Choose a new file name; existing exports are not overwritten silently.");
+                "Chart of Accounts JSON not exported",
+                "A file already exists at " + target.toAbsolutePath()
+                + ". Choose a new file name; existing exports are not overwritten silently.");
             return;
         }
-
         setBusy(true, "Exporting active Chart of Accounts to " + target.toAbsolutePath() + "…");
         UiAsync.run(
-                "coa-json-export",
-                () -> withJpa(jpa -> new ChartOfAccountsJsonService(jpa, this::activeCompanyCode)
-                        .exportActiveChart(target)),
-                this::exportCompleted,
-                error -> operationFailed("Chart of Accounts JSON export failed", error));
+            "coa-json-export",
+            () -> withJpa(jpa -> new ChartOfAccountsJsonService(jpa, this::activeCompanyCode)
+            .exportActiveChart(target)),
+            this::exportCompleted,
+            error -> operationFailed("Chart of Accounts JSON export failed", error));
     }
 
     private void exportCompleted(CoaExportResult result)
     {
         setBusy(false, "Exported " + result.accountCount() + " account(s) to "
-                + result.destination() + "; SHA-256 " + result.sha256() + ".");
+            + result.destination() + "; SHA-256 " + result.sha256() + ".");
         showInformation(
-                "Chart of Accounts JSON exported",
-                "Destination: " + result.destination()
-                        + "\nBytes: " + result.byteCount()
-                        + "\nAccounts: " + result.accountCount()
-                        + "\nSHA-256: " + result.sha256());
-    }
-
-    private void requestImport()
-    {
-        if (delegate.hasUnsavedChanges() && !confirmDiscardUnsavedEditor())
-        {
-            return;
-        }
-        Optional<Path> source = chooseImportFile();
-        if (source.isEmpty())
-        {
-            return;
-        }
-        Optional<ImportOptions> options = showImportOptions();
-        if (options.isEmpty())
-        {
-            return;
-        }
-
-        CoaImportRequest request;
-        try
-        {
-            request = new CoaImportRequest(
-                    source.get(),
-                    options.get().mode(),
-                    options.get().chartName(),
-                    options.get().chartVersion(),
-                    parseMappings(options.get().mappingText()),
-                    false);
-        }
-        catch (RuntimeException ex)
-        {
-            showError("Chart of Accounts JSON options are invalid", UiErrors.safeMessage(ex));
-            return;
-        }
-
-        setBusy(true, "Previewing Chart of Accounts JSON from " + source.get().toAbsolutePath() + "…");
-        UiAsync.run(
-                "coa-json-preview",
-                () -> withJpa(jpa -> new ChartOfAccountsJsonService(jpa, this::activeCompanyCode).preview(request)),
-                this::previewCompleted,
-                error -> operationFailed("Chart of Accounts JSON preview failed", error));
-    }
-
-    private void previewCompleted(CoaImportPreview preview)
-    {
-        setBusy(false, "Preview ready: " + preview.counts().total() + " account(s), "
-                + preview.counts().errors() + " blocking error(s), "
-                + preview.counts().warnings() + " warning(s).");
-        Optional<Boolean> decision = showPreview(preview);
-        if (decision.isEmpty() || !decision.get())
-        {
-            interchangeStatus.setText("Chart of Accounts JSON import cancelled after preview.");
-            return;
-        }
-
-        CoaImportRequest request = preview.request();
-        CoaImportRequest confirmedRequest = new CoaImportRequest(
-                request.sourceFile(),
-                request.mode(),
-                request.targetChartName(),
-                request.targetChartVersion(),
-                request.codeMappings(),
-                true);
-        setBusy(true, "Revalidating and importing Chart of Accounts JSON into " + preview.targetLabel() + "…");
-        UiAsync.run(
-                "coa-json-import",
-                () -> withJpa(jpa -> {
-                    ChartOfAccountsJsonService previewService = new ChartOfAccountsJsonService(
-                            jpa,
-                            this::activeCompanyCode);
-                    CoaImportPreview confirmed = previewService.preview(confirmedRequest);
-                    return UiServiceRegistry.coaJsonImport().commit(confirmed);
-                }),
-                this::importCompleted,
-                error -> operationFailed("Chart of Accounts JSON import failed", error));
-    }
-
-    private void importCompleted(CoaImportResult result)
-    {
-        if (!result.committed())
-        {
-            setBusy(false, "Chart of Accounts JSON import rolled back; the active chart was not changed.");
-            String message = result.messages().stream()
-                    .filter(InterchangeValidationMessage::blocking)
-                    .reduce((left, right) -> right)
-                    .map(InterchangeValidationMessage::message)
-                    .orElse("The import transaction rolled back.");
-            showError("Chart of Accounts JSON import rolled back", message);
-            return;
-        }
-
-        delegate.onPanelShown();
-        setBusy(false, "Imported Chart of Accounts JSON: "
-                + result.counts().created() + " created, "
-                + result.counts().updated() + " updated, "
-                + result.counts().identical() + " identical.");
-        showInformation(
-                "Chart of Accounts JSON imported",
-                "Target: " + result.targetLabel()
-                        + "\nCreated: " + result.counts().created()
-                        + "\nUpdated: " + result.counts().updated()
-                        + "\nIdentical: " + result.counts().identical()
-                        + "\nSource SHA-256: " + result.sourceSha256());
-    }
-
-    private Optional<ImportOptions> showImportOptions()
-    {
-        Dialog<ImportOptions> dialog = new Dialog<>();
-        dialog.setTitle("Chart of Accounts JSON Import Options");
-        dialog.setHeaderText("Choose how source account codes target the active company.");
-        initOwner(dialog);
-
-        ComboBox<CoaImportMode> mode = new ComboBox<>();
-        mode.setId("coaJsonImportMode");
-        mode.getItems().setAll(CoaImportMode.values());
-        mode.setValue(CoaImportMode.MERGE_BY_CODE);
-        TextField chartName = new TextField("Imported Chart");
-        chartName.setId("coaJsonTargetChartName");
-        TextField chartVersion = new TextField("1");
-        chartVersion.setId("coaJsonTargetChartVersion");
-        TextArea mappings = new TextArea();
-        mappings.setId("coaJsonCodeMappings");
-        mappings.setPromptText("One mapping per line: sourceCode=targetCode");
-        mappings.setPrefRowCount(6);
-        mappings.setWrapText(false);
-
-        mappings.setTooltip(new javafx.scene.control.Tooltip("Map every source code using one sourceCode=targetCode line."));
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(8);
-        grid.addRow(0, new Label("Import mode"), mode);
-        grid.addRow(1, new Label("New chart name"), chartName);
-        grid.addRow(2, new Label("New chart version"), chartVersion);
-        grid.add(new Label("Code mappings"), 0, 3);
-        grid.add(mappings, 1, 3);
-        grid.setPadding(new Insets(8));
-
-        Runnable visibility = () -> {
-            boolean newChart = mode.getValue() == CoaImportMode.CREATE_NEW_CHART;
-            chartName.setDisable(!newChart);
-            chartVersion.setDisable(!newChart);
-            boolean mapped = mode.getValue() == CoaImportMode.MAP_CODES;
-            mappings.setDisable(!mapped);
-        };
-        mode.valueProperty().addListener((observable, oldValue, newValue) -> visibility.run());
-        visibility.run();
-
-        dialog.getDialogPane().setContent(grid);
-        dialog.getDialogPane().getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
-        dialog.setResultConverter(button -> button == ButtonType.OK
-                ? new ImportOptions(
-                        mode.getValue(),
-                        chartName.getText(),
-                        chartVersion.getText(),
-                        mappings.getText())
-                : null);
-        return dialog.showAndWait();
-    }
-
-    private Optional<Boolean> showPreview(CoaImportPreview preview)
-    {
-        Dialog<Boolean> dialog = new Dialog<>();
-        dialog.setTitle("Chart of Accounts JSON Preview");
-        dialog.setHeaderText(preview.hasBlockingErrors()
-                ? "Import is blocked until validation errors are corrected."
-                : "Review every proposed account action before importing.");
-        initOwner(dialog);
-
-        Label source = new Label("Source: " + preview.sourceFile());
-        Label hash = new Label("SHA-256: " + preview.sourceSha256());
-        Label target = new Label("Target: " + preview.targetLabel());
-        Label counts = new Label(
-                "Accounts: " + preview.counts().total()
-                        + " | create " + preview.counts().created()
-                        + " | update " + preview.counts().updated()
-                        + " | identical " + preview.counts().identical()
-                        + " | blocked " + preview.counts().skipped());
-
-        TableView<CoaPreviewItem> table = new TableView<>();
-        table.setId("coaJsonPreviewTable");
-        table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        TableColumn<CoaPreviewItem, String> sourceCode = new TableColumn<>("Source Code");
-        sourceCode.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
-                cell.getValue().account().sourceCode()));
-        TableColumn<CoaPreviewItem, String> targetCode = new TableColumn<>("Target Code");
-        targetCode.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
-                cell.getValue().targetCode()));
-        TableColumn<CoaPreviewItem, String> name = new TableColumn<>("Name");
-        name.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
-                cell.getValue().account().name()));
-        TableColumn<CoaPreviewItem, String> action = new TableColumn<>("Action");
-        action.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
-                cell.getValue().disposition().name()));
-        table.getColumns().setAll(sourceCode, targetCode, name, action);
-        table.getItems().setAll(preview.items());
-        table.setPrefHeight(300.0);
-
-        ListView<String> messages = new ListView<>();
-        messages.setId("coaJsonValidationMessages");
-        messages.getItems().setAll(preview.messages().stream()
-                .map(message -> message.severity() + " " + message.code() + " "
-                        + message.path() + " — " + message.message())
-                .toList());
-        messages.setPrefHeight(150.0);
-
-        CheckBox confirmation = new CheckBox(confirmationText(preview.confirmations()));
-        confirmation.setId("coaJsonConfirmation");
-        confirmation.setWrapText(true);
-        confirmation.setVisible(!preview.confirmations().isEmpty());
-        confirmation.setManaged(confirmation.isVisible());
-
-        VBox content = new VBox(
-                6,
-                source,
-                hash,
-                target,
-                counts,
-                new Label("Proposed account actions"),
-                table,
-                new Label("Validation messages"),
-                messages,
-                confirmation);
-        content.setPadding(new Insets(8));
-        VBox.setVgrow(table, Priority.ALWAYS);
-        dialog.getDialogPane().setContent(content);
-
-        ButtonType importButton = new ButtonType("Save Imported Accounts", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().setAll(importButton, ButtonType.CANCEL);
-        Node importNode = dialog.getDialogPane().lookupButton(importButton);
-        importNode.setDisable(preview.hasBlockingErrors()
-                || (!preview.confirmations().isEmpty() && !confirmation.isSelected()));
-        confirmation.selectedProperty().addListener((observable, oldValue, selected) -> importNode.setDisable(
-                preview.hasBlockingErrors() || (!preview.confirmations().isEmpty() && !selected)));
-        dialog.setResultConverter(button -> button == importButton);
-        return dialog.showAndWait();
-    }
-
-    private static String confirmationText(List<InterchangeConfirmation> confirmations)
-    {
-        if (confirmations.isEmpty())
-        {
-            return "No additional confirmation is required.";
-        }
-        return confirmations.stream()
-                .map(InterchangeConfirmation::label)
-                .reduce((left, right) -> left + " " + right)
-                .orElse("Confirm import.");
+            "Chart of Accounts JSON exported",
+            "Destination: " + result.destination()
+            + "\nBytes: " + result.byteCount()
+            + "\nAccounts: " + result.accountCount()
+            + "\nSHA-256: " + result.sha256());
     }
 
     private Optional<Path> chooseImportFile()
@@ -384,7 +170,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
             return Optional.empty();
         }
         FileChooser chooser = jsonFileChooser("Import Chart of Accounts JSON");
-        File selected = chooser.showOpenDialog(owner);
+        File selected = this.chooser.apply(chooser,owner);
         return selected == null ? Optional.empty() : Optional.of(selected.toPath().toAbsolutePath().normalize());
     }
 
@@ -407,7 +193,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         FileChooser chooser = new FileChooser();
         chooser.setTitle(title);
         chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Chart of Accounts JSON", "*.json"));
+            new FileChooser.ExtensionFilter("Chart of Accounts JSON", "*.json"));
         return chooser;
     }
 
@@ -417,18 +203,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         return raw.toLowerCase().endsWith(".json") ? path : Path.of(raw + ".json");
     }
 
-    private boolean confirmDiscardUnsavedEditor()
-    {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Import Chart of Accounts JSON");
-        alert.setHeaderText("Discard unsaved account edits before import?");
-        alert.setContentText(
-                "Import refreshes the Chart of Accounts editor after a successful transaction. Save the current account first or choose Cancel.");
-        initOwner(alert);
-        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
-    }
-
-    private static Map<String, String> parseMappings(String text)
+    static Map<String, String> parseMappings(String text)
     {
         Map<String, String> mappings = new LinkedHashMap<>();
         if (text == null || text.isBlank())
@@ -447,7 +222,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
             if (separator <= 0 || separator == line.length() - 1)
             {
                 throw new IllegalArgumentException(
-                        "Mapping line " + (index + 1) + " must be sourceCode=targetCode.");
+                    "Mapping line " + (index + 1) + " must be sourceCode=targetCode.");
             }
             String source = line.substring(0, separator).trim();
             String target = line.substring(separator + 1).trim();
@@ -462,7 +237,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     private <T> T withJpa(Function<Jpa, T> operation)
     {
         Path database = DatabaseLocationService.resolveDatabasePath(
-                MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
+            MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
         try (Jpa jpa = new Jpa(database))
         {
             return operation.apply(jpa);
@@ -530,6 +305,11 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         }
     }
 
+    private AppPanel active()
+    {
+        return reviewing ? review : delegate;
+    }
+
     @Override
     public String title()
     {
@@ -543,69 +323,93 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     }
 
     @Override
-    public java.util.Set<AppCommand> commandCapabilities()
+    public Set<AppCommand> commandCapabilities()
     {
-        return delegate.commandCapabilities();
+        return busy.get() ? Set.of() : active().commandCapabilities();
     }
 
     @Override
-    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    public Optional<ApplicationPermission> requiredPermission(AppCommand command)
     {
-        delegate.setCommandCapabilitiesChangedListener(listener);
+        return active().requiredPermission(command);
+    }
+
+    @Override
+    public String commandLabel(AppCommand command)
+    {
+        return active().commandLabel(command);
     }
 
     @Override
     public String saveUnavailableReason()
     {
-        return delegate.saveUnavailableReason();
+        return active().saveUnavailableReason();
     }
 
     @Override
     public RunCommandResult executeCommand(AppCommand command)
     {
-        return delegate.executeCommand(command);
-    }
-
-    @Override
-    public java.util.Optional<ApplicationPermission> requiredPermission(AppCommand command)
-    {
-        return delegate.requiredPermission(command);
+        return commandCapabilities().contains(command) ? active().executeCommand(command)
+                : new RunCommandResult(false,GlobalCommandRegistry.label(command) + " is not available in "
+                        + title() + ". " + saveUnavailableReason());
     }
 
     @Override
     public void onNew()
     {
-        delegate.onNew();
+        active().onNew();
     }
 
     @Override
     public void onSave()
     {
-        delegate.onSave();
+        active().onSave();
+    }
+
+    @Override
+    public String commandResultMessage(AppCommand command)
+    {
+        return active().commandResultMessage(command);
     }
 
     @Override
     public boolean hasUnsavedChanges()
     {
-        return delegate.hasUnsavedChanges();
+        return delegate.hasUnsavedChanges() || review.hasUnsavedChanges();
     }
 
     @Override
     public void onPanelShown()
     {
-        delegate.onPanelShown();
+        active().onPanelShown();
     }
 
     @Override
-    public void onPanelShownFrom(AppPanelId origin, String originTitle)
+    public void onPanelShownFrom(AppPanelId origin, String title)
     {
-        delegate.onPanelShownFrom(origin, originTitle);
+        delegate.onPanelShownFrom(origin,title);
+        if (reviewing) review.onPanelShown();
     }
 
     @Override
     public void onImportAddSuggestion(ImportAddSuggestion suggestion)
     {
+        if (busy.get() || review.busy()) return;
+        showAccounts();
         delegate.onImportAddSuggestion(suggestion);
+    }
+
+    @Override
+    public void setCommandCapabilitiesChangedListener(Runnable listener)
+    {
+        capabilitiesChanged = listener;
+    }
+
+    @Override
+    public void setCommandResultListener(Consumer<RunCommandResult> listener)
+    {
+        delegate.setCommandResultListener(listener);
+        review.setCommandResultListener(listener);
     }
 
     Button importJsonButtonForTests()
@@ -623,16 +427,8 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         return interchangeStatus;
     }
 
-    static Map<String, String> parseMappingsForTests(String text)
+    static Map<String,String> parseMappingsForTests(String text)
     {
         return parseMappings(text);
-    }
-
-    private record ImportOptions(
-            CoaImportMode mode,
-            String chartName,
-            String chartVersion,
-            String mappingText)
-    {
     }
 }

@@ -1,5 +1,15 @@
 # Journal workspace editor guidelines
 
+P27-C20 extends the existing review pattern to Chart JSON inside its own workspace:
+Import Setup, Proposed Accounts, Edit Account and Original Source and Diagnostics.
+Apply accepts a proposal without writing H2; Cancel restores its last applied fields.
+Multi-delete omits proposals only. Grey/black/bold status rows distinguish invalid,
+ready and updated-ready definitions. Refresh clears bold markers while retaining
+unapplied raw text; it never applies the editor. Review acknowledgment and complete
+graph validation gate the explicit atomic import. Global Save follows Apply in Edit
+and reviewed import on the proposal/diagnostic pages. No routine import editor popup
+or formal approval queue is introduced. See [JSON contract](../data-exchange/chart-of-accounts-json.md).
+
 P03 provides one spreadsheet-like transaction editor inside the unified Journal workspace. P03-C6 replaces the separate Ledger Register, Transaction Editor, and Inspect Journal destinations with one Journal surface derived from the interaction model of the donor repository's `Journal*` classes. P03-C7 adds the production `JournalWorkspaceCompliancePanel`, which applies the cross-cutting scrolling, table-state, money/date-formatting, and company-owned UI-state contract without duplicating accounting behavior.
 
 ## Shared line editor contract

@@ -1,6 +1,11 @@
 # P27-C19 — Literal Import Add suggestion prefill
 
-Status: VERIFYING. Current main e7c69354 includes merged C18/#444.
+Status: DONE. PR #445 merged at 2934f37a3473572eb269a37c9150cbec0882c717;
+accepted head 63d4af2b passed full local verification (1,367 tests, zero failures/
+errors, 198 headless skips, 10:15) and exact-head CI 45324843732. Earlier pending
+notes below are historical.
+
+Original scope: Current main e7c69354 includes merged C18/#444.
 Owner requests that Add from Import autofill the corresponding maintenance
 new-record form. Their final clarification is literal Name only; Code stays
 blank. Do not generate codes or infer classification from a name.
