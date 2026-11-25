@@ -1,17 +1,27 @@
 ---
-plan_version: 548
+plan_version: 549
 active_phase: P27
 active_slice: P27-C20
 active_status: VERIFYING
 active_branch: codex/P27-C20-coa-import-review
-active_pull_request: null
-active_head: 2934f37a3473572eb269a37c9150cbec0882c717
-next_action: "Finish final C20 native regression gate, inspect final image, publish draft PR and run full clean verify plus exact-head Linux/Windows CI. No automatic merge."
+active_pull_request: 446
+active_head: 2c87ad8fc0f9cbd7f8d3bc1af59de67a6739ceb7
+next_action: "Finish final C20 native regression gate, inspect final image and run full clean verify plus exact-final-head Linux/Windows CI for PR #446. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
 ### P27-C20 Chart of Accounts JSON review editor — owner request
+
+Published [draft PR #446](https://github.com/benbaron/sca-jakarta-h2/pull/446):
+implementation **2c87ad8fc0f9cbd7f8d3bc1af59de67a6739ceb7**, tree
+**7d1e87db68db8545fec5a08a21ae54937c9fc7a0**. Branch was absent; normal push
+and PR read-back match. Source/test/Word work is complete. This receipt changes
+only PLAN/C20; require full clean verify and exact-final-head Linux/Windows CI
+on its published successor. Final native gate is running, including the expanded
+scope/sorting/painted-text/overflow and asynchronous maintenance-prefill checks.
+Earlier unavailable-command regression is fixed and the real route audit passes.
+Keep draft until final gates pass. No automatic merge.
 
 Candidate implemented; VERIFYING. Existing 10 service tests and 8 new reviewed
 service cases pass. Initial native gate passes 5; broad 79-case run passes 77

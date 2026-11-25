@@ -46,6 +46,13 @@ database is required; no automatic merge.
 
 ## Implementation and verification
 
+Published [draft PR #446](https://github.com/benbaron/sca-jakarta-h2/pull/446),
+implementation **2c87ad8fc0f9cbd7f8d3bc1af59de67a6739ceb7**, tree
+**7d1e87db68db8545fec5a08a21ae54937c9fc7a0**. The new remote branch was absent,
+normal push succeeded, and PR read-back matches. This publication receipt is a
+PLAN/C20-only successor; validate that exact final head before readiness. Initial
+CI 45549836933 is preliminary. No automatic merge.
+
 Inline review is implemented in the existing Chart wrapper, over the existing
 JSON parser and guarded atomic commit. The immutable reviewed request retains
 source SHA/ordinals/metadata and a company/target-account fingerprint. Opening
@@ -72,9 +79,12 @@ Rendered to 31 pages; changed page 9 and following page 10 inspected. Local
 documentation links (260) and whitespace checks pass. Evidence is in
 `/workspace/p27-c20-evidence`, outside the repository.
 
-Remaining: finish final native gate and inspect its image; run full clean verify;
-publish the branch/draft PR, record actual head and require exact-head Linux/
-Windows CI before making it ready. No automatic merge.
+Remaining: finish expanded final native gate (including async prefill, sorting,
+scope and actual painted grey lookup/row text) and inspect its image; run full
+clean verify and require exact-final-head Linux/Windows CI before making it ready.
+The unavailable-command route audit now passes. The new maintenance draft test
+waits for its real asynchronous prefill before asserting; assertions are retained.
+No automatic merge.
 
 ## Owner testing
 
