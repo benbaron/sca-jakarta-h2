@@ -1,6 +1,6 @@
 # P27-C20 — Reviewed Chart of Accounts JSON proposals
 
-Status: VERIFYING. Owner requests an editor/reviewer like Journal CSV import
+Status: DONE. PR #446 merged at f7453b324f54421ff33ccc12edbc073121f9ef70. Owner requests an editor/reviewer like Journal CSV import
 for Chart JSON validation issues, including incompatible subtype. Main contains
 merged C19/#445 at 2934f37a. Baseline compile passes.
 

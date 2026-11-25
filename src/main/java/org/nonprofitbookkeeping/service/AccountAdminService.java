@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.nonprofitbookkeeping.model.Account;
+import org.nonprofitbookkeeping.model.AuditEvent;
 import org.nonprofitbookkeeping.model.AccountFunction;
 import org.nonprofitbookkeeping.model.AccountSubtype;
 import org.nonprofitbookkeeping.model.AccountType;
@@ -58,8 +59,9 @@ public class AccountAdminService
      */
     public Account save(AccountCommand command)
     {
-        ServiceAuthorization.require(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
-                companyCodeSupplier.get(), "save account");
+        String companyCode = companyCodeSupplier.get();
+        String actor = ServiceAuthorization.actor(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
+                companyCode, "save account", "SYSTEM");
         if (command == null)
         {
             throw new IllegalArgumentException("Account details are required.");
@@ -76,6 +78,11 @@ public class AccountAdminService
             throw new IllegalArgumentException("Normal balance is required.");
         }
         validateClassification(command.accountType(), command.accountFunction(), command.normalBalance());
+        if (command.details() != null)
+        {
+            AccountDefinitionRules.validate(cleanCode, cleanName, command.accountType(), command.accountFunction(),
+                    command.normalBalance(), command.subtype(), command.details());
+        }
 
         try (EntityManager em = jpa.em())
         {
@@ -83,9 +90,10 @@ public class AccountAdminService
             try
             {
                 CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
-                Company company = ownership.requireCompany(em, companyCodeSupplier.get());
+                Company company = ownership.requireCompany(em, companyCode);
                 SupplementalIntegrityService.lock(em, company);
-                ChartOfAccounts chart = resolveChart(em, company, ownership);
+                ChartOfAccounts chart = command.chartId() == null ? resolveChart(em, company, ownership)
+                        : requireEditableChart(em, company, command.chartId(), ownership);
 
                 Account account;
                 if (command.id() == null)
@@ -103,7 +111,7 @@ public class AccountAdminService
                             || !account.getChart().getId().equals(chart.getId()))
                     {
                         throw new CompanyOwnershipException(
-                                "Account ID " + command.id() + " does not belong to the active Chart of Accounts.");
+                                "Account ID " + command.id() + " does not belong to the selected Chart of Accounts.");
                     }
                     requireAcquisitionClassification(em, account, command.accountType(), command.subtype(), command.normalBalance());
                     validateConfiguredBankClassification(
@@ -126,6 +134,13 @@ public class AccountAdminService
                     ownership.requireOwnedBy(company, parent, "Parent account");
                 }
 
+                requireAcyclicParent(account, parent, chart);
+                if (command.details() != null)
+                {
+                    requireDefinitionChanges(em, account, command, parent);
+                }
+                String before = account.getId() == null ? null : describe(account);
+
                 applyAccount(
                         account,
                         cleanCode,
@@ -137,9 +152,33 @@ public class AccountAdminService
                         parent,
                         command.active());
 
+                if (command.details() != null)
+                {
+                    var details = command.details();
+                    account.setPosting(details.posting());
+                    account.setEffectiveFrom(details.effectiveFrom());
+                    account.setEffectiveTo(details.effectiveTo());
+                    account.setOpeningBalance(details.openingBalance().setScale(2));
+                    account.setDescription(details.description());
+                }
+
                 if (account.getId() == null)
                 {
                     em.persist(account);
+                }
+                if (command.chartId() != null || command.details() != null)
+                {
+                    em.flush();
+                    AuditEvent event = new AuditEvent();
+                    event.setCompany(company);
+                    event.setActor(actor);
+                    event.setEntityType("ACCOUNT");
+                    event.setEntityId(account.getId().toString());
+                    event.setActionType(before == null ? "ACCOUNT_CREATED" : "ACCOUNT_UPDATED");
+                    event.setSummary((before == null ? "Created account " : "Updated account ") + cleanCode);
+                    event.setBeforeValue(before);
+                    event.setAfterValue(describe(account));
+                    em.persist(event);
                 }
                 em.getTransaction().commit();
                 return account;
@@ -153,6 +192,63 @@ public class AccountAdminService
                 throw mapPersistenceError(ex, cleanCode);
             }
         }
+    }
+
+    private static ChartOfAccounts requireEditableChart(EntityManager em, Company company, long id, CompanyOwnershipService ownership)
+    {
+        if (!company.isActive()) throw new IllegalStateException("The company is inactive.");
+        ChartOfAccounts chart = em.find(ChartOfAccounts.class, id, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        if (chart == null) throw new IllegalArgumentException("Chart of Accounts no longer exists.");
+        ownership.requireOwnedBy(company, chart, "Chart of Accounts");
+        if (chart.getStatus() == ChartStatus.RETIRED) throw new IllegalStateException("Retired charts are read-only; restore the chart to DRAFT before editing accounts.");
+        return chart;
+    }
+
+    private static void requireAcyclicParent(Account account, Account parent, ChartOfAccounts chart)
+    {
+        java.util.Set<Long> seen = new java.util.HashSet<>();
+        for (Account ancestor = parent; ancestor != null; ancestor = ancestor.getParent())
+        {
+            if (!Objects.equals(ancestor.getChart().getId(), chart.getId())) throw new IllegalArgumentException("Parent hierarchy crosses charts.");
+            if (Objects.equals(ancestor.getId(), account.getId()) || !seen.add(ancestor.getId()))
+            {
+                throw new IllegalArgumentException("Parent account would create a hierarchy cycle.");
+            }
+        }
+    }
+
+    private static void requireDefinitionChanges(EntityManager em, Account account, AccountCommand command, Account parent)
+    {
+        var details = command.details();
+        boolean parentChanged = !Objects.equals(account.getParent() == null ? null : account.getParent().getId(), parent == null ? null : parent.getId());
+        if (parent != null && parent.isPosting() && (account.getId() == null || parentChanged))
+        {
+            throw new IllegalArgumentException("Choose a non-posting group as the parent account.");
+        }
+        if (account.getId() != null && !account.isPosting() && details.posting()
+                && em.createQuery("select count(a) from Account a where a.parent = :account", Long.class).setParameter("account", account).getSingleResult() > 0)
+        {
+            throw new IllegalArgumentException("A group with child accounts cannot become a posting account.");
+        }
+        boolean structural = account.getAccountType() != command.accountType() || account.getAccountFunction() != command.accountFunction()
+                || account.getNormalBalance() != command.normalBalance() || account.getSubtype() != command.subtype()
+                || account.isPosting() != details.posting() || parentChanged
+                || account.getOpeningBalance().compareTo(details.openingBalance()) != 0;
+        if (account.getId() != null && structural
+                && em.createQuery("select count(s) from TxnSplit s where s.account = :account", Long.class).setParameter("account", account).getSingleResult() > 0)
+        {
+            throw new IllegalArgumentException("This account has transaction history. Preserve its classification, parent, posting state and opening balance; use a new account for a structural change.");
+        }
+    }
+
+    private static String describe(Account account)
+    {
+        return account.getCode() + " | " + account.getName() + " | " + account.getAccountType() + " | "
+                + account.getAccountFunction() + " | " + account.getNormalBalance() + " | " + account.getSubtype()
+                + " | parent=" + (account.getParent() == null ? "" : account.getParent().getId())
+                + " | posting=" + account.isPosting() + " | active=" + account.isActive()
+                + " | from=" + account.getEffectiveFrom() + " | to=" + account.getEffectiveTo()
+                + " | opening=" + account.getOpeningBalance() + " | " + account.getDescription();
     }
 
     /** Compatibility boundary for callers that intentionally address an account by code. */

@@ -45,6 +45,18 @@ public class AccountLookupService
         return list(false);
     }
 
+    /** Complete definitions for chart maintenance; does not alter Journal choice filtering. */
+    public List<Account> listAllCompanyAccountsForMaintenance()
+    {
+        try (EntityManager em = jpa.em())
+        {
+            Company company = new CompanyOwnershipService(jpa).requireCompany(em, companyCodeSupplier.get());
+            return em.createQuery("select a from Account a join fetch a.chart left join fetch a.parent "
+                            + "where a.chart.company = :company order by a.code, a.id", Account.class)
+                    .setParameter("company", company).getResultList();
+        }
+    }
+
     private List<Account> list(boolean activeOnly)
     {
         try (EntityManager em = jpa.em())

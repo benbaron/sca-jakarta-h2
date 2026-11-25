@@ -65,7 +65,7 @@ jobs:
         run: xvfb-run -a mvn -B -ntp -e -Dtest=PanelOverflowTest test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
 
       - name: Run Import workflows and task lifecycle
-        run: xvfb-run -a mvn -B -ntp -e -DreuseForks=false -Dtest=CoaJsonReviewPaneTest,ExchequerImportReviewPaneTest,ImportWorkflowPanelTest,ImportPreviewPanelSclxTest,InterchangeTaskControllerTest test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
+        run: xvfb-run -a mvn -B -ntp -e -DreuseForks=false -Dtest=NativeChartEditorPaneTest,CoaJsonReviewPaneTest,ExchequerImportReviewPaneTest,ImportWorkflowPanelTest,ImportPreviewPanelSclxTest,InterchangeTaskControllerTest test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository
 
       - name: Run Journal Save and SCLX failure feedback
         run: xvfb-run -a mvn -B -ntp -e -DreuseForks=false -Dtest=JournalSaveFeedbackTest,PanelHostCommandFeedbackTest,SclxExportFailureDialogTest test --settings .mvn/settings-github.xml -Dmaven.repo.local=$HOME/.m2/repository

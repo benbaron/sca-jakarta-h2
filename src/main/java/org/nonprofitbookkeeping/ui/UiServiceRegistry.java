@@ -23,6 +23,7 @@ import org.nonprofitbookkeeping.repository.ReconciliationRunRepository;
 import org.nonprofitbookkeeping.report.SemanticAccountingReportQueryService;
 import org.nonprofitbookkeeping.report.AssetInventoryReportQueryService;
 import org.nonprofitbookkeeping.service.AccountAdminService;
+import org.nonprofitbookkeeping.service.ChartAdminService;
 import org.nonprofitbookkeeping.service.AccountLookupService;
 import org.nonprofitbookkeeping.service.ActivityAdminService;
 import org.nonprofitbookkeeping.service.ActivityLookupService;
@@ -97,6 +98,25 @@ public final class UiServiceRegistry
         return new EventAccountingQueryService(services().jpa(), UiServiceRegistry::activeCompanyCode);
     }
     public static AccountAdminService accountAdmin() { return services().accountAdmin(); }
+    public static ChartAdminService chartAdmin()
+    {
+        ServiceBundle current = services();
+        String company = activeCompanyCode();
+        return new ChartAdminService(current.jpa(), () -> company, current.authorizationGuard());
+    }
+    static java.util.function.Supplier<ChartOfAccountsPanel.ChartData> chartDataLoader()
+    {
+        ServiceBundle current = services();
+        String companyCode = activeCompanyCode();
+        var companyAdmin = new CompanyAdminService(current.jpa());
+        var lookup = new AccountLookupService(current.jpa(), () -> companyCode);
+        return () ->
+        {
+            var company = companyAdmin.requireActiveCompany(companyCode);
+            return new ChartOfAccountsPanel.ChartData(company.id(),companyAdmin.listCompanyCharts(company.id()),
+                    lookup.listAllCompanyAccountsForMaintenance());
+        };
+    }
     public static CoaCsvImportService coaCsvImport()
     {
         ServiceBundle current = services();

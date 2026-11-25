@@ -1,5 +1,12 @@
 # Chart of Accounts JSON contract
 
+P27-C21 makes native **New Chart / Edit Chart / Clone Chart** and the account
+list/editor the primary maintenance path. JSON is secondary compatibility under
+**Chart of Accounts → Compatibility → Import Chart JSON… / Export Chart JSON…**.
+The existing inline review and format rules remain authoritative for files.
+Native draft/account editing and cross-company, zero-opening cloning require no
+JSON round-trip. See [native chart maintenance](../P27-C21-native-chart-maintenance.md).
+
 ## 1. Purpose and authority
 
 Chart of Accounts JSON transfers account definitions and hierarchy. It does not transfer transactions, funds as independent master data, bank statements, other company records, or an H2 database.
@@ -232,7 +239,7 @@ Production Chart of Accounts JSON import commits require `BOOKKEEPING_WRITE` at 
 
 ## P27-C20 inline reviewed proposals
 
-**Import JSON…** opens an inline review inside the Chart workspace. Import Setup
+**Compatibility → Import Chart JSON…** opens an inline review inside the Chart workspace. Import Setup
 preserves the three modes and explicit mappings; Start New Review deliberately
 replaces the proposed batch. Setup/source changes require that action again.
 Proposed Accounts provides Edit Selected/double-click and multi-select Delete
