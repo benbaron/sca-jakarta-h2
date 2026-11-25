@@ -97,3 +97,9 @@ Owner checks on the PR build:
    bank and reconciliation history stays on its original records.
 6. Check Back/Cancel draft behavior, retired-chart explanation and the secondary
    Compatibility → Import/Export Chart JSON routes.
+
+Publication: [draft PR #447](https://github.com/benbaron/sca-jakarta-h2/pull/447),
+implementation `744007343e0562886d67f9d13fff5224fe82f41d`, tree
+`8c4b70c3ac4862387dccc660dfa4326a5b2da9ca`. Normal new-branch push and
+PR head match. This docs-only successor records publication; final native/full
+and exact-head CI are pending. Keep draft and do not merge automatically.

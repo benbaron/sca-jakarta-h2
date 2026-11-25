@@ -4,8 +4,8 @@ active_phase: P27
 active_slice: P27-C21
 active_status: VERIFYING
 active_branch: codex/P27-C21-native-chart-maintenance
-active_pull_request: null
-active_head: f7453b324f54421ff33ccc12edbc073121f9ef70
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/447
+active_head: 744007343e0562886d67f9d13fff5224fe82f41d
 next_action: "Finish final native and clean verify gates; publish C21 PR and verify exact-head Linux/Windows CI. No automatic merge."
 ---
 
@@ -31,6 +31,14 @@ remain. Completed: native forms/services, full account editor, compatibility men
 regressions, Word and governing docs. No known product failure. Remaining: final
 native/full results, publication and exact-head CI receipt.
 No automatic merge.
+
+
+Published [draft PR #447](https://github.com/benbaron/sca-jakarta-h2/pull/447),
+implementation **744007343e0562886d67f9d13fff5224fe82f41d**, tree
+**8c4b70c3ac4862387dccc660dfa4326a5b2da9ca**. New branch was absent;
+normal push and PR read-back match. This publication receipt changes PLAN/C21
+only. Final native/full gates and exact-final-head Linux/Windows CI remain;
+keep draft until green. Source/test/Word work is frozen. No automatic merge.
 
 
 ### P27-C20 Chart of Accounts JSON review editor — owner request
