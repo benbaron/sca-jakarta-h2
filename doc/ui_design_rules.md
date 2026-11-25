@@ -1,5 +1,14 @@
 # UI design rules
 
+P27-C21 Chart of Accounts exposes native New Chart / Edit Chart / Clone Chart as
+primary actions and JSON under a secondary Compatibility menu. Chart forms stay
+inline; accounts remain an independently scrollable table/editor split. Owned
+DRAFT/ACTIVE charts are editable without activation; global New/Save labels follow
+the actual account or chart form. Clone sources identify company, chart name,
+version, lifecycle and ID; opening balances always reset to zero. Retained chart/
+account/JSON drafts, visible role/scope/busy explanations, explicit Cancel and
+draggable header/form dividers use existing company/database state authority.
+
 P27-C20 Chart JSON review uses inline named pages and a persistent header/body
 divider with local horizontal/vertical scrolling. Validation and original JSON
 use alternative tabs to avoid a third visible section. Needs attention, Ready and

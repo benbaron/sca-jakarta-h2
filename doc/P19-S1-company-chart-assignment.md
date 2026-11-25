@@ -9,7 +9,7 @@ P19-S1 completes the previously deferred Company Admin workflow for selecting a 
 Two existing relationships have distinct meanings:
 
 - `chart_of_accounts.company_id` owns a chart and everything attached to that chart;
-- `company.active_chart_of_accounts_id` selects the chart that current account administration and chart-targeted interchange use for that company.
+- `company.active_chart_of_accounts_id` selects the chart for routine journal choices and chart-targeted compatibility interchange. P27-C21 native maintenance can explicitly target another owned non-retired chart without changing that pointer.
 
 Ownership is not reassignment. P19-S1 never changes `chart_of_accounts.company_id` and never moves `Account.chart` references.
 
@@ -44,7 +44,7 @@ The existing **Administration → Company Admin** editor gains a **Chart of Acco
 
 ## Interactions
 
-- `AccountAdminService` already prefers `Company.activeChartOfAccounts`; new account maintenance therefore follows the selected pointer.
+- Legacy `AccountAdminService` callers resolve `Company.activeChartOfAccounts`; P27-C21 native maintenance supplies the viewed chart ID explicitly and validates ownership/lifecycle.
 - Chart of Accounts JSON `CREATE_NEW_CHART` remains non-activating and produces a company-owned `DRAFT` chart. P19-S1 is the explicit activation step.
 - Chart of Accounts JSON `MERGE_BY_CODE` continues to target the company's active chart.
 - P27-C8 supersedes the SCLX single-chart rule: all-chart files retain membership across company-owned charts and preserve an existing target selection; see [all-chart interchange](P27-C8-sclx-all-charts.md). Legacy SCLX existing-company import continues to preserve/use the target company's current chart; a new/unpopulated target may establish its first chart through the governed SCLX path.

@@ -1,17 +1,44 @@
 ---
-plan_version: 549
+plan_version: 551
 active_phase: P27
-active_slice: P27-C20
+active_slice: P27-C21
 active_status: VERIFYING
-active_branch: codex/P27-C20-coa-import-review
-active_pull_request: 446
-active_head: 22376cfa940be3916cbcd94b115b25d8495b102e
-next_action: "Verify the C20 copied-database regression and final native/services, then full clean verify and exact-final-head Linux/Windows CI for PR #446. No automatic merge."
+active_branch: codex/P27-C21-native-chart-maintenance
+active_pull_request: null
+active_head: f7453b324f54421ff33ccc12edbc073121f9ef70
+next_action: "Finish final native and clean verify gates; publish C21 PR and verify exact-head Linux/Windows CI. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
+### P27-C21 Native chart maintenance — owner request
+
+C20/#446 is confirmed merged at current main **f7453b324f54421ff33ccc12edbc073121f9ef70**;
+its accepted head 615422bb passed full local and exact-head CI 45550510269. C20
+is DONE. New branch `codex/P27-C21-native-chart-maintenance` starts from current
+main; no prior local receipt/code is reused. Baseline compile passes.
+[C21 contract](P27-C21-native-chart-maintenance.md). Native New/Edit/Clone Chart,
+full account definition editing for owned drafts/non-retired charts, explicit
+activation, secondary JSON compatibility, atomic audited services and real native
+regressions. No schema, alternate persistence or implicit data/history movement.
+Owner confirmed cross-company sources and zero opening balances. Native lifecycle/clone
+services and inline forms are implemented. Baseline compile and 15 existing service
+cases pass; broad native/service/workflow verification passes **107/0/0/0**.
+Final native gate includes optional subtype clearing and permission parity.
+Primary Word updated directly; other ZIP parts/review anchors preserved and
+33-page render inspected on affected pages 8–10, 15 and 18. Final full and CI
+remain. Completed: native forms/services, full account editor, compatibility menu,
+regressions, Word and governing docs. No known product failure. Remaining: final
+native/full results, publication and exact-head CI receipt.
+No automatic merge.
+
+
 ### P27-C20 Chart of Accounts JSON review editor — owner request
+
+C20 is DONE: PR #446 merged at f7453b32; accepted head 615422bb passed full
+local verification and exact-head Linux/Windows CI 45550510269. The older
+publication/progress receipts below are historical. C21 supersedes native
+maintenance limitations while retaining JSON as compatibility.
 
 Final UI gate passes **15/0/0/0 (02:11)**, including all seven new review
 journeys and actual painted grey lookup/row text. Final narrow image inspected;

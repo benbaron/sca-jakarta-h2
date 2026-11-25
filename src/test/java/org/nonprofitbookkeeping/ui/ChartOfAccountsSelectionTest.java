@@ -106,7 +106,7 @@ class ChartOfAccountsSelectionTest
             selector(panel).getSelectionModel().select(1);
             assertEquals(List.of(actions.newAccount), table(panel).getItems());
             assertEquals(0, actions.activations);
-            assertTrue(panel.commandCapabilities().isEmpty());
+            assertTrue(panel.commandCapabilities().contains(AppCommand.SAVE_ACTIVE), "Owned non-retired charts are now editable without activation");
             assertTrue(panel.root().lookup("#chartOfAccountsSelection").getBoundsInParent().getWidth() > 0);
             activate(panel).fire();
             return null;

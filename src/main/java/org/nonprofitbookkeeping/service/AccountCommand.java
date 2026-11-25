@@ -15,6 +15,14 @@ public record AccountCommand(
         NormalBalance normalBalance,
         AccountSubtype subtype,
         String parentCode,
-        boolean active)
+        boolean active,
+        Long chartId,
+        AccountDefinitionDetails details)
 {
+    public AccountCommand(Long id, String code, String name, AccountType accountType,
+            AccountFunction accountFunction, NormalBalance normalBalance, AccountSubtype subtype,
+            String parentCode, boolean active)
+    {
+        this(id, code, name, accountType, accountFunction, normalBalance, subtype, parentCode, active, null, null);
+    }
 }

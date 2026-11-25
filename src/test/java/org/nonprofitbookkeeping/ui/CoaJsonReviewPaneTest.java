@@ -78,7 +78,7 @@ class CoaJsonReviewPaneTest
             host.showReplacement(AppPanelId.CHART_OF_ACCOUNTS, panel);
             host.applyCss();
             host.layout();
-            button("coaImportJsonButton").fire();
+            openJson();
             host.applyCss();
             host.layout();
             button("coaReviewPreview").fire();
@@ -183,7 +183,7 @@ class CoaJsonReviewPaneTest
             assertEquals("12.345", field("coaReviewOpeningBalance").getText());
             button("coaReviewBack").fire();
             assertNotNull(panel.root().lookup("#chartOfAccountsSelection"));
-            button("coaImportJsonButton").fire();
+            openJson();
             assertEquals("Unapplied literal name", field("coaReviewName").getText());
             button("coaReviewCancel").fire();
             edit(2);
@@ -364,7 +364,7 @@ class CoaJsonReviewPaneTest
             assertEquals("Literal maintenance name", maintenance.readFormStateForTests().name());
             assertEquals("", maintenance.readFormStateForTests().code());
             assertTrue(maintenance.hasUnsavedChanges());
-            button("coaImportJsonButton").fire();
+            openJson();
             stage.getScene().getRoot().applyCss();
             stage.getScene().getRoot().layout();
             assertEquals("Pending JSON proposal name", field("coaReviewName").getText());
@@ -436,6 +436,14 @@ class CoaJsonReviewPaneTest
     {
         return panel.root().lookup("#coaReviewStatus") instanceof Label label ? label.getText() : "Account maintenance";
     }
+    private void openJson()
+    {
+        var compatibility = (MenuButton) panel.root().lookup("#coaCompatibility");
+        assertNotNull(compatibility);
+        compatibility.show();
+        panel.importJsonButtonForTests().fire();
+    }
+
     private Button button(String id) { return (Button) panel.root().lookup("#" + id); }
     private TextField field(String id) { return (TextField) panel.root().lookup("#" + id); }
     private CheckBox check(String id) { return (CheckBox) panel.root().lookup("#" + id); }

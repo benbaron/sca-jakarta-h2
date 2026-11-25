@@ -12,7 +12,6 @@ import org.nonprofitbookkeeping.interchange.coa.*;
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.ApplicationPermission;
-
 import java.io.File;
 import java.nio.file.*;
 import java.util.*;
@@ -23,17 +22,26 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
     private final ChartOfAccountsPanel delegate;
-    private final Button importJson = new Button("Import JSON…");
-    private final Button exportJson = new Button("Export JSON…");
+    private final MenuItem importJson = new MenuItem("Import Chart JSON…");
+    private final MenuItem exportJson = new MenuItem("Export Chart JSON…");
+    private final MenuButton compatibility = new MenuButton("Compatibility");
+    private final Button newChart = new Button("New Chart");
+    private final Button editChart = new Button("Edit Chart");
+    private final Button cloneChart = new Button("Clone Chart");
+    private final Label nativeHint = new Label();
     private final ProgressIndicator progress = new ProgressIndicator();
-    private final Label interchangeStatus = new Label("Chart of Accounts JSON is separate from SCLX and database backup.");
+    private final Label interchangeStatus = new Label("Create or select a chart, then maintain its accounts.");
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
+    private final BooleanProperty working = new SimpleBooleanProperty(false);
     private final CoaJsonReviewPane review;
+    private final NativeChartEditorPane nativeEditor;
     private final BiFunction<FileChooser, Window, File> chooser;
     private boolean reviewing;
+    private boolean chartEditing;
     private Runnable capabilitiesChanged = () ->
     {
     };
+    private final javafx.beans.value.ChangeListener<Boolean> chartPermission = (o,a,b) -> changed();
 
     public ChartOfAccountsInterchangePanel()
     {
@@ -66,23 +74,44 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
                 return UiServiceRegistry.coaJsonImport().commit(approved);
             }
         },this::chooseImportFile,this::showAccounts,CompanyUiFormat.activeCompany());
+        nativeEditor = new NativeChartEditorPane(UiServiceRegistry::chartAdmin,this::chartSaved,this::showAccounts);
+        nativeEditor.setCommandCapabilitiesChangedListener(this::changed);
         review.setCommandCapabilitiesChangedListener(this::changed);
         delegate.setCommandCapabilitiesChangedListener(this::changed);
         busy.addListener((o,a,b) -> changed());
         importJson.setId("coaImportJsonButton");
         exportJson.setId("coaExportJsonButton");
-        UiPermissionGate.gate(importJson,ApplicationPermission.BOOKKEEPING_WRITE,"Review Chart JSON import");
-        UiPermissionGate.gate(exportJson,ApplicationPermission.EXPORT,"Export Chart JSON");
-        importJson.setOnAction(event -> requestImport());
-        exportJson.setOnAction(event -> requestExport());
+        importJson.disableProperty().bind(working.or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
+        exportJson.disableProperty().bind(working.or(UiPermissionGate.deniedProperty(ApplicationPermission.EXPORT)));
+        compatibility.setId("coaCompatibility");
+        compatibility.getItems().setAll(importJson,exportJson);
+        importJson.setOnAction(event ->
+        {
+            compatibility.hide();
+            requestImport();
+        });
+        exportJson.setOnAction(event ->
+        {
+            compatibility.hide();
+            requestExport();
+        });
+        newChart.setId("coaNewChart");
+        editChart.setId("coaEditChart");
+        cloneChart.setId("coaCloneChart");
+        newChart.setOnAction(event -> requestChart(NativeChartEditorPane.Mode.NEW));
+        editChart.setOnAction(event -> requestChart(NativeChartEditorPane.Mode.EDIT));
+        cloneChart.setOnAction(event -> requestChart(NativeChartEditorPane.Mode.CLONE));
+        nativeHint.setWrapText(true);
+        UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE).addListener(new javafx.beans.value.WeakChangeListener<>(chartPermission));
         interchangeStatus.setWrapText(true);
         progress.setMaxSize(18,18);
-        FlowPane toolbar = new FlowPane(8,6,importJson,exportJson,progress,interchangeStatus);
+        FlowPane toolbar = new FlowPane(8,6,newChart,editChart,cloneChart,compatibility,progress);
         toolbar.setPadding(new Insets(8));
         toolbar.setMinWidth(0);
         root.setMinSize(0,0);
         interchangeStatus.prefWidthProperty().bind(root.widthProperty().subtract(24));
-        root.setTop(new VBox(toolbar,new Separator()));
+        nativeHint.prefWidthProperty().bind(root.widthProperty().subtract(24));
+        root.setTop(new VBox(6,toolbar,nativeHint,interchangeStatus,new Separator()));
         root.setCenter(delegate.root());
         changed();
     }
@@ -97,8 +126,9 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
 
     private void requestImport()
     {
-        if (busy.get() || review.busy() || !UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE)) return;
+        if (working.get() || !UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE)) return;
         reviewing = true;
+        chartEditing = false;
         root.setCenter(review);
         changed();
         if (!review.hasUnsavedChanges()) review.chooseSource();
@@ -106,8 +136,9 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
 
     private void showAccounts()
     {
-        if (busy.get() || review.busy()) return;
+        if (working.get()) return;
         reviewing = false;
+        chartEditing = false;
         root.setCenter(delegate.root());
         delegate.onPanelShown();
         changed();
@@ -115,13 +146,48 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
 
     private void changed()
     {
-        boolean working = busy.get() || review.busy();
-        importJson.setDisable(working);
-        exportJson.setDisable(working);
-        progress.setVisible(working);
-        progress.setManaged(working);
-        delegate.root().setDisable(working);
+        boolean inFlight = busy.get() || review.busy() || nativeEditor.busy();
+        working.set(inFlight);
+        boolean allowed = UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE);
+        boolean accountDirty = delegate.hasUnsavedChanges();
+        newChart.setDisable(inFlight || !allowed || accountDirty);
+        cloneChart.setDisable(inFlight || !allowed || accountDirty);
+        editChart.setDisable(inFlight || !allowed || delegate.loadingCharts() || delegate.selectedChart() == null && !nativeEditor.hasUnsavedChanges());
+        compatibility.setDisable(inFlight || importJson.isDisable() && exportJson.isDisable());
+        nativeHint.setText(!allowed ? "New/Edit/Clone Chart requires BOOKKEEPING_WRITE (ACCOUNTANT/MANAGER/ADMIN). Account editing uses BOOKKEEPING_WRITE."
+            : accountDirty ? "Save or Cancel Account Changes before creating or cloning a chart. Chart metadata editing preserves the account draft."
+            : "Maintain charts and accounts here. Make Active Chart is explicit; JSON is available under Compatibility.");
+        progress.setVisible(inFlight);
+        progress.setManaged(inFlight);
+        delegate.root().setDisable(inFlight);
         capabilitiesChanged.run();
+    }
+
+    private void requestChart(NativeChartEditorPane.Mode mode)
+    {
+        if (working.get() || !UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE)) return;
+        if (delegate.hasUnsavedChanges() && mode != NativeChartEditorPane.Mode.EDIT)
+        {
+            interchangeStatus.setText("Save or Cancel Account Changes first; the account draft is retained.");
+            return;
+        }
+        var selected = delegate.selectedChart();
+        if (mode == NativeChartEditorPane.Mode.EDIT && selected == null && !nativeEditor.hasUnsavedChanges()) return;
+        reviewing = false;
+        chartEditing = true;
+        root.setCenter(nativeEditor.root());
+        nativeEditor.begin(mode,selected == null ? null : selected.id());
+        changed();
+    }
+
+    private void chartSaved(org.nonprofitbookkeeping.service.ChartDetails chart)
+    {
+        reviewing = false;
+        chartEditing = false;
+        root.setCenter(delegate.root());
+        delegate.focusChart(chart.id());
+        interchangeStatus.setText("Saved chart " + chart.name() + " / " + chart.version() + " (ID " + chart.id() + "). Activation remains explicit.");
+        changed();
     }
 
     private void requestExport()
@@ -307,7 +373,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
 
     private AppPanel active()
     {
-        return reviewing ? review : delegate;
+        return chartEditing ? nativeEditor : reviewing ? review : delegate;
     }
 
     @Override
@@ -350,8 +416,8 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     public RunCommandResult executeCommand(AppCommand command)
     {
         return commandCapabilities().contains(command) ? active().executeCommand(command)
-                : new RunCommandResult(false,GlobalCommandRegistry.label(command) + " is not available in "
-                        + title() + ". " + saveUnavailableReason());
+        : new RunCommandResult(false,GlobalCommandRegistry.label(command) + " is not available in "
+            + title() + ". " + saveUnavailableReason());
     }
 
     @Override
@@ -375,7 +441,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     @Override
     public boolean hasUnsavedChanges()
     {
-        return delegate.hasUnsavedChanges() || review.hasUnsavedChanges();
+        return delegate.hasUnsavedChanges() || review.hasUnsavedChanges() || nativeEditor.hasUnsavedChanges();
     }
 
     @Override
@@ -389,12 +455,13 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     {
         delegate.onPanelShownFrom(origin,title);
         if (reviewing) review.onPanelShown();
+        if (chartEditing) nativeEditor.onPanelShown();
     }
 
     @Override
     public void onImportAddSuggestion(ImportAddSuggestion suggestion)
     {
-        if (busy.get() || review.busy()) return;
+        if (working.get()) return;
         showAccounts();
         delegate.onImportAddSuggestion(suggestion);
     }
@@ -410,14 +477,13 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     {
         delegate.setCommandResultListener(listener);
         review.setCommandResultListener(listener);
+        nativeEditor.setCommandResultListener(listener);
     }
-
-    Button importJsonButtonForTests()
+    MenuItem importJsonButtonForTests()
     {
         return importJson;
     }
-
-    Button exportJsonButtonForTests()
+    MenuItem exportJsonButtonForTests()
     {
         return exportJson;
     }

@@ -1187,29 +1187,12 @@ public final class ChartOfAccountsJsonService
 
     private static boolean normalBalanceCompatible(AccountType type, NormalBalance balance)
     {
-        if (type == null || balance == null)
-        {
-            return false;
-        }
-        return switch (type)
-        {
-            case ASSET, EXPENSE -> balance == NormalBalance.DEBIT;
-            case LIABILITY, EQUITY, INCOME -> balance == NormalBalance.CREDIT;
-        };
+        return AccountClassification.normalBalanceCompatible(type, balance);
     }
 
     private static boolean subtypeCompatible(AccountType type, AccountSubtype subtype)
     {
-        if (subtype == null || type == null)
-        {
-            return true;
-        }
-        return switch (subtype)
-        {
-            case RECEIVABLE, PREPAID, INVENTORY, FIXED_ASSET, OTHER_ASSET -> type == AccountType.ASSET;
-            case PAYABLE, DEFERRED_REVENUE, OTHER_LIABILITY -> type == AccountType.LIABILITY;
-            case CASH -> type == AccountType.ASSET;
-        };
+        return AccountClassification.subtypeCompatible(type, subtype);
     }
 
     private static TypeMapping portableType(String value, String path)

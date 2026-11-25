@@ -17,6 +17,26 @@ public final class AccountClassification
                 && account.getAccountFunction() == AccountFunction.BANK;
     }
 
+    public static boolean normalBalanceCompatible(AccountType type, NormalBalance balance)
+    {
+        if (type == null || balance == null) return false;
+        return switch (type)
+        {
+            case ASSET, EXPENSE -> balance == NormalBalance.DEBIT;
+            case LIABILITY, EQUITY, INCOME -> balance == NormalBalance.CREDIT;
+        };
+    }
+
+    public static boolean subtypeCompatible(AccountType type, AccountSubtype subtype)
+    {
+        if (subtype == null || type == null) return true;
+        return switch (subtype)
+        {
+            case RECEIVABLE, PREPAID, INVENTORY, FIXED_ASSET, OTHER_ASSET, CASH -> type == AccountType.ASSET;
+            case PAYABLE, DEFERRED_REVENUE, OTHER_LIABILITY -> type == AccountType.LIABILITY;
+        };
+    }
+
     public static boolean isCash(Account account)
     {
         return account != null

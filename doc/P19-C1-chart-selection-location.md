@@ -1,5 +1,14 @@
 # P19-C1 — Chart viewing and active selection
 
+P27-C21 supersedes the original restriction that another owned chart is always
+read-only. Native New/Edit/Clone Chart and complete account maintenance now own
+the primary workflow. BOOKKEEPING_WRITE can maintain any viewed owned DRAFT/ACTIVE
+chart through an explicit stable chart ID; RETIRED charts remain read-only until
+restored to DRAFT. New/clone charts are not automatically selected as current.
+Make Active Chart remains COMPANY_ADMIN with the original ownership/history rules.
+See [native maintenance](P27-C21-native-chart-maintenance.md). The paragraph below
+records the original P19-C1 implementation.
+
 Owner directs named chart viewing and Make Active Chart onto Chart of Accounts; Company Admin retains company profile/lifecycle/report defaults. This supersedes P19-S1's UI placement, not its service rules. Use the existing H2 CompanyAdminService assignment transaction, ownership checks, permission COMPANY_ADMIN, DRAFT promotion, retired rejection and confirmation. No data migration or alternate registry is needed; adapt the existing production implementation rather than donor persistence.
 
 Show owned chart name/version/lifecycle/current indication. Browsing must not activate or move records; show accounts only for the viewed stable chart ID, including inactive posting accounts. New/Save apply only while viewing the active chart, and remain subject to BOOKKEEPING_WRITE. Noncurrent charts are explicitly read-only. Dirty-state cancellation preserves form, selected row and chart. Activation preserves history and requires explicit confirmation. Show permission/read-only explanations visibly rather than relying on disabled-control tooltips.

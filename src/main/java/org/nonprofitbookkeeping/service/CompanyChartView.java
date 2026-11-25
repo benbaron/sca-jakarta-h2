@@ -14,6 +14,7 @@ public record CompanyChartView(
     public String toString()
     {
         return name + " — " + version + " [" + status + "]"
+                + " (Chart ID " + id + ")"
                 + (activeForCompany ? " — current" : "");
     }
 }
