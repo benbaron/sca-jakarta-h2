@@ -115,11 +115,11 @@ Creates a new chart and accounts. The target chart name/version must not conflic
 
 ### 5.2 `MERGE_BY_CODE`
 
-Matches source `code` to target `code` in the active company chart. It may create missing accounts and update explicitly supported fields of compatible existing accounts. It MUST NOT delete, deactivate, detach, or reparent absent local accounts.
+Matches source `code` to target `code` in the explicitly selected, owned non-retired chart, including a DRAFT. Native Import Setup names that target and never activates it. Legacy service requests without a target ID retain active-chart resolution. It may create missing accounts and update explicitly supported fields of compatible existing accounts. It MUST NOT delete, deactivate, detach, or reparent absent local accounts.
 
 ### 5.3 `MAP_CODES`
 
-Requires an explicit source-to-target code map for every source account used. The preview displays mappings, collisions, and unmapped codes. One target account MUST NOT receive multiple source accounts unless an explicitly supported consolidation rule exists; P15-S3 initially treats that as blocking.
+Uses the selected owned non-retired target chart and requires an explicit source-to-target code map for every source account used. The preview displays mappings, collisions, and unmapped codes. One target account MUST NOT receive multiple source accounts unless an explicitly supported consolidation rule exists; P15-S3 initially treats that as blocking.
 
 ## 6. Validation
 
@@ -291,3 +291,25 @@ receipts for the deleted stable account ID atomically with audit. It retains
 chart receipts, other mappings and all history. Operational references and child
 accounts block deletion; later deliberate import can recreate an omitted account.
 See [draft deletion](../P27-C22-draft-account-deletion.md).
+
+## P27-C23 explicit targets and persistent production controls
+
+The chart toolbar remains owned by the wrapper outside its replaceable center;
+the existing compact-header policy prevents production layout preparation from
+reparenting and then losing it. Tests use the actual PanelFactory preparation
+and include a factory-created multi-chart/subview journey.
+
+Import Setup displays Create a new chart, Merge into an existing chart, or Map
+source codes into an existing chart. Existing modes require a selected target
+name/version/lifecycle/ID; a draft does not need activation. The immutable request
+carries that optional stable ID through reviewed edits, refresh and locked commit.
+Foreign/missing/retired/drifted targets cannot fall back to active. Scope hashes
+include the target portable UUID. New explicit-target chart receipts use
+`chart/<portable UUID>`; legacy chart receipt keys are preserved. The file format
+stays SCA-COA 1.0. See [complete chart workspace](../P27-C23-complete-chart-workspace.md).
+
+Delete Draft Chart removes an entire unused non-current draft and its definitions/
+account and chart mapping receipts in one audited transaction. This differs from
+Delete Account and omitting a transient import proposal. Used/current/retired
+charts, external children, shared dictionaries and operational/audit history
+remain protected. No implicit activation or history reassignment occurs.

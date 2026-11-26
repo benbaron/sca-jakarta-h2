@@ -931,6 +931,17 @@ public class ChartOfAccountsPanel implements AppPanel
     }
 
     CompanyChartView selectedChart() { return chartSelection.getValue(); }
+    List<CompanyChartView> chartChoices()
+    {
+        return List.copyOf(chartSelection.getItems());
+    }
+
+    void afterChartDeletion()
+    {
+        clearFormForNew();
+        reload(null);
+    }
+
     boolean loadingCharts() { return loadingCharts; }
 
     boolean focusChart(long id)

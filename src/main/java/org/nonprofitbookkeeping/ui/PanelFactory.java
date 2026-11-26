@@ -122,8 +122,14 @@ public final class PanelFactory
             throw new IllegalArgumentException("Unsupported panel id: " + id);
         }
         AppPanel panel = factory.get();
+        prepareProductionPanel(panel, canonicalId);
+        return panel;
+    }
+    /** Shared production preparation for created panels and injected workflow regression fixtures. */
+    static void prepareProductionPanel(AppPanel panel, AppPanelId id)
+    {
+        AppPanelId canonicalId = AppPanelId.canonical(id);
         CompanyTableStateBinder.applyProductionPanel(panel.root(), canonicalId);
         PanelViewport.prepare(panel.root(), "panel-" + canonicalId.name());
-        return panel;
     }
 }

@@ -285,6 +285,7 @@ public final class ChartOfAccountsJsonService
         if (target.chart() != null)
         {
             state.put("chart", target.chart().getId());
+            state.put("portableId", target.chart().getPortableId().toString());
             state.put("name", target.chart().getName());
             state.put("version", target.chart().getVersion());
             state.put("status", String.valueOf(target.chart().getStatus()));
@@ -759,8 +760,14 @@ public final class ChartOfAccountsJsonService
                     Map.of());
         }
 
-        ChartOfAccounts chart = requireActiveChart(em, company);
-        ownership.ensureOwnedBy(em, company, chart, "Active Chart of Accounts");
+        ChartOfAccounts chart = request.targetChartId() == null ? requireActiveChart(em, company)
+                : em.find(ChartOfAccounts.class, request.targetChartId());
+        if (chart == null) throw new IllegalArgumentException("The selected target chart no longer exists. Choose another chart and start a new review.");
+        ownership.requireOwnedBy(company, chart, "Target Chart of Accounts");
+        if (chart.getStatus() == ChartStatus.RETIRED)
+        {
+            throw new IllegalStateException("Retired charts are read-only. Restore the chart to DRAFT before merging.");
+        }
         List<Account> accounts = em.createQuery("""
                 select a from Account a
                 left join fetch a.parent
@@ -796,7 +803,8 @@ public final class ChartOfAccountsJsonService
         }
         return new TargetContext(
                 chart,
-                "Active chart " + chart.getName() + " / " + chart.getVersion(),
+                request.targetChartId() == null ? "Active chart " + chart.getName() + " / " + chart.getVersion()
+                        : "Target chart " + chart.getName() + " / " + chart.getVersion() + " (ID " + chart.getId() + ")",
                 Map.copyOf(existing));
     }
 

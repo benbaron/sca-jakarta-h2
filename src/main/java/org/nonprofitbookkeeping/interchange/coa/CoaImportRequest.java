@@ -11,12 +11,20 @@ public record CoaImportRequest(
         String targetChartVersion,
         Map<String, String> codeMappings,
         boolean confirmOpeningBalances,
-        CoaReviewEdits reviewEdits)
+        CoaReviewEdits reviewEdits,
+        Long targetChartId)
 {
     public CoaImportRequest(Path sourceFile, CoaImportMode mode, String targetChartName,
             String targetChartVersion, Map<String, String> codeMappings, boolean confirmOpeningBalances)
     {
-        this(sourceFile, mode, targetChartName, targetChartVersion, codeMappings, confirmOpeningBalances, null);
+        this(sourceFile, mode, targetChartName, targetChartVersion, codeMappings, confirmOpeningBalances, null, null);
+    }
+
+    public CoaImportRequest(Path sourceFile, CoaImportMode mode, String targetChartName,
+            String targetChartVersion, Map<String, String> codeMappings, boolean confirmOpeningBalances,
+            CoaReviewEdits reviewEdits)
+    {
+        this(sourceFile, mode, targetChartName, targetChartVersion, codeMappings, confirmOpeningBalances, reviewEdits, null);
     }
 
     public CoaImportRequest
@@ -28,6 +36,10 @@ public record CoaImportRequest(
         if (mode == null)
         {
             throw new IllegalArgumentException("mode is required");
+        }
+        if (mode == CoaImportMode.CREATE_NEW_CHART && targetChartId != null)
+        {
+            throw new IllegalArgumentException("A new-chart import cannot target an existing chart.");
         }
         sourceFile = sourceFile.toAbsolutePath().normalize();
         targetChartName = normalize(targetChartName);

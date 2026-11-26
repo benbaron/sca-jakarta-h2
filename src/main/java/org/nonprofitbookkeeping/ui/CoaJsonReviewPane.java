@@ -11,6 +11,7 @@ import org.nonprofitbookkeeping.interchange.InterchangeValidationMessage;
 import org.nonprofitbookkeeping.interchange.coa.*;
 import org.nonprofitbookkeeping.model.*;
 import org.nonprofitbookkeeping.service.ApplicationPermission;
+import org.nonprofitbookkeeping.service.CompanyChartView;
 
 import java.nio.file.Path;
 import java.math.BigDecimal;
@@ -56,6 +57,9 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
     private final Label status = new Label();
     private final Label selectedMessage = new Label();
     private final ComboBox<CoaImportMode> mode = combo(CoaImportMode.values(), false);
+    private boolean configuringTargets;
+    private final ComboBox<CompanyChartView> targetChart = new ComboBox<>();
+    private final Label targetChartLabel = new Label("Target existing chart");
     private final TextField chartName = text("coaJsonTargetChartName");
     private final TextField chartVersion = text("coaJsonTargetChartVersion");
     private final TextArea mappings = new TextArea();
@@ -177,6 +181,28 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
     {
         mode.setId("coaJsonImportMode");
         mode.setValue(CoaImportMode.MERGE_BY_CODE);
+        mode.setConverter(new javafx.util.StringConverter<CoaImportMode>()
+        {
+            @Override public String toString(CoaImportMode value)
+            {
+                if (value == null) return "";
+                return switch (value)
+                {
+                    case CREATE_NEW_CHART -> "Create a new chart";
+                    case MERGE_BY_CODE -> "Merge into an existing chart";
+                    case MAP_CODES -> "Map source codes into an existing chart";
+                };
+            }
+            @Override public CoaImportMode fromString(String value)
+            {
+                throw new UnsupportedOperationException("Choose an import mode.");
+            }
+        });
+        targetChart.setId("coaJsonTargetChart");
+        targetChart.setMaxWidth(Double.MAX_VALUE);
+        targetChart.setMinWidth(0);
+        targetChart.setPromptText("Select the chart to merge into");
+        targetChart.valueProperty().addListener((o,a,b) -> setupChanged());
         chartName.setText("Imported Chart");
         chartVersion.setText("1");
         mappings.setId("coaJsonCodeMappings");
@@ -186,12 +212,13 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
         grid.setHgap(8);
         grid.setVgap(8);
         grid.addRow(0,new Label("Import mode"),mode);
-        grid.addRow(1,new Label("New chart name"),chartName);
-        grid.addRow(2,new Label("New chart version"),chartVersion);
-        grid.addRow(3,new Label("Code mappings"),mappings);
+        grid.addRow(1,targetChartLabel,targetChart);
+        grid.addRow(2,new Label("New chart name"),chartName);
+        grid.addRow(3,new Label("New chart version"),chartVersion);
+        grid.addRow(4,new Label("Code mappings"),mappings);
         Label help = new Label("Start New Review replaces the current proposed batch. Source files and saved accounts are unchanged until Import Reviewed Accounts.");
         help.setWrapText(true);
-        grid.add(help,0,4,2,1);
+        grid.add(help,0,5,2,1);
         mode.valueProperty().addListener((o,a,b) ->
         {
             setupVisibility();
@@ -206,13 +233,43 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
 
     private void setupVisibility()
     {
-        chartName.setDisable(mode.getValue() != CoaImportMode.CREATE_NEW_CHART);
+        boolean existing = mode.getValue() != CoaImportMode.CREATE_NEW_CHART;
+        targetChart.setVisible(existing);
+        targetChart.setManaged(existing);
+        targetChartLabel.setVisible(existing);
+        targetChartLabel.setManaged(existing);
+        targetChart.setDisable(!existing);
+        chartName.setDisable(existing);
         chartVersion.setDisable(mode.getValue() != CoaImportMode.CREATE_NEW_CHART);
         mappings.setDisable(mode.getValue() != CoaImportMode.MAP_CODES);
+    }
+    /** Refresh owned target choices without redirecting a retained review to another chart. */
+    void configureTargets(List<CompanyChartView> choices, Long viewedId)
+    {
+        boolean fresh = !hasUnsavedChanges();
+        if (!fresh && scope != null && !scope.currentScope()) return;
+        CompanyChartView previous = targetChart.getValue();
+        Long requested = fresh ? viewedId : previous == null ? null : previous.id();
+        var eligible = choices.stream().filter(c -> c.status() != ChartStatus.RETIRED).toList();
+        configuringTargets = true;
+        try
+        {
+            targetChart.getItems().setAll(eligible);
+            targetChart.setValue(eligible.stream().filter(c -> Objects.equals(c.id(),requested)).findFirst().orElse(null));
+            if (fresh && eligible.isEmpty()) mode.setValue(CoaImportMode.CREATE_NEW_CHART);
+            setupVisibility();
+        }
+        finally
+        {
+            configuringTargets = false;
+        }
+        if (!fresh && mode.getValue() != CoaImportMode.CREATE_NEW_CHART
+            && !Objects.equals(previous, targetChart.getValue())) setupChanged();
     }
 
     private void setupChanged()
     {
+        if (configuringTargets) return;
         if (draft != null)
         {
             setupDirty = true;
@@ -388,8 +445,13 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
         if (source == null || busy || !UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE)) return;
         try
         {
+            if (mode.getValue() != CoaImportMode.CREATE_NEW_CHART && targetChart.getValue() == null)
+            {
+                throw new IllegalArgumentException("Select the target existing chart, or choose Create a new chart.");
+            }
+            Long target = mode.getValue() == CoaImportMode.CREATE_NEW_CHART ? null : targetChart.getValue().id();
             CoaImportRequest request = new CoaImportRequest(source,mode.getValue(),chartName.getText(),chartVersion.getText(),
-                ChartOfAccountsInterchangePanel.parseMappings(mappings.getText()),false);
+                ChartOfAccountsInterchangePanel.parseMappings(mappings.getText()),false,null,target);
             Scope requestedScope = Scope.current();
             run("coa-json-preview",() ->
             {

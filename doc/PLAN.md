@@ -1,17 +1,83 @@
 ---
-plan_version: 553
+plan_version: 559
 active_phase: P27
-active_slice: P27-C22
+active_slice: P27-C23
 active_status: VERIFYING
-active_branch: codex/P27-C22-draft-account-deletion
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/448
-active_head: d6dcc9d58042648bd29cacd8febcf90881a602dc
-next_action: "Finish final native/clean verification and exact-head Linux/Windows CI for PR #448 after the shared-header correction. No automatic merge."
+active_branch: codex/P27-C23-complete-chart-workspace
+active_pull_request: 449
+active_head: 20318de4c0297e8f81f6c8363c6433e4acb939b8
+next_action: "Run corrected C23 native/full gates and inspect successor PR #449 head Linux/Windows CI; record acceptance and mark ready only after all pass. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
-### P27-C22 Draft account deletion and visible JSON — owner request
+### P27-C23 Complete chart workspace — owner screenshot
+
+C22/#448 is DONE, confirmed merged at current main b922b2a408f2c97179c6f63353c5ce3dc7530ece;
+accepted head 710c045b passed local 1,410 tests and CI 45743300401. New branch
+`codex/P27-C23-complete-chart-workspace` starts from main; prior local receipt
+is retained on its old branch. [C23 contract](P27-C23-complete-chart-workspace.md).
+Screenshot exposes a real factory-only bug: PanelViewport preparation moves the
+wrapper toolbar into its center; wrapper subview changes replace that center and
+remove the toolbar. Prior injected UI tests bypassed PanelFactory preparation.
+Preserve chart actions across production preparation and every subview transition;
+exercise the actual factory/preparation path. Add separate atomic audited Delete
+Draft Chart (empty or unused partial), preserving used/current/retired charts and
+shared/history data. Make JSON create-new versus merge explicit and allow an
+owned non-retired target by stable ID without activation. Preserve legacy callers,
+file format, review binding, roles, scope/dirty state, scrolling and native editor.
+Baseline compile and 17 existing service cases pass. Implementation is complete:
+persistent compact locally scrollable toolbar; audited whole-draft deletion;
+explicit JSON new/owned-draft merge targets; retained review navigation and corrected
+native deletion explanation. No schema or alternate store. Initial service gate
+passes 33 cases; corrected production/native gate passes 26 cases with no skips.
+Two more native regressions cover company-switch confirmation and unchanged-versus-
+changed JSON targets; the final broader native/service gate is running. The toolbar
+loss was reproduced before the fix using a factory-created panel. Normal/narrow
+rendered views were inspected, including complete table rows and local scrolling.
+Word was edited directly: only document.xml changed, all other ZIP parts, 18 links
+and 2 drawings preserved; 33-page render inspected on affected pages 9/10.
+Documentation links/whitespace pass. Remaining: final native/service results,
+clean verify, publication and exact-head Linux/Windows CI before readiness.
+No automatic merge.
+
+Published [draft PR #449](https://github.com/benbaron/sca-jakarta-h2/pull/449):
+implementation 6e6047fbb4ca53d6c4a7c28827462f5ae3f658e4, tree
+636cf19d2904d917077d359e94c2883e008e8ba2. Main remains b922b2a4;
+new branch was absent, normal push and PR read-back match. Final focused gate:
+52 tests, zero failures/errors/skips (19 native chart journeys, 8 inline JSON
+reviews, production/selection/compliance and deletion/import service coverage).
+All five requested chart operations pass through real factory preparation;
+company-switch cancellation, retained review acknowledgement and target drift pass.
+Earlier 33-case service gate also covers native create/clone and JSON review.
+272 local documentation file links and whitespace pass. Remaining: full local
+clean verify and exact-final-head Linux/Windows CI; keep PR draft until green.
+This receipt updates PLAN/C23 only. No automatic merge.
+
+Final review identified a directly related retained-selector edge case: opening a
+retained JSON review against another company's loaded choices can clear its
+original target. The backend blocks foreign-scope commit, but the selector must
+retain its original value. Add a regression before the guard, ignore foreign-scope
+choices, and repeat final native/full/exact-successor-head CI. The earlier full
+run and b934189b CI are superseded for acceptance by this narrowly scoped correction.
+
+Pre-correction full clean verify passes 1,423 tests, zero failures/errors, 225
+display-dependent skips (9:32). The new real-pane regression reproduces a null
+selector instead of the original chart after foreign choices arrive. A one-line
+scope guard now leaves that selector intact; scope invalidation still requires
+refresh before commit. Corrected native/full and successor-head CI must pass
+before acceptance. No other source behavior changed in this correction.
+
+Correction 20318de4c0297e8f81f6c8363c6433e4acb939b8 (tree
+c8186ea754e0f6d07a0f76f197cda8eeccf83a55) is published by normal push.
+The failing foreign-scope regression confirmed selection -> null before the guard.
+Final code is frozen. Corrected native chart/JSON/route gate is running, followed
+by full clean verify. Inspect CI for the final documentation-receipt successor
+head on #449; do not use the superseded b934189b run for acceptance.
+
+### P27-C22 Draft account deletion and visible JSON — DONE (#448 merged)
+
+C22 is DONE at b922b2a4; older progress/publication receipts below are historical.
 
 C21/#447 is DONE, confirmed merged at current main b0d1c613721ca8f79ea946430963c6919c127ee1;
 accepted head eb578da0 passed CI 45685091517. Fresh branch

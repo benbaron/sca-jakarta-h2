@@ -199,7 +199,7 @@ public final class ChartOfAccountsJsonImportService
                         InterchangeFormat.COA_JSON,
                         sourceSystem,
                         "CHART",
-                        chartExternalId(current),
+                        chartExternalId(current,targetChart),
                         normalizedChartHash(current),
                         String.valueOf(targetChart.getId()));
 
@@ -261,15 +261,12 @@ public final class ChartOfAccountsJsonImportService
             em.persist(chart);
             return chart;
         }
-
-        Company managed = em.find(Company.class, company.getId());
-        ChartOfAccounts active = managed.getActiveChartOfAccounts();
-        if (active == null)
-        {
-            throw new IllegalStateException("Company " + managed.getCode() + " has no active Chart of Accounts.");
-        }
-        ownership.ensureOwnedBy(em, managed, active, "Active Chart of Accounts");
-        return active;
+        Long targetId = preview.scope().chartId();
+        ChartOfAccounts target = targetId == null ? null : em.find(ChartOfAccounts.class, targetId, LockModeType.PESSIMISTIC_WRITE);
+        if (target == null) throw new IllegalStateException("The reviewed target chart no longer exists. Start a new review.");
+        ownership.requireOwnedBy(company, target, "Target Chart of Accounts");
+        if (target.getStatus() == ChartStatus.RETIRED) throw new IllegalStateException("Retired charts cannot accept JSON merges.");
+        return target;
     }
 
     private static Map<String, Account> loadAccounts(EntityManager em, ChartOfAccounts chart)
@@ -395,13 +392,14 @@ public final class ChartOfAccountsJsonImportService
                 + preview.request().mode().name();
     }
 
-    private static String chartExternalId(CoaImportPreview preview)
+    private static String chartExternalId(CoaImportPreview preview, ChartOfAccounts target)
     {
         if (preview.request().mode() == CoaImportMode.CREATE_NEW_CHART)
         {
             return preview.request().targetChartName() + "/" + preview.request().targetChartVersion();
         }
-        return preview.targetLabel();
+        // Explicit targets use stable compact identity; legacy labels/receipts remain unchanged.
+        return preview.request().targetChartId() == null ? preview.targetLabel() : "chart/" + target.getPortableId();
     }
 
     private static String normalizedChartHash(CoaImportPreview preview)

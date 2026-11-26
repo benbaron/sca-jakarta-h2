@@ -159,7 +159,7 @@ final class NativeChartEditorPane extends VBox implements AppPanel
         target.setText(scope.company());
         heading.setText(requested == Mode.NEW ? "New Chart" : requested == Mode.CLONE ? "Clone Chart" : "Edit Chart");
         details.setText(requested == Mode.NEW ? "New chart: DRAFT, no accounts yet." : "Loading chart definitions…");
-        explanation.setText("Charts are retained, not deleted. Retire a non-current chart; unretiring restores DRAFT. Make Active Chart is a separate action. Accounts are maintained on the account page.");
+        explanation.setText("An unused, non-current DRAFT can be removed with Delete Draft Chart after Back to Accounts. ACTIVE, RETIRED and used charts are retained. Retire a non-current chart; unretiring restores DRAFT. Make Active Chart is a separate action.");
         status.setText(requested == Mode.NEW ? "Enter a name and version, then Save Chart." : "Loading…");
         if (requested == Mode.EDIT && selectedId != null) loadSource(selectedId,true);
         else if (requested == Mode.CLONE)
