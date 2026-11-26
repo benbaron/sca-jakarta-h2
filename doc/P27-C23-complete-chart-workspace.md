@@ -80,3 +80,18 @@ Use Import Chart JSON, choose Create a new chart and review/import. Repeat with
 Merge into an existing chart and the intended named draft. Verify the current
 chart/history does not change. Export the viewed chart. Actions must remain visible
 throughout. Used/current/retired charts and referenced accounts must be retained.
+
+## Publication and verification receipt
+
+Draft [PR #449](https://github.com/benbaron/sca-jakarta-h2/pull/449), implementation
+6e6047fbb4ca53d6c4a7c28827462f5ae3f658e4, tree
+636cf19d2904d917077d359e94c2883e008e8ba2, normal push/read-back verified.
+Baseline compile plus 17 prior service cases pass. Initial service gate 33 cases
+passes; final focused gate 52 tests, zero failures/errors/skips, including 19
+native chart and 8 JSON review cases. Actual factory loss reproduced before fix;
+complete-row, divider movement and local scroll reachability pass at enlarged
+text/narrow size. Word edited in place; only document.xml changed, all other ZIP
+parts, 18 links and 2 drawings preserved. 33-page render inspected on pages 9/10.
+272 local documentation file links and whitespace pass. Full local clean verify
+and exact-final-head Linux/Windows CI remain pending; keep draft until green.
+No automatic merge.

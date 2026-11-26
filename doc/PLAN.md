@@ -1,12 +1,12 @@
 ---
-plan_version: 556
+plan_version: 557
 active_phase: P27
 active_slice: P27-C23
 active_status: VERIFYING
 active_branch: codex/P27-C23-complete-chart-workspace
-active_pull_request: null
-active_head: b922b2a408f2c97179c6f63353c5ce3dc7530ece
-next_action: "Finish C23 final native/service gates, clean verify and exact-head Linux/Windows CI; publish reviewable PR. No automatic merge."
+active_pull_request: 449
+active_head: 6e6047fbb4ca53d6c4a7c28827462f5ae3f658e4
+next_action: "Run full local clean verify and inspect exact final PR #449 head Linux/Windows CI; record results and mark ready only after all pass. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -40,6 +40,19 @@ and 2 drawings preserved; 33-page render inspected on affected pages 9/10.
 Documentation links/whitespace pass. Remaining: final native/service results,
 clean verify, publication and exact-head Linux/Windows CI before readiness.
 No automatic merge.
+
+Published [draft PR #449](https://github.com/benbaron/sca-jakarta-h2/pull/449):
+implementation 6e6047fbb4ca53d6c4a7c28827462f5ae3f658e4, tree
+636cf19d2904d917077d359e94c2883e008e8ba2. Main remains b922b2a4;
+new branch was absent, normal push and PR read-back match. Final focused gate:
+52 tests, zero failures/errors/skips (19 native chart journeys, 8 inline JSON
+reviews, production/selection/compliance and deletion/import service coverage).
+All five requested chart operations pass through real factory preparation;
+company-switch cancellation, retained review acknowledgement and target drift pass.
+Earlier 33-case service gate also covers native create/clone and JSON review.
+272 local documentation file links and whitespace pass. Remaining: full local
+clean verify and exact-final-head Linux/Windows CI; keep PR draft until green.
+This receipt updates PLAN/C23 only. No automatic merge.
 
 ### P27-C22 Draft account deletion and visible JSON — DONE (#448 merged)
 
