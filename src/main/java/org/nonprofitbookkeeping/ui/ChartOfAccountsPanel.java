@@ -454,7 +454,8 @@ public class ChartOfAccountsPanel implements AppPanel
         }
         try
         {
-            Account saved = UiServiceRegistry.accountAdmin().save(accountCommand());
+            AccountCommand command = accountCommand();
+            Account saved = UiServiceRegistry.accountAdmin().save(command);
             editingAccountId = saved.getId();
             dirtyState.markClean();
             accountFieldsChanged();

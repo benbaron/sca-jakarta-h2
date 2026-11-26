@@ -4,8 +4,8 @@ active_phase: P27
 active_slice: P27-C25
 active_status: VERIFYING
 active_branch: codex/P27-C25-save-entire-chart
-active_pull_request: null
-active_head: 4e48604444b4878a91fa8b24fe4603fea6f893a1
+active_pull_request: 451
+active_head: 74e4f8c05f4d4f37c3cbd7f9d753694cc9dd0e34
 next_action: "Run full clean verify and check GitHub CI for the Save Chart correction."
 ---
 
@@ -23,7 +23,11 @@ Baseline compile and the final focused gate passed. The focused gate ran 48
 tests with zero failures, errors or skips and covered cross-company clone,
 selected-account save, whole-chart rollback, retained edits, Save Chart and Return,
 JSON review, deletion safeguards and production layout. Native screenshot and the
-updated Word manual were inspected. Full clean verify and GitHub CI remain.
+updated Word manual were inspected. [PR #451](https://github.com/benbaron/sca-jakarta-h2/pull/451)
+contains the correction. Initial full verify exposed a pre-existing source
+contract that checks the named account command. The successor restores that
+explicit local variable and leaves the account write unchanged. Repeat full
+verification and GitHub checks on the successor before readiness.
 
 ### P27-C24 Save a cloned chart account and return (merged, superseded by C25)
 
