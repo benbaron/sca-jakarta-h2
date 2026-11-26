@@ -72,3 +72,9 @@ is running; full clean verify and exact-head CI remain before readiness. Word
 edited directly (five paragraph changes/one insertion), all other parts/review
 markup preserved; 33-page render inspected on 9, 10, 15 and 18. 268 links and
 whitespace pass. No automatic merge.
+
+Publication: [draft PR #448](https://github.com/benbaron/sca-jakarta-h2/pull/448),
+implementation d6dcc9d58042648bd29cacd8febcf90881a602dc, tree
+bed64f7a10722d36aab3716076665058052ab4cc. Normal new-branch push and PR
+head read-back match. This receipt successor changes PLAN/C22 only; final focused,
+full and exact-final-head CI remain. No automatic merge.

@@ -4,8 +4,8 @@ active_phase: P27
 active_slice: P27-C22
 active_status: VERIFYING
 active_branch: codex/P27-C22-draft-account-deletion
-active_pull_request: null
-active_head: b0d1c613721ca8f79ea946430963c6919c127ee1
+active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/448
+active_head: d6dcc9d58042648bd29cacd8febcf90881a602dc
 next_action: "Finish C22 final focused/native/full gates, publish draft and verify exact-head Linux/Windows CI before review readiness. No automatic merge."
 ---
 
@@ -32,6 +32,13 @@ Word updated directly (five paragraphs and one insertion); all other ZIP/review
 parts preserved, 33-page render inspected on 9/10/15/18. 268 local links and
 whitespace pass. Remaining: final native/full and exact-head CI before readiness.
 No automatic merge.
+
+Published [draft PR #448](https://github.com/benbaron/sca-jakarta-h2/pull/448):
+implementation d6dcc9d58042648bd29cacd8febcf90881a602dc, tree
+bed64f7a10722d36aab3716076665058052ab4cc. New branch was absent; normal push
+and PR read-back match. This receipt changes PLAN/C22 only. Require final
+focused/native/full results and exact-final-head Linux/Windows CI; keep draft
+until all green. No automatic merge.
 
 ### P27-C21 Native chart maintenance — DONE (#447 merged)
 
