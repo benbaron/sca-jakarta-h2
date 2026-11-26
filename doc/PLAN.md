@@ -1,17 +1,34 @@
 ---
-plan_version: 559
+plan_version: 561
 active_phase: P27
-active_slice: P27-C23
+active_slice: P27-C24
 active_status: VERIFYING
-active_branch: codex/P27-C23-complete-chart-workspace
-active_pull_request: 449
-active_head: 20318de4c0297e8f81f6c8363c6433e4acb939b8
-next_action: "Run corrected C23 native/full gates and inspect successor PR #449 head Linux/Windows CI; record acceptance and mark ready only after all pass. No automatic merge."
+active_branch: codex/P27-C24-save-account-and-return
+active_pull_request: null
+active_head: 1930da4c2db177886cdf69fcb0a9b57607f3406b
+next_action: "Finish the final focused regression and clean verify, then inspect the correction PR CI."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
-### P27-C23 Complete chart workspace — owner screenshot
+### P27-C24 Save a cloned chart account and return
+
+A saved clone opens its account editor. An account edit is independently pending,
+and the existing Return action only navigates. Place Save Account and Return beside
+Save Account while the form has pending changes. Use the existing account service
+and only navigate to the recorded origin on successful save. Keep validation visible
+and retain rejected fields. Preserve Save Account confirmation across the list reload.
+
+Baseline compile passed from merged main. The initial native chart, JSON review
+and production-route gate passed 30 cases without failures or skips. The final
+regression also checks shell feedback. The final focused run and full clean verify
+are pending. The Word manual was updated in place and the new instruction rendered.
+Owner check: edit an account, choose Save Account and Return to Import, then reopen
+the clone to verify the updated account.
+
+### P27-C23 Complete chart workspace — merged in #449
+
+C23 is DONE at 1930da4c. Prior verification receipts below are historical.
 
 C22/#448 is DONE, confirmed merged at current main b922b2a408f2c97179c6f63353c5ce3dc7530ece;
 accepted head 710c045b passed local 1,410 tests and CI 45743300401. New branch
