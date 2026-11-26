@@ -174,6 +174,81 @@ class NativeChartEditorPaneTest
     }
 
     @Test
+    void savesClonedAccountBeforeReturningToImportAndKeepsRejectedEditsOpen() throws Exception
+    {
+        openClone();
+        FxTestSupport.onFx(() ->
+        {
+            field("nativeChartName").setText("Import account copy");
+            button("nativeChartSave").fire();
+            return null;
+        });
+        await(() -> !accounts.loadingCharts() && accounts.selectedChart() != null
+                && accounts.selectedChart().name().equals("Import account copy"));
+        long chartId = FxTestSupport.onFx(() -> accounts.selectedChart().id());
+
+        FxTestSupport.onFx(() ->
+        {
+            panel.onPanelShownFrom(AppPanelId.IMPORT_PREVIEW, "Import");
+            return null;
+        });
+        await(() -> !accounts.loadingCharts() && accountTable().getItems().size() == 2);
+        FxTestSupport.onFx(() ->
+        {
+            selectAccount("1010");
+            assertFalse(button("chartOfAccountsSaveAndReturn").isVisible());
+            field("chartOfAccountsName").setText("First saved edit");
+            button("chartOfAccountsSaveAccount").fire();
+            return null;
+        });
+        await(() -> !accounts.loadingCharts() && accountStatus().startsWith("Saved account 1010"));
+
+        FxTestSupport.onFx(() ->
+        {
+            var host = (PanelHost) stage.getScene().getRoot();
+            var feedback = new java.util.concurrent.atomic.AtomicReference<AppPanel.RunCommandResult>();
+            host.setCommandResultListener(feedback::set);
+            DrillThroughCoordinator.configureOpener(host::show);
+            try
+            {
+                field("chartOfAccountsCode").setText("1000");
+                field("chartOfAccountsName").setText("Final saved edit");
+                Button finish = button("chartOfAccountsSaveAndReturn");
+                assertTrue(finish.isVisible());
+                assertEquals("Save Account and Return to Import", finish.getText());
+                screenshot("account-save-and-return");
+                finish.fire();
+                assertSame(panel.root(), host.activeRoot());
+                assertTrue(panel.hasUnsavedChanges());
+                assertTrue(accountStatus().contains("Account code already exists"));
+                assertFalse(feedback.get().handled());
+                assertEquals(accountStatus(), feedback.get().message());
+                assertEquals("Final saved edit", field("chartOfAccountsName").getText());
+
+                field("chartOfAccountsCode").setText("4015");
+                finish.fire();
+                assertEquals("Import", host.getActiveTitle());
+                assertFalse(panel.hasUnsavedChanges());
+                assertTrue(feedback.get().handled());
+                assertTrue(feedback.get().message().startsWith("Saved account 4015"));
+            }
+            finally
+            {
+                DrillThroughCoordinator.configureOpener(null);
+            }
+            return null;
+        });
+
+        try (Jpa jpa = new Jpa(database); var em = jpa.em())
+        {
+            var saved = em.createQuery("from Account where chart.id = :chart and code = '4015'", Account.class)
+                    .setParameter("chart", chartId).getSingleResult();
+            assertEquals("Final saved edit", saved.getName());
+            assertEquals(ChartStatus.DRAFT, saved.getChart().getStatus());
+        }
+    }
+
+    @Test
     void clonesOtherCompanyDefinitionsWithZeroOpeningsAndBusyControls() throws Exception
     {
         openClone();

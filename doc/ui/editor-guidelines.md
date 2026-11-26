@@ -1,5 +1,11 @@
 # Journal workspace editor guidelines
 
+In Chart of Accounts, Save Account persists the selected account definition and
+keeps the editor open. When the form has pending edits, Save Account and Return
+names the originating workspace and opens it only after the same account save
+succeeds. Rejected edits remain in the form with an inline error beside the actions.
+
+
 P27-C23 regression tests prepare through PanelFactory rather than bypassing its
 layout/policy hooks. The chart wrapper keeps its toolbar outside the switched
 center. Whole-draft deletion uses preview/confirmation plus atomic service-owned

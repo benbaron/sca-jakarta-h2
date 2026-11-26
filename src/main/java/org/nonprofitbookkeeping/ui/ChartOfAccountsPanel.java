@@ -34,6 +34,7 @@ import org.nonprofitbookkeeping.service.AccountCommand;
 import org.nonprofitbookkeeping.service.AccountDefinitionDetails;
 import org.nonprofitbookkeeping.service.CompanyChartView;
 import org.nonprofitbookkeeping.model.ChartStatus;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import java.util.ArrayList;
@@ -73,6 +74,7 @@ public class ChartOfAccountsPanel implements AppPanel
     private Button refresh;
     private final Button add = new Button("+ Add");
     private final Button save = new Button("Save");
+    private final Button saveAndReturn = new Button();
     private final MaintenanceReturn returnAction = new MaintenanceReturn(AppPanelId.CHART_OF_ACCOUNTS, "chartOfAccountsReturn");
     private final MaintenanceListFeedback listFeedback = new MaintenanceListFeedback("chartOfAccounts", "accounts", "the selected chart", "New Account");
     private long loadGeneration;
@@ -87,6 +89,7 @@ public class ChartOfAccountsPanel implements AppPanel
     private boolean changingCharts;
     private boolean loadingCharts = true;
     private Node accountEditor;
+    private Consumer<RunCommandResult> resultListener = ignored -> {};
     private Runnable capabilitiesChanged = () -> {};
     private final javafx.beans.value.ChangeListener<Boolean> permissionChanged =
             (observable, prior, denied) -> updateChartState();
@@ -139,7 +142,10 @@ public class ChartOfAccountsPanel implements AppPanel
 
         add.setOnAction(e -> onNew());
 
-        save.setOnAction(e -> saveForm());
+        save.setOnAction(e -> onSave());
+        saveAndReturn.setId("chartOfAccountsSaveAndReturn");
+        saveAndReturn.textProperty().bind(returnAction.button().textProperty().map(text -> "Save Account and " + text));
+        saveAndReturn.managedProperty().bind(saveAndReturn.visibleProperty());
         delete.setId("chartOfAccountsDeleteAccount");
         delete.setOnAction(e -> deleteAccount());
         add.setText("New Account"); add.setId("chartOfAccountsNewAccount");
@@ -163,7 +169,7 @@ public class ChartOfAccountsPanel implements AppPanel
         showAll.setTooltip(new javafx.scene.control.Tooltip("Reload active and inactive accounts in the viewed chart without discarding editor changes."));
         showAll.setOnAction(e -> reload(editingAccountId));
 
-        FlowPane actions = new FlowPane(8, 6, add, save, cancel, delete, refresh, showAll, returnAction.button());
+        FlowPane actions = new FlowPane(8, 6, add, save, saveAndReturn, cancel, delete, refresh, showAll, returnAction.button());
         chartSelection.setId("chartOfAccountsSelection");
         chartSelection.setPromptText("Select a Chart of Accounts");
         chartSelection.setMaxWidth(Double.MAX_VALUE);
@@ -183,7 +189,7 @@ public class ChartOfAccountsPanel implements AppPanel
                 new FlowPane(8, 6, makeActiveChart));
         Node editorForm = buildEditorForm();
         accountEditor = editorForm;
-        VBox header = new VBox(6, title, actions, chartActionsBar, chartStatus, lifecycle, listFeedback.summary(), status, importPrefill.notice(), new Separator());
+        VBox header = new VBox(6, title, actions, status, chartActionsBar, chartStatus, lifecycle, listFeedback.summary(), importPrefill.notice(), new Separator());
 
         header.setMinWidth(0);
         ScrollPane headerScroll = new ScrollPane(header);
@@ -193,6 +199,19 @@ public class ChartOfAccountsPanel implements AppPanel
         headerScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         headerScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         dirtyState = new FormDirtyTracker(this::formSnapshot);
+        saveAndReturn.setOnAction(e ->
+        {
+            if (!dirtyState.isDirty())
+            {
+                return;
+            }
+            RunCommandResult result = saveForm();
+            resultListener.accept(result);
+            if (result.handled())
+            {
+                returnAction.button().fire();
+            }
+        });
 
         TableColumn<Account, String> code = new TableColumn<>("Code");
         code.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getCode()));
@@ -444,12 +463,12 @@ public class ChartOfAccountsPanel implements AppPanel
         accountFieldsChanged();
     }
 
-    private void saveForm()
+    private RunCommandResult saveForm()
     {
         if (!canEditChart())
         {
             status.setText(saveUnavailableReason());
-            return;
+            return new RunCommandResult(false, status.getText());
         }
         try
         {
@@ -467,13 +486,16 @@ public class ChartOfAccountsPanel implements AppPanel
                             openingAmount(), description.getText()));
             Account saved = UiServiceRegistry.accountAdmin().save(command);
             editingAccountId = saved.getId();
-            status.setText("Saved account " + saved.getCode() + " (ID " + saved.getId() + ").");
             dirtyState.markClean();
-            reload(saved.getId());
+            accountFieldsChanged();
+            String message = "Saved account " + saved.getCode() + " (ID " + saved.getId() + ").";
+            reload(saved.getId(), message);
+            return new RunCommandResult(true, message);
         }
         catch (RuntimeException ex)
         {
             status.setText("Could not save account: " + UiErrors.safeMessage(ex));
+            return new RunCommandResult(false, status.getText());
         }
     }
 
@@ -580,6 +602,11 @@ public class ChartOfAccountsPanel implements AppPanel
 
     private void reload(Long reselectId)
     {
+        reload(reselectId, null);
+    }
+
+    private void reload(Long reselectId, String saveConfirmation)
+    {
         if (deletingAccount) return;
         long generation = ++loadGeneration;
         FullFormState requestedForm = formSnapshot();
@@ -593,7 +620,7 @@ public class ChartOfAccountsPanel implements AppPanel
         {
             pendingDrillContext = incomingContext;
         }
-        status.setText(formatStatus("Loading accounts..."));
+        status.setText(formatStatus(saveConfirmation == null ? "Loading accounts..." : saveConfirmation));
         var started = CoaJsonReviewPane.Scope.current();
         var load = chartActions.captureLoad();
         UiAsync.run("coa-load", load, data ->
@@ -641,6 +668,10 @@ public class ChartOfAccountsPanel implements AppPanel
                     suppressSelection = false;
                 }
             }
+            if (saveConfirmation != null && !keepDraft)
+            {
+                status.setText(saveConfirmation);
+            }
             importPrefill.applyWhenReady(!dirtyState.isDirty(), this::startImportDraft);
         }, ex ->
         {
@@ -658,7 +689,8 @@ public class ChartOfAccountsPanel implements AppPanel
             table.getItems().clear();
             updateChartState();
             listFeedback.failed();
-            status.setText(formatStatus("Failed to load accounts: " + UiErrors.safeMessage(ex)));
+            status.setText(formatStatus((saveConfirmation == null ? "" : saveConfirmation + " ")
+                    + "Failed to load accounts: " + UiErrors.safeMessage(ex)));
         });
     }
 
@@ -679,6 +711,7 @@ public class ChartOfAccountsPanel implements AppPanel
         refresh.setDisable(loadingCharts);
         add.setDisable(!canEditChart());
         save.setDisable(!canEditChart());
+        saveAndReturn.setDisable(!canEditChart());
         cancel.setDisable(loadingCharts || deletingAccount);
         delete.setDisable(!canDeleteAccount());
         lifecycle.setText(deletionExplanation());
@@ -707,6 +740,7 @@ public class ChartOfAccountsPanel implements AppPanel
 
     private void accountFieldsChanged()
     {
+        saveAndReturn.setVisible(dirtyState.isDirty());
         delete.setDisable(!canDeleteAccount());
         lifecycle.setText(deletionExplanation());
         capabilitiesChanged.run();
@@ -1017,7 +1051,19 @@ public class ChartOfAccountsPanel implements AppPanel
     @Override
     public void onSave()
     {
-        saveForm();
+        resultListener.accept(saveForm());
+    }
+
+    @Override
+    public RunCommandResult executeCommand(AppCommand command)
+    {
+        return command == AppCommand.SAVE_ACTIVE ? saveForm() : AppPanel.super.executeCommand(command);
+    }
+
+    @Override
+    public void setCommandResultListener(Consumer<RunCommandResult> listener)
+    {
+        resultListener = Objects.requireNonNull(listener);
     }
 
     @Override
