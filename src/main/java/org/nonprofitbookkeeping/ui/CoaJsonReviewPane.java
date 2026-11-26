@@ -247,6 +247,7 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
     void configureTargets(List<CompanyChartView> choices, Long viewedId)
     {
         boolean fresh = !hasUnsavedChanges();
+        if (!fresh && scope != null && !scope.currentScope()) return;
         CompanyChartView previous = targetChart.getValue();
         Long requested = fresh ? viewedId : previous == null ? null : previous.id();
         var eligible = choices.stream().filter(c -> c.status() != ChartStatus.RETIRED).toList();

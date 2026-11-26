@@ -250,6 +250,26 @@ class CoaJsonReviewPaneTest
     }
 
     @Test
+    void foreignScopeChoicesCannotClearTheRetainedReviewTarget() throws Exception
+    {
+        FxTestSupport.onFx(() ->
+        {
+            ComboBox<?> targets = (ComboBox<?>) panel.root().lookup("#coaJsonTargetChart");
+            Object original = targets.getValue();
+            assertNotNull(original);
+            var review = (CoaJsonReviewPane) panel.root().lookup("#coaJsonReviewPane");
+            MainWindow.sharedSessionState().setMultiCompany(new MultiCompanyState("OTHER", List.of("DEFAULT", "OTHER")));
+            // A resumed review can receive the account loader's choices for the other company.
+            review.configureTargets(List.of(), null);
+            assertEquals(original, targets.getValue(), "A foreign company's choices must not clear the original target");
+            MainWindow.sharedSessionState().setMultiCompany(new MultiCompanyState("DEFAULT", List.of("DEFAULT")));
+            assertEquals(original, targets.getValue());
+            assertTrue(button("coaReviewCommit").isDisabled(), "Restoring scope still requires review refresh");
+            return null;
+        });
+    }
+
+    @Test
     void multiDeleteOnlyRemovesProposalsAndRefreshClearsTheAcceptedUpdateMarker() throws Exception
     {
         long before = accountCount();

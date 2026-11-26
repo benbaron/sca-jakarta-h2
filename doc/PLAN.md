@@ -1,12 +1,12 @@
 ---
-plan_version: 557
+plan_version: 558
 active_phase: P27
 active_slice: P27-C23
 active_status: VERIFYING
 active_branch: codex/P27-C23-complete-chart-workspace
 active_pull_request: 449
 active_head: 6e6047fbb4ca53d6c4a7c28827462f5ae3f658e4
-next_action: "Run full local clean verify and inspect exact final PR #449 head Linux/Windows CI; record results and mark ready only after all pass. No automatic merge."
+next_action: "Run corrected C23 native/full gates and inspect successor PR #449 head Linux/Windows CI; record acceptance and mark ready only after all pass. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -53,6 +53,20 @@ Earlier 33-case service gate also covers native create/clone and JSON review.
 272 local documentation file links and whitespace pass. Remaining: full local
 clean verify and exact-final-head Linux/Windows CI; keep PR draft until green.
 This receipt updates PLAN/C23 only. No automatic merge.
+
+Final review identified a directly related retained-selector edge case: opening a
+retained JSON review against another company's loaded choices can clear its
+original target. The backend blocks foreign-scope commit, but the selector must
+retain its original value. Add a regression before the guard, ignore foreign-scope
+choices, and repeat final native/full/exact-successor-head CI. The earlier full
+run and b934189b CI are superseded for acceptance by this narrowly scoped correction.
+
+Pre-correction full clean verify passes 1,423 tests, zero failures/errors, 225
+display-dependent skips (10:01). The new real-pane regression reproduces a null
+selector instead of the original chart after foreign choices arrive. A one-line
+scope guard now leaves that selector intact; scope invalidation still requires
+refresh before commit. Corrected native/full and successor-head CI must pass
+before acceptance. No other source behavior changed in this correction.
 
 ### P27-C22 Draft account deletion and visible JSON — DONE (#448 merged)
 

@@ -51,6 +51,9 @@ old constructor/caller behavior (legacy null target resolves active). Retain tha
 ID through Apply/Refresh/commit. Scope fingerprints, source hash, ownership,
 lifecycle and existing history rules are rechecked before and under the commit
 lock. Missing/foreign/retired/drifted targets cannot silently fall back to active.
+An unfinished review must ignore target choices loaded for a different company or
+database; its original selector value is retained until the original scope returns.
+Scope changes still invalidate acknowledgement and require review refresh.
 New explicit-target CHART receipts use the target portable UUID rather than a
 name/label, preserving legacy receipt keys and idempotency across renames; target
 fingerprints include that UUID. CREATE_NEW_CHART remains separate and cannot carry an existing target. No JSON
@@ -95,3 +98,9 @@ parts, 18 links and 2 drawings preserved. 33-page render inspected on pages 9/10
 272 local documentation file links and whitespace pass. Full local clean verify
 and exact-final-head Linux/Windows CI remain pending; keep draft until green.
 No automatic merge.
+
+A final retained-target regression reproduced original selection -> null when
+foreign-scope choices were configured. Ignore those choices while the review's
+original scope is absent; acknowledgement remains invalidated. Pre-correction
+clean verify passes 1,423 tests with zero failures/errors and 225 display skips.
+Repeat native/full and exact-successor-head CI for this one-line guard plus test.
