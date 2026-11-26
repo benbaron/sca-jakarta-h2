@@ -1,17 +1,41 @@
 ---
-plan_version: 551
+plan_version: 553
 active_phase: P27
-active_slice: P27-C21
+active_slice: P27-C22
 active_status: VERIFYING
-active_branch: codex/P27-C21-native-chart-maintenance
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/447
-active_head: 744007343e0562886d67f9d13fff5224fe82f41d
-next_action: "Finish final native and clean verify gates; publish C21 PR and verify exact-head Linux/Windows CI. No automatic merge."
+active_branch: codex/P27-C22-draft-account-deletion
+active_pull_request: null
+active_head: b0d1c613721ca8f79ea946430963c6919c127ee1
+next_action: "Finish C22 final focused/native/full gates, publish draft and verify exact-head Linux/Windows CI before review readiness. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
-### P27-C21 Native chart maintenance — owner request
+### P27-C22 Draft account deletion and visible JSON — owner request
+
+C21/#447 is DONE, confirmed merged at current main b0d1c613721ca8f79ea946430963c6919c127ee1;
+accepted head eb578da0 passed CI 45685091517. Fresh branch
+`codex/P27-C22-draft-account-deletion` starts from main; prior local receipt is
+retained on its old branch. [C22 contract](P27-C22-draft-account-deletion.md).
+Restore directly visible Import/Export Chart JSON beside native controls, retain
+inline review and export the viewed owned chart (including draft) by captured ID.
+Add real audited atomic Delete Account for unused, non-current DRAFT definitions;
+protect child/history/bank/asset/inventory references. Remove definition adjuncts
+and same-company account mapping receipts together; preserve audit and other
+history/receipts. Validate scope/revisions and retain failed/cancelled drafts.
+No schema or alternate store. Baseline compile and 12 existing chart service
+cases pass. Five new service cases pass, including imported draft metadata/receipt
+cleanup, every operational reference category, stale previews, rollback and
+JSON/SCLX export. Native findings led to a bounded, resizable account chrome header
+and explicit export/lookup readiness in tests; final broad/native gate is running.
+Word updated directly (five paragraphs and one insertion); all other ZIP/review
+parts preserved, 33-page render inspected on 9/10/15/18. 268 local links and
+whitespace pass. Remaining: final native/full and exact-head CI before readiness.
+No automatic merge.
+
+### P27-C21 Native chart maintenance — DONE (#447 merged)
+
+C21 is DONE at b0d1c613; the progress/publication receipts below are historical.
 
 C20/#446 is confirmed merged at current main **f7453b324f54421ff33ccc12edbc073121f9ef70**;
 its accepted head 615422bb passed full local and exact-head CI 45550510269. C20

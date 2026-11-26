@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ChartOfAccountsPanelLifecycleSourceTest
 {
     @Test
-    void panelUsesStableIdLifecycleServiceAndNoDeletePlaceholder() throws Exception
+    void panelUsesStableIdLifecycleServiceAndRealProtectedDraftDelete() throws Exception
     {
         String source = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/ui/ChartOfAccountsPanel.java"));
@@ -21,8 +21,9 @@ class ChartOfAccountsPanelLifecycleSourceTest
         assertTrue(source.contains("accountAdmin().save(command)"));
         assertTrue(source.contains("editingAccountId = null"));
         assertTrue(source.contains("Objects.equals(row.getId(), reselectId)"));
-        assertTrue(source.contains("Accounts cannot be deleted; clear Active and Save to retire them."));
+        assertTrue(source.contains("Only unused accounts in a non-current DRAFT chart can be deleted."));
+        assertTrue(source.contains("service.deleteAccount(chart,account,preview.revision())"));
         assertFalse(source.contains("accountAdmin().upsert("));
-        assertFalse(source.contains("new Button(\"Delete"));
+        assertTrue(source.contains("new Button(\"Delete Account\")"));
     }
 }

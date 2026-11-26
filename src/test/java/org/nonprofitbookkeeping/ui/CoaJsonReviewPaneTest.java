@@ -438,9 +438,6 @@ class CoaJsonReviewPaneTest
     }
     private void openJson()
     {
-        var compatibility = (MenuButton) panel.root().lookup("#coaCompatibility");
-        assertNotNull(compatibility);
-        compatibility.show();
         panel.importJsonButtonForTests().fire();
     }
 
