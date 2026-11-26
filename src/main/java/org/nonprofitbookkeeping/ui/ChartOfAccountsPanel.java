@@ -254,11 +254,8 @@ public class ChartOfAccountsPanel implements AppPanel
         split.setDividerPositions(0.62);
         CompanySplitPaneStateBinder.bind(split, "chart-of-accounts-workspace", 0.62);
         split.setMinSize(0,0);
-        SplitPane chrome = new SplitPane(headerScroll,split);
+        SplitPane chrome = ResizablePanelHeader.split(headerScroll,split,"chart-of-accounts-chrome",.38);
         chrome.setId("chartOfAccountsChromeSplit");
-        chrome.setOrientation(Orientation.VERTICAL);
-        chrome.setMinSize(0,0);
-        CompanySplitPaneStateBinder.bind(chrome,"chart-of-accounts-chrome",.38);
         root.setCenter(chrome);
 
         clearFormForNew();

@@ -78,3 +78,17 @@ implementation d6dcc9d58042648bd29cacd8febcf90881a602dc, tree
 bed64f7a10722d36aab3716076665058052ab4cc. Normal new-branch push and PR
 head read-back match. This receipt successor changes PLAN/C22 only; final focused,
 full and exact-final-head CI remain. No automatic merge.
+
+The initial broad gate passed 95/96 cases; its sole error was production chrome
+classification (also reproduced in CI 45741546880). The chart now uses the existing
+ResizablePanelHeader service/policy instead of a separate unclassified split;
+the two business sections remain table/editor. Long redundant default chrome
+copy is removed so narrow views retain actual account rows. Final native/route
+revalidation and full/final-head CI are required on this successor. Earlier run
+is superseded, not an unrelated accepted failure.
+
+Shared-header production route passes on the correction. All functional native
+cases pass; the complete-row geometry check now uses the actual rendered scrollbar
+height and both resize dividers and passes independently. Final complete native
+and clean verify gates, then exact successor-head CI, remain. Source/Word are
+frozen; no unrelated failures are accepted.

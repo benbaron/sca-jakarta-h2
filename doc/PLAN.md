@@ -6,7 +6,7 @@ active_status: VERIFYING
 active_branch: codex/P27-C22-draft-account-deletion
 active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/448
 active_head: d6dcc9d58042648bd29cacd8febcf90881a602dc
-next_action: "Finish C22 final focused/native/full gates, publish draft and verify exact-head Linux/Windows CI before review readiness. No automatic merge."
+next_action: "Finish final native/clean verification and exact-head Linux/Windows CI for PR #448 after the shared-header correction. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
@@ -32,6 +32,15 @@ Word updated directly (five paragraphs and one insertion); all other ZIP/review
 parts preserved, 33-page render inspected on 9/10/15/18. 268 local links and
 whitespace pass. Remaining: final native/full and exact-head CI before readiness.
 No automatic merge.
+
+The broad run passes 95/96 cases (CSV 35, JSON 7, chart UI 14, services 13,
+Save/commands/form state); its sole error and CI 45741546880 identify unclassified
+chrome. Use the existing ResizablePanelHeader rather than an independent split.
+Production route revalidation passes; all functional cases pass. A strengthened
+complete-row assertion now measures actual scrollbar height and verifies both
+dividers with usable table/editor sizes; its focused run passes. Final code/Word
+are frozen; final native gate followed by clean verify and successor-head CI
+remain. The earlier failing CI is superseded by this narrow tested correction.
 
 Published [draft PR #448](https://github.com/benbaron/sca-jakarta-h2/pull/448):
 implementation d6dcc9d58042648bd29cacd8febcf90881a602dc, tree

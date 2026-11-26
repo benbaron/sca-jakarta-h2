@@ -619,7 +619,7 @@ class NativeChartEditorPaneTest
             stage.getScene().getRoot().setStyle("-fx-font-size: 18px;");
             return null;
         });
-        await(() -> stage.getWidth()<=550);
+        await(() -> stage.getScene().getWidth()<=550 && stage.getScene().getHeight()<=650);
         FxTestSupport.onFx(() ->
         {
             layout();
@@ -637,11 +637,21 @@ class NativeChartEditorPaneTest
             chrome.setDividerPositions(.30);
             layout();
             var body=(SplitPane)node("chartOfAccountsWorkspaceSplit");
-            body.setDividerPositions(.45);
+            body.setDividerPositions(.50);
             layout();
             body.layout();
             assertTrue(body.getHeight()>80,"Header must leave a usable account table/editor body");
             assertTrue(accountTable().getHeight()>20);
+            accountTable().layout();
+            screenshot("draft-before-row-check");
+            var flow=accountTable().lookup(".virtual-flow");
+            var row=accountTable().lookupAll(".table-row-cell").stream().filter(TableRow.class::isInstance)
+                    .map(TableRow.class::cast).filter(r -> !r.isEmpty()).findFirst().orElseThrow();
+            var horizontal=accountTable().lookupAll(".scroll-bar").stream().filter(ScrollBar.class::isInstance).map(ScrollBar.class::cast)
+                    .filter(b -> b.isVisible() && b.getOrientation()==Orientation.HORIZONTAL).findFirst().orElseThrow();
+            assertTrue(flow.getBoundsInLocal().getHeight()+.5>=row.getHeight()+horizontal.getHeight(),
+                    "A complete account row must fit above the rendered scrollbar: flow="+flow.getBoundsInLocal().getHeight()
+                    +", row="+row.getHeight()+", scrollbar="+horizontal.getHeight());
             var header=(ScrollPane)node("chartOfAccountsHeaderScroll");
             assertTrue(header.lookupAll(".scroll-bar").stream().filter(ScrollBar.class::isInstance).map(ScrollBar.class::cast)
                 .anyMatch(b -> b.isVisible() && b.getOrientation()==Orientation.VERTICAL));

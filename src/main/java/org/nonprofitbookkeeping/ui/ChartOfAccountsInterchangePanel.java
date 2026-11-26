@@ -29,7 +29,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     private final Button cloneChart = new Button("Clone Chart");
     private final Label nativeHint = new Label();
     private final ProgressIndicator progress = new ProgressIndicator();
-    private final Label interchangeStatus = new Label("Create or select a chart, then maintain its accounts.");
+    private final Label interchangeStatus = new Label("JSON export uses the viewed chart.");
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
     private final BooleanProperty working = new SimpleBooleanProperty(false);
     private final CoaJsonReviewPane review;
@@ -88,6 +88,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         importJson.setId("coaImportJsonButton");
         exportJson.setId("coaExportJsonButton");
         importJson.disableProperty().bind(working.or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
+        exportJson.setTooltip(new Tooltip("Export saved definitions from View chart, including a draft, without activating it."));
         UiPermissionGate.gate(exportJson, ApplicationPermission.EXPORT, "Export the viewed Chart of Accounts to JSON");
         importJson.setOnAction(event -> requestImport());
         exportJson.setOnAction(event -> requestExport());
@@ -152,8 +153,10 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         editChart.setDisable(inFlight || !allowed || delegate.loadingCharts() || delegate.selectedChart() == null && !nativeEditor.hasUnsavedChanges());
         exportJson.setDisable(inFlight || delegate.loadingCharts() || delegate.selectedChart() == null);
         nativeHint.setText(!allowed ? "New/Edit/Clone Chart requires BOOKKEEPING_WRITE (ACCOUNTANT/MANAGER/ADMIN). Account editing uses BOOKKEEPING_WRITE."
-            : accountDirty ? "Save or Cancel Account Changes before creating or cloning a chart. Chart metadata editing preserves the account draft."
-            : "Native editor and JSON import/export. Export uses the viewed chart.");
+            : accountDirty ? "Save or cancel account changes before New/Clone Chart."
+            : "");
+        nativeHint.setVisible(!nativeHint.getText().isBlank());
+        nativeHint.setManaged(nativeHint.isVisible());
         progress.setVisible(inFlight);
         progress.setManaged(inFlight);
         delegate.root().setDisable(inFlight);
@@ -183,7 +186,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         chartEditing = false;
         root.setCenter(delegate.root());
         delegate.focusChart(chart.id());
-        interchangeStatus.setText("Saved chart " + chart.name() + " / " + chart.version() + " (ID " + chart.id() + "). Activation remains explicit.");
+        interchangeStatus.setText("Saved chart (ID " + chart.id() + ").");
         changed();
     }
 
