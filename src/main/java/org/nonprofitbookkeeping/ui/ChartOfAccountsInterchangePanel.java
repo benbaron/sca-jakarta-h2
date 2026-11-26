@@ -12,6 +12,7 @@ import org.nonprofitbookkeeping.interchange.coa.*;
 import org.nonprofitbookkeeping.persistence.DatabaseLocationService;
 import org.nonprofitbookkeeping.persistence.Jpa;
 import org.nonprofitbookkeeping.service.ApplicationPermission;
+import org.nonprofitbookkeeping.service.ChartDeletionPreview;
 import java.io.File;
 import java.nio.file.*;
 import java.util.*;
@@ -26,11 +27,14 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     private final Button exportJson = new Button("Export Chart JSON…");
     private final Button newChart = new Button("New Chart");
     private final Button editChart = new Button("Edit Chart");
+    private final Button deleteChart = new Button("Delete Draft Chart");
+    private Predicate<ChartDeletionPreview> chartDeleteConfirmation = this::confirmChartDeletion;
     private final Button cloneChart = new Button("Clone Chart");
     private final Label nativeHint = new Label();
     private final ProgressIndicator progress = new ProgressIndicator();
     private final Label interchangeStatus = new Label("JSON export uses the viewed chart.");
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
+    private final BooleanProperty chartLoading = new SimpleBooleanProperty(true);
     private final BooleanProperty working = new SimpleBooleanProperty(false);
     private final CoaJsonReviewPane review;
     private final NativeChartEditorPane nativeEditor;
@@ -87,7 +91,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         busy.addListener((o,a,b) -> changed());
         importJson.setId("coaImportJsonButton");
         exportJson.setId("coaExportJsonButton");
-        importJson.disableProperty().bind(working.or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
+        importJson.disableProperty().bind(working.or(chartLoading).or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
         exportJson.setTooltip(new Tooltip("Export saved definitions from View chart, including a draft, without activating it."));
         UiPermissionGate.gate(exportJson, ApplicationPermission.EXPORT, "Export the viewed Chart of Accounts to JSON");
         importJson.setOnAction(event -> requestImport());
@@ -95,6 +99,8 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         newChart.setId("coaNewChart");
         editChart.setId("coaEditChart");
         cloneChart.setId("coaCloneChart");
+        deleteChart.setId("coaDeleteDraftChart");
+        deleteChart.setOnAction(event -> requestChartDeletion());
         newChart.setOnAction(event -> requestChart(NativeChartEditorPane.Mode.NEW));
         editChart.setOnAction(event -> requestChart(NativeChartEditorPane.Mode.EDIT));
         cloneChart.setOnAction(event -> requestChart(NativeChartEditorPane.Mode.CLONE));
@@ -103,13 +109,22 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         interchangeStatus.setId("coaInterchangeStatus");
         interchangeStatus.setWrapText(true);
         progress.setMaxSize(18,18);
-        FlowPane toolbar = new FlowPane(8,6,newChart,editChart,cloneChart,importJson,exportJson,progress);
+        FlowPane toolbar = new FlowPane(8,6,newChart,editChart,cloneChart,deleteChart,importJson,exportJson,progress);
         toolbar.setPadding(new Insets(8));
         toolbar.setMinWidth(0);
         root.setMinSize(0,0);
+        // This wrapper owns and swaps its center. Keep its persistent toolbar outside that center.
+        ResizablePanelHeader.keepCompact(root);
         interchangeStatus.prefWidthProperty().bind(root.widthProperty().subtract(24));
         nativeHint.prefWidthProperty().bind(root.widthProperty().subtract(24));
-        root.setTop(new VBox(6,toolbar,nativeHint,interchangeStatus,new Separator()));
+        VBox header = new VBox(6,toolbar,nativeHint,interchangeStatus,new Separator());
+        header.setMinHeight(Region.USE_PREF_SIZE);
+        ScrollPane headerScroll = new ScrollPane(header);
+        headerScroll.setId("coaChartToolbarScroll");
+        headerScroll.setFitToWidth(true);
+        headerScroll.setMinSize(0,0);
+        headerScroll.maxHeightProperty().bind(root.heightProperty().multiply(.28));
+        root.setTop(headerScroll);
         root.setCenter(delegate.root());
         changed();
     }
@@ -124,7 +139,12 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
 
     private void requestImport()
     {
-        if (working.get() || !UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE)) return;
+        if (working.get() || delegate.loadingCharts() && !review.hasUnsavedChanges()
+            || !UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE)) return;
+        if (!delegate.loadingCharts())
+        {
+            review.configureTargets(delegate.chartChoices(), delegate.selectedChart() == null ? null : delegate.selectedChart().id());
+        }
         reviewing = true;
         chartEditing = false;
         root.setCenter(review);
@@ -146,14 +166,19 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     {
         boolean inFlight = busy.get() || review.busy() || nativeEditor.busy() || delegate.deletingAccount();
         working.set(inFlight);
+        chartLoading.set(delegate.loadingCharts() && !review.hasUnsavedChanges());
         boolean allowed = UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE);
         boolean accountDirty = delegate.hasUnsavedChanges();
         newChart.setDisable(inFlight || !allowed || accountDirty);
         cloneChart.setDisable(inFlight || !allowed || accountDirty);
         editChart.setDisable(inFlight || !allowed || delegate.loadingCharts() || delegate.selectedChart() == null && !nativeEditor.hasUnsavedChanges());
         exportJson.setDisable(inFlight || delegate.loadingCharts() || delegate.selectedChart() == null);
+        deleteChart.setDisable(!canDeleteChart());
         nativeHint.setText(!allowed ? "New/Edit/Clone Chart requires BOOKKEEPING_WRITE (ACCOUNTANT/MANAGER/ADMIN). Account editing uses BOOKKEEPING_WRITE."
-            : accountDirty ? "Save or cancel account changes before New/Clone Chart."
+            : accountDirty ? "Save or cancel account changes before New/Clone/Delete Chart."
+            : !reviewing && !chartEditing && nativeEditor.hasUnsavedChanges() ? "A chart draft is retained. Save or cancel it before Delete Draft Chart."
+            : !reviewing && !chartEditing && delegate.selectedChart()!=null && delegate.selectedChart().status()!=org.nonprofitbookkeeping.model.ChartStatus.DRAFT
+            ? "Delete Draft Chart requires an unused, non-current DRAFT."
             : "");
         nativeHint.setVisible(!nativeHint.getText().isBlank());
         nativeHint.setManaged(nativeHint.isVisible());
@@ -188,6 +213,72 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         delegate.focusChart(chart.id());
         interchangeStatus.setText("Saved chart (ID " + chart.id() + ").");
         changed();
+    }
+
+    private boolean canDeleteChart()
+    {
+        var chart = delegate.selectedChart();
+        return !working.get() && !reviewing && !chartEditing && !delegate.loadingCharts()
+        && UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE)
+        && chart != null && chart.status() == org.nonprofitbookkeeping.model.ChartStatus.DRAFT && !chart.activeForCompany()
+        && !delegate.hasUnsavedChanges() && !nativeEditor.hasUnsavedChanges();
+    }
+
+    private void requestChartDeletion()
+    {
+        if (!canDeleteChart()) return;
+        var scope = CoaJsonReviewPane.Scope.current();
+        var service = UiServiceRegistry.chartAdmin();
+        long id = delegate.selectedChart().id();
+        setBusy(true,"Checking draft chart references…");
+        UiAsync.run("coa-chart-delete-preview",() -> service.previewChartDeletion(id),preview ->
+        {
+            if (!scope.currentScope())
+            {
+                setBusy(false,"Company/database changed; draft chart deletion cancelled.");
+                return;
+            }
+            if (!preview.canDelete())
+            {
+                setBusy(false,"Cannot delete draft chart: "+String.join("; ",preview.blockers()));
+                return;
+            }
+            if (!chartDeleteConfirmation.test(preview))
+            {
+                setBusy(false,"Draft chart deletion cancelled; saved definitions are retained.");
+                return;
+            }
+            if (!scope.currentScope())
+            {
+                setBusy(false,"Company/database changed; draft chart deletion cancelled.");
+                return;
+            }
+            setBusy(true,"Deleting draft chart '"+preview.name()+"'…");
+            UiAsync.run("coa-chart-delete",() ->
+            {
+                service.deleteChart(id,preview.revision());
+                return preview;
+            },deleted ->
+            {
+                if (scope.currentScope()) delegate.afterChartDeletion();
+                setBusy(false,"Deleted draft chart '"+deleted.name()+"' (ID "+id+").");
+            },error -> setBusy(false,"Could not delete draft chart: "+UiErrors.safeMessage(error)));
+        },error -> setBusy(false,"Could not inspect draft chart deletion: "+UiErrors.safeMessage(error)));
+    }
+
+    private boolean confirmChartDeletion(ChartDeletionPreview preview)
+    {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete draft Chart of Accounts");
+        alert.setHeaderText("Delete '"+preview.name()+"' / "+preview.version()+" (ID "+preview.chartId()+") from "+preview.companyCode()+"?");
+        alert.setContentText("This permanently removes "+preview.effects()+". Other charts, shared dictionaries and audit/history are retained. Pending imports targeting this chart require a new review.");
+        if (ownerWindow()!=null) alert.initOwner(ownerWindow());
+        return alert.showAndWait().filter(ButtonType.OK::equals).isPresent();
+    }
+
+    void setChartDeleteConfirmationForTests(Predicate<ChartDeletionPreview> confirmation)
+    {
+        chartDeleteConfirmation = confirmation;
     }
 
     private void requestExport()
@@ -410,6 +501,10 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         delegate.setCommandResultListener(listener);
         review.setCommandResultListener(listener);
         nativeEditor.setCommandResultListener(listener);
+    }
+    ChartOfAccountsPanel accountPanelForTests()
+    {
+        return delegate;
     }
 
     Button importJsonButtonForTests()

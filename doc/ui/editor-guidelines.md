@@ -1,5 +1,13 @@
 # Journal workspace editor guidelines
 
+P27-C23 regression tests prepare through PanelFactory rather than bypassing its
+layout/policy hooks. The chart wrapper keeps its toolbar outside the switched
+center. Whole-draft deletion uses preview/confirmation plus atomic service-owned
+reference/revision checks; it retains cancelled/failed state. JSON merge explicitly
+selects an owned non-retired chart by ID; reviewed edits preserve that target and
+cannot silently use the current chart. Create-new remains separate. These operations
+are available to BOOKKEEPING_WRITE without activating a draft.
+
 P27-C21 makes native chart and account maintenance primary. Inline chart metadata
 and clone forms use Save/Cancel/Back with retained inputs and snapshot-bound
 atomic services. Account Save carries the viewed stable chart ID and full fields

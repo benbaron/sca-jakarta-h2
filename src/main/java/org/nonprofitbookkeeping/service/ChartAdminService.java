@@ -357,6 +357,112 @@ public final class ChartAdminService
     private record Deletion(Account account, List<InterchangeIdentity> identities, AccountDeletionPreview preview, String facts)
     {
     }
+    /** Read-only preview for an entire empty or unused partial draft, not an account delete. */
+    public ChartDeletionPreview previewChartDeletion(long chartId)
+    {
+        String target = companyCode.get();
+        ServiceAuthorization.require(authorization, ApplicationPermission.BOOKKEEPING_WRITE, target, "inspect draft chart deletion");
+        try (EntityManager em = jpa.em())
+        {
+            Company company = requireTarget(em, target);
+            ChartOfAccounts chart = requireChart(em, chartId);
+            new CompanyOwnershipService(jpa).requireOwnedBy(company, chart, "Chart of Accounts");
+            return chartDeletion(em, chart).preview();
+        }
+    }
+    /** Removes only unused non-current draft definitions and their mappings in one audited transaction. */
+
+    public void deleteChart(long chartId, String expectedRevision)
+    {
+        String target = companyCode.get();
+        String actor = ServiceAuthorization.actor(authorization, ApplicationPermission.BOOKKEEPING_WRITE, target, "delete draft chart", "SYSTEM");
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            try
+            {
+                Company company = requireTarget(em, target);
+                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
+                ChartOfAccounts chart = requireChart(em, chartId);
+                new CompanyOwnershipService(jpa).requireOwnedBy(company, chart, "Chart of Accounts");
+                em.lock(chart, LockModeType.PESSIMISTIC_WRITE);
+                ChartDeletion state = chartDeletion(em, chart);
+                if (!state.preview().canDelete())
+                {
+                    throw new IllegalStateException("Cannot delete chart '" + chart.getName() + "': " + String.join("; ",state.preview().blockers()));
+                }
+                if (expectedRevision == null || !expectedRevision.equals(state.preview().revision()))
+                {
+                    throw new IllegalStateException("Chart definitions or mappings changed. Review Delete Draft Chart again.");
+                }
+                audit(em,company,actor,"CHART_DELETED",chart,state.facts(),null);
+                em.createQuery("delete from AccountAlias a where a.account.chart = :chart").setParameter("chart",chart).executeUpdate();
+                em.createQuery("delete from AccountReportSection a where a.account.chart = :chart").setParameter("chart",chart).executeUpdate();
+                em.createQuery("delete from AccountScheduleRequirement a where a.account.chart = :chart").setParameter("chart",chart).executeUpdate();
+                state.identities().forEach(em::remove);
+                // Break only links inside the unused draft. External children are blockers above.
+                em.createQuery("update Account a set a.parent = null where a.chart = :chart").setParameter("chart",chart).executeUpdate();
+                em.createQuery("delete from Account a where a.chart = :chart").setParameter("chart",chart).executeUpdate();
+                em.remove(chart);
+                em.flush();
+                checkpoint.accept("CHART_DELETION_WRITTEN");
+                em.getTransaction().commit();
+            }
+            catch (RuntimeException ex)
+            {
+                if (em.getTransaction().isActive()) em.getTransaction().rollback();
+                throw ex;
+            }
+        }
+    }
+
+    private ChartDeletion chartDeletion(EntityManager em, ChartOfAccounts chart)
+    {
+        Snapshot source = snapshot(em,chart);
+        List<String> blockers = new ArrayList<>();
+        if (chart.getStatus() != ChartStatus.DRAFT) blockers.add("Only a DRAFT chart can be deleted. Retain ACTIVE/RETIRED charts.");
+        chartReference(em,blockers,chart,"Company","e.activeChartOfAccounts = :chart","current company selections (select another current chart first)");
+        chartReference(em,blockers,chart,"Account","e.parent in (select a from Account a where a.chart = :chart) and e.chart <> :chart","child accounts in another chart");
+        chartReference(em,blockers,chart,"TxnSplit",chartAccountCondition("account"),"journal lines");
+        chartReference(em,blockers,chart,"Txn",chartAccountCondition("bankAccount"),"journal bank references");
+        chartReference(em,blockers,chart,"CompanyBankAccount",chartAccountCondition("account"),"configured bank accounts");
+        chartReference(em,blockers,chart,"FixedAsset",chartAccountCondition("assetAccount","accumulatedDepreciationAccount","depreciationExpenseAccount"),"fixed assets");
+        chartReference(em,blockers,chart,"FixedAssetLifecycleEvent",chartAccountCondition("proceedsAccount","gainAccount","lossAccount"),"asset lifecycle records");
+        chartReference(em,blockers,chart,"InventoryItem",chartAccountCondition("inventoryAccount"),"inventory items");
+        List<InterchangeIdentity> identities = em.createQuery("from InterchangeIdentity i where "
+            + "(upper(i.entityType) in ('CHART','CHART_OF_ACCOUNTS') and i.localEntityId = :id) or "
+            + "(upper(i.entityType) = 'ACCOUNT' and i.localEntityId in (select cast(a.id as string) from Account a where a.chart = :chart)) order by i.id",InterchangeIdentity.class)
+        .setParameter("id",chart.getId().toString()).setParameter("chart",chart).getResultList();
+        if (identities.stream().anyMatch(i -> !Objects.equals(i.getCompany().getId(),chart.getCompany().getId())))
+            blockers.add("Chart/account import mappings owned by another company require ownership repair.");
+        StringBuilder state = new StringBuilder();
+        fields(state,source.details().revision());
+        blockers.forEach(b -> fields(state,b));
+        identities.forEach(i -> fields(state,"IMPORT",i.getId(),i.getCompany().getId(),i.getEntityType(),i.getLocalEntityId(),
+            i.getFormatCode(),i.getSourceSystem(),i.getExternalId(),i.getNormalizedContentHash(),i.getUpdatedAt()));
+        ChartDeletionPreview preview = new ChartDeletionPreview(chart.getId(),chart.getCompany().getCode(),chart.getName(),chart.getVersion(),
+            source.accounts().size(),source.aliases().size(),source.reports().size(),source.schedules().size(),identities.size(),hash(state.toString()),blockers);
+        // Audit definitions and mapping facts, while keeping local connection paths only in the digest.
+        StringBuilder facts = new StringBuilder();
+        fields(facts,"owner",chart.getCompany().getId(),chart.getCompany().getCode(),"definitions",source.definitionFacts(),"effects",preview.effects());
+        identities.forEach(i -> fields(facts,"IMPORT",i.getId(),i.getEntityType(),i.getLocalEntityId(),i.getFormatCode(),i.getSourceSystem(),i.getExternalId(),i.getNormalizedContentHash()));
+        return new ChartDeletion(identities,preview,facts.toString());
+    }
+
+    private static String chartAccountCondition(String... properties)
+    {
+        return Arrays.stream(properties).map(p -> "e."+p+" in (select a from Account a where a.chart = :chart)").collect(java.util.stream.Collectors.joining(" or "));
+    }
+
+    private static void chartReference(EntityManager em, List<String> blockers, ChartOfAccounts chart, String entity, String condition, String description)
+    {
+        long count = em.createQuery("select count(e) from "+entity+" e where "+condition,Long.class).setParameter("chart",chart).getSingleResult();
+        if (count != 0) blockers.add(count+" "+description);
+    }
+
+    private record ChartDeletion(List<InterchangeIdentity> identities, ChartDeletionPreview preview, String facts)
+    {
+    }
     private Company requireTarget(EntityManager em, String code)
     {
         Company company = new CompanyOwnershipService(jpa).requireCompany(em, code);
@@ -444,9 +550,11 @@ public final class ChartAdminService
         List<AccountAlias> aliases = em.createQuery("from AccountAlias a where a.account.chart = :chart order by a.id", AccountAlias.class).setParameter("chart",chart).getResultList();
         List<AccountReportSection> reports = em.createQuery("from AccountReportSection a where a.account.chart = :chart order by a.id", AccountReportSection.class).setParameter("chart",chart).getResultList();
         List<AccountScheduleRequirement> schedules = em.createQuery("from AccountScheduleRequirement a where a.account.chart = :chart order by a.id", AccountScheduleRequirement.class).setParameter("chart",chart).getResultList();
+        StringBuilder scope = new StringBuilder();
+        fields(scope, em.getEntityManagerFactory().getProperties().get("jakarta.persistence.jdbc.url"), company.getId(), company.getCode(),
+            company.getDisplayName(), company.getDefaultCurrency(), company.isActive(), company.getActiveChartOfAccounts() == null ? null : company.getActiveChartOfAccounts().getId());
         StringBuilder state = new StringBuilder();
-        fields(state, em.getEntityManagerFactory().getProperties().get("jakarta.persistence.jdbc.url"), company.getId(), company.getCode(),
-            company.getDisplayName(), company.getDefaultCurrency(), company.isActive(), company.getActiveChartOfAccounts() == null ? null : company.getActiveChartOfAccounts().getId(),
+        fields(state,
             chart.getId(), chart.getPortableId(), chart.getName(), chart.getVersion(), chart.getStatus(), chart.getUpdatedAt());
         accounts.forEach(a -> fields(state, "ACCOUNT", a.getId(), a.getCode(), a.getName(), a.getAccountType(), a.getAccountFunction(), a.getSubtype(),
             a.getNormalBalance(), a.getParent() == null ? null : a.getParent().getId(), a.isPosting(), a.isActive(), a.getEffectiveFrom(), a.getEffectiveTo(),
@@ -456,8 +564,8 @@ public final class ChartAdminService
         schedules.forEach(a -> fields(state, "SCHEDULE", a.getId(), a.getAccount().getId(), a.getScheduleKind().getId(), a.isRequired(), a.getNotes()));
         boolean current = company.getActiveChartOfAccounts() != null && Objects.equals(company.getActiveChartOfAccounts().getId(),chart.getId());
         ChartDetails details = new ChartDetails(chart.getId(), company.getCode(), company.getDisplayName(), chart.getName(), chart.getVersion(), chart.getStatus(),
-            current, accounts.size(), accounts.stream().filter(a -> a.getOpeningBalance().signum() != 0).count(), hash(state.toString()));
-        return new Snapshot(details, accounts, aliases, reports, schedules);
+            current, accounts.size(), accounts.stream().filter(a -> a.getOpeningBalance().signum() != 0).count(), hash(scope.toString()+state));
+        return new Snapshot(details, accounts, aliases, reports, schedules, state.toString());
     }
 
     private static void fields(StringBuilder state, Object... values)
@@ -482,7 +590,7 @@ public final class ChartAdminService
     }
 
     private record Snapshot(ChartDetails details, List<Account> accounts, List<AccountAlias> aliases,
-        List<AccountReportSection> reports, List<AccountScheduleRequirement> schedules)
+        List<AccountReportSection> reports, List<AccountScheduleRequirement> schedules, String definitionFacts)
     {
     }
 }

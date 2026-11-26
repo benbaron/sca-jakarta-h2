@@ -10,6 +10,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.nonprofitbookkeeping.model.AccountSubtype;
+import org.nonprofitbookkeeping.model.Company;
 import org.nonprofitbookkeeping.model.DatabaseSelectionState;
 import org.nonprofitbookkeeping.model.MultiCompanyState;
 import org.nonprofitbookkeeping.persistence.Jpa;
@@ -67,6 +68,7 @@ class CoaJsonReviewPaneTest
             session.setAuthenticatedUser(UiPermissionTestSessions.manager());
             maintenance = new ChartOfAccountsPanel();
             panel = new ChartOfAccountsInterchangePanel(maintenance, (chooser, owner) -> file.toFile());
+            PanelFactory.prepareProductionPanel(panel,AppPanelId.CHART_OF_ACCOUNTS);
             PanelHost host = new PanelHost();
             stage = new Stage();
             stage.setScene(new Scene(host, 1050, 780));
@@ -78,9 +80,14 @@ class CoaJsonReviewPaneTest
             host.showReplacement(AppPanelId.CHART_OF_ACCOUNTS, panel);
             host.applyCss();
             host.layout();
+            return null;
+        });
+        await(() -> !maintenance.loadingCharts());
+        FxTestSupport.onFx(() ->
+        {
             openJson();
-            host.applyCss();
-            host.layout();
+            stage.getScene().getRoot().applyCss();
+            stage.getScene().getRoot().layout();
             button("coaReviewPreview").fire();
             return null;
         });
@@ -189,6 +196,55 @@ class CoaJsonReviewPaneTest
             edit(2);
             assertEquals("Net assets proposal", field("coaReviewName").getText());
             assertEquals(AccountSubtype.INVENTORY, combo("coaReviewSubtype").getValue());
+            return null;
+        });
+    }
+    @Test
+    void reopeningTheSameTargetPreservesAcknowledgementButChangedTargetMetadataRequiresANewReview() throws Exception
+    {
+        FxTestSupport.onFx(() ->
+        {
+            edit(2);
+            button("coaReviewClearSubtype").fire();
+            button("coaReviewApply").fire();
+            return null;
+        });
+        await(() -> status().startsWith("Account changes applied"));
+        FxTestSupport.onFx(() ->
+        {
+            check("coaReviewAcknowledged").setSelected(true);
+            assertFalse(button("coaReviewCommit").isDisabled());
+            button("coaReviewBack").fire();
+            return null;
+        });
+        await(() -> !maintenance.loadingCharts());
+        FxTestSupport.onFx(() ->
+        {
+            openJson();
+            assertTrue(check("coaReviewAcknowledged").isSelected());
+            assertFalse(button("coaReviewCommit").isDisabled());
+            button("coaReviewBack").fire();
+            return null;
+        });
+        await(() -> !maintenance.loadingCharts());
+        try (Jpa jpa = new Jpa(database); var em = jpa.em())
+        {
+            em.getTransaction().begin();
+            em.createQuery("from Company where code='DEFAULT'",Company.class).getSingleResult().getActiveChartOfAccounts().setVersion("changed target");
+            em.getTransaction().commit();
+        }
+        FxTestSupport.onFx(() ->
+        {
+            maintenance.onPanelShown();
+            return null;
+        });
+        await(() -> !maintenance.loadingCharts());
+        FxTestSupport.onFx(() ->
+        {
+            openJson();
+            assertFalse(check("coaReviewAcknowledged").isSelected());
+            assertTrue(button("coaReviewCommit").isDisabled());
+            assertTrue(status().contains("Start New Review"));
             return null;
         });
     }

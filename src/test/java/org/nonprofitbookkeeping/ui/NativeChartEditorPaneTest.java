@@ -89,6 +89,7 @@ class NativeChartEditorPaneTest
                 }
             },chart -> true);
             panel = new ChartOfAccountsInterchangePanel(accounts,(chooser,owner) -> null);
+            PanelFactory.prepareProductionPanel(panel,AppPanelId.CHART_OF_ACCOUNTS);
             PanelHost host = new PanelHost();
             stage = new Stage();
             stage.setScene(new Scene(host,1050,790));
@@ -120,7 +121,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void nativeCreateAndFullAccountEditingWorkBeforeExplicitActivation() throws Exception
     {
         createViaUi("My native chart");
@@ -174,7 +174,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void clonesOtherCompanyDefinitionsWithZeroOpeningsAndBusyControls() throws Exception
     {
         openClone();
@@ -209,7 +208,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void metadataEditingPreservesCurrentIdentityAndThePendingAccountDraft() throws Exception
     {
         createViaUi("Current native");
@@ -251,7 +249,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void backResumeCancelPermissionsAndScopePreserveTheChartDraft() throws Exception
     {
         FxTestSupport.onFx(() ->
@@ -286,7 +283,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void rejectedSourceDriftRetainsEditsAndExplicitRefreshAllowsReviewAndRetry() throws Exception
     {
         openClone();
@@ -327,7 +323,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void visibleJsonActionsCoexistWithNativeMaintenance() throws Exception
     {
         FxTestSupport.onFx(() ->
@@ -346,7 +341,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void nativeChartAndAccountFormsHaveIndependentOverflowAndMovableDividers() throws Exception
     {
         openClone();
@@ -388,7 +382,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void accountantUsesNativeCreationWhileActivationRetainsItsAdministrationPermission() throws Exception
     {
         FxTestSupport.onFx(() ->
@@ -408,7 +401,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void draftDeletionChecksChildrenThenDeletesLeafAndGroupWithBusyControls() throws Exception
     {
         draftAccounts();
@@ -455,7 +447,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void dirtyCancelRoleAndNonDraftDeletionRulesAreVisible() throws Exception
     {
         draftAccounts();
@@ -493,7 +484,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void changedDefinitionOrCompanyDuringConfirmationPreservesTheAccountAndEditor() throws Exception
     {
         draftAccounts();
@@ -535,7 +525,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void visibleJsonButtonsExportTheViewedDraftAndOpenItsInlineImport() throws Exception
     {
         draftAccounts();
@@ -543,6 +532,7 @@ class NativeChartEditorPaneTest
         FxTestSupport.onFx(() ->
         {
             panel=new ChartOfAccountsInterchangePanel(accounts,(chooser,owner) -> exported.toFile(),(chooser,owner) -> exported.toFile());
+            PanelFactory.prepareProductionPanel(panel,AppPanelId.CHART_OF_ACCOUNTS);
             ((PanelHost)stage.getScene().getRoot()).showReplacement(AppPanelId.CHART_OF_ACCOUNTS,panel);
             return null;
         });
@@ -580,7 +570,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void jsonExportDoesNotRedirectIfTheCompanyChangesDuringFileSelection() throws Exception
     {
         draftAccounts();
@@ -592,6 +581,7 @@ class NativeChartEditorPaneTest
                 MainWindow.sharedSessionState().setMultiCompany(new MultiCompanyState("OTHER",List.of("DEFAULT","OTHER")));
                 return destination.toFile();
             });
+            PanelFactory.prepareProductionPanel(panel,AppPanelId.CHART_OF_ACCOUNTS);
             ((PanelHost)stage.getScene().getRoot()).showReplacement(AppPanelId.CHART_OF_ACCOUNTS,panel);
             return null;
         });
@@ -606,7 +596,6 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-
     void accountDeleteAndJsonControlsRemainReachableWithIndependentEditorScrolling() throws Exception
     {
         draftAccounts();
@@ -627,6 +616,20 @@ class NativeChartEditorPaneTest
             var globalHeader=wrapperRoot.getTop().localToScene(wrapperRoot.getTop().getBoundsInLocal());
             var accountRoot=accounts.root().localToScene(accounts.root().getBoundsInLocal());
             assertTrue(accountRoot.getMinY()>=globalHeader.getMaxY()-1,"Account content overlaps the wrapper header");
+            ScrollPane toolbarScroll=(ScrollPane)node("coaChartToolbarScroll");
+            for (String id : List.of("coaNewChart","coaDeleteDraftChart","coaImportJsonButton","coaExportJsonButton"))
+            {
+                var control=button(id);
+                var bounds=toolbarScroll.getContent().sceneToLocal(control.localToScene(control.getBoundsInLocal()));
+                double range=toolbarScroll.getContent().getLayoutBounds().getHeight()-toolbarScroll.getViewportBounds().getHeight();
+                toolbarScroll.setVvalue(range <= 0 ? 0 : Math.min(1,Math.max(0,bounds.getMinY()/range)));
+                layout();
+                var viewport=toolbarScroll.lookup(".viewport");
+                var visible=viewport.localToScene(viewport.getBoundsInLocal());
+                var actual=control.localToScene(control.getBoundsInLocal());
+                assertTrue(actual.getMinY()>=visible.getMinY()-1 && actual.getMaxY()<=visible.getMaxY()+1,id+" must be fully reachable in toolbar viewport");
+            }
+            toolbarScroll.setVvalue(0);
             SplitPane chrome=(SplitPane)node("chartOfAccountsChromeSplit");
             chrome.setDividerPositions(.25);
             layout();
@@ -691,6 +694,296 @@ class NativeChartEditorPaneTest
             screenshot("draft-accounts-narrow");
             return null;
         });
+    }
+    @Test
+    void actualFactoryToolbarSurvivesNativeSaveRepeatedCreationAndSubviewReturns() throws Exception
+    {
+        FxTestSupport.onFx(() ->
+        {
+            panel=(ChartOfAccountsInterchangePanel)new PanelFactory().create(AppPanelId.CHART_OF_ACCOUNTS);
+            accounts=panel.accountPanelForTests();
+            ((PanelHost)stage.getScene().getRoot()).showReplacement(AppPanelId.CHART_OF_ACCOUNTS,panel);
+            return null;
+        });
+        await(() -> !accounts.loadingCharts());
+        createViaUi("First factory chart");
+        assertChartToolbar();
+        createViaUi("Second factory chart");
+        assertChartToolbar();
+        assertEquals(2,targetCharts());
+        FxTestSupport.onFx(() ->
+        {
+            screenshot("factory-after-two-charts");
+            return null;
+        });
+        FxTestSupport.onFx(() ->
+        {
+            button("coaEditChart").fire();
+            return null;
+        });
+        await(() -> field("nativeChartName")!=null && field("nativeChartName").getText().equals("Second factory chart"));
+        FxTestSupport.onFx(() ->
+        {
+            button("nativeChartCancel").fire();
+            return null;
+        });
+        await(() -> !accounts.loadingCharts());
+        assertChartToolbar();
+        FxTestSupport.onFx(() ->
+        {
+            button("coaCloneChart").fire();
+            return null;
+        });
+        await(() -> field("nativeChartName") != null && !field("nativeChartName").isDisabled()
+            && field("nativeChartName").getText().equals("Second factory chart copy"));
+        FxTestSupport.onFx(() ->
+        {
+            assertTrue(panel.root().lookupAll(".label").stream().filter(Label.class::isInstance).map(Label.class::cast)
+                    .anyMatch(label -> label.getText().contains("unused, non-current DRAFT") && label.getText().contains("Delete Draft Chart")));
+            button("nativeChartBack").fire();
+            return null;
+        });
+        await(() -> !accounts.loadingCharts());
+        assertChartToolbar();
+    }
+
+    private void assertChartToolbar()
+    {
+        FxTestSupport.onFx(() ->
+        {
+            for(String id:List.of("coaNewChart","coaEditChart","coaCloneChart","coaDeleteDraftChart","coaImportJsonButton","coaExportJsonButton"))
+            {
+                assertNotNull(node(id),"Chart action disappeared after production view change: "+id);
+                assertTrue(node(id).isVisible());
+            }
+            return null;
+        });
+    }
+    @Test
+    void deletesAnEmptyDraftAfterCancellationAndKeepsTheToolbarForCreatingAnother() throws Exception
+    {
+        createViaUi("Empty partial draft");
+        FxTestSupport.onFx(() ->
+        {
+            assertFalse(button("coaDeleteDraftChart").isDisabled());
+            panel.setChartDeleteConfirmationForTests(preview ->
+            {
+                assertEquals(0,preview.accounts());
+                assertTrue(button("coaNewChart").isDisabled());
+                assertTrue(panel.commandCapabilities().isEmpty());
+                return false;
+            });
+            button("coaDeleteDraftChart").fire();
+            return null;
+        });
+        await(() -> globalStatus().contains("deletion cancelled"));
+        assertEquals(1,targetCharts());
+        FxTestSupport.onFx(() ->
+        {
+            panel.setChartDeleteConfirmationForTests(preview -> true);
+            button("coaDeleteDraftChart").fire();
+            return null;
+        });
+        await(() -> globalStatus().contains("Deleted draft chart") && !accounts.loadingCharts() && accounts.selectedChart()==null);
+        assertEquals(0,targetCharts());
+        assertChartToolbar();
+        createViaUi("Replacement chart");
+        assertEquals(1,targetCharts());
+        assertChartToolbar();
+    }
+    @Test
+    void chartDeletionCannotFollowACompanySwitchDuringConfirmation() throws Exception
+    {
+        createViaUi("Keep original company draft");
+        FxTestSupport.onFx(() ->
+        {
+            panel.setChartDeleteConfirmationForTests(preview ->
+            {
+                MainWindow.sharedSessionState().setMultiCompany(new MultiCompanyState("OTHER",List.of("DEFAULT","OTHER")));
+                return true;
+            });
+            button("coaDeleteDraftChart").fire();
+            return null;
+        });
+        await(() -> globalStatus().contains("Company/database changed; draft chart deletion cancelled"));
+        assertEquals(1,targetCharts());
+        try (Jpa jpa = new Jpa(database); var em = jpa.em())
+        {
+            assertEquals(0L,em.createQuery("select count(a) from AuditEvent a where a.actionType='CHART_DELETED'",Long.class).getSingleResult());
+        }
+    }
+    @Test
+    void partialChartDeletionProtectsUnappliedEditsRolesAndBankLinksThenRemovesItsUnusedTree() throws Exception
+    {
+        draftAccounts();
+        long chart=FxTestSupport.onFx(() -> accounts.selectedChart().id());
+        FxTestSupport.onFx(() ->
+        {
+            selectAccount("1010");
+            field("chartOfAccountsName").setText("Unapplied");
+            assertTrue(button("coaDeleteDraftChart").isDisabled());
+            button("chartOfAccountsCancelAccount").fire();
+            MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.session(java.util.Set.of(ReservedSecurityRole.VIEWER)));
+            assertTrue(button("coaDeleteDraftChart").isDisabled());
+            MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.session(java.util.Set.of(ReservedSecurityRole.ACCOUNTANT)));
+            assertFalse(button("coaDeleteDraftChart").isDisabled());
+            return null;
+        });
+        try(Jpa jpa=new Jpa(database);var em=jpa.em())
+        {
+            em.getTransaction().begin();
+            var a=em.createQuery("from Account where chart.id=:id and code='1010'",Account.class).setParameter("id",chart).getSingleResult();
+            var bank=new CompanyBankAccount();
+            bank.setCompany(a.getChart().getCompany());
+            bank.setAccount(a);
+            bank.setName("Draft bank link");
+            em.persist(bank);
+            em.getTransaction().commit();
+        }
+        java.util.concurrent.atomic.AtomicInteger confirmations=new java.util.concurrent.atomic.AtomicInteger();
+        FxTestSupport.onFx(() ->
+        {
+            panel.setChartDeleteConfirmationForTests(preview ->
+            {
+                confirmations.incrementAndGet();
+                assertEquals(2,preview.accounts());
+                return true;
+            });
+            button("coaDeleteDraftChart").fire();
+            return null;
+        });
+        await(() -> globalStatus().contains("configured bank accounts"));
+        assertEquals(0,confirmations.get());
+        try(Jpa jpa=new Jpa(database);var em=jpa.em())
+        {
+            em.getTransaction().begin();
+            em.createQuery("delete from CompanyBankAccount where name='Draft bank link'").executeUpdate();
+            em.getTransaction().commit();
+        }
+        FxTestSupport.onFx(() ->
+        {
+            button("coaDeleteDraftChart").fire();
+            return null;
+        });
+        await(() -> globalStatus().contains("Deleted draft chart") && !accounts.loadingCharts() && accounts.selectedChart()==null);
+        assertEquals(1,confirmations.get());
+        assertEquals(0,targetCharts());
+        assertChartToolbar();
+        try(Jpa jpa=new Jpa(database);var em=jpa.em())
+        {
+            assertEquals(2L,em.createQuery("select count(a) from Account a where a.chart.company.code='OTHER'",Long.class).getSingleResult());
+            assertEquals(0L,em.createQuery("select count(t) from Txn t",Long.class).getSingleResult());
+        }
+    }
+    @Test
+    void accountantImportsANewChartThenMergesIntoTheViewedDraftAndExportsWithoutActivation() throws Exception
+    {
+        draftAccounts();
+        long target=FxTestSupport.onFx(() -> accounts.selectedChart().id());
+        Path file=directory.resolve("new-and-merge.json"),exported=directory.resolve("merged-draft.json");
+        String source="""
+                {"format":"SCA-COA","version":"1.0","chart":{"name":"Source","chartVersion":"1","status":"DRAFT","currency":"USD"},
+                 "accounts":[{"code":"1000","name":"Account 1000","type":"ASSET","normalBalance":"DEBIT","posting":false,"active":true,"openingBalance":"0.00"},
+                 {"code":"1010","name":"Imported leaf","type":"ASSET","normalBalance":"DEBIT","parentCode":"1000","posting":true,"active":true,"openingBalance":"0.00"}]}
+                """;
+        java.nio.file.Files.writeString(file,source);
+        FxTestSupport.onFx(() ->
+        {
+            MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.session(java.util.Set.of(ReservedSecurityRole.ACCOUNTANT)));
+            panel=new ChartOfAccountsInterchangePanel(accounts,(chooser,owner) -> file.toFile(),(chooser,owner) -> exported.toFile());
+            PanelFactory.prepareProductionPanel(panel,AppPanelId.CHART_OF_ACCOUNTS);
+            ((PanelHost)stage.getScene().getRoot()).showReplacement(AppPanelId.CHART_OF_ACCOUNTS,panel);
+            return null;
+        });
+        await(() -> !accounts.loadingCharts());
+        FxTestSupport.onFx(() ->
+        {
+            button("coaImportJsonButton").fire();
+            layout();
+            importMode().setValue(org.nonprofitbookkeeping.interchange.coa.CoaImportMode.CREATE_NEW_CHART);
+            field("coaJsonTargetChartName").setText("From JSON");
+            field("coaJsonTargetChartVersion").setText("1");
+            assertEquals("Create a new chart",importMode().getConverter().toString(importMode().getValue()));
+            button("coaReviewPreview").fire();
+            return null;
+        });
+        commitJsonReview();
+        FxTestSupport.onFx(() ->
+        {
+            button("coaReviewBack").fire();
+            return null;
+        });
+        await(() -> !accounts.loadingCharts() && accounts.chartChoices().size()==2);
+        assertEquals(2,targetCharts());
+        assertChartToolbar();
+        assertEquals(target,FxTestSupport.onFx(() -> accounts.selectedChart().id()));
+        java.nio.file.Files.writeString(file,source.replace("Imported leaf","Merged leaf"));
+        FxTestSupport.onFx(() ->
+        {
+            button("coaImportJsonButton").fire();
+            layout();
+            importMode().setValue(org.nonprofitbookkeeping.interchange.coa.CoaImportMode.MERGE_BY_CODE);
+            @SuppressWarnings("unchecked") ComboBox<CompanyChartView> targets=(ComboBox<CompanyChartView>)node("coaJsonTargetChart");
+            assertEquals(target,targets.getValue().id());
+            assertEquals("Merge into an existing chart",importMode().getConverter().toString(importMode().getValue()));
+            button("coaReviewPreview").fire();
+            return null;
+        });
+        commitJsonReview();
+        assertChartToolbar();
+        try(Jpa jpa=new Jpa(database);var em=jpa.em())
+        {
+            assertEquals("Merged leaf",em.createQuery("from Account where chart.id=:id and code='1010'",Account.class).setParameter("id",target).getSingleResult().getName());
+            assertEquals("Imported leaf",em.createQuery("from Account where chart.name='From JSON' and code='1010'",Account.class).getSingleResult().getName());
+            assertNull(em.createQuery("from Company where code='DEFAULT'",Company.class).getSingleResult().getActiveChartOfAccounts());
+        }
+        FxTestSupport.onFx(() ->
+        {
+            button("coaReviewBack").fire();
+            return null;
+        });
+        await(() -> !accounts.loadingCharts());
+        FxTestSupport.onFx(() ->
+        {
+            assertTrue(button("makeActiveChart").isDisabled());
+            button("coaExportJsonButton").fire();
+            return null;
+        });
+        await(() -> java.nio.file.Files.exists(exported) && globalStatus().startsWith("Exported chart"));
+        assertTrue(java.nio.file.Files.readString(exported).contains("Merged leaf"));
+        assertChartToolbar();
+        FxTestSupport.onFx(() ->
+        {
+            panel.onPanelShownFrom(AppPanelId.REPORT_LIBRARY,"Report Library");
+            return null;
+        });
+        await(() -> !accounts.loadingCharts());
+        assertChartToolbar();
+    }
+    @SuppressWarnings("unchecked")
+
+    private ComboBox<org.nonprofitbookkeeping.interchange.coa.CoaImportMode> importMode()
+    {
+        return (ComboBox<org.nonprofitbookkeeping.interchange.coa.CoaImportMode>)node("coaJsonImportMode");
+    }
+
+    private String globalStatus()
+    {
+        return ((Label)node("coaInterchangeStatus")).getText();
+    }
+
+    private void commitJsonReview() throws Exception
+    {
+        await(() -> node("coaJsonPreviewTable") instanceof TableView<?> table && table.getItems().size()==2 && !check("coaReviewAcknowledged").isDisabled());
+        FxTestSupport.onFx(() ->
+        {
+            check("coaReviewAcknowledged").setSelected(true);
+            assertFalse(button("coaReviewCommit").isDisabled(),"Reviewed import must be ready: "+((Label)node("coaReviewStatus")).getText());
+            button("coaReviewCommit").fire();
+            return null;
+        });
+        await(() -> ((Label)node("coaReviewStatus")).getText().startsWith("Imported reviewed accounts"));
+        assertChartToolbar();
     }
 
     private void draftAccounts() throws Exception
@@ -813,7 +1106,7 @@ class NativeChartEditorPaneTest
     private String status()
     {
         return node("nativeChartStatus") instanceof Label label ? label.getText()
-        : node("chartOfAccountsStatus") instanceof Label label ? label.getText()+" / "+((Label)node("coaInterchangeStatus")).getText() : "Review page";
+        : node("chartOfAccountsStatus") instanceof Label label ? label.getText()+" / "+(node("coaInterchangeStatus") instanceof Label global ? global.getText() : "Chart toolbar missing") : "Review page";
     }
 
     private void screenshot(String suffix) throws Exception

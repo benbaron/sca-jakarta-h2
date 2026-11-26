@@ -1,17 +1,49 @@
 ---
-plan_version: 553
+plan_version: 556
 active_phase: P27
-active_slice: P27-C22
+active_slice: P27-C23
 active_status: VERIFYING
-active_branch: codex/P27-C22-draft-account-deletion
-active_pull_request: https://github.com/benbaron/sca-jakarta-h2/pull/448
-active_head: d6dcc9d58042648bd29cacd8febcf90881a602dc
-next_action: "Finish final native/clean verification and exact-head Linux/Windows CI for PR #448 after the shared-header correction. No automatic merge."
+active_branch: codex/P27-C23-complete-chart-workspace
+active_pull_request: null
+active_head: b922b2a408f2c97179c6f63353c5ce3dc7530ece
+next_action: "Finish C23 final native/service gates, clean verify and exact-head Linux/Windows CI; publish reviewable PR. No automatic merge."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
-### P27-C22 Draft account deletion and visible JSON — owner request
+### P27-C23 Complete chart workspace — owner screenshot
+
+C22/#448 is DONE, confirmed merged at current main b922b2a408f2c97179c6f63353c5ce3dc7530ece;
+accepted head 710c045b passed local 1,410 tests and CI 45743300401. New branch
+`codex/P27-C23-complete-chart-workspace` starts from main; prior local receipt
+is retained on its old branch. [C23 contract](P27-C23-complete-chart-workspace.md).
+Screenshot exposes a real factory-only bug: PanelViewport preparation moves the
+wrapper toolbar into its center; wrapper subview changes replace that center and
+remove the toolbar. Prior injected UI tests bypassed PanelFactory preparation.
+Preserve chart actions across production preparation and every subview transition;
+exercise the actual factory/preparation path. Add separate atomic audited Delete
+Draft Chart (empty or unused partial), preserving used/current/retired charts and
+shared/history data. Make JSON create-new versus merge explicit and allow an
+owned non-retired target by stable ID without activation. Preserve legacy callers,
+file format, review binding, roles, scope/dirty state, scrolling and native editor.
+Baseline compile and 17 existing service cases pass. Implementation is complete:
+persistent compact locally scrollable toolbar; audited whole-draft deletion;
+explicit JSON new/owned-draft merge targets; retained review navigation and corrected
+native deletion explanation. No schema or alternate store. Initial service gate
+passes 33 cases; corrected production/native gate passes 26 cases with no skips.
+Two more native regressions cover company-switch confirmation and unchanged-versus-
+changed JSON targets; the final broader native/service gate is running. The toolbar
+loss was reproduced before the fix using a factory-created panel. Normal/narrow
+rendered views were inspected, including complete table rows and local scrolling.
+Word was edited directly: only document.xml changed, all other ZIP parts, 18 links
+and 2 drawings preserved; 33-page render inspected on affected pages 9/10.
+Documentation links/whitespace pass. Remaining: final native/service results,
+clean verify, publication and exact-head Linux/Windows CI before readiness.
+No automatic merge.
+
+### P27-C22 Draft account deletion and visible JSON — DONE (#448 merged)
+
+C22 is DONE at b922b2a4; older progress/publication receipts below are historical.
 
 C21/#447 is DONE, confirmed merged at current main b0d1c613721ca8f79ea946430963c6919c127ee1;
 accepted head eb578da0 passed CI 45685091517. Fresh branch

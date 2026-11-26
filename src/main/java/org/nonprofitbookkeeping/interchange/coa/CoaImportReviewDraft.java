@@ -99,7 +99,7 @@ public final class CoaImportReviewDraft
         var initial = original.request();
         return new CoaImportRequest(initial.sourceFile(), initial.mode(), initial.targetChartName(),
             initial.targetChartVersion(), mappings, openingConfirmed,
-            new CoaReviewEdits(original.sourceSha256(), original.scope(), replacements, excluded));
+            new CoaReviewEdits(original.sourceSha256(), original.scope(), replacements, excluded), initial.targetChartId());
     }
 
     public static CoaAccountData definition(CoaAccountData source, String code, String name,

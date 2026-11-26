@@ -1,5 +1,16 @@
 # UI design rules
 
+P27-C23 chart-level controls must survive actual factory preparation and all
+view changes. Keep the wrapper toolbar in its own top region with the established
+compact-header policy and bounded local two-axis scrolling; never replace a
+layout-owned center containing the toolbar. Enlarged toolbar text must leave usable
+account-table/editor viewports.
+New/Edit/Clone, Delete Draft Chart and JSON import/export remain visible after
+save/cancel/back/commit and return navigation. Import modes use plain labels and
+an explicit existing target selector including owned drafts. Delete Draft Chart
+is a separate confirmed operation over an entire unused non-current DRAFT; account
+edits must be saved/cancelled first, and blockers/results remain inline.
+
 P27-C21 Chart of Accounts exposes native New Chart / Edit Chart / Clone Chart as
 primary actions alongside directly visible Import Chart JSON / Export Chart JSON
 buttons (P27-C22). Export uses the viewed owned chart, including a draft. Chart forms stay

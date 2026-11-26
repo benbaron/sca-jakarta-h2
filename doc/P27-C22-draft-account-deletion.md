@@ -1,6 +1,6 @@
 # P27-C22 — Draft account deletion and visible JSON
 
-Status: VERIFYING. Owner wants JSON import/export alongside the native editor,
+Status: DONE. PR #448 merged at b922b2a408f2c97179c6f63353c5ce3dc7530ece. C23 corrects production toolbar retention and adds whole draft-chart deletion/explicit merge targeting. Historical receipt follows. Owner wants JSON import/export alongside the native editor,
 and physical account deletion in DRAFT charts. Branch
 `codex/P27-C22-draft-account-deletion`, based on merged C21/#447 b0d1c613.
 

@@ -289,6 +289,10 @@ class DraftAccountDeletionServiceTest
         assertFalse(p.canDelete());
         assertTrue(String.join(";",p.blockers()).contains(text),p.blockers().toString());
         assertThrows(IllegalStateException.class,() -> service.deleteAccount(chart,id,p.revision()));
+        var chartPreview=service.previewChartDeletion(chart);
+        assertFalse(chartPreview.canDelete());
+        assertTrue(String.join(";",chartPreview.blockers()).contains(text),chartPreview.blockers().toString());
+        assertThrows(IllegalStateException.class,() -> service.deleteChart(chart,chartPreview.revision()));
     }
 
     private static ChartAdminService service(Jpa jpa)

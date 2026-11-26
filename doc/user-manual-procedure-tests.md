@@ -106,3 +106,13 @@ classes, lifecycle/scope/permissions, stale previews, rollback and deterministic
 viewed-draft export. Expanded NativeChartEditorPaneTest follows the visible JSON
 buttons, exports a draft without activation, opens inline import, and checks real
 successful/blocked/cancelled/dirty/busy/stale/scope-safe draft deletion.
+
+P27-C23 adds [DraftChartDeletionServiceTest](../src/test/java/org/nonprofitbookkeeping/service/DraftChartDeletionServiceTest.java)
+and [ChartJsonTargetTest](../src/test/java/org/nonprofitbookkeeping/interchange/coa/ChartJsonTargetTest.java).
+They follow whole empty/partial draft removal, protected references/mappings,
+rollback/stale state, target-draft merge, reviewed edits, stable receipts and
+JSON/SCLX export. DraftAccountDeletionServiceTest's operational fixtures also
+check the whole-chart boundary. NativeChartEditorPaneTest and CoaJsonReviewPaneTest
+now use actual production preparation; the native suite includes a real
+PanelFactory-created multi-chart/save/return journey, empty/partial draft delete,
+and ACCOUNTANT JSON new/merge/export without activation.
