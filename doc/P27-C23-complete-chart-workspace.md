@@ -104,3 +104,8 @@ foreign-scope choices were configured. Ignore those choices while the review's
 original scope is absent; acknowledgement remains invalidated. Pre-correction
 clean verify passes 1,423 tests with zero failures/errors and 225 display skips.
 Repeat native/full and exact-successor-head CI for this one-line guard plus test.
+
+Published correction 20318de4c0297e8f81f6c8363c6433e4acb939b8, tree
+c8186ea754e0f6d07a0f76f197cda8eeccf83a55. Code is frozen. Corrected native
+chart/JSON/route tests, full clean verify and exact final receipt-head CI remain
+required before readiness. The pre-correction full run elapsed 9:32.
