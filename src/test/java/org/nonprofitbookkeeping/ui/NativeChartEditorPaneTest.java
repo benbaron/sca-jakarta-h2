@@ -174,7 +174,7 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-    void savesClonedAccountBeforeReturningToImportAndKeepsRejectedEditsOpen() throws Exception
+    void savesTheWholeClonedChartBeforeReturningToImportAndKeepsRejectedEditsOpen() throws Exception
     {
         openClone();
         FxTestSupport.onFx(() ->
@@ -196,7 +196,8 @@ class NativeChartEditorPaneTest
         FxTestSupport.onFx(() ->
         {
             selectAccount("1010");
-            assertFalse(button("chartOfAccountsSaveAndReturn").isVisible());
+            assertTrue(button("coaSaveChart").isVisible());
+            assertEquals("Save Account", button("chartOfAccountsSaveAccount").getText());
             field("chartOfAccountsName").setText("First saved edit");
             button("chartOfAccountsSaveAccount").fire();
             return null;
@@ -205,39 +206,65 @@ class NativeChartEditorPaneTest
 
         FxTestSupport.onFx(() ->
         {
-            var host = (PanelHost) stage.getScene().getRoot();
-            var feedback = new java.util.concurrent.atomic.AtomicReference<AppPanel.RunCommandResult>();
-            host.setCommandResultListener(feedback::set);
-            DrillThroughCoordinator.configureOpener(host::show);
-            try
-            {
-                field("chartOfAccountsCode").setText("1000");
-                field("chartOfAccountsName").setText("Final saved edit");
-                Button finish = button("chartOfAccountsSaveAndReturn");
-                assertTrue(finish.isVisible());
-                assertEquals("Save Account and Return to Import", finish.getText());
-                screenshot("account-save-and-return");
-                finish.fire();
-                assertSame(panel.root(), host.activeRoot());
-                assertTrue(panel.hasUnsavedChanges());
-                assertTrue(accountStatus().contains("Account code already exists"));
-                assertFalse(feedback.get().handled());
-                assertEquals(accountStatus(), feedback.get().message());
-                assertEquals("Final saved edit", field("chartOfAccountsName").getText());
-
-                field("chartOfAccountsCode").setText("4015");
-                finish.fire();
-                assertEquals("Import", host.getActiveTitle());
-                assertFalse(panel.hasUnsavedChanges());
-                assertTrue(feedback.get().handled());
-                assertTrue(feedback.get().message().startsWith("Saved account 4015"));
-            }
-            finally
-            {
-                DrillThroughCoordinator.configureOpener(null);
-            }
+            button("coaEditChart").fire();
             return null;
         });
+        await(() -> field("nativeChartName") != null && field("nativeChartName").getText().equals("Import account copy"));
+        FxTestSupport.onFx(() ->
+        {
+            field("nativeChartName").setText("Edited full chart");
+            button("nativeChartBack").fire();
+            return null;
+        });
+        await(() -> !accounts.loadingCharts());
+        var feedback = new java.util.concurrent.atomic.AtomicReference<AppPanel.RunCommandResult>();
+        try
+        {
+            FxTestSupport.onFx(() ->
+            {
+                var host = (PanelHost) stage.getScene().getRoot();
+                host.setCommandResultListener(feedback::set);
+                DrillThroughCoordinator.configureOpener(host::show);
+                field("chartOfAccountsCode").setText("1000");
+                field("chartOfAccountsName").setText("Final saved edit");
+                Button finish = button("coaSaveChartAndReturn");
+                assertTrue(finish.isVisible());
+                assertEquals("Save Chart and Return to Import", finish.getText());
+                screenshot("chart-save-and-return");
+                finish.fire();
+                return null;
+            });
+            await(() -> globalStatus().contains("Account code already exists"));
+            FxTestSupport.onFx(() ->
+            {
+                var host = (PanelHost) stage.getScene().getRoot();
+                assertSame(panel.root(), host.activeRoot());
+                assertTrue(panel.hasUnsavedChanges());
+                assertFalse(feedback.get().handled());
+                assertEquals("Final saved edit", field("chartOfAccountsName").getText());
+                return null;
+            });
+            try (Jpa jpa = new Jpa(database); var em = jpa.em())
+            {
+                assertEquals("Import account copy", em.find(ChartOfAccounts.class, chartId).getName());
+                assertEquals("First saved edit", em.createQuery("from Account where chart.id = :chart and code = '1010'", Account.class)
+                        .setParameter("chart", chartId).getSingleResult().getName());
+            }
+            FxTestSupport.onFx(() ->
+            {
+                field("chartOfAccountsCode").setText("4015");
+                button("coaSaveChartAndReturn").fire();
+                return null;
+            });
+            await(() -> "Import".equals(((PanelHost) stage.getScene().getRoot()).getActiveTitle()));
+            assertFalse(FxTestSupport.onFx(panel::hasUnsavedChanges));
+            assertTrue(feedback.get().handled());
+            assertTrue(feedback.get().message().startsWith("Saved chart Edited full chart"));
+        }
+        finally
+        {
+            FxTestSupport.onFx(() -> { DrillThroughCoordinator.configureOpener(null); return null; });
+        }
 
         try (Jpa jpa = new Jpa(database); var em = jpa.em())
         {
@@ -245,6 +272,11 @@ class NativeChartEditorPaneTest
                     .setParameter("chart", chartId).getSingleResult();
             assertEquals("Final saved edit", saved.getName());
             assertEquals(ChartStatus.DRAFT, saved.getChart().getStatus());
+            assertEquals("Edited full chart", saved.getChart().getName());
+            assertEquals("DEFAULT", saved.getChart().getCompany().getCode());
+            assertEquals("Template chart", em.find(ChartOfAccounts.class, sourceChart).getName());
+            assertEquals("Template bank", em.createQuery("from Account where chart.id = :chart and code = '1010'", Account.class)
+                    .setParameter("chart", sourceChart).getSingleResult().getName());
         }
     }
 
@@ -283,7 +315,7 @@ class NativeChartEditorPaneTest
     }
 
     @Test
-    void metadataEditingPreservesCurrentIdentityAndThePendingAccountDraft() throws Exception
+    void savingChartDetailsAlsoSavesThePendingAccountAndPreservesCurrentIdentity() throws Exception
     {
         createViaUi("Current native");
         long chart = FxTestSupport.onFx(() -> accounts.selectedChart().id());
@@ -317,8 +349,8 @@ class NativeChartEditorPaneTest
             assertEquals(chart,accounts.selectedChart().id());
             assertTrue(accounts.selectedChart().activeForCompany());
             assertEquals("Pending account",accounts.readFormStateForTests().name());
-            assertTrue(panel.hasUnsavedChanges());
-            button("chartOfAccountsCancelAccount").fire();
+            assertFalse(panel.hasUnsavedChanges());
+            assertEquals("PENDING", ((Account) accountTable().getItems().get(0)).getCode());
             return null;
         });
     }

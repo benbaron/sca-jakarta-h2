@@ -74,11 +74,30 @@ public final class ChartAdminService
 
     public ChartDetails save(ChartCommand command)
     {
+        Objects.requireNonNull(command, "Chart details are required");
+        return saveChart(command.id(), command, null).chart();
+    }
+
+    public record ChartSaveResult(ChartDetails chart, Long accountId)
+    {
+    }
+
+    /** Commits the selected chart and any pending account definition in one transaction. */
+    public ChartSaveResult saveExistingChart(long chartId, ChartCommand details, AccountCommand account)
+    {
+        return saveChart(chartId, details, account);
+    }
+
+    private ChartSaveResult saveChart(Long chartId, ChartCommand command, AccountCommand account)
+    {
+        if (command != null && !Objects.equals(chartId, command.id()))
+        {
+            throw new IllegalArgumentException("The chart details belong to a different chart.");
+        }
         String target = companyCode.get();
         String actor = ServiceAuthorization.actor(authorization, ApplicationPermission.BOOKKEEPING_WRITE, target, "save chart", "SYSTEM");
-        Objects.requireNonNull(command, "Chart details are required");
-        String name = AccountDefinitionRules.bounded(command.name(), "Chart name", 200);
-        String version = AccountDefinitionRules.bounded(command.version(), "Chart version", 50);
+        String name = command == null ? null : AccountDefinitionRules.bounded(command.name(), "Chart name", 200);
+        String version = command == null ? null : AccountDefinitionRules.bounded(command.version(), "Chart version", 50);
         try (EntityManager em = jpa.em())
         {
             em.getTransaction().begin();
@@ -88,7 +107,7 @@ public final class ChartAdminService
                 em.lock(company, LockModeType.PESSIMISTIC_WRITE);
                 ChartOfAccounts chart;
                 String before = null;
-                if (command.id() == null)
+                if (chartId == null)
                 {
                     if (command.retired()) throw new IllegalArgumentException("New charts start as DRAFT.");
                     unique(em, company, name, version, null);
@@ -98,22 +117,33 @@ public final class ChartAdminService
                 }
                 else
                 {
-                    chart = requireChart(em, command.id());
+                    chart = requireChart(em, chartId);
                     em.lock(chart, LockModeType.PESSIMISTIC_WRITE);
                     new CompanyOwnershipService(jpa).requireOwnedBy(company, chart, "Chart of Accounts");
-                    Snapshot saved = snapshot(em, chart);
-                    requireRevision(command.expectedRevision(), saved.details().revision());
                     before = describe(chart);
-                    if (command.retired() && saved.details().currentForCompany())
+                    if (command != null)
                     {
-                        throw new IllegalStateException("The current chart cannot be retired. Make another chart active first.");
+                        ChartDetails saved = snapshot(em, chart).details();
+                        requireRevision(command.expectedRevision(), saved.revision());
+                        if (command.retired() && saved.currentForCompany())
+                        {
+                            throw new IllegalStateException("The current chart cannot be retired. Make another chart active first.");
+                        }
+                        if (!chart.getName().equals(name) || !chart.getVersion().equals(version))
+                        {
+                            unique(em, company, name, version, chart.getId());
+                        }
                     }
-                    if (!chart.getName().equals(name) || !chart.getVersion().equals(version)) unique(em, company, name, version, chart.getId());
+                }
+                Long savedAccountId = account == null ? null : AccountAdminService.saveInChart(
+                        em, new CompanyOwnershipService(jpa), company, chart, account, actor).getId();
+                if (command != null)
+                {
+                    chart.setName(name);
+                    chart.setVersion(version);
                     if (command.retired()) chart.setStatus(ChartStatus.RETIRED);
                     else if (chart.getStatus() == ChartStatus.RETIRED) chart.setStatus(ChartStatus.DRAFT);
                 }
-                chart.setName(name);
-                chart.setVersion(version);
                 chart.touchUpdatedAt();
                 if (chart.getId() == null) em.persist(chart);
                 em.flush();
@@ -123,7 +153,7 @@ public final class ChartAdminService
                 em.refresh(chart);
                 ChartDetails result = snapshot(em, chart).details();
                 em.getTransaction().commit();
-                return result;
+                return new ChartSaveResult(result, savedAccountId);
             }
             catch (RuntimeException ex)
             {

@@ -1,10 +1,11 @@
 # Journal workspace editor guidelines
 
-In Chart of Accounts, Save Account persists the selected account definition and
-keeps the editor open. When the form has pending edits, Save Account and Return
-names the originating workspace and opens it only after the same account save
-succeeds. Rejected edits remain in the form with an inline error beside the actions.
-
+In Chart of Accounts, Save Account commits the selected account and keeps the
+editor open. Save Chart commits retained chart details and any pending account
+form together. Save Chart and Return opens the named originating workspace after
+the commit succeeds. Rejected changes remain in their forms and the chart toolbar
+shows the validation error. Clone Chart offers source charts from all companies
+in the open database and creates an independent draft in the selected company.
 
 P27-C23 regression tests prepare through PanelFactory rather than bypassing its
 layout/policy hooks. The chart wrapper keeps its toolbar outside the switched
