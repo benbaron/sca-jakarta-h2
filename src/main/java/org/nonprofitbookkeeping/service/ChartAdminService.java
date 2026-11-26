@@ -234,7 +234,129 @@ public final class ChartAdminService
             }
         }
     }
+    /** Read-only eligibility; deletion repeats all checks under the company/chart locks. */
 
+    public AccountDeletionPreview previewAccountDeletion(long chartId, long accountId)
+    {
+        String target = companyCode.get();
+        ServiceAuthorization.require(authorization, ApplicationPermission.BOOKKEEPING_WRITE, target, "inspect draft account deletion");
+        try (EntityManager em = jpa.em())
+        {
+            Company company = requireTarget(em, target);
+            ChartOfAccounts chart = requireChart(em, chartId);
+            new CompanyOwnershipService(jpa).requireOwnedBy(company, chart, "Chart of Accounts");
+            return deletion(em, chart, accountId).preview();
+        }
+    }
+    /** Deletes one unused draft definition, adjuncts and account receipts atomically; never cascades history/children. */
+
+    public void deleteAccount(long chartId, long accountId, String expectedRevision)
+    {
+        String target = companyCode.get();
+        String actor = ServiceAuthorization.actor(authorization, ApplicationPermission.BOOKKEEPING_WRITE, target, "delete draft account", "SYSTEM");
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            try
+            {
+                Company company = requireTarget(em, target);
+                em.lock(company, LockModeType.PESSIMISTIC_WRITE);
+                ChartOfAccounts chart = requireChart(em, chartId);
+                new CompanyOwnershipService(jpa).requireOwnedBy(company, chart, "Chart of Accounts");
+                em.lock(chart, LockModeType.PESSIMISTIC_WRITE);
+                Deletion state = deletion(em, chart, accountId);
+                AccountDeletionPreview preview = state.preview();
+                if (!preview.canDelete())
+                {
+                    throw new IllegalStateException("Cannot delete account " + preview.accountCode() + ": " + String.join("; ", preview.blockers()));
+                }
+                if (expectedRevision == null || !expectedRevision.equals(preview.revision()))
+                {
+                    throw new IllegalStateException("Draft account, chart or import mappings changed. Refresh and review Delete Account again.");
+                }
+                AuditEvent event = new AuditEvent();
+                event.setCompany(company);
+                event.setActor(actor);
+                event.setActionType("ACCOUNT_DELETED");
+                event.setEntityType("ACCOUNT");
+                event.setEntityId(Long.toString(accountId));
+                event.setSummary("Deleted unused draft account " + preview.accountCode() + " from chart " + chartId);
+                event.setBeforeValue(state.facts());
+                em.persist(event);
+                em.createQuery("delete from AccountAlias a where a.account.id = :id").setParameter("id", accountId).executeUpdate();
+                em.createQuery("delete from AccountReportSection a where a.account.id = :id").setParameter("id", accountId).executeUpdate();
+                em.createQuery("delete from AccountScheduleRequirement a where a.account.id = :id").setParameter("id", accountId).executeUpdate();
+                state.identities().forEach(em::remove);
+                em.remove(state.account());
+                chart.touchUpdatedAt();
+                em.flush();
+                checkpoint.accept("ACCOUNT_DELETION_WRITTEN");
+                em.getTransaction().commit();
+            }
+            catch (RuntimeException ex)
+            {
+                if (em.getTransaction().isActive()) em.getTransaction().rollback();
+                throw ex;
+            }
+        }
+    }
+
+    private Deletion deletion(EntityManager em, ChartOfAccounts chart, long accountId)
+    {
+        Account account = em.find(Account.class, accountId);
+        if (account == null || !Objects.equals(account.getChart().getId(), chart.getId()))
+        {
+            throw new IllegalArgumentException("The account does not belong to the viewed chart or no longer exists.");
+        }
+        Snapshot snapshot = snapshot(em, chart);
+        List<String> blockers = new ArrayList<>();
+        if (chart.getStatus() != ChartStatus.DRAFT || snapshot.details().currentForCompany())
+        {
+            blockers.add("Only unused accounts in a non-current DRAFT chart can be deleted. Deactivate accounts in other charts.");
+        }
+        reference(em, blockers, accountId, "Account", "a.parent.id = :id", "child accounts (delete or reparent children first)");
+        reference(em, blockers, accountId, "TxnSplit", "a.account.id = :id", "journal lines");
+        reference(em, blockers, accountId, "Txn", "a.bankAccount.id = :id", "journal bank references");
+        reference(em, blockers, accountId, "CompanyBankAccount", "a.account.id = :id", "configured bank accounts");
+        reference(em, blockers, accountId, "FixedAsset", "a.assetAccount.id = :id or a.accumulatedDepreciationAccount.id = :id or a.depreciationExpenseAccount.id = :id", "fixed assets");
+        reference(em, blockers, accountId, "FixedAssetLifecycleEvent", "a.proceedsAccount.id = :id or a.gainAccount.id = :id or a.lossAccount.id = :id", "asset lifecycle records");
+        reference(em, blockers, accountId, "InventoryItem", "a.inventoryAccount.id = :id", "inventory items");
+        List<InterchangeIdentity> identities = em.createQuery("from InterchangeIdentity i where upper(i.entityType) = 'ACCOUNT' and i.localEntityId = :id order by i.id", InterchangeIdentity.class)
+        .setParameter("id", Long.toString(accountId)).getResultList();
+        if (identities.stream().anyMatch(i -> !Objects.equals(i.getCompany().getId(), chart.getCompany().getId())))
+        {
+            blockers.add("Account import mappings owned by another company require ownership repair.");
+        }
+        long aliases = snapshot.aliases().stream().filter(a -> a.getAccount().getId() == accountId).count();
+        long reports = snapshot.reports().stream().filter(a -> a.getAccount().getId() == accountId).count();
+        long schedules = snapshot.schedules().stream().filter(a -> a.getAccount().getId() == accountId).count();
+        StringBuilder facts = new StringBuilder();
+        fields(facts, snapshot.details().revision(), "ACCOUNT", accountId, account.getCode(), account.getName());
+        blockers.forEach(b -> fields(facts, b));
+        identities.forEach(i -> fields(facts, "IMPORT", i.getId(), i.getCompany().getId(), i.getFormatCode(), i.getSourceSystem(),
+            i.getExternalId(), i.getNormalizedContentHash(), i.getUpdatedAt()));
+        // The complete definition fingerprint plus receipt facts binds the confirmation to saved content.
+        String revision = hash(facts.toString());
+        fields(facts, "chart", describe(chart), "definition", account.getAccountType(), account.getAccountFunction(), account.getSubtype(),
+            account.getNormalBalance(), account.getParent() == null ? null : account.getParent().getId(), account.isPosting(), account.isActive(),
+            account.getEffectiveFrom(), account.getEffectiveTo(), account.getOpeningBalance(), account.getDescription(),
+            "removed aliases/report mappings/schedule requirements", aliases, reports, schedules);
+        snapshot.aliases().stream().filter(a -> a.getAccount().getId() == accountId).forEach(a -> fields(facts, "ALIAS", a.getId(), a.getAliasText(), a.getSource(), a.isActive()));
+        snapshot.reports().stream().filter(a -> a.getAccount().getId() == accountId).forEach(a -> fields(facts, "REPORT", a.getId(), a.getReportSection().getId(), a.getSortOrder(), a.getSignPolicy()));
+        snapshot.schedules().stream().filter(a -> a.getAccount().getId() == accountId).forEach(a -> fields(facts, "SCHEDULE", a.getId(), a.getScheduleKind().getId(), a.isRequired(), a.getNotes()));
+        return new Deletion(account, identities, new AccountDeletionPreview(chart.getId(), accountId, chart.getName(), account.getCode(), account.getName(),
+            revision, blockers, aliases, reports, schedules, identities.size()), facts.toString());
+    }
+
+    private static void reference(EntityManager em, List<String> blockers, long id, String entity, String condition, String description)
+    {
+        long count = em.createQuery("select count(a) from " + entity + " a where " + condition, Long.class).setParameter("id", id).getSingleResult();
+        if (count != 0) blockers.add(count + " " + description);
+    }
+
+    private record Deletion(Account account, List<InterchangeIdentity> identities, AccountDeletionPreview preview, String facts)
+    {
+    }
     private Company requireTarget(EntityManager em, String code)
     {
         Company company = new CompanyOwnershipService(jpa).requireCompany(em, code);

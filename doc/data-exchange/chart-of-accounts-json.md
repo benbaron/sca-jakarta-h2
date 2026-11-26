@@ -1,8 +1,11 @@
 # Chart of Accounts JSON contract
 
 P27-C21 makes native **New Chart / Edit Chart / Clone Chart** and the account
-list/editor the primary maintenance path. JSON is secondary compatibility under
-**Chart of Accounts → Compatibility → Import Chart JSON… / Export Chart JSON…**.
+list/editor the primary maintenance path. JSON import/export remains directly visible beside native controls:
+**Chart of Accounts → Import Chart JSON… / Export Chart JSON…**. P27-C22
+supersedes the secondary Compatibility menu; format compatibility is retained.
+Export uses the viewed owned chart, including DRAFT/RETIRED, without activation;
+the legacy active-chart export API remains supported.
 The existing inline review and format rules remain authoritative for files.
 Native draft/account editing and cross-company, zero-opening cloning require no
 JSON round-trip. See [native chart maintenance](../P27-C21-native-chart-maintenance.md).
@@ -239,7 +242,7 @@ Production Chart of Accounts JSON import commits require `BOOKKEEPING_WRITE` at 
 
 ## P27-C20 inline reviewed proposals
 
-**Compatibility → Import Chart JSON…** opens an inline review inside the Chart workspace. Import Setup
+**Import Chart JSON…** opens an inline review inside the Chart workspace. Import Setup
 preserves the three modes and explicit mappings; Start New Review deliberately
 replaces the proposed batch. Setup/source changes require that action again.
 Proposed Accounts provides Edit Selected/double-click and multi-select Delete
@@ -278,3 +281,13 @@ audit mechanism is introduced. Back to Accounts and Import JSON… preserve pend
 JSON and single-account drafts; Import Add reaches the established maintenance editor.
 Drafts do not survive application restart. See [C20 contract](../P27-C20-coa-import-review.md)
 and the primary Word manual for user steps.
+
+## P27-C22 native draft-account deletion
+
+Explicit native Delete Account can remove an unused non-current DRAFT account;
+this is separate from omitting transient JSON proposals. It removes aliases,
+report/schedule definition mappings and that company's ACCOUNT interchange
+receipts for the deleted stable account ID atomically with audit. It retains
+chart receipts, other mappings and all history. Operational references and child
+accounts block deletion; later deliberate import can recreate an omitted account.
+See [draft deletion](../P27-C22-draft-account-deletion.md).

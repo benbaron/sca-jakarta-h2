@@ -112,6 +112,17 @@ public final class ChartOfAccountsJsonService
     /** Writes deterministic SCA-COA 1.0 JSON for the selected company's active chart. */
     public CoaExportResult exportActiveChart(Path requestedDestination)
     {
+        return exportChart(null, requestedDestination);
+    }
+
+    /** Writes the viewed owned chart, including a draft, without changing the current selection. */
+    public CoaExportResult exportChart(long chartId, Path requestedDestination)
+    {
+        return exportChart(Long.valueOf(chartId), requestedDestination);
+    }
+
+    private CoaExportResult exportChart(Long chartId, Path requestedDestination)
+    {
         Objects.requireNonNull(requestedDestination, "requestedDestination");
         ownership.requireNoOpenOwnershipIssues();
         Path destination = requestedDestination.toAbsolutePath().normalize();
@@ -125,8 +136,9 @@ public final class ChartOfAccountsJsonService
         try (EntityManager em = jpa.em())
         {
             Company company = ownership.requireCompany(em, companyCodeSupplier.get());
-            ChartOfAccounts chart = requireActiveChart(em, company);
-            ownership.ensureOwnedBy(em, company, chart, "Active Chart of Accounts");
+            ChartOfAccounts chart = chartId == null ? requireActiveChart(em, company) : em.find(ChartOfAccounts.class, chartId);
+            if (chart == null) throw new IllegalArgumentException("The viewed Chart of Accounts no longer exists.");
+            ownership.requireOwnedBy(company, chart, "Viewed Chart of Accounts");
             List<Account> accounts = em.createQuery("""
                     select a from Account a
                     left join fetch a.parent

@@ -65,6 +65,10 @@ public class ChartOfAccountsPanel implements AppPanel
     private final TextField openingBalance = new TextField();
     private final TextArea description = new TextArea();
     private final CompanyUiFormat format = CompanyUiFormat.activeCompany();
+    private final Button delete = new Button("Delete Account");
+    private final Label lifecycle = new Label();
+    private boolean deletingAccount;
+    private Predicate<org.nonprofitbookkeeping.service.AccountDeletionPreview> confirmDeletion = this::confirmAccountDeletion;
     private final Button cancel = new Button("Cancel Account Changes");
     private Button refresh;
     private final Button add = new Button("+ Add");
@@ -126,15 +130,18 @@ public class ChartOfAccountsPanel implements AppPanel
         this.chartActions = Objects.requireNonNull(chartActions);
         this.confirmActivation = Objects.requireNonNull(confirmActivation);
         root.setPadding(new Insets(8));
+        root.setMinSize(0,0);
 
         Label title = new Label("Chart of Accounts");
         title.getStyleClass().add("panel-title");
-        Label lifecycle = new Label("Accounts cannot be deleted; clear Active and Save to retire them.");
+        lifecycle.setId("chartOfAccountsLifecycle");
         lifecycle.setWrapText(true);
 
         add.setOnAction(e -> onNew());
 
         save.setOnAction(e -> saveForm());
+        delete.setId("chartOfAccountsDeleteAccount");
+        delete.setOnAction(e -> deleteAccount());
         add.setText("New Account"); add.setId("chartOfAccountsNewAccount");
         save.setText("Save Account"); save.setId("chartOfAccountsSaveAccount");
         cancel.setId("chartOfAccountsCancelAccount");
@@ -156,7 +163,7 @@ public class ChartOfAccountsPanel implements AppPanel
         showAll.setTooltip(new javafx.scene.control.Tooltip("Reload active and inactive accounts in the viewed chart without discarding editor changes."));
         showAll.setOnAction(e -> reload(editingAccountId));
 
-        FlowPane actions = new FlowPane(8, 6, add, save, cancel, refresh, showAll, returnAction.button());
+        FlowPane actions = new FlowPane(8, 6, add, save, cancel, delete, refresh, showAll, returnAction.button());
         chartSelection.setId("chartOfAccountsSelection");
         chartSelection.setPromptText("Select a Chart of Accounts");
         chartSelection.setMaxWidth(Double.MAX_VALUE);
@@ -170,6 +177,7 @@ public class ChartOfAccountsPanel implements AppPanel
         UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE).addListener(
                 new javafx.beans.value.WeakChangeListener<>(permissionChanged));
         chartStatus.setWrapText(true);
+        status.setId("chartOfAccountsStatus");
         status.setWrapText(true);
         VBox chartActionsBar = new VBox(6, new Label("View chart"), chartSelection,
                 new FlowPane(8, 6, makeActiveChart));
@@ -177,7 +185,13 @@ public class ChartOfAccountsPanel implements AppPanel
         accountEditor = editorForm;
         VBox header = new VBox(6, title, actions, chartActionsBar, chartStatus, lifecycle, listFeedback.summary(), status, importPrefill.notice(), new Separator());
 
-        root.setTop(header);
+        header.setMinWidth(0);
+        ScrollPane headerScroll = new ScrollPane(header);
+        headerScroll.setId("chartOfAccountsHeaderScroll");
+        headerScroll.setMinSize(0,0);
+        headerScroll.setFitToWidth(true);
+        headerScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        headerScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         dirtyState = new FormDirtyTracker(this::formSnapshot);
 
         TableColumn<Account, String> code = new TableColumn<>("Code");
@@ -239,20 +253,23 @@ public class ChartOfAccountsPanel implements AppPanel
         split.setOrientation(Orientation.VERTICAL);
         split.setDividerPositions(0.62);
         CompanySplitPaneStateBinder.bind(split, "chart-of-accounts-workspace", 0.62);
-        root.setCenter(split);
+        split.setMinSize(0,0);
+        SplitPane chrome = ResizablePanelHeader.split(headerScroll,split,"chart-of-accounts-chrome",.38);
+        chrome.setId("chartOfAccountsChromeSplit");
+        root.setCenter(chrome);
 
         clearFormForNew();
         for (TextField field : List.of(codeField, nameField, parentCodeField, openingBalance, effectiveFrom.getEditor(), effectiveTo.getEditor()))
         {
-            field.textProperty().addListener((o,a,b) -> capabilitiesChanged.run());
+            field.textProperty().addListener((o,a,b) -> accountFieldsChanged());
         }
-        description.textProperty().addListener((o,a,b) -> capabilitiesChanged.run());
+        description.textProperty().addListener((o,a,b) -> accountFieldsChanged());
         for (ComboBox<?> field : List.of(typeField, functionField, balanceField, subtypeField))
         {
-            field.valueProperty().addListener((o,a,b) -> capabilitiesChanged.run());
+            field.valueProperty().addListener((o,a,b) -> accountFieldsChanged());
         }
-        postingField.selectedProperty().addListener((o,a,b) -> capabilitiesChanged.run());
-        activeField.selectedProperty().addListener((o,a,b) -> capabilitiesChanged.run());
+        postingField.selectedProperty().addListener((o,a,b) -> accountFieldsChanged());
+        activeField.selectedProperty().addListener((o,a,b) -> accountFieldsChanged());
         var weakPanel = new java.lang.ref.WeakReference<>(this);
         Runnable scopeChanged = () ->
         {
@@ -402,7 +419,7 @@ public class ChartOfAccountsPanel implements AppPanel
         status.setText("Edit mode for account ID " + row.getId() + " (" + row.getCode() + ").");
         dirtyState.markClean();
         accountDraftScope = CoaJsonReviewPane.Scope.current();
-        capabilitiesChanged.run();
+        accountFieldsChanged();
     }
 
     private void clearFormForNew()
@@ -424,7 +441,7 @@ public class ChartOfAccountsPanel implements AppPanel
         description.clear();
         dirtyState.markClean();
         accountDraftScope = CoaJsonReviewPane.Scope.current();
-        capabilitiesChanged.run();
+        accountFieldsChanged();
     }
 
     private void saveForm()
@@ -563,6 +580,7 @@ public class ChartOfAccountsPanel implements AppPanel
 
     private void reload(Long reselectId)
     {
+        if (deletingAccount) return;
         long generation = ++loadGeneration;
         FullFormState requestedForm = formSnapshot();
         listFeedback.loading();
@@ -646,7 +664,7 @@ public class ChartOfAccountsPanel implements AppPanel
 
     private boolean canEditChart()
     {
-        return !loadingCharts && chartSelection.getValue() != null
+        return !loadingCharts && !deletingAccount && chartSelection.getValue() != null
                 && chartSelection.getValue().status() != ChartStatus.RETIRED
                 && (accountDraftScope == null || accountDraftScope.currentScope())
                 && UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE);
@@ -655,13 +673,16 @@ public class ChartOfAccountsPanel implements AppPanel
     private void updateChartState()
     {
         CompanyChartView selected = chartSelection.getValue();
-        chartSelection.setDisable(loadingCharts);
+        chartSelection.setDisable(loadingCharts || deletingAccount);
+        table.setDisable(deletingAccount);
         accountEditor.setDisable(!canEditChart());
         refresh.setDisable(loadingCharts);
         add.setDisable(!canEditChart());
         save.setDisable(!canEditChart());
-        cancel.setDisable(loadingCharts);
-        makeActiveChart.setDisable(loadingCharts || companyId == null || selected == null
+        cancel.setDisable(loadingCharts || deletingAccount);
+        delete.setDisable(!canDeleteAccount());
+        lifecycle.setText(deletionExplanation());
+        makeActiveChart.setDisable(loadingCharts || deletingAccount || companyId == null || selected == null
                 || selected.activeForCompany() || selected.status() == ChartStatus.RETIRED);
         String state = selected == null ? "No chart selected."
                 : selected.activeForCompany() ? "Viewing the active chart."
@@ -682,6 +703,110 @@ public class ChartOfAccountsPanel implements AppPanel
         chartStatus.setText((current == null ? "No active chart. "
                 : "Active chart: " + current.name() + " — " + current.version() + ". ") + state);
         capabilitiesChanged.run();
+    }
+
+    private void accountFieldsChanged()
+    {
+        delete.setDisable(!canDeleteAccount());
+        lifecycle.setText(deletionExplanation());
+        capabilitiesChanged.run();
+    }
+
+    private boolean canDeleteAccount()
+    {
+        CompanyChartView chart = selectedChart();
+        return canEditChart() && chart.status() == ChartStatus.DRAFT && !chart.activeForCompany()
+                && editingAccountId != null && !dirtyState.isDirty();
+    }
+
+    private String deletionExplanation()
+    {
+        if (deletingAccount) return "Checking/deleting the draft account; other commands are disabled.";
+        if (selectedChart() == null || selectedChart().status() != ChartStatus.DRAFT || selectedChart().activeForCompany())
+            return "Only unused accounts in a non-current DRAFT chart can be deleted. In other charts, clear Active and Save to deactivate an account.";
+        if (!UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE)) return "Delete Account requires BOOKKEEPING_WRITE.";
+        if (accountDraftScope != null && !accountDraftScope.currentScope()) return "Return to the original company/database before deleting.";
+        if (dirtyState.isDirty()) return "Save or Cancel Account Changes before deleting a saved draft account.";
+        return "Select a saved draft account, then Delete Account. Journal, banking, assets, inventory and child references prevent deletion.";
+    }
+
+    boolean deletingAccount() { return deletingAccount; }
+
+    private void deleteAccount()
+    {
+        if (!canDeleteAccount()) return;
+        var scope = CoaJsonReviewPane.Scope.current();
+        var service = UiServiceRegistry.chartAdmin();
+        long chart = selectedChart().id();
+        long account = editingAccountId;
+        deletingAccount = true;
+        updateChartState();
+        status.setText("Checking draft account references…");
+        UiAsync.run("coa-account-delete-preview", () -> service.previewAccountDeletion(chart,account), preview ->
+        {
+            if (!scope.currentScope())
+            {
+                deletionFinished("Company/database changed. Return to the original scope; account fields retained.");
+                return;
+            }
+            if (!preview.canDelete())
+            {
+                deletionFinished("Cannot delete account " + preview.accountCode() + ": " + String.join("; ",preview.blockers()));
+                return;
+            }
+            if (!confirmDeletion.test(preview))
+            {
+                deletionFinished("Account deletion cancelled; the saved account and editor are unchanged.");
+                return;
+            }
+            if (!scope.currentScope())
+            {
+                deletionFinished("Company/database changed; deletion cancelled and account fields retained.");
+                return;
+            }
+            status.setText("Deleting draft account " + preview.accountCode() + "…");
+            UiAsync.run("coa-account-delete", () ->
+            {
+                service.deleteAccount(chart,account,preview.revision());
+                return preview.accountCode();
+            }, code ->
+            {
+                deletingAccount = false;
+                if (scope.currentScope())
+                {
+                    suppressSelection = true;
+                    table.getSelectionModel().clearSelection();
+                    suppressSelection = false;
+                    clearFormForNew();
+                    reload(null);
+                }
+                updateChartState();
+                status.setText("Deleted draft account " + code + ". Other accounts and history are unchanged.");
+            }, error -> deletionFinished("Could not delete account: " + UiErrors.safeMessage(error)));
+        }, error -> deletionFinished("Could not inspect account deletion: " + UiErrors.safeMessage(error)));
+    }
+
+    private void deletionFinished(String message)
+    {
+        deletingAccount = false;
+        updateChartState();
+        status.setText(message);
+    }
+
+    private boolean confirmAccountDeletion(org.nonprofitbookkeeping.service.AccountDeletionPreview preview)
+    {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Delete draft account");
+        confirmation.setHeaderText("Delete " + preview.accountCode() + " — " + preview.accountName() + " from '" + preview.chartName() + "'?");
+        confirmation.setContentText("This permanently removes this unused draft account and " + preview.effects()
+                + ". Children and operational history are never deleted. The deletion is audited.");
+        if (root.getScene() != null) confirmation.initOwner(root.getScene().getWindow());
+        return confirmation.showAndWait().filter(ButtonType.OK::equals).isPresent();
+    }
+
+    void setDeleteConfirmationForTests(Predicate<org.nonprofitbookkeeping.service.AccountDeletionPreview> confirmation)
+    {
+        confirmDeletion = confirmation;
     }
 
     private void selectChart(CompanyChartView prior, CompanyChartView selected)
@@ -725,7 +850,7 @@ public class ChartOfAccountsPanel implements AppPanel
     private void activateChart()
     {
         CompanyChartView selected = chartSelection.getValue();
-        if (loadingCharts || companyId == null || selected == null || selected.activeForCompany()
+        if (loadingCharts || deletingAccount || companyId == null || selected == null || selected.activeForCompany()
                 || selected.status() == ChartStatus.RETIRED || !UiPermissionGate.allows(ApplicationPermission.COMPANY_ADMIN))
         {
             return;

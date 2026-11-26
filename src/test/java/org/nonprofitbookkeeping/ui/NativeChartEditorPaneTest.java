@@ -31,7 +31,6 @@ class NativeChartEditorPaneTest
     private ChartOfAccountsInterchangePanel panel;
     private ChartOfAccountsPanel accounts;
     private long sourceChart;
-
     @BeforeEach
 
     void setup() throws Exception
@@ -103,7 +102,6 @@ class NativeChartEditorPaneTest
         });
         await(() -> !accounts.loadingCharts());
     }
-
     @AfterEach
 
     void cleanup()
@@ -330,19 +328,17 @@ class NativeChartEditorPaneTest
 
     @Test
 
-    void secondaryCompatibilityMenuDoesNotReplaceNativeMaintenance() throws Exception
+    void visibleJsonActionsCoexistWithNativeMaintenance() throws Exception
     {
         FxTestSupport.onFx(() ->
         {
             assertNotNull(button("coaNewChart"));
             assertNotNull(button("coaEditChart"));
             assertNotNull(button("coaCloneChart"));
-            assertNull(node("coaImportJsonButton"),"JSON import is a menu item rather than a main editing button");
-            MenuButton menu = (MenuButton) node("coaCompatibility");
-            menu.show();
-            assertEquals(2,menu.getItems().size());
-            assertTrue(menu.getItems().stream().anyMatch(i -> i.getText().equals("Import Chart JSON…")));
-            menu.hide();
+            assertTrue(button("coaImportJsonButton").isVisible());
+            assertTrue(button("coaExportJsonButton").isVisible());
+            assertEquals("Import Chart JSON…",button("coaImportJsonButton").getText());
+            assertEquals("Export Chart JSON…",button("coaExportJsonButton").getText());
             return null;
         });
         createViaUi("Native without files");
@@ -366,10 +362,13 @@ class NativeChartEditorPaneTest
         FxTestSupport.onFx(() ->
         {
             SplitPane split = (SplitPane) node("nativeChartEditorSplit");
-            double before = split.getDividerPositions()[0];
-            split.setDividerPositions(.40);
+            screenshot("narrow-before-divider");
+            split.setDividerPositions(.20);
             layout();
-            assertTrue(split.getDividerPositions()[0] > before + .04);
+            double before = split.getDividerPositions()[0];
+            split.setDividerPositions(.60);
+            layout();
+            assertTrue(split.getDividerPositions()[0] > before + .04, "Divider before="+before+", after="+split.getDividerPositions()[0]+", height="+split.getHeight());
             javafx.scene.Node cursor = field("nativeChartName");
             while (!(cursor instanceof ScrollPane)) cursor = cursor.getParent();
             ScrollPane scroll = (ScrollPane) cursor;
@@ -406,6 +405,331 @@ class NativeChartEditorPaneTest
             assertTrue(accounts.commandCapabilities().contains(AppCommand.SAVE_ACTIVE));
             return null;
         });
+    }
+
+    @Test
+
+    void draftDeletionChecksChildrenThenDeletesLeafAndGroupWithBusyControls() throws Exception
+    {
+        draftAccounts();
+        java.util.concurrent.atomic.AtomicInteger confirmed = new java.util.concurrent.atomic.AtomicInteger();
+        FxTestSupport.onFx(() ->
+        {
+            accounts.setDeleteConfirmationForTests(preview ->
+            {
+                confirmed.incrementAndGet();
+                assertTrue(accounts.deletingAccount());
+                assertTrue(panel.commandCapabilities().isEmpty());
+                assertTrue(button("coaImportJsonButton").isDisabled());
+                assertTrue(button("coaNewChart").isDisabled());
+                assertTrue(button("chartOfAccountsSaveAccount").isDisabled());
+                return true;
+            });
+            selectAccount("1000");
+            button("chartOfAccountsDeleteAccount").fire();
+            return null;
+        });
+        await(() -> !accounts.deletingAccount() && accountStatus().contains("child accounts"));
+        assertEquals(0,confirmed.get());
+        FxTestSupport.onFx(() ->
+        {
+            selectAccount("1010");
+            button("chartOfAccountsDeleteAccount").fire();
+            return null;
+        });
+        await(() -> !accounts.deletingAccount() && !accounts.loadingCharts() && accountTable().getItems().size()==1);
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals("",field("chartOfAccountsCode").getText());
+            selectAccount("1000");
+            button("chartOfAccountsDeleteAccount").fire();
+            return null;
+        });
+        await(() -> !accounts.deletingAccount() && !accounts.loadingCharts() && accountTable().getItems().isEmpty());
+        assertEquals(2,confirmed.get());
+        try (Jpa jpa=new Jpa(database);var em=jpa.em())
+        {
+            assertEquals(2L,em.createQuery("select count(a) from AuditEvent a where a.actionType='ACCOUNT_DELETED'",Long.class).getSingleResult());
+            assertEquals(0L,em.createQuery("select count(t) from Txn t",Long.class).getSingleResult());
+        }
+    }
+
+    @Test
+
+    void dirtyCancelRoleAndNonDraftDeletionRulesAreVisible() throws Exception
+    {
+        draftAccounts();
+        FxTestSupport.onFx(() ->
+        {
+            selectAccount("1010");
+            field("chartOfAccountsName").setText("Unapplied");
+            assertTrue(button("chartOfAccountsDeleteAccount").isDisabled());
+            assertTrue(((Label)node("chartOfAccountsLifecycle")).getText().contains("Save or Cancel"));
+            button("chartOfAccountsCancelAccount").fire();
+            assertFalse(button("chartOfAccountsDeleteAccount").isDisabled());
+            accounts.setDeleteConfirmationForTests(preview -> false);
+            button("chartOfAccountsDeleteAccount").fire();
+            return null;
+        });
+        await(() -> !accounts.deletingAccount() && accountStatus().contains("cancelled"));
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals("Account 1010",field("chartOfAccountsName").getText());
+            assertEquals(2,accountTable().getItems().size());
+            MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.session(java.util.Set.of(ReservedSecurityRole.VIEWER)));
+            assertTrue(button("chartOfAccountsDeleteAccount").isDisabled());
+            assertTrue(((Label)node("chartOfAccountsLifecycle")).getText().contains("BOOKKEEPING_WRITE"));
+            MainWindow.sharedSessionState().setAuthenticatedUser(UiPermissionTestSessions.manager());
+            button("makeActiveChart").fire();
+            return null;
+        });
+        await(() -> !accounts.loadingCharts() && accounts.selectedChart().activeForCompany());
+        FxTestSupport.onFx(() ->
+        {
+            assertTrue(button("chartOfAccountsDeleteAccount").isDisabled());
+            assertTrue(((Label)node("chartOfAccountsLifecycle")).getText().contains("DRAFT"));
+            return null;
+        });
+    }
+
+    @Test
+
+    void changedDefinitionOrCompanyDuringConfirmationPreservesTheAccountAndEditor() throws Exception
+    {
+        draftAccounts();
+        FxTestSupport.onFx(() ->
+        {
+            selectAccount("1010");
+            accounts.setDeleteConfirmationForTests(preview ->
+            {
+                try(Jpa jpa=new Jpa(database);var em=jpa.em())
+                {
+                    em.getTransaction().begin();
+                    em.find(Account.class,preview.accountId()).setName("Changed elsewhere");
+                    em.getTransaction().commit();
+                }
+                return true;
+            });
+            button("chartOfAccountsDeleteAccount").fire();
+            return null;
+        });
+        await(() -> !accounts.deletingAccount() && accountStatus().contains("changed"));
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals("Account 1010",field("chartOfAccountsName").getText());
+            assertEquals(2,accountTable().getItems().size());
+            accounts.setDeleteConfirmationForTests(preview ->
+            {
+                MainWindow.sharedSessionState().setMultiCompany(new MultiCompanyState("OTHER",List.of("DEFAULT","OTHER")));
+                return true;
+            });
+            button("chartOfAccountsDeleteAccount").fire();
+            return null;
+        });
+        await(() -> !accounts.deletingAccount() && accountStatus().contains("Company/database changed"));
+        try(Jpa jpa=new Jpa(database);var em=jpa.em())
+        {
+            assertEquals(2L,em.createQuery("select count(a) from Account a where a.chart.company.code='DEFAULT'",Long.class).getSingleResult());
+            assertEquals(0L,em.createQuery("select count(a) from AuditEvent a where a.actionType='ACCOUNT_DELETED'",Long.class).getSingleResult());
+        }
+    }
+
+    @Test
+
+    void visibleJsonButtonsExportTheViewedDraftAndOpenItsInlineImport() throws Exception
+    {
+        draftAccounts();
+        Path exported=directory.resolve("viewed-draft.json");
+        FxTestSupport.onFx(() ->
+        {
+            panel=new ChartOfAccountsInterchangePanel(accounts,(chooser,owner) -> exported.toFile(),(chooser,owner) -> exported.toFile());
+            ((PanelHost)stage.getScene().getRoot()).showReplacement(AppPanelId.CHART_OF_ACCOUNTS,panel);
+            return null;
+        });
+        await(() -> !accounts.loadingCharts() && !button("coaExportJsonButton").isDisabled());
+        FxTestSupport.onFx(() ->
+        {
+            selectAccount("1010");
+            field("chartOfAccountsName").setText("Unapplied name");
+            button("coaExportJsonButton").fire();
+            assertTrue(button("coaImportJsonButton").isDisabled());
+            return null;
+        });
+        await(() -> java.nio.file.Files.exists(exported) && ((Label)node("coaInterchangeStatus")).getText().startsWith("Exported chart"));
+        String json=java.nio.file.Files.readString(exported);
+        assertTrue(json.contains("Deletion draft"));
+        assertTrue(json.contains("1010"));
+        assertTrue(json.contains("DRAFT"));
+        assertFalse(json.contains("Unapplied name"));
+        FxTestSupport.onFx(() ->
+        {
+            assertFalse(accounts.selectedChart().activeForCompany());
+            button("coaExportJsonButton").fire();
+            assertTrue(((Label)node("coaInterchangeStatus")).getText().contains("destination exists"));
+            button("coaImportJsonButton").fire();
+            layout();
+            assertNotNull(node("coaJsonImportMode"));
+            assertNotNull(node("coaReviewPreview"));
+            assertTrue(button("coaImportJsonButton").isVisible());
+            return null;
+        });
+        try(Jpa jpa=new Jpa(database);var em=jpa.em())
+        {
+            assertNull(em.createQuery("from Company where code='DEFAULT'",Company.class).getSingleResult().getActiveChartOfAccounts());
+        }
+    }
+
+    @Test
+
+    void jsonExportDoesNotRedirectIfTheCompanyChangesDuringFileSelection() throws Exception
+    {
+        draftAccounts();
+        Path destination=directory.resolve("must-not-export.json");
+        FxTestSupport.onFx(() ->
+        {
+            panel=new ChartOfAccountsInterchangePanel(accounts,(chooser,owner) -> null,(chooser,owner) ->
+            {
+                MainWindow.sharedSessionState().setMultiCompany(new MultiCompanyState("OTHER",List.of("DEFAULT","OTHER")));
+                return destination.toFile();
+            });
+            ((PanelHost)stage.getScene().getRoot()).showReplacement(AppPanelId.CHART_OF_ACCOUNTS,panel);
+            return null;
+        });
+        await(() -> !accounts.loadingCharts());
+        FxTestSupport.onFx(() ->
+        {
+            button("coaExportJsonButton").fire();
+            assertTrue(((Label)node("coaInterchangeStatus")).getText().contains("export cancelled"));
+            return null;
+        });
+        assertFalse(java.nio.file.Files.exists(destination));
+    }
+
+    @Test
+
+    void accountDeleteAndJsonControlsRemainReachableWithIndependentEditorScrolling() throws Exception
+    {
+        draftAccounts();
+        FxTestSupport.onFx(() ->
+        {
+            selectAccount("1010");
+            screenshot("draft-accounts-normal");
+            stage.setWidth(550);
+            stage.setHeight(650);
+            stage.getScene().getRoot().setStyle("-fx-font-size: 18px;");
+            return null;
+        });
+        await(() -> stage.getScene().getWidth()<=550 && stage.getScene().getHeight()<=650);
+        FxTestSupport.onFx(() ->
+        {
+            layout();
+            var wrapperRoot=(javafx.scene.layout.BorderPane)panel.root();
+            var globalHeader=wrapperRoot.getTop().localToScene(wrapperRoot.getTop().getBoundsInLocal());
+            var accountRoot=accounts.root().localToScene(accounts.root().getBoundsInLocal());
+            assertTrue(accountRoot.getMinY()>=globalHeader.getMaxY()-1,"Account content overlaps the wrapper header");
+            SplitPane chrome=(SplitPane)node("chartOfAccountsChromeSplit");
+            chrome.setDividerPositions(.25);
+            layout();
+            double before=chrome.getDividerPositions()[0];
+            chrome.setDividerPositions(.50);
+            layout();
+            assertTrue(chrome.getDividerPositions()[0]>before+.05);
+            chrome.setDividerPositions(.30);
+            layout();
+            var body=(SplitPane)node("chartOfAccountsWorkspaceSplit");
+            body.setDividerPositions(.50);
+            layout();
+            body.layout();
+            assertTrue(body.getHeight()>80,"Header must leave a usable account table/editor body");
+            assertTrue(accountTable().getHeight()>20);
+            accountTable().layout();
+            screenshot("draft-before-row-check");
+            var flow=accountTable().lookup(".virtual-flow");
+            var row=accountTable().lookupAll(".table-row-cell").stream().filter(TableRow.class::isInstance)
+                    .map(TableRow.class::cast).filter(r -> !r.isEmpty()).findFirst().orElseThrow();
+            var horizontal=accountTable().lookupAll(".scroll-bar").stream().filter(ScrollBar.class::isInstance).map(ScrollBar.class::cast)
+                    .filter(b -> b.isVisible() && b.getOrientation()==Orientation.HORIZONTAL).findFirst().orElseThrow();
+            assertTrue(flow.getBoundsInLocal().getHeight()+.5>=row.getHeight()+horizontal.getHeight(),
+                    "A complete account row must fit above the rendered scrollbar: flow="+flow.getBoundsInLocal().getHeight()
+                    +", row="+row.getHeight()+", scrollbar="+horizontal.getHeight());
+            var header=(ScrollPane)node("chartOfAccountsHeaderScroll");
+            assertTrue(header.lookupAll(".scroll-bar").stream().filter(ScrollBar.class::isInstance).map(ScrollBar.class::cast)
+                .anyMatch(b -> b.isVisible() && b.getOrientation()==Orientation.VERTICAL));
+            header.setVvalue(1);
+            layout();
+            assertEquals(1,header.getVvalue());
+            header.setVvalue(0);
+            layout();
+            var deleteBounds=header.getContent().sceneToLocal(button("chartOfAccountsDeleteAccount").localToScene(button("chartOfAccountsDeleteAccount").getBoundsInLocal()));
+            double range=header.getContent().getLayoutBounds().getHeight()-header.getViewportBounds().getHeight();
+            header.setVvalue(Math.min(1,Math.max(0,deleteBounds.getMinY()/range)));
+            layout();
+            var viewport=header.lookup(".viewport");
+            var viewportBounds=viewport.localToScene(viewport.getBoundsInLocal());
+            var visibleDelete=button("chartOfAccountsDeleteAccount").localToScene(button("chartOfAccountsDeleteAccount").getBoundsInLocal());
+            assertTrue(visibleDelete.getMinY()>=viewportBounds.getMinY()-1 && visibleDelete.getMaxY()<=viewportBounds.getMaxY()+1,"Delete must be fully reachable by scrolling the header");
+            for(String id:List.of("coaImportJsonButton","coaExportJsonButton","chartOfAccountsDeleteAccount"))
+            {
+                var control=button(id);
+                var bounds=control.localToScene(control.getBoundsInLocal());
+                assertTrue(bounds.getMinX()>=0 && bounds.getMaxX()<=stage.getScene().getWidth(),id+" clipped horizontally");
+                assertTrue(bounds.getMinY()>=0 && bounds.getMaxY()<=stage.getScene().getHeight(),id+" clipped vertically");
+            }
+            ScrollPane editor=(ScrollPane)node("chartOfAccountsEditorScroll");
+            editor.layout();
+            assertTrue(editor.getViewportBounds().getHeight()>20,"Editor viewport="+editor.getViewportBounds().getHeight()+", body="+body.getHeight()+", divider="+body.getDividerPositions()[0]);
+            var bars=editor.lookupAll(".scroll-bar").stream().filter(ScrollBar.class::isInstance).map(ScrollBar.class::cast).filter(ScrollBar::isVisible).toList();
+            assertTrue(bars.stream().anyMatch(b -> b.getOrientation()==Orientation.HORIZONTAL));
+            assertTrue(bars.stream().anyMatch(b -> b.getOrientation()==Orientation.VERTICAL));
+            editor.setHvalue(1);
+            editor.setVvalue(1);
+            layout();
+            assertEquals(1,editor.getHvalue());
+            assertEquals(1,editor.getVvalue());
+            editor.setHvalue(0);
+            editor.setVvalue(0);
+            screenshot("draft-accounts-narrow");
+            return null;
+        });
+    }
+
+    private void draftAccounts() throws Exception
+    {
+        createViaUi("Deletion draft");
+        long chart=FxTestSupport.onFx(() -> accounts.selectedChart().id());
+        try(Jpa jpa=new Jpa(database))
+        {
+            var admin=new AccountAdminService(jpa);
+            for(int i=0;i<2;i++) admin.save(new AccountCommand(null,i==0?"1000":"1010",i==0?"Account 1000":"Account 1010",
+                AccountType.ASSET,null,NormalBalance.DEBIT,null,i==0?null:"1000",true,chart,
+                new AccountDefinitionDetails(i!=0,null,null,BigDecimal.ZERO,"Notes")));
+        }
+        FxTestSupport.onFx(() ->
+        {
+            accounts.onPanelShown();
+            return null;
+        });
+        await(() -> !accounts.loadingCharts() && accountTable().getItems().size()==2);
+    }
+
+    private void selectAccount(String code)
+    {
+        int index=0;
+        for(Object value:accountTable().getItems())
+        {
+            if(((Account)value).getCode().equals(code))
+            {
+                accountTable().getSelectionModel().select(index);
+                return;
+            }
+            index++;
+        }
+        fail("Missing account "+code);
+    }
+
+    private String accountStatus()
+    {
+        return ((Label)node("chartOfAccountsStatus")).getText();
     }
 
     private void createViaUi(String name) throws Exception
@@ -488,7 +812,8 @@ class NativeChartEditorPaneTest
 
     private String status()
     {
-        return node("nativeChartStatus") instanceof Label label ? label.getText() : "Account page";
+        return node("nativeChartStatus") instanceof Label label ? label.getText()
+        : node("chartOfAccountsStatus") instanceof Label label ? label.getText()+" / "+((Label)node("coaInterchangeStatus")).getText() : "Review page";
     }
 
     private void screenshot(String suffix) throws Exception

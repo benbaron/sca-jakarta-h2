@@ -99,3 +99,10 @@ Apply/Cancel, contextual Save, Updated/Ready/grey row rendering, multi-delete an
 refresh preserving both applied and unfinished edits. The Word import procedure
 reflects those actions; it remains the manual source. New UI cases require a
 real display and are exercised by the existing CI Import workflow gate.
+
+P27-C22 [DraftAccountDeletionServiceTest](../src/test/java/org/nonprofitbookkeeping/service/DraftAccountDeletionServiceTest.java)
+checks imported draft deletion, metadata/receipt cleanup, all operational reference
+classes, lifecycle/scope/permissions, stale previews, rollback and deterministic
+viewed-draft export. Expanded NativeChartEditorPaneTest follows the visible JSON
+buttons, exports a draft without activation, opens inline import, and checks real
+successful/blocked/cancelled/dirty/busy/stale/scope-safe draft deletion.

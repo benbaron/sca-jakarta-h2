@@ -22,20 +22,20 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
 {
     private final BorderPane root = new BorderPane();
     private final ChartOfAccountsPanel delegate;
-    private final MenuItem importJson = new MenuItem("Import Chart JSON…");
-    private final MenuItem exportJson = new MenuItem("Export Chart JSON…");
-    private final MenuButton compatibility = new MenuButton("Compatibility");
+    private final Button importJson = new Button("Import Chart JSON…");
+    private final Button exportJson = new Button("Export Chart JSON…");
     private final Button newChart = new Button("New Chart");
     private final Button editChart = new Button("Edit Chart");
     private final Button cloneChart = new Button("Clone Chart");
     private final Label nativeHint = new Label();
     private final ProgressIndicator progress = new ProgressIndicator();
-    private final Label interchangeStatus = new Label("Create or select a chart, then maintain its accounts.");
+    private final Label interchangeStatus = new Label("JSON export uses the viewed chart.");
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
     private final BooleanProperty working = new SimpleBooleanProperty(false);
     private final CoaJsonReviewPane review;
     private final NativeChartEditorPane nativeEditor;
     private final BiFunction<FileChooser, Window, File> chooser;
+    private final BiFunction<FileChooser, Window, File> exportChooser;
     private boolean reviewing;
     private boolean chartEditing;
     private Runnable capabilitiesChanged = () ->
@@ -53,8 +53,14 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     }
     ChartOfAccountsInterchangePanel(ChartOfAccountsPanel delegate, BiFunction<FileChooser,Window,File> chooser)
     {
+        this(delegate, chooser, (fileChooser, owner) -> fileChooser.showSaveDialog(owner));
+    }
+    ChartOfAccountsInterchangePanel(ChartOfAccountsPanel delegate, BiFunction<FileChooser,Window,File> chooser,
+        BiFunction<FileChooser,Window,File> exportChooser)
+    {
         this.delegate = Objects.requireNonNull(delegate);
         this.chooser = chooser;
+        this.exportChooser = exportChooser;
         review = new CoaJsonReviewPane(new CoaJsonReviewPane.Operations()
         {
             @Override
@@ -82,19 +88,10 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         importJson.setId("coaImportJsonButton");
         exportJson.setId("coaExportJsonButton");
         importJson.disableProperty().bind(working.or(UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE)));
-        exportJson.disableProperty().bind(working.or(UiPermissionGate.deniedProperty(ApplicationPermission.EXPORT)));
-        compatibility.setId("coaCompatibility");
-        compatibility.getItems().setAll(importJson,exportJson);
-        importJson.setOnAction(event ->
-        {
-            compatibility.hide();
-            requestImport();
-        });
-        exportJson.setOnAction(event ->
-        {
-            compatibility.hide();
-            requestExport();
-        });
+        exportJson.setTooltip(new Tooltip("Export saved definitions from View chart, including a draft, without activating it."));
+        UiPermissionGate.gate(exportJson, ApplicationPermission.EXPORT, "Export the viewed Chart of Accounts to JSON");
+        importJson.setOnAction(event -> requestImport());
+        exportJson.setOnAction(event -> requestExport());
         newChart.setId("coaNewChart");
         editChart.setId("coaEditChart");
         cloneChart.setId("coaCloneChart");
@@ -103,9 +100,10 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         cloneChart.setOnAction(event -> requestChart(NativeChartEditorPane.Mode.CLONE));
         nativeHint.setWrapText(true);
         UiPermissionGate.deniedProperty(ApplicationPermission.BOOKKEEPING_WRITE).addListener(new javafx.beans.value.WeakChangeListener<>(chartPermission));
+        interchangeStatus.setId("coaInterchangeStatus");
         interchangeStatus.setWrapText(true);
         progress.setMaxSize(18,18);
-        FlowPane toolbar = new FlowPane(8,6,newChart,editChart,cloneChart,compatibility,progress);
+        FlowPane toolbar = new FlowPane(8,6,newChart,editChart,cloneChart,importJson,exportJson,progress);
         toolbar.setPadding(new Insets(8));
         toolbar.setMinWidth(0);
         root.setMinSize(0,0);
@@ -146,17 +144,19 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
 
     private void changed()
     {
-        boolean inFlight = busy.get() || review.busy() || nativeEditor.busy();
+        boolean inFlight = busy.get() || review.busy() || nativeEditor.busy() || delegate.deletingAccount();
         working.set(inFlight);
         boolean allowed = UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE);
         boolean accountDirty = delegate.hasUnsavedChanges();
         newChart.setDisable(inFlight || !allowed || accountDirty);
         cloneChart.setDisable(inFlight || !allowed || accountDirty);
         editChart.setDisable(inFlight || !allowed || delegate.loadingCharts() || delegate.selectedChart() == null && !nativeEditor.hasUnsavedChanges());
-        compatibility.setDisable(inFlight || importJson.isDisable() && exportJson.isDisable());
+        exportJson.setDisable(inFlight || delegate.loadingCharts() || delegate.selectedChart() == null);
         nativeHint.setText(!allowed ? "New/Edit/Clone Chart requires BOOKKEEPING_WRITE (ACCOUNTANT/MANAGER/ADMIN). Account editing uses BOOKKEEPING_WRITE."
-            : accountDirty ? "Save or Cancel Account Changes before creating or cloning a chart. Chart metadata editing preserves the account draft."
-            : "Maintain charts and accounts here. Make Active Chart is explicit; JSON is available under Compatibility.");
+            : accountDirty ? "Save or cancel account changes before New/Clone Chart."
+            : "");
+        nativeHint.setVisible(!nativeHint.getText().isBlank());
+        nativeHint.setManaged(nativeHint.isVisible());
         progress.setVisible(inFlight);
         progress.setManaged(inFlight);
         delegate.root().setDisable(inFlight);
@@ -186,45 +186,37 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         chartEditing = false;
         root.setCenter(delegate.root());
         delegate.focusChart(chart.id());
-        interchangeStatus.setText("Saved chart " + chart.name() + " / " + chart.version() + " (ID " + chart.id() + "). Activation remains explicit.");
+        interchangeStatus.setText("Saved chart (ID " + chart.id() + ").");
         changed();
     }
 
     private void requestExport()
     {
+        if (working.get() || delegate.loadingCharts() || delegate.selectedChart() == null
+            || !UiPermissionGate.allows(ApplicationPermission.EXPORT)) return;
+        var scope = CoaJsonReviewPane.Scope.current();
+        var chart = delegate.selectedChart();
         Optional<Path> destination = chooseExportFile();
-        if (destination.isEmpty())
+        if (destination.isEmpty()) return;
+        if (!scope.currentScope())
         {
+            interchangeStatus.setText("Company/database changed; Chart JSON export cancelled. Select the intended chart again.");
             return;
         }
         Path target = normalizeJsonPath(destination.get());
         if (Files.exists(target))
         {
-            showError(
-                "Chart of Accounts JSON not exported",
-                "A file already exists at " + target.toAbsolutePath()
-                + ". Choose a new file name; existing exports are not overwritten silently.");
+            interchangeStatus.setText("Chart of Accounts JSON not exported: destination exists. Choose a new file name: " + target);
             return;
         }
-        setBusy(true, "Exporting active Chart of Accounts to " + target.toAbsolutePath() + "…");
-        UiAsync.run(
-            "coa-json-export",
-            () -> withJpa(jpa -> new ChartOfAccountsJsonService(jpa, this::activeCompanyCode)
-            .exportActiveChart(target)),
-            this::exportCompleted,
-            error -> operationFailed("Chart of Accounts JSON export failed", error));
-    }
-
-    private void exportCompleted(CoaExportResult result)
-    {
-        setBusy(false, "Exported " + result.accountCount() + " account(s) to "
-            + result.destination() + "; SHA-256 " + result.sha256() + ".");
-        showInformation(
-            "Chart of Accounts JSON exported",
-            "Destination: " + result.destination()
-            + "\nBytes: " + result.byteCount()
-            + "\nAccounts: " + result.accountCount()
-            + "\nSHA-256: " + result.sha256());
+        setBusy(true, "Exporting viewed chart " + chart.name() + " (ID " + chart.id() + ") to " + target + "…");
+        UiAsync.run("coa-json-export",
+            () -> scoped(scope, jpa -> new ChartOfAccountsJsonService(jpa,scope::company).exportChart(chart.id(),target)),
+            result ->
+        {
+            setBusy(false, "Exported chart " + chart.name() + " (ID " + chart.id() + "), " + result.accountCount()
+                + " account(s) to " + result.destination() + "; SHA-256 " + result.sha256() + ".");
+        }, error -> setBusy(false, "Chart of Accounts JSON export failed: " + UiErrors.safeMessage(error)));
     }
 
     private Optional<Path> chooseImportFile()
@@ -250,7 +242,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         }
         FileChooser chooser = jsonFileChooser("Export Chart of Accounts JSON");
         chooser.setInitialFileName("chart-of-accounts.json");
-        File selected = chooser.showSaveDialog(owner);
+        File selected = exportChooser.apply(chooser,owner);
         return selected == null ? Optional.empty() : Optional.of(selected.toPath().toAbsolutePath().normalize());
     }
 
@@ -300,75 +292,15 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         return Map.copyOf(mappings);
     }
 
-    private <T> T withJpa(Function<Jpa, T> operation)
-    {
-        Path database = DatabaseLocationService.resolveDatabasePath(
-            MainWindow.sharedSessionState().databaseSelection().activeDatabasePath());
-        try (Jpa jpa = new Jpa(database))
-        {
-            return operation.apply(jpa);
-        }
-    }
-
-    private String activeCompanyCode()
-    {
-        String code = MainWindow.sharedSessionState().multiCompany().activeCompanyCode();
-        return code == null || code.isBlank() ? "DEFAULT" : code.trim();
-    }
-
-    private void operationFailed(String title, Throwable error)
-    {
-        setBusy(false, title + ": " + UiErrors.safeMessage(error));
-        showError(title, UiErrors.safeMessage(error));
-    }
-
     private void setBusy(boolean value, String message)
     {
         busy.set(value);
         interchangeStatus.setText(message);
     }
 
-    private void showError(String title, String message)
-    {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        initOwner(alert);
-        alert.showAndWait();
-    }
-
-    private void showInformation(String title, String message)
-    {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        initOwner(alert);
-        alert.showAndWait();
-    }
-
     private Window ownerWindow()
     {
         return root.getScene() == null ? null : root.getScene().getWindow();
-    }
-
-    private void initOwner(Dialog<?> dialog)
-    {
-        Window owner = ownerWindow();
-        if (owner != null)
-        {
-            dialog.initOwner(owner);
-        }
-    }
-
-    private void initOwner(Alert alert)
-    {
-        Window owner = ownerWindow();
-        if (owner != null)
-        {
-            alert.initOwner(owner);
-        }
     }
 
     private AppPanel active()
@@ -391,7 +323,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     @Override
     public Set<AppCommand> commandCapabilities()
     {
-        return busy.get() ? Set.of() : active().commandCapabilities();
+        return working.get() ? Set.of() : active().commandCapabilities();
     }
 
     @Override
@@ -479,11 +411,13 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         review.setCommandResultListener(listener);
         nativeEditor.setCommandResultListener(listener);
     }
-    MenuItem importJsonButtonForTests()
+
+    Button importJsonButtonForTests()
     {
         return importJson;
     }
-    MenuItem exportJsonButtonForTests()
+
+    Button exportJsonButtonForTests()
     {
         return exportJson;
     }

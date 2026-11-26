@@ -1,13 +1,22 @@
 # UI design rules
 
 P27-C21 Chart of Accounts exposes native New Chart / Edit Chart / Clone Chart as
-primary actions and JSON under a secondary Compatibility menu. Chart forms stay
+primary actions alongside directly visible Import Chart JSON / Export Chart JSON
+buttons (P27-C22). Export uses the viewed owned chart, including a draft. Chart forms stay
 inline; accounts remain an independently scrollable table/editor split. Owned
 DRAFT/ACTIVE charts are editable without activation; global New/Save labels follow
 the actual account or chart form. Clone sources identify company, chart name,
 version, lifecycle and ID; opening balances always reset to zero. Retained chart/
 account/JSON drafts, visible role/scope/busy explanations, explicit Cancel and
 draggable header/form dividers use existing company/database state authority.
+
+P27-C22 Delete Account is a genuine audited service operation for unused accounts
+in non-current DRAFT charts. Require saved/unchanged fields, explicit confirmation,
+company/chart revision and reference revalidation; expose inline blocking reasons.
+Children, journal, banking, assets and inventory never cascade. Definition adjuncts
+and same-company account import mappings are removed atomically; history/audit is
+retained. Pending async delete disables competing actions and retains fields on
+cancel/failure/scope change. Other chart states use deactivation.
 
 P27-C20 Chart JSON review uses inline named pages and a persistent header/body
 divider with local horizontal/vertical scrolling. Validation and original JSON

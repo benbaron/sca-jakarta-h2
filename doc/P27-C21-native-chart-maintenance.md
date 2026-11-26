@@ -1,6 +1,6 @@
 # P27-C21 — Native Chart of Accounts maintenance
 
-Status: VERIFYING. Owner requests native chart creation, editing and cloning;
+Status: DONE. PR #447 merged at b0d1c613721ca8f79ea946430963c6919c127ee1. P27-C22 supersedes secondary-only JSON placement and the draft-account no-delete restriction. Historical receipt follows. Owner requests native chart creation, editing and cloning;
 JSON is compatibility interchange, not the primary maintenance path. C20/#446
 merged at f7453b324f54421ff33ccc12edbc073121f9ef70; this branch starts from that
 main. Baseline compile passes. Branch: `codex/P27-C21-native-chart-maintenance`.

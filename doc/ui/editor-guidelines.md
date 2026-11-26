@@ -11,6 +11,14 @@ gates activation. Clone may read other companies' chart definitions in the curre
 database, but writes only a fresh target DRAFT graph with zero openings. No routine
 input popup, JSON round-trip, history movement or implicit activation is introduced.
 
+P27-C22 adds physical Delete Account for an unchanged saved account in a
+non-current DRAFT chart. Preview/confirmation and locked revalidation protect
+ownership, role, scope, revision, children and all operational references. Remove
+only account definition adjuncts and its company's account import mappings; retain
+audit and shared dictionaries. Cancel/failure retains selection and fields; busy
+state blocks conflicting commands. JSON import/export are directly visible next
+to native controls; export targets the viewed owned chart without activation.
+
 P27-C20 extends the existing review pattern to Chart JSON inside its own workspace:
 Import Setup, Proposed Accounts, Edit Account and Original Source and Diagnostics.
 Apply accepts a proposal without writing H2; Cancel restores its last applied fields.
