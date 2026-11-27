@@ -4,8 +4,8 @@ active_phase: P27
 active_slice: P27-C26
 active_status: VERIFYING
 active_branch: codex/P27-C26-actionable-chart-import-errors
-active_pull_request: null
-active_head: 2f734ba1
+active_pull_request: 452
+active_head: 4d1ab69fcb7b66b4a0571c624fa7df19f360a407
 next_action: "Verify actionable chart import errors and retained proposals, then run the full build."
 ---
 
@@ -22,7 +22,11 @@ available in Diagnostics. No write occurs until the reviewed import is committed
 The focused gate passed 28 tests with zero failures/errors/skips. The Word manual
 was updated in place and the changed instructions were rendered. The blocker was
 moved above the action bar following narrow-window inspection. Final layout and
-full clean verify are running.
+full clean verify passed, with 1,428 cases and zero failures/errors. The first CI
+Import step failed. Its local reproduction passed all 11 chart review tests and
+found an existing native chart geometry test checking before the scene resize.
+Wait for the actual scene dimensions and keep both scrollbar assertions. Verify
+the successor locally and in GitHub CI.
 [Other actionable-error opportunities](actionable-error-survey.md) records the
 survey and identifies existing navigation to reuse.
 
