@@ -1,17 +1,35 @@
 ---
-plan_version: 561
+plan_version: 563
 active_phase: P27
-active_slice: P27-C24
+active_slice: P27-C25
 active_status: VERIFYING
-active_branch: codex/P27-C24-save-account-and-return
-active_pull_request: null
-active_head: 1930da4c2db177886cdf69fcb0a9b57607f3406b
-next_action: "Finish the final focused regression and clean verify, then inspect the correction PR CI."
+active_branch: codex/P27-C25-save-entire-chart
+active_pull_request: 451
+active_head: 74e4f8c05f4d4f37c3cbd7f9d753694cc9dd0e34
+next_action: "Run full clean verify and check GitHub CI for the Save Chart correction."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
-### P27-C24 Save a cloned chart account and return
+### P27-C25 Save an entire chart and verify cross-company copying
+
+Save Account commits the selected form. Save Chart commits the viewed chart,
+including any retained chart details and the currently pending account edit, in
+one transaction with the existing role, chart revision and account guards.
+Save Chart and Return follows the recorded workspace after success. A rejected
+save retains both forms. Cross-company Clone Chart remains available inside the
+open database, and edits to the copy preserve the original company's definitions.
+Baseline compile and the final focused gate passed. The focused gate ran 48
+tests with zero failures, errors or skips and covered cross-company clone,
+selected-account save, whole-chart rollback, retained edits, Save Chart and Return,
+JSON review, deletion safeguards and production layout. Native screenshot and the
+updated Word manual were inspected. [PR #451](https://github.com/benbaron/sca-jakarta-h2/pull/451)
+contains the correction. Initial full verify exposed a pre-existing source
+contract that checks the named account command. The successor restores that
+explicit local variable and leaves the account write unchanged. Repeat full
+verification and GitHub checks on the successor before readiness.
+
+### P27-C24 Save a cloned chart account and return (merged, superseded by C25)
 
 A saved clone opens its account editor. An account edit is independently pending,
 and the existing Return action only navigates. Place Save Account and Return beside

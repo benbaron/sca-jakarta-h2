@@ -45,6 +45,33 @@ class NativeChartServiceTest
     }
 
     @Test
+    void wholeChartSaveRollsBackChartAccountAndAuditTogether()
+    {
+        try (Jpa jpa = database())
+        {
+            var service = service(jpa, "DEFAULT");
+            var chart = service.save(new ChartCommand(null, "Original", "1", false, null));
+            var details = new ChartCommand(chart.id(), "Updated", "2", false, chart.revision());
+            var account = account(chart.id(), null, "1000", null, true, "0.00");
+            long auditCount = count(jpa, "AuditEvent");
+            var failing = new ChartAdminService(jpa, () -> "DEFAULT", null, step ->
+            {
+                if ("AUDIT_WRITTEN".equals(step)) throw new IllegalStateException("Injected late failure");
+            });
+            assertThrows(IllegalStateException.class, () -> failing.saveExistingChart(chart.id(), details, account));
+            assertEquals("Original", service.load(chart.id()).name());
+            assertEquals(0, count(jpa, "Account"));
+            assertEquals(auditCount, count(jpa, "AuditEvent"));
+
+            var saved = service.saveExistingChart(chart.id(), details, account);
+            assertEquals("Updated", saved.chart().name());
+            assertEquals(1, saved.chart().accountCount());
+            assertNotNull(saved.accountId());
+            assertEquals(auditCount + 2, count(jpa, "AuditEvent"));
+        }
+    }
+
+    @Test
 
     void editsMetadataRetainsIdentityAndRequiresAnotherCurrentChartBeforeRetirement()
     {

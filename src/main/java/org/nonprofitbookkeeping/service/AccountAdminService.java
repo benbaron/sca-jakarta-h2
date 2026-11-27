@@ -62,11 +62,41 @@ public class AccountAdminService
         String companyCode = companyCodeSupplier.get();
         String actor = ServiceAuthorization.actor(authorizationGuard, ApplicationPermission.BOOKKEEPING_WRITE,
                 companyCode, "save account", "SYSTEM");
+        validateSaveCommand(command);
+        String cleanCode = command.code().trim();
+
+        try (EntityManager em = jpa.em())
+        {
+            em.getTransaction().begin();
+            try
+            {
+                CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
+                Company company = ownership.requireCompany(em, companyCode);
+                SupplementalIntegrityService.lock(em, company);
+                ChartOfAccounts chart = command.chartId() == null ? resolveChart(em, company, ownership)
+                        : requireEditableChart(em, company, command.chartId(), ownership);
+
+                Account account = writeDefinition(em, ownership, company, chart, command, actor);
+                em.getTransaction().commit();
+                return account;
+            }
+            catch (RuntimeException ex)
+            {
+                if (em.getTransaction().isActive())
+                {
+                    em.getTransaction().rollback();
+                }
+                throw mapPersistenceError(ex, cleanCode);
+            }
+        }
+    }
+
+    private static void validateSaveCommand(AccountCommand command)
+    {
         if (command == null)
         {
             throw new IllegalArgumentException("Account details are required.");
         }
-
         String cleanCode = requireText(command.code(), "Account code");
         String cleanName = requireText(command.name(), "Account name");
         if (command.accountType() == null)
@@ -83,115 +113,111 @@ public class AccountAdminService
             AccountDefinitionRules.validate(cleanCode, cleanName, command.accountType(), command.accountFunction(),
                     command.normalBalance(), command.subtype(), command.details());
         }
+    }
 
-        try (EntityManager em = jpa.em())
+    /** Writes one definition inside the caller's company/chart transaction. */
+    static Account saveInChart(EntityManager em, CompanyOwnershipService ownership, Company company,
+            ChartOfAccounts chart, AccountCommand command, String actor)
+    {
+        validateSaveCommand(command);
+        if (!Objects.equals(chart.getId(), command.chartId()) || chart.getStatus() == ChartStatus.RETIRED)
         {
-            em.getTransaction().begin();
-            try
-            {
-                CompanyOwnershipService ownership = new CompanyOwnershipService(jpa);
-                Company company = ownership.requireCompany(em, companyCode);
-                SupplementalIntegrityService.lock(em, company);
-                ChartOfAccounts chart = command.chartId() == null ? resolveChart(em, company, ownership)
-                        : requireEditableChart(em, company, command.chartId(), ownership);
-
-                Account account;
-                if (command.id() == null)
-                {
-                    account = new Account();
-                    account.setChart(chart);
-                    account.setPosting(true);
-                }
-                else
-                {
-                    account = requireAccount(em, command.id());
-                    ownership.ensureOwnedBy(em, company, account, "Account");
-                    if (account.getChart() == null
-                            || account.getChart().getId() == null
-                            || !account.getChart().getId().equals(chart.getId()))
-                    {
-                        throw new CompanyOwnershipException(
-                                "Account ID " + command.id() + " does not belong to the selected Chart of Accounts.");
-                    }
-                    requireAcquisitionClassification(em, account, command.accountType(), command.subtype(), command.normalBalance());
-                    validateConfiguredBankClassification(
-                            em,
-                            company,
-                            account,
-                            command.accountType(),
-                            command.accountFunction(),
-                            command.normalBalance());
-                }
-
-                requireUniqueCode(em, chart, command.id(), cleanCode);
-                Account parent = resolveParent(em, chart, cleanCode, command.parentCode());
-                if (parent != null && command.id() != null && command.id().equals(parent.getId()))
-                {
-                    throw new IllegalArgumentException("Parent account cannot be the account being edited.");
-                }
-                if (parent != null)
-                {
-                    ownership.requireOwnedBy(company, parent, "Parent account");
-                }
-
-                requireAcyclicParent(account, parent, chart);
-                if (command.details() != null)
-                {
-                    requireDefinitionChanges(em, account, command, parent);
-                }
-                String before = account.getId() == null ? null : describe(account);
-
-                applyAccount(
-                        account,
-                        cleanCode,
-                        cleanName,
-                        command.accountType(),
-                        command.accountFunction(),
-                        command.normalBalance(),
-                        command.subtype(),
-                        parent,
-                        command.active());
-
-                if (command.details() != null)
-                {
-                    var details = command.details();
-                    account.setPosting(details.posting());
-                    account.setEffectiveFrom(details.effectiveFrom());
-                    account.setEffectiveTo(details.effectiveTo());
-                    account.setOpeningBalance(details.openingBalance().setScale(2));
-                    account.setDescription(details.description());
-                }
-
-                if (account.getId() == null)
-                {
-                    em.persist(account);
-                }
-                if (command.chartId() != null || command.details() != null)
-                {
-                    em.flush();
-                    AuditEvent event = new AuditEvent();
-                    event.setCompany(company);
-                    event.setActor(actor);
-                    event.setEntityType("ACCOUNT");
-                    event.setEntityId(account.getId().toString());
-                    event.setActionType(before == null ? "ACCOUNT_CREATED" : "ACCOUNT_UPDATED");
-                    event.setSummary((before == null ? "Created account " : "Updated account ") + cleanCode);
-                    event.setBeforeValue(before);
-                    event.setAfterValue(describe(account));
-                    em.persist(event);
-                }
-                em.getTransaction().commit();
-                return account;
-            }
-            catch (RuntimeException ex)
-            {
-                if (em.getTransaction().isActive())
-                {
-                    em.getTransaction().rollback();
-                }
-                throw mapPersistenceError(ex, cleanCode);
-            }
+            throw new IllegalArgumentException("The pending account must belong to the editable chart being saved.");
         }
+        return writeDefinition(em, ownership, company, chart, command, actor);
+    }
+
+    private static Account writeDefinition(EntityManager em, CompanyOwnershipService ownership, Company company,
+            ChartOfAccounts chart, AccountCommand command, String actor)
+    {
+        String cleanCode = command.code().trim();
+        String cleanName = command.name().trim();
+        Account account;
+        if (command.id() == null)
+        {
+            account = new Account();
+            account.setChart(chart);
+            account.setPosting(true);
+        }
+        else
+        {
+            account = requireAccount(em, command.id());
+            ownership.ensureOwnedBy(em, company, account, "Account");
+            if (account.getChart() == null
+                    || account.getChart().getId() == null
+                    || !account.getChart().getId().equals(chart.getId()))
+            {
+                throw new CompanyOwnershipException(
+                        "Account ID " + command.id() + " does not belong to the selected Chart of Accounts.");
+            }
+            requireAcquisitionClassification(em, account, command.accountType(), command.subtype(), command.normalBalance());
+            validateConfiguredBankClassification(
+                    em,
+                    company,
+                    account,
+                    command.accountType(),
+                    command.accountFunction(),
+                    command.normalBalance());
+        }
+
+        requireUniqueCode(em, chart, command.id(), cleanCode);
+        Account parent = resolveParent(em, chart, cleanCode, command.parentCode());
+        if (parent != null && command.id() != null && command.id().equals(parent.getId()))
+        {
+            throw new IllegalArgumentException("Parent account cannot be the account being edited.");
+        }
+        if (parent != null)
+        {
+            ownership.requireOwnedBy(company, parent, "Parent account");
+        }
+
+        requireAcyclicParent(account, parent, chart);
+        if (command.details() != null)
+        {
+            requireDefinitionChanges(em, account, command, parent);
+        }
+        String before = account.getId() == null ? null : describe(account);
+
+        applyAccount(
+                account,
+                cleanCode,
+                cleanName,
+                command.accountType(),
+                command.accountFunction(),
+                command.normalBalance(),
+                command.subtype(),
+                parent,
+                command.active());
+
+        if (command.details() != null)
+        {
+            var details = command.details();
+            account.setPosting(details.posting());
+            account.setEffectiveFrom(details.effectiveFrom());
+            account.setEffectiveTo(details.effectiveTo());
+            account.setOpeningBalance(details.openingBalance().setScale(2));
+            account.setDescription(details.description());
+        }
+
+        if (account.getId() == null)
+        {
+            em.persist(account);
+        }
+        if (command.chartId() != null || command.details() != null)
+        {
+            em.flush();
+            AuditEvent event = new AuditEvent();
+            event.setCompany(company);
+            event.setActor(actor);
+            event.setEntityType("ACCOUNT");
+            event.setEntityId(account.getId().toString());
+            event.setActionType(before == null ? "ACCOUNT_CREATED" : "ACCOUNT_UPDATED");
+            event.setSummary((before == null ? "Created account " : "Updated account ") + cleanCode);
+            event.setBeforeValue(before);
+            event.setAfterValue(describe(account));
+            em.persist(event);
+        }
+        return account;
     }
 
     private static ChartOfAccounts requireEditableChart(EntityManager em, Company company, long id, CompanyOwnershipService ownership)
@@ -589,7 +615,7 @@ public class AccountAdminService
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private Account resolveParent(EntityManager em,
+    private static Account resolveParent(EntityManager em,
                                   ChartOfAccounts chart,
                                   String currentCode,
                                   String requestedParentCode)

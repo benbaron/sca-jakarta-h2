@@ -27,6 +27,9 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     private final Button exportJson = new Button("Export Chart JSON…");
     private final Button newChart = new Button("New Chart");
     private final Button editChart = new Button("Edit Chart");
+    private final Button saveChart = new Button("Save Chart");
+    private final Button saveChartAndReturn = new Button();
+    private Consumer<RunCommandResult> resultListener = ignored -> {};
     private final Button deleteChart = new Button("Delete Draft Chart");
     private Predicate<ChartDeletionPreview> chartDeleteConfirmation = this::confirmChartDeletion;
     private final Button cloneChart = new Button("Clone Chart");
@@ -84,7 +87,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
                 return UiServiceRegistry.coaJsonImport().commit(approved);
             }
         },this::chooseImportFile,this::showAccounts,CompanyUiFormat.activeCompany());
-        nativeEditor = new NativeChartEditorPane(UiServiceRegistry::chartAdmin,this::chartSaved,this::showAccounts);
+        nativeEditor = new NativeChartEditorPane(UiServiceRegistry::chartAdmin,this::chartSaved,this::showAccounts,id -> saveExistingChart(id, false));
         nativeEditor.setCommandCapabilitiesChangedListener(this::changed);
         review.setCommandCapabilitiesChangedListener(this::changed);
         delegate.setCommandCapabilitiesChangedListener(this::changed);
@@ -98,6 +101,14 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         exportJson.setOnAction(event -> requestExport());
         newChart.setId("coaNewChart");
         editChart.setId("coaEditChart");
+        saveChart.setId("coaSaveChart");
+        saveChartAndReturn.setId("coaSaveChartAndReturn");
+        saveChartAndReturn.textProperty().bind(javafx.beans.binding.Bindings.createStringBinding(
+                () -> "Save Chart and " + delegate.returnLabel().getValue(), delegate.returnLabel()));
+        saveChart.setOnAction(event -> saveViewedChart(false));
+        saveChartAndReturn.setOnAction(event -> saveViewedChart(true));
+        saveChart.managedProperty().bind(saveChart.visibleProperty());
+        saveChartAndReturn.managedProperty().bind(saveChartAndReturn.visibleProperty());
         cloneChart.setId("coaCloneChart");
         deleteChart.setId("coaDeleteDraftChart");
         deleteChart.setOnAction(event -> requestChartDeletion());
@@ -109,7 +120,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         interchangeStatus.setId("coaInterchangeStatus");
         interchangeStatus.setWrapText(true);
         progress.setMaxSize(18,18);
-        FlowPane toolbar = new FlowPane(8,6,newChart,editChart,cloneChart,deleteChart,importJson,exportJson,progress);
+        FlowPane toolbar = new FlowPane(8,6,newChart,editChart,cloneChart,deleteChart,importJson,exportJson,saveChart,saveChartAndReturn,progress);
         toolbar.setPadding(new Insets(8));
         toolbar.setMinWidth(0);
         root.setMinSize(0,0);
@@ -172,6 +183,11 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         newChart.setDisable(inFlight || !allowed || accountDirty);
         cloneChart.setDisable(inFlight || !allowed || accountDirty);
         editChart.setDisable(inFlight || !allowed || delegate.loadingCharts() || delegate.selectedChart() == null && !nativeEditor.hasUnsavedChanges());
+        saveChart.setVisible(!reviewing && !chartEditing);
+        saveChartAndReturn.setVisible(!reviewing && !chartEditing);
+        boolean saveUnavailable = inFlight || !allowed || delegate.loadingCharts() || delegate.selectedChart() == null;
+        saveChart.setDisable(saveUnavailable);
+        saveChartAndReturn.setDisable(saveUnavailable);
         exportJson.setDisable(inFlight || delegate.loadingCharts() || delegate.selectedChart() == null);
         deleteChart.setDisable(!canDeleteChart());
         nativeHint.setText(!allowed ? "New/Edit/Clone Chart requires BOOKKEEPING_WRITE (ACCOUNTANT/MANAGER/ADMIN). Account editing uses BOOKKEEPING_WRITE."
@@ -185,6 +201,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         progress.setVisible(inFlight);
         progress.setManaged(inFlight);
         delegate.root().setDisable(inFlight);
+        nativeEditor.root().setDisable(busy.get());
         capabilitiesChanged.run();
     }
 
@@ -213,6 +230,50 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
         delegate.focusChart(chart.id());
         interchangeStatus.setText("Saved chart (ID " + chart.id() + ").");
         changed();
+    }
+
+    private void saveViewedChart(boolean returnAfterSave)
+    {
+        var selected = delegate.selectedChart();
+        if (selected != null) saveExistingChart(selected.id(), returnAfterSave);
+    }
+
+    private void saveExistingChart(long chartId, boolean returnAfterSave)
+    {
+        if (working.get() || !UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE)) return;
+        var scope = CoaJsonReviewPane.Scope.current();
+        try
+        {
+            var details = nativeEditor.pendingDetailsForChart(chartId);
+            var account = delegate.pendingAccountForChart(chartId);
+            var service = UiServiceRegistry.chartAdmin();
+            setBusy(true, "Saving chart (ID " + chartId + ")…");
+            UiAsync.run("coa-save-chart", () -> service.saveExistingChart(chartId, details, account), saved ->
+            {
+                String message = "Saved chart " + saved.chart().name() + " (ID " + chartId + ").";
+                setBusy(false, message);
+                if (!scope.currentScope()) return;
+                nativeEditor.acceptChartSave(saved.chart());
+                reviewing = false;
+                chartEditing = false;
+                root.setCenter(delegate.root());
+                delegate.acceptChartSave(chartId, saved.accountId());
+                changed();
+                resultListener.accept(new RunCommandResult(true, message));
+                if (returnAfterSave) delegate.returnToOrigin();
+            }, this::chartSaveFailed);
+        }
+        catch (RuntimeException failure)
+        {
+            chartSaveFailed(failure);
+        }
+    }
+
+    private void chartSaveFailed(Throwable failure)
+    {
+        String message = "Could not save chart: " + UiErrors.safeMessage(failure);
+        setBusy(false, message);
+        resultListener.accept(new RunCommandResult(false, message));
     }
 
     private boolean canDeleteChart()
@@ -498,6 +559,7 @@ public final class ChartOfAccountsInterchangePanel implements AppPanel
     @Override
     public void setCommandResultListener(Consumer<RunCommandResult> listener)
     {
+        resultListener = listener;
         delegate.setCommandResultListener(listener);
         review.setCommandResultListener(listener);
         nativeEditor.setCommandResultListener(listener);

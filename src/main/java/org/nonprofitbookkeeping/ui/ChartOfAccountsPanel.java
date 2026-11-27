@@ -74,7 +74,6 @@ public class ChartOfAccountsPanel implements AppPanel
     private Button refresh;
     private final Button add = new Button("+ Add");
     private final Button save = new Button("Save");
-    private final Button saveAndReturn = new Button();
     private final MaintenanceReturn returnAction = new MaintenanceReturn(AppPanelId.CHART_OF_ACCOUNTS, "chartOfAccountsReturn");
     private final MaintenanceListFeedback listFeedback = new MaintenanceListFeedback("chartOfAccounts", "accounts", "the selected chart", "New Account");
     private long loadGeneration;
@@ -143,9 +142,6 @@ public class ChartOfAccountsPanel implements AppPanel
         add.setOnAction(e -> onNew());
 
         save.setOnAction(e -> onSave());
-        saveAndReturn.setId("chartOfAccountsSaveAndReturn");
-        saveAndReturn.textProperty().bind(returnAction.button().textProperty().map(text -> "Save Account and " + text));
-        saveAndReturn.managedProperty().bind(saveAndReturn.visibleProperty());
         delete.setId("chartOfAccountsDeleteAccount");
         delete.setOnAction(e -> deleteAccount());
         add.setText("New Account"); add.setId("chartOfAccountsNewAccount");
@@ -169,7 +165,7 @@ public class ChartOfAccountsPanel implements AppPanel
         showAll.setTooltip(new javafx.scene.control.Tooltip("Reload active and inactive accounts in the viewed chart without discarding editor changes."));
         showAll.setOnAction(e -> reload(editingAccountId));
 
-        FlowPane actions = new FlowPane(8, 6, add, save, saveAndReturn, cancel, delete, refresh, showAll, returnAction.button());
+        FlowPane actions = new FlowPane(8, 6, add, save, cancel, delete, refresh, showAll, returnAction.button());
         chartSelection.setId("chartOfAccountsSelection");
         chartSelection.setPromptText("Select a Chart of Accounts");
         chartSelection.setMaxWidth(Double.MAX_VALUE);
@@ -199,20 +195,6 @@ public class ChartOfAccountsPanel implements AppPanel
         headerScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         headerScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         dirtyState = new FormDirtyTracker(this::formSnapshot);
-        saveAndReturn.setOnAction(e ->
-        {
-            if (!dirtyState.isDirty())
-            {
-                return;
-            }
-            RunCommandResult result = saveForm();
-            resultListener.accept(result);
-            if (result.handled())
-            {
-                returnAction.button().fire();
-            }
-        });
-
         TableColumn<Account, String> code = new TableColumn<>("Code");
         code.setCellValueFactory(v -> new SimpleStringProperty(v.getValue().getCode()));
 
@@ -472,18 +454,7 @@ public class ChartOfAccountsPanel implements AppPanel
         }
         try
         {
-            AccountCommand command = new AccountCommand(
-                    editingAccountId,
-                    codeField.getText(),
-                    nameField.getText(),
-                    typeField.getValue(),
-                    selectedFunction(),
-                    balanceField.getValue(),
-                    subtypeField.getValue(),
-                    parentCodeField.getText(),
-                    activeField.isSelected(), chartSelection.getValue().id(),
-                    new AccountDefinitionDetails(postingField.isSelected(), optionalDate(effectiveFrom), optionalDate(effectiveTo),
-                            openingAmount(), description.getText()));
+            AccountCommand command = accountCommand();
             Account saved = UiServiceRegistry.accountAdmin().save(command);
             editingAccountId = saved.getId();
             dirtyState.markClean();
@@ -497,6 +468,52 @@ public class ChartOfAccountsPanel implements AppPanel
             status.setText("Could not save account: " + UiErrors.safeMessage(ex));
             return new RunCommandResult(false, status.getText());
         }
+    }
+
+    private AccountCommand accountCommand()
+    {
+        return new AccountCommand(
+                editingAccountId,
+                codeField.getText(),
+                nameField.getText(),
+                typeField.getValue(),
+                selectedFunction(),
+                balanceField.getValue(),
+                subtypeField.getValue(),
+                parentCodeField.getText(),
+                activeField.isSelected(), chartSelection.getValue().id(),
+                new AccountDefinitionDetails(postingField.isSelected(), optionalDate(effectiveFrom), optionalDate(effectiveTo),
+                        openingAmount(), description.getText()));
+    }
+
+    AccountCommand pendingAccountForChart(long chartId)
+    {
+        if (!dirtyState.isDirty()) return null;
+        if (!canEditChart() || !Objects.equals(selectedChart().id(), chartId))
+        {
+            throw new IllegalStateException("Return to the chart and company that own the pending account edit.");
+        }
+        return accountCommand();
+    }
+
+    void acceptChartSave(long chartId, Long accountId)
+    {
+        if (accountId != null)
+        {
+            editingAccountId = accountId;
+            dirtyState.markClean();
+        }
+        focusChart(chartId);
+    }
+
+    javafx.beans.value.ObservableValue<String> returnLabel()
+    {
+        return returnAction.button().textProperty();
+    }
+
+    void returnToOrigin()
+    {
+        returnAction.button().fire();
     }
 
     FormState readFormStateForTests()
@@ -711,7 +728,6 @@ public class ChartOfAccountsPanel implements AppPanel
         refresh.setDisable(loadingCharts);
         add.setDisable(!canEditChart());
         save.setDisable(!canEditChart());
-        saveAndReturn.setDisable(!canEditChart());
         cancel.setDisable(loadingCharts || deletingAccount);
         delete.setDisable(!canDeleteAccount());
         lifecycle.setText(deletionExplanation());
@@ -740,7 +756,6 @@ public class ChartOfAccountsPanel implements AppPanel
 
     private void accountFieldsChanged()
     {
-        saveAndReturn.setVisible(dirtyState.isDirty());
         delete.setDisable(!canDeleteAccount());
         lifecycle.setText(deletionExplanation());
         capabilitiesChanged.run();

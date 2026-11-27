@@ -25,6 +25,7 @@ final class NativeChartEditorPane extends VBox implements AppPanel
     private final Supplier<ChartAdminService> services;
     private final Consumer<ChartDetails> saved;
     private final Runnable back;
+    private final java.util.function.LongConsumer saveExisting;
     private final TextField name = new TextField();
     private final TextField version = new TextField();
     private final CheckBox retired = new CheckBox("Retired");
@@ -56,11 +57,12 @@ final class NativeChartEditorPane extends VBox implements AppPanel
     {
     };
     private final javafx.beans.value.ChangeListener<Boolean> permission = (o,a,b) -> availability();
-    NativeChartEditorPane(Supplier<ChartAdminService> services, Consumer<ChartDetails> saved, Runnable back)
+    NativeChartEditorPane(Supplier<ChartAdminService> services, Consumer<ChartDetails> saved, Runnable back, java.util.function.LongConsumer saveExisting)
     {
         this.services = services;
         this.saved = saved;
         this.back = back;
+        this.saveExisting = saveExisting;
         setId("nativeChartEditor");
         setSpacing(6);
         setPadding(new Insets(8));
@@ -241,11 +243,36 @@ final class NativeChartEditorPane extends VBox implements AppPanel
             ChartCloneCommand command = new ChartCloneCommand(snapshot.id(),snapshot.revision(),proposedName,proposedVersion);
             run("native-chart-clone",service -> service.cloneChart(command),this::saved);
         }
+        else if (mode == Mode.EDIT)
+        {
+            saveExisting.accept(snapshot.id());
+        }
         else
         {
-            ChartCommand command = new ChartCommand(mode == Mode.NEW ? null : snapshot.id(),proposedName,proposedVersion,
-                mode == Mode.EDIT && retired.isSelected(),mode == Mode.NEW ? null : snapshot.revision());
+            ChartCommand command = new ChartCommand(null, proposedName, proposedVersion, false, null);
             run("native-chart-save",service -> service.save(command),this::saved);
+        }
+    }
+
+    ChartCommand pendingDetailsForChart(long chartId)
+    {
+        if (!hasUnsavedChanges()) return null;
+        if (mode != Mode.EDIT || snapshot == null || snapshot.id() != chartId || !scope.currentScope())
+        {
+            throw new IllegalStateException("Save or cancel the retained chart form before saving this chart.");
+        }
+        return new ChartCommand(chartId, name.getText(), version.getText(), retired.isSelected(), snapshot.revision());
+    }
+
+    void acceptChartSave(ChartDetails result)
+    {
+        if (mode == Mode.EDIT && snapshot != null && snapshot.id() == result.id())
+        {
+            // Reopen from the saved chart so the form gets the new revision and values.
+            mode = null;
+            snapshot = null;
+            loadedChartId = null;
+            dirty.markClean();
         }
     }
 
@@ -314,7 +341,7 @@ final class NativeChartEditorPane extends VBox implements AppPanel
     {
         return mode != null && !busy && scope != null && scope.currentScope()
         && UiPermissionGate.allows(ApplicationPermission.BOOKKEEPING_WRITE) && !name.getText().isBlank() && !version.getText().isBlank()
-        && (mode == Mode.NEW || snapshot != null) && (mode != Mode.EDIT || dirty.isDirty());
+        && (mode == Mode.NEW || snapshot != null);
     }
 
     private void availability()
