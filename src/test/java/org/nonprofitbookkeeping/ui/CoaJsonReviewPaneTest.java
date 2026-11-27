@@ -117,6 +117,87 @@ class CoaJsonReviewPaneTest
     }
 
     @Test
+    void conflictingTargetOffersBothRemediesAndMergeRetainsAppliedEdits() throws Exception
+    {
+        FxTestSupport.onFx(() ->
+        {
+            var existing = (org.nonprofitbookkeeping.service.CompanyChartView) combo("coaJsonTargetChart").getValue();
+            combo("coaJsonImportMode").setValue(org.nonprofitbookkeeping.interchange.coa.CoaImportMode.CREATE_NEW_CHART);
+            field("coaJsonTargetChartName").setText(existing.name());
+            field("coaJsonTargetChartVersion").setText(existing.version());
+            button("coaReviewPreview").fire();
+            return null;
+        });
+        await(() -> !button("coaReviewPreview").isDisabled()
+                && panel.root().lookup("#coaReviewChangeChart") != null);
+        FxTestSupport.onFx(() ->
+        {
+            assertTrue(((Label) panel.root().lookup("#coaReviewBlockingMessage")).getText().contains("already exists"));
+            assertFalse(proposalRow(0).getStyleClass().contains("import-entry-invalid"));
+            button("coaReviewChangeChart").fire();
+            assertEquals(0, pages().getSelectionModel().getSelectedIndex());
+            assertEquals("Review Target Changes", button("coaReviewPreview").getText());
+            edit(2);
+            button("coaReviewClearSubtype").fire();
+            field("coaReviewName").setText("Retained proposal edit");
+            button("coaReviewApply").fire();
+            return null;
+        });
+        await(() -> status().startsWith("Account changes applied"));
+        long persisted = accountCount();
+        FxTestSupport.onFx(() ->
+        {
+            check("coaReviewAcknowledged").setSelected(true);
+            button("coaReviewMergeConflict").fire();
+            return null;
+        });
+        await(() -> status().startsWith("Review the proposed accounts")
+                && pages().getSelectionModel().getSelectedIndex() == 1 && !button("coaReviewPreview").isDisabled());
+        FxTestSupport.onFx(() ->
+        {
+            assertFalse(check("coaReviewAcknowledged").isSelected());
+            assertTrue(button("coaReviewCommit").isDisabled());
+            assertTrue(panel.root().lookup("#coaReviewMergeConflict") == null);
+            edit(2);
+            assertEquals("Retained proposal edit", field("coaReviewName").getText());
+            assertNull(combo("coaReviewSubtype").getValue());
+            return null;
+        });
+        assertEquals(persisted, accountCount());
+    }
+
+    @Test
+    void postingParentErrorOpensTheParentPostingControl() throws Exception
+    {
+        FxTestSupport.onFx(() ->
+        {
+            button("coaReviewFixAccount").fire();
+            assertEquals("9300", field("coaReviewCode").getText());
+            button("coaReviewClearSubtype").fire();
+            button("coaReviewApply").fire();
+            return null;
+        });
+        // The relationship error is introduced by a proposal edit, with no database write.
+        await(() -> status().startsWith("Account changes applied"));
+        FxTestSupport.onFx(() ->
+        {
+            edit(0);
+            CheckBox posting = (CheckBox) panel.root().lookup("#coaReviewPosting");
+            posting.setSelected(true);
+            button("coaReviewApply").fire();
+            return null;
+        });
+        await(() -> panel.root().lookup("#coaReviewFixParent") != null && !button("coaReviewRefresh").isDisabled());
+        FxTestSupport.onFx(() ->
+        {
+            button("coaReviewFixParent").fire();
+            assertEquals("9000", field("coaReviewCode").getText());
+            assertEquals(2, pages().getSelectionModel().getSelectedIndex());
+            return null;
+        });
+    }
+
+    @Test
     void reportedConflictCanBeCorrectedAppliedAcknowledgedAndImportedInTheProductionWorkspace() throws Exception
     {
         String original = Files.readString(file);

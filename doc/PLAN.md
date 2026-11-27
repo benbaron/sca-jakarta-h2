@@ -1,17 +1,32 @@
 ---
-plan_version: 563
+plan_version: 565
 active_phase: P27
-active_slice: P27-C25
+active_slice: P27-C26
 active_status: VERIFYING
-active_branch: codex/P27-C25-save-entire-chart
-active_pull_request: 451
-active_head: 74e4f8c05f4d4f37c3cbd7f9d753694cc9dd0e34
-next_action: "Run full clean verify and check GitHub CI for the Save Chart correction."
+active_branch: codex/P27-C26-actionable-chart-import-errors
+active_pull_request: null
+active_head: 2f734ba1
+next_action: "Verify actionable chart import errors and retained proposals, then run the full build."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
-### P27-C25 Save an entire chart and verify cross-company copying
+### P27-C26 Actionable chart import blockers
+
+Chart JSON review shows the cause and a direct remedy beside the import action.
+Target conflicts offer a new name/version or an explicit merge review by existing
+chart ID. Retargeting rechecks the unchanged source and new scope with applied
+proposal edits and removals retained. Approval resets. Account and hierarchy
+errors link to the affected field by source row. The technical details remain
+available in Diagnostics. No write occurs until the reviewed import is committed.
+The focused gate passed 28 tests with zero failures/errors/skips. The Word manual
+was updated in place and the changed instructions were rendered. The blocker was
+moved above the action bar following narrow-window inspection. Final layout and
+full clean verify are running.
+[Other actionable-error opportunities](actionable-error-survey.md) records the
+survey and identifies existing navigation to reuse.
+
+### P27-C25 Save an entire chart and verify cross-company copying — merged in #451
 
 Save Account commits the selected form. Save Chart commits the viewed chart,
 including any retained chart details and the currently pending account edit, in

@@ -33,6 +33,21 @@ public final class CoaImportReviewDraft
         return copy;
     }
 
+    /** Rebinds applied edits only after an explicit review of a new destination. */
+    public CoaImportReviewDraft retarget(CoaImportPreview target)
+    {
+        if (!original.sourceSha256().equals(target.sourceSha256())
+                || original.scope().companyId() != target.scope().companyId())
+        {
+            throw new IllegalStateException("The source file or company changed. Restore the original source or start a new review.");
+        }
+        var result = new CoaImportReviewDraft(target);
+        result.replacements.putAll(replacements);
+        result.excluded.addAll(excluded);
+        result.updated.addAll(updated);
+        return result;
+    }
+
     public List<Integer> rows()
     {
         List<Integer> rows = new ArrayList<>();

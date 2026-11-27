@@ -87,6 +87,14 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
     private final TextField currency = text("coaReviewCurrency");
     private final TextArea description = new TextArea();
     private final Label sourceCode = new Label();
+    private final Label blockingMessage = new Label();
+    private final FlowPane remedies = new FlowPane(8, 6);
+    private final VBox blocker = new VBox(6, blockingMessage, remedies);
+    private boolean repairTarget;
+
+    private record ReviewResult(CoaImportReviewDraft draft, CoaImportPreview preview, String sourceText)
+    {
+    }
     private final Label editorValidation = new Label();
     private final TextArea compatibility = new TextArea();
     private final GridPane editor = new GridPane();
@@ -143,7 +151,12 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
         summary.setWrapText(true);
         status.setWrapText(true);
         status.setId("coaReviewStatus");
-        VBox header = new VBox(6, new FlowPane(8, 6, backButton, choose, previewButton, refresh, commit), sourceLabel, summary, reviewed, opening, status);
+        blockingMessage.setId("coaReviewBlockingMessage");
+        blockingMessage.setWrapText(true);
+        blocker.setVisible(false);
+        blocker.managedProperty().bind(blocker.visibleProperty());
+        VBox header = new VBox(6, blocker, new FlowPane(8, 6, backButton, choose, previewButton, refresh, commit),
+                sourceLabel, summary, reviewed, opening, status);
         ScrollPane headerScroll = scroll(header);
         headerScroll.setPrefHeight(165);
         pages.setId("coaReviewPages");
@@ -274,7 +287,8 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
         {
             setupDirty = true;
             reviewed.setSelected(false);
-            status.setText("Import setup changed. Start New Review to use the new options.");
+            status.setText(repairTarget ? "Review Target Changes to recheck your proposals against this destination."
+                    : "Import setup changed. Start New Review to use the new options.");
             availability();
         }
     }
@@ -399,7 +413,11 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
         column(diagnostics,"Location",InterchangeValidationMessage::path,220);
         column(diagnostics,"Message",InterchangeValidationMessage::message,750);
         selectedMessage.setWrapText(true);
-        diagnostics.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> selectedMessage.setText(b == null ? "" : b.path() + " — " + b.message()));
+        diagnostics.getSelectionModel().selectedItemProperty().addListener((o,a,b) ->
+        {
+            selectedMessage.setText(b == null ? "" : b.path() + " — " + b.message());
+            if (b != null && b.blocking()) showBlocker(b);
+        });
         Button show = new Button("Show Account");
         show.setId("coaReviewShowDiagnosticAccount");
         show.setOnAction(e -> showDiagnosticAccount());
@@ -430,6 +448,8 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
         if (busy) return;
         chooseFile.get().ifPresent(path ->
         {
+            repairTarget = false;
+            previewButton.setText("Start New Review");
             source = path;
             sourceLabel.setText("Source: " + source);
             setupDirty = draft != null;
@@ -453,16 +473,25 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
             CoaImportRequest request = new CoaImportRequest(source,mode.getValue(),chartName.getText(),chartVersion.getText(),
                 ChartOfAccountsInterchangePanel.parseMappings(mappings.getText()),false,null,target);
             Scope requestedScope = Scope.current();
+            CoaImportReviewDraft previous = repairTarget ? draft : null;
+            if (previous != null && (editorDirty || !scope.currentScope()))
+            {
+                throw new IllegalStateException("Apply or cancel the open account edit in the original company before reviewing a new target.");
+            }
             run("coa-json-preview",() ->
             {
-                var result = operations.preview(request,requestedScope);
-                return new AbstractMap.SimpleImmutableEntry<>(result,operations.sourceText(result,requestedScope));
+                var initial = operations.preview(request, requestedScope);
+                var candidate = previous == null ? new CoaImportReviewDraft(initial) : previous.retarget(initial);
+                var result = previous == null ? initial : operations.preview(candidate.request(false), requestedScope);
+                return new ReviewResult(candidate, result, operations.sourceText(result, requestedScope));
             },result ->
             {
                 scope = requestedScope;
-                draft = new CoaImportReviewDraft(result.getKey());
-                preview = result.getKey();
-                originalText.setText(result.getValue());
+                draft = result.draft();
+                preview = result.preview();
+                originalText.setText(result.sourceText());
+                repairTarget = false;
+                previewButton.setText("Start New Review");
                 committed = false;
                 editingRow = null;
                 editorDirty = false;
@@ -486,25 +515,24 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
         List<Row> rows = new ArrayList<>();
         List<Integer> sourceRows = draft.rows();
         Map<Integer,List<InterchangeValidationMessage>> byRow = new HashMap<>();
-        boolean globalError = false;
-        var pattern = java.util.regex.Pattern.compile("\\$\\.(?:accounts|chartOfAccounts)\\[([0-9]+)\\]");
         for (var message : preview.messages())
         {
-            var match = pattern.matcher(message.path());
-            if (match.find()) byRow.computeIfAbsent(Integer.parseInt(match.group(1)),ignored -> new ArrayList<>()).add(message);
-            else if (message.blocking()) globalError = true;
+            Integer row = diagnosticIndex(message);
+            if (row != null) byRow.computeIfAbsent(row, ignored -> new ArrayList<>()).add(message);
         }
         for (int i = 0; i < preview.items().size(); i++)
         {
             var messages = byRow.getOrDefault(i,List.of());
-            boolean invalid = globalError || preview.items().get(i).disposition() == CoaPreviewItem.Disposition.BLOCKED
+            boolean invalid = preview.items().get(i).disposition() == CoaPreviewItem.Disposition.BLOCKED
             || messages.stream().anyMatch(InterchangeValidationMessage::blocking);
             String validation = String.join(" | ",messages.stream().map(InterchangeValidationMessage::message).toList());
-            if (globalError) validation += " Graph validation requires attention; see Diagnostics.";
             rows.add(new Row(sourceRows.get(i),preview.items().get(i),invalid,validation));
         }
         accounts.getItems().setAll(rows);
         diagnostics.getItems().setAll(preview.messages());
+        var blocking = preview.messages().stream().filter(InterchangeValidationMessage::blocking).toList();
+        showBlocker(blocking.stream().filter(message -> "COA_TARGET_CHART_CONFLICT".equals(message.code()))
+                .findFirst().orElse(blocking.isEmpty() ? null : blocking.get(0)));
         summary.setText("Target: " + preview.targetLabel() + " | " + rows.size() + " proposals | " + draft.removedCount()
             + " removed | " + preview.counts().errors() + " errors | " + preview.counts().warnings() + " warnings | SHA-256 " + preview.sourceSha256());
         opening.setVisible(!preview.confirmations().isEmpty());
@@ -711,24 +739,176 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
         });
     }
 
+    private static Integer diagnosticIndex(InterchangeValidationMessage message)
+    {
+        var match = java.util.regex.Pattern.compile("^\\$\\.(?:accounts|chartOfAccounts)\\[(\\d+)\\]").matcher(message.path());
+        return match.find() ? Integer.valueOf(match.group(1)) : null;
+    }
+
+    private void showBlocker(InterchangeValidationMessage message)
+    {
+        blocker.setVisible(message != null);
+        remedies.getChildren().clear();
+        if (message == null) return;
+
+        blockingMessage.setText(message.message());
+        if ("COA_TARGET_CHART_CONFLICT".equals(message.code()))
+        {
+            var request = preview.request();
+            blockingMessage.setText("A chart named " + request.targetChartName() + ", version " + request.targetChartVersion()
+                    + ", already exists for " + scope.company() + ". Change the new chart name or version, or review a merge into that chart.");
+            remedy("coaReviewChangeChart", "Change new chart name or version", () -> openTargetRepair(null));
+            var matching = targetChart.getItems().stream()
+                    .filter(chart -> chart.name().equalsIgnoreCase(request.targetChartName())
+                            && chart.version().equals(request.targetChartVersion()))
+                    .toList();
+            if (matching.size() == 1)
+            {
+                remedy("coaReviewMergeConflict", "Review merge into existing chart", () -> openTargetRepair(matching.get(0)));
+            }
+        }
+        else if (message.path().startsWith("target."))
+        {
+            remedy("coaReviewFixSetup", "Open Import Setup", () ->
+            {
+                pages.getSelectionModel().select(0);
+                focus(message.path().endsWith("chartVersion") ? chartVersion : chartName);
+            });
+        }
+        else
+        {
+            Integer index = diagnosticIndex(message);
+            if (index != null && index < draft.rows().size())
+            {
+                String field = message.path().substring(message.path().indexOf(']') + 1);
+                boolean postingParent = "COA_POSTING_PARENT".equals(message.code());
+                remedy("coaReviewFixAccount", postingParent ? "Edit child" : "Edit affected account", () -> openAccount(index, field));
+                if (postingParent)
+                {
+                    int related = parentIndex(index);
+                    if (related >= 0) remedy("coaReviewFixParent", "Edit parent", () -> openAccount(related, ".posting"));
+                }
+                if ("COA_HIERARCHY_CYCLE".equals(message.code()))
+                {
+                    addCycleRemedies(index);
+                }
+            }
+        }
+        remedy("coaReviewOpenDiagnostics", "View all validation messages", () -> pages.getSelectionModel().select(3));
+    }
+
+    private void addCycleRemedies(int index)
+    {
+        Set<Integer> visited = new HashSet<>();
+        visited.add(index);
+        int related = parentIndex(index);
+        while (related >= 0 && visited.size() < 10 && visited.add(related))
+        {
+            int row = related;
+            remedy("coaReviewFixCycleParent" + row, "Edit " + preview.items().get(row).targetCode(),
+                    () -> openAccount(row, ".parentCode"));
+            related = parentIndex(row);
+        }
+    }
+
+    private int parentIndex(int child)
+    {
+        String parentCode = preview.items().get(child).account().parentCode();
+        if (parentCode == null) return -1;
+        int targetMatch = -1;
+        for (int i = 0; i < preview.items().size(); i++)
+        {
+            var parentItem = preview.items().get(i);
+            if (parentCode.equals(parentItem.account().sourceCode())) return i;
+            if (targetMatch < 0 && parentCode.equals(parentItem.targetCode())) targetMatch = i;
+        }
+        return targetMatch;
+    }
+
+    private void remedy(String id, String label, Runnable action)
+    {
+        Button button = new Button(label);
+        button.setId(id);
+        button.setWrapText(true);
+        button.setOnAction(event -> action.run());
+        remedies.getChildren().add(button);
+    }
+
+    private void openTargetRepair(CompanyChartView merge)
+    {
+        if (!canEdit()) return;
+        if (editorDirty)
+        {
+            status.setText("Apply or cancel the open account edit before changing the target.");
+            pages.getSelectionModel().select(2);
+            return;
+        }
+        repairTarget = true;
+        previewButton.setText("Review Target Changes");
+        if (merge == null)
+        {
+            mode.setValue(CoaImportMode.CREATE_NEW_CHART);
+            pages.getSelectionModel().select(0);
+            focus(chartName);
+        }
+        else
+        {
+            mode.setValue(CoaImportMode.MERGE_BY_CODE);
+            targetChart.setValue(merge);
+            pages.getSelectionModel().select(0);
+            startReview();
+        }
+    }
+
     private void showDiagnosticAccount()
     {
         var selected = diagnostics.getSelectionModel().getSelectedItem();
         if (selected == null || draft == null) return;
-        var match = java.util.regex.Pattern.compile("\\[(\\d+)\\]").matcher(selected.path());
-        if (match.find())
+        Integer index = diagnosticIndex(selected);
+        if (index != null)
         {
-            int index = Integer.parseInt(match.group(1));
-            List<Integer> sourceRows = draft.rows();
-            if (index < sourceRows.size())
-            {
-                int sourceRow = sourceRows.get(index);
-                Row account = accounts.getItems().stream().filter(row -> row.sourceRow() == sourceRow).findFirst().orElse(null);
-                accounts.getSelectionModel().clearSelection();
-                accounts.getSelectionModel().select(account);
-                editSelected();
-            }
+            openAccount(index, selected.path().substring(selected.path().indexOf(']') + 1));
         }
+        else if ("COA_TARGET_CHART_CONFLICT".equals(selected.code()))
+        {
+            openTargetRepair(null);
+        }
+    }
+
+    private void openAccount(int index, String field)
+    {
+        List<Integer> rows = draft.rows();
+        if (!canEdit() || index >= rows.size()) return;
+        int sourceRow = rows.get(index);
+        accounts.getItems().stream().filter(row -> row.sourceRow() == sourceRow).findFirst().ifPresent(row ->
+        {
+            accounts.getSelectionModel().clearSelection();
+            accounts.getSelectionModel().select(row);
+            editSelected();
+            if (!Objects.equals(editingRow, sourceRow)) return;
+            pages.getSelectionModel().select(2);
+            focus(switch (field)
+            {
+                case ".code" -> code;
+                case ".name" -> name;
+                case ".type" -> type;
+                case ".function" -> function;
+                case ".subtype" -> subtype;
+                case ".normalBalance" -> balance;
+                case ".parentCode" -> parent;
+                case ".posting" -> posting;
+                case ".effectiveFrom" -> from;
+                case ".effectiveTo" -> to;
+                case ".openingBalance" -> amount;
+                case ".currency" -> currency;
+                default -> code;
+            });
+        });
+    }
+
+    private static void focus(Node field)
+    {
+        javafx.application.Platform.runLater(field::requestFocus);
     }
 
     private boolean canEdit()
@@ -748,6 +928,7 @@ final class CoaJsonReviewPane extends VBox implements AppPanel
     {
         boolean writable = canEdit();
         commit.setDisable(!ready());
+        remedies.setDisable(!writable);
         refresh.setDisable(draft == null || busy || committed || scope != null && !scope.currentScope());
         edit.setDisable(!writable || accounts.getSelectionModel().getSelectedItem() == null);
         delete.setDisable(!writable || editorDirty || accounts.getSelectionModel().getSelectedItems().isEmpty());

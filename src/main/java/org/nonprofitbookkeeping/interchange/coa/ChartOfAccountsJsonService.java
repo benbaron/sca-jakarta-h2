@@ -616,6 +616,7 @@ public final class ChartOfAccountsJsonService
 
         Map<String, ExistingAccount> existing = target.existingAccounts();
         Map<String, String> parentByTarget = new LinkedHashMap<>();
+        Map<String, Integer> rowByTarget = new HashMap<>();
         for (int index = 0; index < chart.accounts().size(); index++)
         {
             CoaAccountData account = chart.accounts().get(index);
@@ -624,6 +625,7 @@ public final class ChartOfAccountsJsonService
                     ? null
                     : effectiveCodes.getOrDefault(account.parentCode(), account.parentCode());
             parentByTarget.put(targetCode, parentTarget);
+            rowByTarget.putIfAbsent(targetCode, index);
             if (parentTarget != null
                     && !targetCodes.contains(parentTarget)
                     && !existing.containsKey(parentTarget))
@@ -634,8 +636,8 @@ public final class ChartOfAccountsJsonService
                         "Parent account " + parentTarget + " does not exist in the source graph or target chart."));
             }
         }
-        validateCycles(parentByTarget, messages);
-        validatePostingParents(chart.accounts(), effectiveCodes, parentByTarget, messages);
+        validateCycles(parentByTarget, rowByTarget, messages);
+        validatePostingParents(chart.accounts(), effectiveCodes, parentByTarget, rowByTarget, messages);
 
         List<CoaPreviewItem> items = new ArrayList<>();
         for (int index = 0; index < chart.accounts().size(); index++)
@@ -1058,6 +1060,7 @@ public final class ChartOfAccountsJsonService
 
     private static void validateCycles(
             Map<String, String> parentByCode,
+            Map<String, Integer> rowByTarget,
             List<InterchangeValidationMessage> messages)
     {
         Set<String> complete = new HashSet<>();
@@ -1073,10 +1076,14 @@ public final class ChartOfAccountsJsonService
             {
                 if (!path.add(current))
                 {
+                    List<String> cycle = new ArrayList<>(path);
+                    int first = cycle.indexOf(current);
+                    String chain = String.join(" → ", cycle.subList(first, Math.min(first + 10, cycle.size())));
+                    chain += cycle.size() - first > 10 ? " → … → " + current : " → " + current;
                     messages.add(error(
                             "COA_HIERARCHY_CYCLE",
-                            "$.accounts",
-                            "Account hierarchy contains a cycle involving " + current + "."));
+                            "$.accounts[" + rowByTarget.get(current) + "].parentCode",
+                            "Parent links form a cycle: " + chain + ". Change one incorrect parent link."));
                     return;
                 }
                 if (complete.contains(current))
@@ -1093,6 +1100,7 @@ public final class ChartOfAccountsJsonService
             List<CoaAccountData> accounts,
             Map<String, String> effectiveCodes,
             Map<String, String> parentByTarget,
+            Map<String, Integer> rowByTarget,
             List<InterchangeValidationMessage> messages)
     {
         Map<String, CoaAccountData> byTarget = new HashMap<>();
@@ -1108,7 +1116,7 @@ public final class ChartOfAccountsJsonService
             {
                 messages.add(error(
                         "COA_POSTING_PARENT",
-                        "$.accounts",
+                        "$.accounts[" + rowByTarget.get(entry.getKey()) + "].parentCode",
                         "Account " + parentCode + " is marked posting but also has child account "
                                 + entry.getKey() + "."));
             }
