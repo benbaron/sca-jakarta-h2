@@ -207,8 +207,9 @@ class PanelOverflowTest
     {
         FxTestSupport.onFx(() ->
         {
-            EventAccountingPanel panel = (EventAccountingPanel) new PanelFactory().create(AppPanelId.EVENT_ACCOUNTING);
-            show(panel.root(), 620, 600); layout();
+            EventsWorkspacePanel workspace = (EventsWorkspacePanel) new PanelFactory().create(AppPanelId.EVENT_ACCOUNTING);
+            EventAccountingPanel panel = workspace.accounting();
+            show(workspace.root(), 620, 600); layout();
             TitledPane details = (TitledPane) panel.root().lookup("#eventAccountingReviewDetails");
             assertFalse(details.isVisible(), "No empty closeout block before an event is selected");
             List<ReviewFact> facts = List.of(new ReviewFact("Journal linkage", "Linked", "Two canonical transactions."),

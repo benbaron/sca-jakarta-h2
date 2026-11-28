@@ -73,6 +73,34 @@ public class ActivitiesPanel implements AppPanel
 
     private final java.util.function.BooleanSupplier discardConfirmation;
     private Long editingActivityId;
+    private final Button viewAccountingButton = new Button("View accounting");
+    private Runnable viewAccounting = () -> {};
+
+    Long selectedActivityId()
+    {
+        return editingActivityId;
+    }
+
+    void selectActivity(Long id)
+    {
+        if (id == null || Objects.equals(id, editingActivityId)) return;
+        if (dirty)
+        {
+            status.setText("Save or cancel the current event edit before selecting a different event.");
+            return;
+        }
+        search.clear();
+        var row = activities.stream().filter(item -> Objects.equals(item.id(), id)).findFirst();
+        if (row.isPresent()) table.getSelectionModel().select(row.get());
+        else reload(id);
+    }
+
+    void setViewAccountingAction(Runnable action)
+    {
+        viewAccounting = action;
+        viewAccountingButton.setVisible(true);
+        viewAccountingButton.setManaged(true);
+    }
     private boolean populating;
     private boolean dirty;
     private boolean restoringState;
@@ -118,6 +146,10 @@ public class ActivitiesPanel implements AppPanel
         deleteUnused.setOnAction(event -> deleteUnusedActivity());
         refresh.setId("activitiesRefresh");
         refresh.setOnAction(event -> reload(editingActivityId));
+        viewAccountingButton.setId("activitiesViewAccounting");
+        viewAccountingButton.setVisible(false);
+        viewAccountingButton.setManaged(false);
+        viewAccountingButton.setOnAction(event -> viewAccounting.run());
         Button showAll = new Button("Show All");
         showAll.setId("activitiesShowAll");
         showAll.setTooltip(new javafx.scene.control.Tooltip("Clear search and reload all events for the selected company, including inactive events. Unsaved editor changes are retained."));
@@ -131,7 +163,7 @@ public class ActivitiesPanel implements AppPanel
         UiPermissionGate.gate(nameField, ApplicationPermission.BOOKKEEPING_WRITE, "Edit an Activity name");
         UiPermissionGate.gate(activeField, ApplicationPermission.BOOKKEEPING_WRITE, "Change Activity lifecycle state");
 
-        FlowPane actions = new FlowPane(8, 6, add, edit, save, deleteUnused, refresh, showAll, returnAction.button());
+        FlowPane actions = new FlowPane(8, 6, add, edit, save, deleteUnused, refresh, showAll, viewAccountingButton, returnAction.button());
         search.setId("activitiesSearch");
         search.setPromptText("Search event name or code");
         search.setAccessibleText("Search Events / Activities by name or code");

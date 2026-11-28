@@ -1,17 +1,32 @@
 ---
-plan_version: 565
+plan_version: 567
 active_phase: P27
-active_slice: P27-C26
+active_slice: P27-C27
 active_status: VERIFYING
-active_branch: codex/P27-C26-actionable-chart-import-errors
-active_pull_request: 452
-active_head: 4d1ab69fcb7b66b4a0571c624fa7df19f360a407
-next_action: "Verify actionable chart import errors and retained proposals, then run the full build."
+active_branch: codex/P27-C27-unified-events
+active_pull_request: null
+active_head: 7bffcf8c
+next_action: "Verify unified event navigation, retained drafts, permissions, overflow and Import return."
 ---
 
 # SCA Bookkeeping Program — Codex Execution Plan
 
-### P27-C26 Actionable chart import blockers
+### P27-C27 Unified Events / Activities workspace
+
+Accounting and Manage Events share one workspace and hand off stable Activity
+IDs. Accounting keeps its date/fund filters, read-only queries and Journal
+links. Manage Events owns the editing service, permission checks and retained
+draft. Journal and CSV Import still open Manage Events and retain return
+navigation. EVENT_ACCOUNTING opens the Accounting tab of the same workspace.
+No schema or accounting policy change. Owner check: select an event in
+Accounting, manage it, switch tabs with an unsaved edit, and verify the draft
+and event selection. Return from Import Add to the proposal. Compile passed.
+Initial focused run passed 55 cases, including all 35 CSV review cases and the
+new shared event/draft journey. The navigation inventory fixture still expected
+retired bank aliases. It now derives its expected set from canonical routes.
+Final focused and full clean verification are running.
+
+### P27-C26 Actionable chart import blockers — merged in #452
 
 Chart JSON review shows the cause and a direct remedy beside the import action.
 Target conflicts offer a new name/version or an explicit merge review by existing

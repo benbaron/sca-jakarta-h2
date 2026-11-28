@@ -22,8 +22,9 @@ class EventAccountingPanelSourceTest
         String service = read("src/main/java/org/nonprofitbookkeeping/service/EventAccountingQueryService.java");
 
         assertTrue(panelId.contains("EVENT_ACCOUNTING"));
-        assertTrue(navigation.contains("AppPanelId.EVENT_ACCOUNTING, \"Event Accounting\""));
-        assertTrue(factory.contains("AppPanelId.EVENT_ACCOUNTING, EventAccountingPanel::new"));
+        assertFalse(navigation.contains("AppPanelId.EVENT_ACCOUNTING, \"Event Accounting\""));
+        assertTrue(navigation.contains("AppPanelId.ACTIVITIES, \"Events / Activities\""));
+        assertTrue(factory.contains("AppPanelId.ACTIVITIES, EventsWorkspacePanel::new"));
         assertTrue(registry.contains("EventAccountingQueryService eventAccounting()"));
         assertTrue(registry.contains("new EventAccountingQueryService(services().jpa(), UiServiceRegistry::activeCompanyCode)"));
 

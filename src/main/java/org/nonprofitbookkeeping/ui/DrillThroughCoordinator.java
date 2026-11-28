@@ -74,7 +74,7 @@ final class DrillThroughCoordinator
         }
         PANEL_CONTEXT.put(panelId, normalizedContext);
         debug("Opening " + panelId + " with context '" + safeContext(normalizedContext) + "'.");
-        opener.accept(panelId);
+        opener.accept(requestedPanelId == AppPanelId.EVENT_ACCOUNTING ? requestedPanelId : panelId);
         debug("Open request dispatched for " + panelId + ".");
     }
 

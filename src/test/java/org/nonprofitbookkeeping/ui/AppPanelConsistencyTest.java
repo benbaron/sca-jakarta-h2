@@ -25,7 +25,7 @@ public class AppPanelConsistencyTest
     }
 
     @Test
-    public void navigationExposesOneJournalDestinationAndNoRetiredAliases()
+    public void navigationExposesCanonicalDestinationsWithoutRetiredAliases()
     {
         EnumSet<AppPanelId> indexed = FxTestSupport.onFx(() -> {
             NavigationPane nav = new NavigationPane(id -> { });
@@ -33,8 +33,7 @@ public class AppPanelConsistencyTest
         });
 
         EnumSet<AppPanelId> expected = EnumSet.allOf(AppPanelId.class);
-        expected.remove(AppPanelId.LEDGER_REGISTER);
-        expected.remove(AppPanelId.TXN_EDITOR);
+        expected.removeIf(id -> AppPanelId.canonical(id) != id);
         assertEquals(expected, indexed);
     }
 

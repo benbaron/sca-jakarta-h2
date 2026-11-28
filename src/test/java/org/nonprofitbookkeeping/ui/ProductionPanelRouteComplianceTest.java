@@ -88,6 +88,7 @@ class ProductionPanelRouteComplianceTest
                 expectedRoutes.remove(AppPanelId.TXN_EDITOR);
                 expectedRoutes.remove(AppPanelId.RECONCILIATION_RUNS);
                 expectedRoutes.remove(AppPanelId.BANK_TRANSACTIONS);
+                expectedRoutes.remove(AppPanelId.EVENT_ACCOUNTING);
                 assertEquals(expectedRoutes, canonicalRoutes,
                         "Production smoke must enumerate every canonical destination exactly once.");
                 for (AppPanelId panelId : canonicalRoutes)
