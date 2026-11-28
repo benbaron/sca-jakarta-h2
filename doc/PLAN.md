@@ -4,8 +4,8 @@ active_phase: P27
 active_slice: P27-C27
 active_status: VERIFYING
 active_branch: codex/P27-C27-unified-events
-active_pull_request: null
-active_head: 7bffcf8c
+active_pull_request: 453
+active_head: af4a2314bb65471a61d7ef043280bfb0fd22abc7
 next_action: "Verify unified event navigation, retained drafts, permissions, overflow and Import return."
 ---
 
@@ -24,7 +24,9 @@ and event selection. Return from Import Add to the proposal. Compile passed.
 Initial focused run passed 55 cases, including all 35 CSV review cases and the
 new shared event/draft journey. The navigation inventory fixture still expected
 retired bank aliases. It now derives its expected set from canonical routes.
-Final focused and full clean verification are running.
+Final native verification passed seven cases. The full run identified the
+operating guide's old sidebar label assertion. Update the guide and test for
+the two work tabs. Repeat full verification on the successor in [PR #453](https://github.com/benbaron/sca-jakarta-h2/pull/453).
 
 ### P27-C26 Actionable chart import blockers — merged in #452
 

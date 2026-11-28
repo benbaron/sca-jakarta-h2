@@ -21,6 +21,8 @@ class ReleaseOperatingGuideTest
         String guide = Files.readString(Path.of("doc/operating-guide.md"));
         String navigation = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/ui/NavigationPane.java"));
+        String events = Files.readString(Path.of(
+                "src/main/java/org/nonprofitbookkeeping/ui/EventsWorkspacePanel.java"));
         String administration = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/ui/AdministrationPanel.java"));
         String transfer = Files.readString(Path.of(
@@ -28,7 +30,7 @@ class ReleaseOperatingGuideTest
         String coordinator = Files.readString(Path.of(
                 "src/main/java/org/nonprofitbookkeeping/ui/DatabaseTransferCoordinator.java"));
 
-        for (String label : Set.of("Journal", "Merchant Settlement Assistant", "Event Accounting",
+        for (String label : Set.of("Journal", "Merchant Settlement Assistant",
                 "Banking", "Budget Editor", "Budget vs Actual", "Recognition Assistant",
                 "Asset Register", "Inventory", "Property Custody", "Import",
                 "Opening Conversion", "Period Close", "Report Library", "Fund Transfers",
@@ -36,6 +38,11 @@ class ReleaseOperatingGuideTest
         {
             assertTrue(navigation.contains("\"" + label + "\""), label);
             assertTrue(guide.contains("**" + label + "**"), label);
+        }
+        for (String tab : Set.of("Accounting", "Manage Events"))
+        {
+            assertTrue(events.contains("addPane(\"" + tab + "\""), tab);
+            assertTrue(guide.contains("**" + tab + "**"), tab);
         }
         assertTrue(administration.contains("tab(\"Company Admin\""));
         assertTrue(administration.contains("tab(\"Database Transfer\""));
