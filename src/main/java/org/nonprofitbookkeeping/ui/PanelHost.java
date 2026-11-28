@@ -71,6 +71,7 @@ public class PanelHost extends TabPane
         getSelectionModel().select(tab);
         activeId = id;
         AppPanel panel = panels.get(id);
+        if (panel instanceof EventsWorkspacePanel events) events.showDestination(requestedId);
         if (panel instanceof BankingWorkspacePanel banking) banking.showLegacyDestination(requestedId);
         if (panel != null && previouslySelected == tab)
         {

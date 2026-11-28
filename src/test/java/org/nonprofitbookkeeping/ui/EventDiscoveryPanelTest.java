@@ -204,6 +204,63 @@ class EventDiscoveryPanelTest
         });
     }
 
+    @Test
+    void bothDestinationsShareOneWorkspaceAndAnUnsavedEventSurvivesTabChanges() throws Exception
+    {
+        PanelHost host = FxTestSupport.onFx(() ->
+        {
+            var result = new PanelHost();
+            stage = new Stage();
+            stage.setScene(new Scene(result, 1050, 760));
+            stage.show();
+            result.show(AppPanelId.EVENT_ACCOUNTING);
+            result.applyCss();
+            result.layout();
+            return result;
+        });
+        FxTestSupport.onFx(() ->
+        {
+            ComboBox<?> events = (ComboBox<?>) host.lookup("#eventAccountingActivity");
+            for (int i = 0; i < events.getItems().size(); i++)
+            {
+                if (((org.nonprofitbookkeeping.service.EventAccountingQueryService.ActivityOption) events.getItems().get(i)).id().equals(second.id()))
+                {
+                    events.getSelectionModel().select(i);
+                    break;
+                }
+            }
+            ((Button) host.lookup("#eventAccountingManageEvents")).fire();
+            host.applyCss();
+            host.layout();
+            return null;
+        });
+        await(() ->
+        {
+            TextField code = (TextField) host.lookup("#activitiesCode");
+            return code != null && second.code().equals(code.getText());
+        });
+        FxTestSupport.onFx(() ->
+        {
+            assertEquals(1, host.openPanelCount());
+            ((TextField) host.lookup("#activitiesName")).setText("Pending event name");
+            host.show(AppPanelId.EVENT_ACCOUNTING);
+            assertTrue(host.activeCommandCapabilities().isEmpty());
+            host.show(AppPanelId.ACTIVITIES);
+            host.applyCss();
+            host.layout();
+            assertEquals(1, host.openPanelCount());
+            assertEquals("Pending event name", ((TextField) host.lookup("#activitiesName")).getText());
+            assertTrue(host.activeCommandCapabilities().contains(AppCommand.SAVE_ACTIVE));
+            ((Button) host.lookup("#activitiesViewAccounting")).fire();
+            host.applyCss();
+            host.layout();
+            ComboBox<?> events = (ComboBox<?>) host.lookup("#eventAccountingActivity");
+            assertEquals(second.id(), ((org.nonprofitbookkeeping.service.EventAccountingQueryService.ActivityOption)
+                    events.getValue()).id());
+            return null;
+        });
+    }
+
     private void showPanel() throws Exception
     {
         FxTestSupport.onFx(() ->

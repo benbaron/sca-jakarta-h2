@@ -14,7 +14,7 @@ public enum AppPanelId
     /** Canonical identifier for the unified Journal workspace. */
     JOURNAL_PANE,
 
-    /** Read-only Activity/event/project accounting workspace. */
+    /** Compatibility route to the Accounting tab in Events / Activities. */
     EVENT_ACCOUNTING,
 
     BANKING,
@@ -60,6 +60,6 @@ public enum AppPanelId
         {
             return BANKING;
         }
-        return id;
+        return id == EVENT_ACCOUNTING ? ACTIVITIES : id;
     }
 }

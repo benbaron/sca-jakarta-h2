@@ -76,7 +76,6 @@ public final class PanelFactory
     {
         factories.put(AppPanelId.DASHBOARD, dashboardFactory);
         factories.put(AppPanelId.JOURNAL_PANE, JournalWorkspaceCompliancePanel::new);
-        factories.put(AppPanelId.EVENT_ACCOUNTING, EventAccountingPanel::new);
         factories.putIfAbsent(AppPanelId.BANKING, BankingWorkspacePanel::new);
         factories.put(AppPanelId.BUDGET_EDITOR, BudgetEditorPanel::new);
         factories.put(AppPanelId.BUDGET_VS_ACTUAL, BudgetVsActualPanel::new);
@@ -97,7 +96,7 @@ public final class PanelFactory
         factories.put(AppPanelId.CHART_OF_ACCOUNTS, ChartOfAccountsInterchangePanel::new);
         factories.put(AppPanelId.FUNDS, FundsPanel::new);
         factories.put(AppPanelId.FUND_TRANSFERS, FundTransfersPanel::new);
-        factories.put(AppPanelId.ACTIVITIES, ActivitiesPanel::new);
+        factories.put(AppPanelId.ACTIVITIES, EventsWorkspacePanel::new);
         factories.put(AppPanelId.SETTINGS, administrationFactory);
         factories.put(AppPanelId.DIAGNOSTICS, diagnosticsFactory);
         factories.put(AppPanelId.HELP, HelpPanel::new);
@@ -110,6 +109,7 @@ public final class PanelFactory
         result.add(AppPanelId.TXN_EDITOR);
         result.add(AppPanelId.RECONCILIATION_RUNS);
         result.add(AppPanelId.BANK_TRANSACTIONS);
+        result.add(AppPanelId.EVENT_ACCOUNTING);
         return result;
     }
 
@@ -123,6 +123,7 @@ public final class PanelFactory
         }
         AppPanel panel = factory.get();
         prepareProductionPanel(panel, canonicalId);
+        if (id == AppPanelId.EVENT_ACCOUNTING && panel instanceof EventsWorkspacePanel events) events.showDestination(id);
         return panel;
     }
     /** Shared production preparation for created panels and injected workflow regression fixtures. */

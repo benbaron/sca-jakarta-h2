@@ -63,7 +63,24 @@ public final class EventAccountingPanel implements AppPanel
     private final FlowPane reviewStatuses = new FlowPane(12, 4);
     private final javafx.scene.control.TitledPane reviewDetails = new javafx.scene.control.TitledPane("Closeout review facts", reviewFacts);
     private final Button openJournal = new Button("Open Selected in Journal");
+    private Runnable manage = () -> DrillThroughCoordinator.openPanelWithContext(AppPanelId.ACTIVITIES, "");
     private boolean applyingDefaultDates;
+
+    Long selectedActivityId()
+    {
+        return activity.getValue() == null ? null : activity.getValue().id();
+    }
+
+    void selectActivity(Long id)
+    {
+        activity.getItems().stream().filter(item -> Objects.equals(item.id(), id))
+                .findFirst().ifPresent(activity.getSelectionModel()::select);
+    }
+
+    void setManageAction(Runnable action)
+    {
+        manage = action;
+    }
     private boolean dateScopeDetached;
 
     public EventAccountingPanel()
@@ -144,10 +161,9 @@ public final class EventAccountingPanel implements AppPanel
         fromDate.setId("eventAccountingFromDate");
         throughDate.setId("eventAccountingThroughDate");
 
-        Button manageEvents = new Button("Events / Activities");
+        Button manageEvents = new Button("Manage this event");
         manageEvents.setId("eventAccountingManageEvents");
-        manageEvents.setOnAction(event -> DrillThroughCoordinator.openPanelWithContext(
-                AppPanelId.ACTIVITIES, ""));
+        manageEvents.setOnAction(event -> manage.run());
         Button refresh = new Button("Refresh");
         Button resetScope = new Button("Use Active Period Scope");
         refresh.setOnAction(event -> reloadWorkspace());
@@ -388,7 +404,7 @@ public final class EventAccountingPanel implements AppPanel
         LocalDate end = throughDate.getValue();
         if (selectedActivity == null)
         {
-            clearWorkspace("Choose Events / Activities to create an event, then return here to select it.");
+            clearWorkspace("Create an event in Manage Events, then return here to view its accounting.");
             return;
         }
         if (start == null || end == null)

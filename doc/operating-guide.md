@@ -16,7 +16,7 @@ Use the configured correction method. Direct edit/delete is available only when 
 
 ## Events, budgets and transfers
 
-Use **Event Accounting** under **ACCOUNTING** to select an event by name/code and review income, expense, net result, line detail and related configured-bank context. Open a selected transaction in Journal for correction. No memo inference or clearing-account workaround is required for event attribution.
+Open **Events / Activities** under **ADMINISTRATION** and select **Accounting** to review an event’s income, expense, net result, line detail and related configured-bank context. Use **Manage this event** to open the selected event in **Manage Events**. Use **View accounting** to return to its figures. Open a selected transaction in Journal for correction. No memo inference or clearing-account workaround is required for event attribution.
 
 Use **Budget Editor** and **Budget vs Actual** under **PLANNING** for versioned Fund/Event plans and actual comparison. Use **Fund Transfers** under **ADMINISTRATION** for same-company internal allocations; its Save creates the balanced canonical entry and retained transfer fact atomically. Bank-account movement and inter-entity payment remain Journal/banking operations rather than internal fund transfers.
 
