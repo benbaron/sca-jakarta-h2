@@ -459,7 +459,8 @@ class NativeChartEditorPaneTest
             stage.getScene().getRoot().setStyle("-fx-font-size: 18px;");
             return null;
         });
-        await(() -> stage.getWidth() <= 550);
+        // The window properties update before the window manager resizes the scene.
+        await(() -> stage.getScene().getWidth() <= 550 && stage.getScene().getHeight() <= 590);
         FxTestSupport.onFx(() ->
         {
             SplitPane split = (SplitPane) node("nativeChartEditorSplit");
